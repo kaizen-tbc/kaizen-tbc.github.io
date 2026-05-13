@@ -1,0 +1,469 @@
+{
+  "version": 2,
+  "savedAt": "2026-05-13T20:23:01.554Z",
+  "roster": [
+    {
+      "id": 1,
+      "name": "Bradpitiful",
+      "class": "Warrior",
+      "ms": "Protection",
+      "os": "Fury",
+      "role": "Tank",
+      "status": "Main",
+      "altOf": "",
+      "notes": ""
+    },
+    {
+      "id": 2,
+      "name": "Medinthil",
+      "class": "Paladin",
+      "ms": "Protection",
+      "os": "Retribution",
+      "role": "Tank",
+      "status": "Main",
+      "altOf": "",
+      "notes": ""
+    },
+    {
+      "id": 3,
+      "name": "Sobadai",
+      "class": "Druid",
+      "ms": "Restoration",
+      "os": "Feral",
+      "role": "Tank",
+      "status": "Main",
+      "altOf": "",
+      "notes": "Guardian Main"
+    },
+    {
+      "id": 4,
+      "name": "Ytknight",
+      "class": "Paladin",
+      "ms": "Holy",
+      "os": "Protection",
+      "role": "Healer",
+      "status": "Main",
+      "altOf": "",
+      "notes": ""
+    },
+    {
+      "id": 5,
+      "name": "Healkinz",
+      "class": "Druid",
+      "ms": "Restoration",
+      "os": "Balance",
+      "role": "Healer",
+      "status": "Main",
+      "altOf": "",
+      "notes": ""
+    },
+    {
+      "id": 6,
+      "name": "Mivian",
+      "class": "Priest",
+      "ms": "Holy",
+      "os": "Holy",
+      "role": "Healer",
+      "status": "Main",
+      "altOf": "",
+      "notes": ""
+    },
+    {
+      "id": 7,
+      "name": "Koldhottie",
+      "class": "Priest",
+      "ms": "Holy",
+      "os": "",
+      "role": "Healer",
+      "status": "Main",
+      "altOf": "",
+      "notes": ""
+    },
+    {
+      "id": 8,
+      "name": "Zabanya",
+      "class": "Shaman",
+      "ms": "Restoration",
+      "os": "Elemental",
+      "role": "Healer",
+      "status": "Main",
+      "altOf": "",
+      "notes": ""
+    },
+    {
+      "id": 9,
+      "name": "Depew",
+      "class": "Shaman",
+      "ms": "Enhancement",
+      "os": "Restoration",
+      "role": "Melee",
+      "status": "Main",
+      "altOf": "",
+      "notes": ""
+    },
+    {
+      "id": 10,
+      "name": "Totemy",
+      "class": "Shaman",
+      "ms": "Enhancement",
+      "os": "",
+      "role": "Melee",
+      "status": "Main",
+      "altOf": "",
+      "notes": ""
+    },
+    {
+      "id": 11,
+      "name": "Darwin",
+      "class": "Druid",
+      "ms": "Feral",
+      "os": "Feral",
+      "role": "Melee",
+      "status": "Main",
+      "altOf": "",
+      "notes": ""
+    },
+    {
+      "id": 12,
+      "name": "Oshika",
+      "class": "Shaman",
+      "ms": "Elemental",
+      "os": "Combat",
+      "role": "Ranged",
+      "status": "Main",
+      "altOf": "",
+      "notes": ""
+    },
+    {
+      "id": 13,
+      "name": "Adili",
+      "class": "Warlock",
+      "ms": "Demonology",
+      "os": "",
+      "role": "Ranged",
+      "status": "Main",
+      "altOf": "",
+      "notes": ""
+    },
+    {
+      "id": 14,
+      "name": "Murrduh",
+      "class": "Warlock",
+      "ms": "Destruction",
+      "os": "Enhancement",
+      "role": "Ranged",
+      "status": "Main",
+      "altOf": "",
+      "notes": ""
+    },
+    {
+      "id": 15,
+      "name": "Aniviah",
+      "class": "Mage",
+      "ms": "Arcane",
+      "os": "Arcane",
+      "role": "Ranged",
+      "status": "Main",
+      "altOf": "",
+      "notes": ""
+    },
+    {
+      "id": 16,
+      "name": "Naetho",
+      "class": "Mage",
+      "ms": "Arcane",
+      "os": "Destruction",
+      "role": "Ranged",
+      "status": "Main",
+      "altOf": "",
+      "notes": ""
+    },
+    {
+      "id": 17,
+      "name": "Magusalhan",
+      "class": "Mage",
+      "ms": "Frost",
+      "os": "Protection",
+      "role": "Ranged",
+      "status": "Main",
+      "altOf": "",
+      "notes": ""
+    },
+    {
+      "id": 18,
+      "name": "Sucmelowmane",
+      "class": "Mage",
+      "ms": "Frost",
+      "os": "",
+      "role": "Ranged",
+      "status": "Main",
+      "altOf": "",
+      "notes": ""
+    },
+    {
+      "id": 19,
+      "name": "Krunkette",
+      "class": "Priest",
+      "ms": "Shadow",
+      "os": "Holy",
+      "role": "Ranged",
+      "status": "Main",
+      "altOf": "",
+      "notes": ""
+    },
+    {
+      "id": 20,
+      "name": "Howiebling",
+      "class": "Hunter",
+      "ms": "Beastmastery",
+      "os": "",
+      "role": "Ranged",
+      "status": "Main",
+      "altOf": "",
+      "notes": ""
+    },
+    {
+      "id": 21,
+      "name": "Akohre",
+      "class": "Hunter",
+      "ms": "Beastmastery",
+      "os": "Beastmastery",
+      "role": "Ranged",
+      "status": "Main",
+      "altOf": "",
+      "notes": ""
+    },
+    {
+      "id": 22,
+      "name": "TuxedoKamen",
+      "class": "Paladin",
+      "ms": "Protection",
+      "os": "Retribution",
+      "role": "Tank",
+      "status": "Alt",
+      "altOf": "Bradpitiful",
+      "notes": ""
+    },
+    {
+      "id": 23,
+      "name": "Kiricolo",
+      "class": "Paladin",
+      "ms": "Retribution",
+      "os": "Protection",
+      "role": "Melee",
+      "status": "Alt",
+      "altOf": "Depew",
+      "notes": ""
+    },
+    {
+      "id": 24,
+      "name": "Tilatia",
+      "class": "Hunter",
+      "ms": "Beastmastery",
+      "os": "",
+      "role": "Ranged",
+      "status": "Alt",
+      "altOf": "Healkinz",
+      "notes": ""
+    },
+    {
+      "id": 25,
+      "name": "Infernomatik",
+      "class": "Warlock",
+      "ms": "Destruction",
+      "os": "",
+      "role": "Ranged",
+      "status": "Alt",
+      "altOf": "Sobadai",
+      "notes": ""
+    },
+    {
+      "id": 26,
+      "name": "Vestuvian",
+      "class": "Priest",
+      "ms": "Shadow",
+      "os": "",
+      "role": "Ranged",
+      "status": "Alt",
+      "altOf": "Depew",
+      "notes": ""
+    },
+    {
+      "id": 27,
+      "name": "Suboptimalsp",
+      "class": "Priest",
+      "ms": "Shadow",
+      "os": "Holy",
+      "role": "Ranged",
+      "status": "Alt",
+      "altOf": "Totemy",
+      "notes": ""
+    },
+    {
+      "id": 28,
+      "name": "Thanil",
+      "class": "Druid",
+      "ms": "Restoration",
+      "os": "",
+      "role": "Healer",
+      "status": "Alt",
+      "altOf": "Naetho",
+      "notes": ""
+    },
+    {
+      "id": 29,
+      "name": "Giantwoww",
+      "class": "Warrior",
+      "ms": "Fury",
+      "os": "Protection",
+      "role": "Melee",
+      "status": "Casual",
+      "altOf": "",
+      "notes": ""
+    },
+    {
+      "id": 30,
+      "name": "Gunslinger",
+      "class": "Hunter",
+      "ms": "Marksmanship",
+      "os": "",
+      "role": "Ranged",
+      "status": "Casual",
+      "altOf": "",
+      "notes": ""
+    },
+    {
+      "id": 31,
+      "name": "Muvrin",
+      "class": "Warrior",
+      "ms": "Arms",
+      "os": "",
+      "role": "Melee",
+      "status": "Casual",
+      "altOf": "",
+      "notes": ""
+    },
+    {
+      "id": 32,
+      "name": "Minotoru",
+      "class": "Mage",
+      "ms": "Arcane",
+      "os": "",
+      "role": "Ranged",
+      "status": "Casual",
+      "altOf": "",
+      "notes": ""
+    },
+    {
+      "id": 33,
+      "name": "Rodentmage",
+      "class": "Mage",
+      "ms": "Arcane",
+      "os": "",
+      "role": "Ranged",
+      "status": "Casual",
+      "altOf": "",
+      "notes": ""
+    },
+    {
+      "id": 34,
+      "name": "Romelex",
+      "class": "Mage",
+      "ms": "Arcane",
+      "os": "Destruction",
+      "role": "Ranged",
+      "status": "Casual",
+      "altOf": "",
+      "notes": ""
+    },
+    {
+      "id": 35,
+      "name": "Melam",
+      "class": "Paladin",
+      "ms": "Protection",
+      "os": "",
+      "role": "Tank",
+      "status": "Casual",
+      "altOf": "",
+      "notes": ""
+    },
+    {
+      "id": 36,
+      "name": "Sugarmoose",
+      "class": "Druid",
+      "ms": "Restoration",
+      "os": "",
+      "role": "Healer",
+      "status": "Casual",
+      "altOf": "",
+      "notes": ""
+    },
+    {
+      "id": 37,
+      "name": "Oltakk",
+      "class": "Warrior",
+      "ms": "Fury",
+      "os": "",
+      "role": "Melee",
+      "status": "Casual",
+      "altOf": "",
+      "notes": ""
+    },
+    {
+      "id": 38,
+      "name": "Clutchlack",
+      "class": "Rogue",
+      "ms": "Combat",
+      "os": "",
+      "role": "Melee",
+      "status": "Casual",
+      "altOf": "",
+      "notes": ""
+    }
+  ],
+  "groups": [
+    [],
+    [],
+    [],
+    [],
+    []
+  ],
+  "attendance": [
+    {
+      "iso": "2026-03-24",
+      "data": {}
+    },
+    {
+      "iso": "2026-03-31",
+      "data": {}
+    },
+    {
+      "iso": "2026-04-07",
+      "data": {}
+    },
+    {
+      "iso": "2026-04-14",
+      "data": {}
+    }
+  ],
+  "nextId": 39,
+  "guildInfo": {
+    "about": "Kaizen is a chill but serious Horde raiding guild pushing into 25-man progression content on TBC Classic. We're building a solid, consistent roster of players who show up prepared, respect each other's time, and want to actually clear content — without the toxicity. If that sounds like you, come hang.",
+    "raidSchedule": [
+      {
+        "day": "Tuesday",
+        "content": "Progression — SSC or TK",
+        "time": "6:30 – 9:30 pm server (8:30 – 11:30 pm EST · 5:30 – 8:30 pm PST)",
+        "note": "Invites 30 min before first pull"
+      },
+      {
+        "day": "Sunday",
+        "content": "Progression — SSC or TK",
+        "time": "6:30 – 9:30 pm server (8:30 – 11:30 pm EST · 5:30 – 8:30 pm PST)",
+        "note": "Continue / finish the week's instance"
+      }
+    ],
+    "recruitment": "We are actively building our 25-man roster and looking for reliable, raid-ready players.<br><br>Current loot system:<br><strong style='color:var(--gold);font-size:15px;'>2 Soft Reserves · MS &gt; OS + 1</strong><br><br>All specs considered — reach out on Discord if you're interested in running with us.",
+    "lootRules": "<strong style='color:var(--text-bright)'>2 Soft Reserves (SR)</strong> — each raider may reserve up to 2 items per raid week.<br><strong style='color:var(--text-bright)'>MS > OS</strong> — main spec rolls beat off spec rolls on all items.<br><strong style='color:var(--text-bright)'>+1 Rule</strong> — once you win a main spec item, you go to the back of the line for subsequent drops that night."
+  }
+}

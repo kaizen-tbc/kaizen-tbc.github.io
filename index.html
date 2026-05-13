@@ -1,0 +1,1901 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kaizen — TBC Classic Guild</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-deep: #0a0b0d;
+  --bg-panel: #0f1115;
+  --bg-card: #13161b;
+  --bg-hover: #1a1e26;
+  --border: #1e2530;
+  --border-bright: #2a3344;
+  --gold: #c9a227;
+  --gold-light: #f0c040;
+  --gold-dim: #6b5212;
+  --teal: #1aafc0;
+  --teal-dim: #0d4f58;
+  --red: #c0392b;
+  --red-bright: #e74c3c;
+  --green: #27ae60;
+  --green-bright: #2ecc71;
+  --purple: #8e44ad;
+  --text-bright: #e8e0d0;
+  --text-mid: #8a8fa8;
+  --text-dim: #444a5a;
+
+  /* TBC class colors */
+  --druid: #ff7d0a;
+  --hunter: #abd473;
+  --mage: #69ccf0;
+  --paladin: #f58cba;
+  --priest: #ffffff;
+  --rogue: #fff569;
+  --shaman: #0070de;
+  --warlock: #9482c9;
+  --warrior: #c79c6e;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg-deep);
+  color: var(--text-bright);
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 15px;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Subtle texture overlay */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: 
+    radial-gradient(ellipse at 20% 0%, rgba(201,162,39,0.04) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 100%, rgba(26,175,192,0.03) 0%, transparent 60%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ===== HEADER ===== */
+header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(10,11,13,0.95);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border-bright);
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  gap: 0;
+  height: 56px;
+}
+
+.guild-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-right: 32px;
+  border-right: 1px solid var(--border-bright);
+  margin-right: 24px;
+  text-decoration: none;
+}
+
+.guild-icon {
+  width: 28px;
+  height: 28px;
+  background: linear-gradient(135deg, var(--gold), var(--gold-dim));
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Cinzel', serif;
+  font-weight: 900;
+  font-size: 14px;
+  color: #0a0b0d;
+  flex-shrink: 0;
+}
+
+.guild-name {
+  font-family: 'Cinzel', serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--gold);
+  letter-spacing: 0.05em;
+  line-height: 1;
+}
+
+.guild-realm {
+  font-size: 10px;
+  color: var(--text-mid);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+nav { display: flex; gap: 2px; flex: 1; }
+
+.nav-btn {
+  padding: 0 16px;
+  height: 56px;
+  background: none;
+  border: none;
+  color: var(--text-mid);
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.15s;
+  position: relative;
+}
+
+.nav-btn:hover { color: var(--text-bright); background: var(--bg-hover); }
+.nav-btn.active { color: var(--gold); border-bottom-color: var(--gold); }
+
+.header-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.raid-tier-badge {
+  font-size: 11px;
+  color: var(--teal);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 600;
+  border: 1px solid var(--teal-dim);
+  padding: 3px 10px;
+  border-radius: 2px;
+}
+
+/* ===== MAIN LAYOUT ===== */
+main {
+  position: relative;
+  z-index: 1;
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* ===== SECTION HEADER ===== */
+.section-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.section-title {
+  font-family: 'Cinzel', serif;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-bright);
+  letter-spacing: 0.02em;
+}
+
+.section-subtitle {
+  font-size: 13px;
+  color: var(--text-mid);
+  margin-top: 2px;
+  letter-spacing: 0.04em;
+}
+
+/* ===== BUTTONS ===== */
+.btn {
+  padding: 7px 16px;
+  border: 1px solid var(--border-bright);
+  background: var(--bg-card);
+  color: var(--text-mid);
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: all 0.15s;
+}
+
+.btn:hover { background: var(--bg-hover); color: var(--text-bright); border-color: var(--border-bright); }
+
+.btn-gold {
+  background: var(--gold);
+  color: #0a0b0d;
+  border-color: var(--gold);
+  font-weight: 700;
+}
+.btn-gold:hover { background: var(--gold-light); border-color: var(--gold-light); color: #0a0b0d; }
+
+.btn-danger { border-color: var(--red); color: var(--red); }
+.btn-danger:hover { background: var(--red); color: white; }
+
+.btn-small { padding: 4px 10px; font-size: 11px; }
+
+/* ===== CARDS ===== */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 16px;
+}
+
+/* ===== STATS STRIP ===== */
+.stats-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+
+.stat-block {
+  background: var(--bg-card);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stat-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-dim);
+  font-weight: 600;
+}
+
+.stat-value {
+  font-family: 'Cinzel', serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-bright);
+  line-height: 1;
+}
+
+.stat-value.gold { color: var(--gold); }
+.stat-value.teal { color: var(--teal); }
+.stat-value.green { color: var(--green-bright); }
+.stat-value.red { color: var(--red-bright); }
+
+/* ===== ROSTER TABLE ===== */
+.roster-controls {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.filter-input {
+  background: var(--bg-card);
+  border: 1px solid var(--border-bright);
+  color: var(--text-bright);
+  padding: 7px 12px;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 14px;
+  border-radius: 2px;
+  outline: none;
+  transition: border-color 0.15s;
+  min-width: 180px;
+}
+
+.filter-input:focus { border-color: var(--gold); }
+
+.filter-select {
+  background: var(--bg-card);
+  border: 1px solid var(--border-bright);
+  color: var(--text-bright);
+  padding: 7px 12px;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 13px;
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  min-width: 130px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23444a5a'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 28px;
+}
+
+.filter-select:focus { border-color: var(--gold); }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th {
+  text-align: left;
+  padding: 8px 12px;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  font-weight: 600;
+  border-bottom: 1px solid var(--border-bright);
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+th:hover { color: var(--text-mid); }
+
+td {
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+  font-size: 14px;
+}
+
+tr:hover td { background: rgba(255,255,255,0.02); }
+tr:last-child td { border-bottom: none; }
+
+.class-pill {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 2px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.class-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 6px;
+}
+
+/* Class colors */
+.class-druid { color: var(--druid); }
+.class-hunter { color: var(--hunter); }
+.class-mage { color: var(--mage); }
+.class-paladin { color: var(--paladin); }
+.class-priest { color: var(--priest); }
+.class-rogue { color: var(--rogue); }
+.class-shaman { color: var(--shaman); }
+.class-warlock { color: var(--warlock); }
+.class-warrior { color: var(--warrior); }
+
+.bg-druid { background: rgba(255,125,10,0.15); }
+.bg-hunter { background: rgba(171,212,115,0.15); }
+.bg-mage { background: rgba(105,204,240,0.15); }
+.bg-paladin { background: rgba(245,140,186,0.15); }
+.bg-priest { background: rgba(255,255,255,0.12); }
+.bg-rogue { background: rgba(255,245,105,0.15); }
+.bg-shaman { background: rgba(0,112,222,0.15); }
+.bg-warlock { background: rgba(148,130,201,0.15); }
+.bg-warrior { background: rgba(199,156,110,0.15); }
+
+.role-badge {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 2px;
+}
+
+.role-tank { background: rgba(199,156,110,0.2); color: #c79c6e; border: 1px solid rgba(199,156,110,0.3); }
+.role-healer { background: rgba(39,174,96,0.2); color: #2ecc71; border: 1px solid rgba(39,174,96,0.3); }
+.role-melee { background: rgba(192,57,43,0.2); color: #e74c3c; border: 1px solid rgba(192,57,43,0.3); }
+.role-ranged { background: rgba(26,175,192,0.2); color: #1aafc0; border: 1px solid rgba(26,175,192,0.3); }
+
+.status-badge {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 2px;
+}
+
+.status-main { background: rgba(201,162,39,0.2); color: var(--gold); border: 1px solid rgba(201,162,39,0.3); }
+.status-alt { background: rgba(138,143,168,0.15); color: var(--text-mid); border: 1px solid var(--border-bright); }
+.status-casual { background: rgba(68,74,90,0.3); color: var(--text-dim); border: 1px solid var(--border); }
+
+.char-name { font-weight: 600; letter-spacing: 0.02em; }
+.main-of { font-size: 11px; color: var(--text-dim); margin-top: 1px; }
+
+.action-cell { display: flex; gap: 6px; }
+
+/* ===== INLINE EDIT ===== */
+.editable-cell select,
+.editable-cell input {
+  background: var(--bg-deep);
+  border: 1px solid var(--teal-dim);
+  color: var(--text-bright);
+  padding: 3px 8px;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 13px;
+  border-radius: 2px;
+  outline: none;
+  max-width: 180px;
+}
+
+/* ===== GROUP BUILDER ===== */
+.group-builder-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.group-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.group-header {
+  padding: 10px 14px;
+  background: rgba(255,255,255,0.03);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.group-label {
+  font-family: 'Cinzel', serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-mid);
+  letter-spacing: 0.06em;
+}
+
+.group-count {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.group-slots {
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 200px;
+}
+
+.slot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 10px;
+  border-radius: 3px;
+  border: 1px solid transparent;
+  transition: all 0.15s;
+  cursor: pointer;
+  min-height: 36px;
+}
+
+.slot.filled { background: rgba(255,255,255,0.03); border-color: var(--border); }
+.slot.filled:hover { background: var(--bg-hover); border-color: var(--border-bright); }
+.slot.empty { border: 1px dashed var(--border); background: rgba(255,255,255,0.01); }
+.slot.empty:hover { border-color: var(--gold-dim); background: rgba(201,162,39,0.03); }
+
+.slot-num {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  color: var(--text-dim);
+  width: 14px;
+  flex-shrink: 0;
+}
+
+.slot-name {
+  font-weight: 600;
+  font-size: 14px;
+  flex: 1;
+}
+
+.slot-spec {
+  font-size: 11px;
+  color: var(--text-mid);
+}
+
+.slot-role { flex-shrink: 0; }
+
+.slot-remove {
+  opacity: 0;
+  background: none;
+  border: none;
+  color: var(--red-bright);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0 2px;
+  line-height: 1;
+  transition: opacity 0.15s;
+}
+
+.slot:hover .slot-remove { opacity: 1; }
+
+/* pool */
+.player-pool {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 12px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  min-height: 80px;
+}
+
+.pool-player {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 3px;
+  border: 1px solid var(--border-bright);
+  background: var(--bg-card);
+  cursor: pointer;
+  transition: all 0.12s;
+  font-size: 13px;
+  font-weight: 600;
+  user-select: none;
+}
+
+.pool-player:hover { border-color: var(--gold-dim); background: var(--bg-hover); transform: translateY(-1px); }
+.pool-player.assigned { opacity: 0.35; pointer-events: none; }
+
+/* group builder controls */
+.builder-controls {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.groups-layout {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+@media (max-width: 1200px) {
+  .groups-layout { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 800px) {
+  .groups-layout { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ===== ATTENDANCE ===== */
+.attendance-grid {
+  overflow-x: auto;
+}
+
+.attendance-table th, .attendance-table td {
+  text-align: center;
+  padding: 7px 10px;
+  white-space: nowrap;
+}
+
+.attendance-table th:first-child,
+.attendance-table td:first-child {
+  text-align: left;
+  padding-left: 12px;
+  position: sticky;
+  left: 0;
+  background: var(--bg-card);
+  z-index: 2;
+  border-right: 1px solid var(--border-bright);
+  min-width: 140px;
+}
+
+.attendance-table th:first-child { background: var(--bg-panel); }
+
+.att-check {
+  width: 20px;
+  height: 20px;
+  border-radius: 2px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.12s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+}
+
+.att-check.present { background: rgba(39,174,96,0.3); color: var(--green-bright); border: 1px solid var(--green); }
+.att-check.absent { background: rgba(68,74,90,0.2); color: var(--text-dim); border: 1px solid var(--border-bright); }
+.att-check.excused { background: rgba(201,162,39,0.2); color: var(--gold); border: 1px solid var(--gold-dim); }
+
+.att-pct {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 12px;
+}
+
+.att-bar {
+  height: 3px;
+  border-radius: 2px;
+  background: var(--border);
+  margin-top: 3px;
+  overflow: hidden;
+}
+
+.att-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.4s;
+}
+
+.week-header {
+  font-size: 11px;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  transform: rotate(180deg);
+  color: var(--text-dim);
+}
+
+.add-week-btn {
+  font-size: 11px;
+  padding: 4px 10px;
+}
+
+/* ===== MODAL ===== */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+
+.modal-overlay.open { opacity: 1; pointer-events: all; }
+
+.modal {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-bright);
+  border-radius: 6px;
+  width: 520px;
+  max-width: 95vw;
+  max-height: 90vh;
+  overflow-y: auto;
+  transform: translateY(16px);
+  transition: transform 0.2s;
+  box-shadow: 0 32px 80px rgba(0,0,0,0.6);
+}
+
+.modal-overlay.open .modal { transform: translateY(0); }
+
+.modal-header {
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid var(--border-bright);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modal-title {
+  font-family: 'Cinzel', serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-bright);
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 20px;
+  cursor: pointer;
+  line-height: 1;
+  transition: color 0.15s;
+}
+
+.modal-close:hover { color: var(--text-bright); }
+
+.modal-body { padding: 20px; }
+.modal-footer {
+  padding: 14px 20px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-group.full { grid-column: 1 / -1; }
+
+.form-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-dim);
+  font-weight: 600;
+}
+
+.form-input, .form-select {
+  background: var(--bg-card);
+  border: 1px solid var(--border-bright);
+  color: var(--text-bright);
+  padding: 9px 12px;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 14px;
+  border-radius: 2px;
+  outline: none;
+  transition: border-color 0.15s;
+  width: 100%;
+}
+
+.form-select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23444a5a'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 28px;
+  cursor: pointer;
+}
+
+.form-input:focus, .form-select:focus { border-color: var(--gold); }
+
+/* ===== NOTICE ===== */
+.notice {
+  padding: 10px 14px;
+  border-radius: 3px;
+  font-size: 13px;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.notice-info { background: rgba(26,175,192,0.1); border: 1px solid var(--teal-dim); color: var(--teal); }
+.notice-warn { background: rgba(201,162,39,0.1); border: 1px solid var(--gold-dim); color: var(--gold); }
+
+/* ===== BUFF COVERAGE ===== */
+.buff-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.buff-tag {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 2px;
+  border: 1px solid;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+.buff-present { border-color: rgba(39,174,96,0.4); background: rgba(39,174,96,0.1); color: var(--green-bright); }
+.buff-missing { border-color: rgba(192,57,43,0.4); background: rgba(192,57,43,0.1); color: var(--red-bright); }
+
+/* ===== SCROLLBAR ===== */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-deep); }
+::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
+
+/* ===== EMPTY STATE ===== */
+.empty-state {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--text-dim);
+}
+
+.empty-state-icon { font-size: 36px; margin-bottom: 12px; }
+.empty-state-text { font-size: 14px; }
+
+/* ===== TOOLTIP ===== */
+[title] { cursor: help; }
+
+/* ===== BENCH LIST ===== */
+.bench-section {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+/* ===== ANIMATION ===== */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.tab-panel.active { animation: fadeIn 0.2s ease; }
+
+/* ===== CONFIRM ===== */
+.confirm-modal .modal { width: 380px; }
+
+/* roster table wrapper */
+.table-wrapper {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.table-wrapper table { margin: 0; }
+
+/* alt indicator */
+.alt-of-label {
+  font-size: 10px;
+  color: var(--text-dim);
+  font-style: italic;
+}
+
+/* ===== MISSING: overflow for groups ===== */
+.groups-container {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+@media (max-width: 1300px) {
+  .groups-container { grid-template-columns: repeat(3, 1fr); }
+}
+
+.group-box {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.group-box-header {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(255,255,255,0.02);
+}
+
+.group-box-title {
+  font-family: 'Cinzel', serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-mid);
+  letter-spacing: 0.05em;
+}
+
+.group-box-body {
+  padding: 8px;
+  min-height: 190px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.group-slot-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 7px;
+  border-radius: 2px;
+  border: 1px solid transparent;
+  font-size: 13px;
+  min-height: 30px;
+}
+
+.group-slot-row.filled {
+  background: rgba(255,255,255,0.025);
+  border-color: var(--border);
+}
+
+.group-slot-row.empty-slot {
+  border: 1px dashed var(--border);
+  color: var(--text-dim);
+  font-size: 11px;
+}
+
+.slot-row-name { flex: 1; font-weight: 600; }
+.slot-row-spec { font-size: 10px; color: var(--text-mid); }
+.slot-row-role { flex-shrink: 0; }
+
+/* Remove from group btn */
+.slot-row-rm {
+  opacity: 0;
+  background: none;
+  border: none;
+  color: var(--red-bright);
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+  padding: 0 2px;
+  transition: opacity 0.12s;
+}
+
+.group-slot-row:hover .slot-row-rm { opacity: 1; }
+
+.slot-drag-over {
+  background: rgba(201,162,39,0.12) !important;
+  border-color: var(--gold-dim) !important;
+  outline: 1px dashed var(--gold-dim);
+}
+
+.group-box-body.drag-over {
+  background: rgba(201,162,39,0.04);
+  border-radius: 3px;
+}
+
+/* Coverage */
+.coverage-strip {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+/* Unassigned pool label */
+.pool-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-dim);
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="guild-brand">
+    <div class="guild-icon">K</div>
+    <div>
+      <div class="guild-name">&lt;Kaizen&gt;</div>
+      <div class="guild-realm">Horde · TBC Classic</div>
+    </div>
+  </div>
+  <nav>
+    <button class="nav-btn active" onclick="showTab('overview')">Overview</button>
+    <button class="nav-btn" onclick="showTab('roster')">Roster</button>
+    <button class="nav-btn" onclick="showTab('builder')">Group Builder</button>
+    <button class="nav-btn" onclick="showTab('attendance')">Attendance</button>
+  </nav>
+  <div class="header-right">
+    <span class="raid-tier-badge">T4 · T5 · T6</span>
+
+  </div>
+</header>
+
+<main>
+
+<!-- ==================== OVERVIEW TAB ==================== -->
+<div class="tab-panel active" id="tab-overview">
+
+  <!-- WHO WE ARE -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
+    <div class="card" style="grid-column:1/-1;padding:24px 28px;background:linear-gradient(135deg,rgba(201,162,39,0.06),rgba(26,175,192,0.03));border-color:var(--border-bright);">
+      <div style="display:flex;align-items:flex-start;gap:20px;flex-wrap:wrap;">
+        <!-- Guild logo — drop assets/kaizen-logo.png into your repo and this renders automatically -->
+        <div style="flex-shrink:0;width:180px;height:180px;border-radius:12px;overflow:hidden;background:var(--bg-deep);display:flex;align-items:center;justify-content:center;">
+          <img src="assets/kaizen-logo.png" alt="Kaizen"
+            onerror="this.parentElement.innerHTML='<div style=&quot;display:flex;flex-direction:column;align-items:center;gap:8px;&quot;><div style=&quot;font-family:Cinzel,serif;font-size:28px;font-weight:900;color:var(--gold);&quot;>K</div><div style=&quot;font-size:10px;color:var(--text-dim);letter-spacing:0.1em;text-transform:uppercase;&quot;>logo here</div></div>'"
+            style="width:180px;height:180px;object-fit:contain;display:block;">
+        </div>
+        <div style="flex:1;min-width:260px;">
+          <div style="font-family:'Cinzel',serif;font-size:24px;font-weight:700;color:var(--gold);letter-spacing:0.03em;margin-bottom:4px;">&lt;Kaizen&gt;</div>
+          <div style="font-size:13px;color:var(--text-mid);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:16px;">Horde · TBC Classic · PvE</div>
+          <div id="ov-about" style="font-size:15px;color:var(--text-mid);line-height:1.7;margin-bottom:20px;"></div>
+          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+            <a id="ov-discord-link" href="https://discord.gg/Srg4BSNqnN" target="_blank"
+              style="display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 18px;background:#5865F2;border-radius:4px;text-decoration:none;color:white;font-weight:600;font-size:14px;letter-spacing:0.03em;transition:opacity 0.15s;line-height:1;"
+              onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="white" style="display:block;flex-shrink:0;"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg>
+              <span style="display:block;line-height:1;">Join our Discord</span>
+            </a>
+            <span style="font-size:11px;color:var(--text-dim);letter-spacing:0.06em;">discord.gg/Srg4BSNqnN</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RAID SCHEDULE + RECRUITMENT -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
+
+    <!-- Raid Schedule -->
+    <div class="card">
+      <div style="font-family:'Cinzel',serif;font-size:15px;font-weight:600;color:var(--text-bright);margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--border);">Raid Schedule</div>
+      <div style="display:flex;flex-direction:column;gap:10px;" id="ov-schedule"></div>
+    </div>
+
+    <!-- Recruitment -->
+    <div class="card">
+      <div style="font-family:'Cinzel',serif;font-size:15px;font-weight:600;color:var(--text-bright);margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--border);">Recruitment</div>
+      <div id="ov-recruitment" style="font-size:14px;color:var(--text-mid);line-height:1.7;"></div>
+    </div>
+
+  </div>
+
+  <!-- LOOT SYSTEM -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
+
+    <div class="card">
+      <div style="font-family:'Cinzel',serif;font-size:15px;font-weight:600;color:var(--text-bright);margin-bottom:4px;">Loot System</div>
+      <div style="font-size:12px;color:var(--text-dim);margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--border);">How loot works in Kaizen raids</div>
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+            <span style="font-size:13px;font-weight:700;color:var(--gold);">Priority Rules</span>
+          </div>
+          <div id="ov-loot-rules" style="font-size:14px;color:var(--text-mid);line-height:1.8;"></div>
+        </div>
+        <div style="border-top:1px solid var(--border);padding-top:12px;">
+          <div style="font-size:12px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-dim);font-weight:600;margin-bottom:10px;">Tools We Use</div>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <a href="https://thatsmybis.com" target="_blank" style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:var(--bg-hover);border-radius:3px;border:1px solid var(--border-bright);text-decoration:none;transition:border-color 0.15s;" onmouseover="this.style.borderColor='var(--gold-dim)'" onmouseout="this.style.borderColor='var(--border-bright)'">
+              <div style="flex:1;">
+                <div style="font-size:13px;font-weight:700;color:var(--gold);margin-bottom:2px;">That's My BIS</div>
+                <div style="font-size:12px;color:var(--text-dim);line-height:1.5;">Raiders pre-list their BIS items by priority. When loot drops, loot council can instantly see who has it highest on their list, making decisions fast and transparent. Sign up at thatsmybis.com with your Discord account.</div>
+              </div>
+              <span style="font-size:10px;color:var(--text-dim);white-space:nowrap;margin-top:2px;">↗ thatsmybis.com</span>
+            </a>
+            <a href="https://www.curseforge.com/wow/addons/gargul" target="_blank" style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:var(--bg-hover);border-radius:3px;border:1px solid var(--border-bright);text-decoration:none;transition:border-color 0.15s;" onmouseover="this.style.borderColor='var(--teal-dim)'" onmouseout="this.style.borderColor='var(--border-bright)'">
+              <div style="flex:1;">
+                <div style="font-size:13px;font-weight:700;color:var(--teal);margin-bottom:2px;">Gargul</div>
+                <div style="font-size:12px;color:var(--text-dim);line-height:1.5;">In-game addon used by the loot master to manage rolls, track MS/OS, and distribute loot cleanly. Integrates directly with TMB. Install via CurseForge — only the loot master strictly needs it, but raiders benefit from having it too.</div>
+              </div>
+              <span style="font-size:10px;color:var(--text-dim);white-space:nowrap;margin-top:2px;">↗ CurseForge</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Roster snapshot -->
+    <div class="card">
+      <div style="font-family:'Cinzel',serif;font-size:15px;font-weight:600;color:var(--text-bright);margin-bottom:4px;">Roster Snapshot</div>
+      <div style="font-size:12px;color:var(--text-dim);margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--border);">Active 25-man raiders</div>
+      <div id="ov-roster-snapshot" style="display:flex;flex-direction:column;gap:6px;"></div>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- ==================== ROSTER TAB ==================== -->
+<div class="tab-panel" id="tab-roster">
+  <div class="section-header">
+    <div>
+      <div class="section-title">Guild Roster</div>
+      <div class="section-subtitle">Manage members, designate alts, and set raider status</div>
+    </div>
+
+  </div>
+
+  <div class="stats-strip" id="roster-stats"></div>
+
+<div style="margin-bottom:12px;"><span id="roster-count" style="font-size:12px;color:var(--text-dim);"></span></div>
+
+  <div class="table-wrapper">
+    <table id="roster-table">
+      <thead>
+        <tr>
+          <th onclick="sortRoster('name')">Character ↕</th>
+          <th onclick="sortRoster('class')">Class ↕</th>
+          <th>Main Spec</th>
+          <th>Off Spec</th>
+          <th onclick="sortRoster('role')">Role ↕</th>
+          <th onclick="sortRoster('status')">Status ↕</th>
+          <th>Alt Of</th>
+          <th>Notes</th>
+
+        </tr>
+      </thead>
+      <tbody id="roster-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ==================== GROUP BUILDER TAB ==================== -->
+<div class="tab-panel" id="tab-builder">
+  <div class="section-header">
+    <div>
+      <div class="section-title">Group Builder</div>
+      <div class="section-subtitle">Drag raiders into groups — up to 5 groups of 5 (25-man) or 2 groups of 5 (10-man)</div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <select class="filter-select" id="builder-mode" onchange="renderBuilder()">
+        <option value="25">25-Man Raid</option>
+        <option value="10">10-Man Raid</option>
+      </select>
+      <button class="btn" onclick="clearGroups()">Clear All</button>
+      <button class="btn btn-gold" onclick="autoFillGroups()">Auto-Fill</button>
+    </div>
+  </div>
+
+  <div id="builder-coverage" style="margin-bottom:16px;"></div>
+
+  <div class="groups-container" id="groups-container"></div>
+
+  <div class="bench-section">
+    <div class="pool-label">Unassigned Raiders</div>
+    <div class="player-pool" id="player-pool"></div>
+  </div>
+</div>
+
+<!-- ==================== ATTENDANCE TAB ==================== -->
+<div class="tab-panel" id="tab-attendance">
+  <div class="section-header">
+    <div>
+      <div class="section-title">Attendance Tracker</div>
+      <div class="section-subtitle">Track weekly raid attendance for active mains</div>
+    </div>
+
+  </div>
+
+  <div class="notice notice-info" style="margin-bottom:16px;">
+    <span>ℹ</span> Attendance is updated by the guild master. ✓ Present &nbsp;·&nbsp; ✗ Absent &nbsp;·&nbsp; ⊘ Excused
+  </div>
+
+  <div class="attendance-grid">
+    <div class="table-wrapper">
+      <table class="attendance-table" id="attendance-table">
+        <thead id="att-thead"></thead>
+        <tbody id="att-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+</main>
+
+
+
+<script>
+// ======================================================
+// DATA
+// ======================================================
+
+const CLASS_SPECS = {
+  Druid: ['Balance', 'Feral', 'Restoration'],
+  Hunter: ['Beastmastery', 'Marksmanship', 'Survival'],
+  Mage: ['Arcane', 'Fire', 'Frost'],
+  Paladin: ['Holy', 'Protection', 'Retribution'],
+  Priest: ['Discipline', 'Holy', 'Shadow'],
+  Rogue: ['Assassination', 'Combat', 'Subtlety'],
+  Shaman: ['Elemental', 'Enhancement', 'Restoration'],
+  Warlock: ['Affliction', 'Demonology', 'Destruction'],
+  Warrior: ['Arms', 'Fury', 'Protection'],
+};
+
+const SPEC_ROLE = {
+  'Balance': 'Ranged', 'Feral': 'Melee', 'Restoration': 'Healer', // Druid
+  'Beastmastery': 'Ranged', 'Marksmanship': 'Ranged', 'Survival': 'Ranged', // Hunter
+  'Arcane': 'Ranged', 'Fire': 'Ranged', 'Frost': 'Ranged', // Mage
+  'Holy': 'Healer', 'Protection': 'Tank', 'Retribution': 'Melee', // Paladin
+  'Discipline': 'Healer', 'Shadow': 'Ranged', // Priest
+  'Assassination': 'Melee', 'Combat': 'Melee', 'Subtlety': 'Melee', // Rogue
+  'Elemental': 'Ranged', 'Enhancement': 'Melee', // Shaman
+  'Affliction': 'Ranged', 'Demonology': 'Ranged', 'Destruction': 'Ranged', // Warlock
+  'Arms': 'Melee', 'Fury': 'Melee', // Warrior
+};
+
+// Override when spec doesn't determine role (tank specs)
+// Paladin Protection => Tank, Warrior Protection => Tank, Druid Restoration => Healer (already), Guardian Druid => Tank
+const GUARDIAN_ROLE = { 'Protection (Paladin)': 'Tank', 'Protection (Warrior)': 'Tank' };
+
+// ======================================================
+// GUILD INFO — editable, saved/loaded with JSON
+// ======================================================
+let guildInfo = {
+  about: "Kaizen is a chill but serious Horde raiding guild pushing into 25-man progression content on TBC Classic. We're building a solid, consistent roster of players who show up prepared, respect each other's time, and want to actually clear content — without the toxicity. If that sounds like you, come hang.",
+  raidSchedule: [
+    { day: "Tuesday", content: "Progression — SSC or TK", time: "6:30 – 9:30 pm server (8:30 – 11:30 pm EST · 5:30 – 8:30 pm PST)", note: "Invites 30 min before first pull" },
+    { day: "Sunday",  content: "Progression — SSC or TK", time: "6:30 – 9:30 pm server (8:30 – 11:30 pm EST · 5:30 – 8:30 pm PST)", note: "Continue / finish the week's instance" },
+  ],
+  recruitment: "We are actively building our 25-man roster and looking for reliable, raid-ready players.<br><br>Current loot system:<br><strong style='color:var(--gold);font-size:15px;'>2 Soft Reserves · MS &gt; OS + 1</strong><br><br>All specs considered — reach out on Discord if you're interested in running with us.",
+  lootRules: "<strong style='color:var(--text-bright)'>2 Soft Reserves (SR)</strong> — each raider may reserve up to 2 items per raid week.<br><strong style='color:var(--text-bright)'>MS > OS</strong> — main spec rolls beat off spec rolls on all items.<br><strong style='color:var(--text-bright)'>+1 Rule</strong> — once you win a main spec item, you go to the back of the line for subsequent drops that night.",
+};
+
+// Preset roster from guild screenshots + Excel data
+let roster = [
+  { id: 1, name: 'Bradpitiful', class: 'Warrior', ms: 'Protection', os: 'Fury', role: 'Tank', status: 'Main', altOf: '', notes: '' },
+  { id: 2, name: 'Medinthil', class: 'Paladin', ms: 'Protection', os: 'Retribution', role: 'Tank', status: 'Main', altOf: '', notes: '' },
+  { id: 3, name: 'Sobadai', class: 'Druid', ms: 'Restoration', os: 'Feral', role: 'Tank', status: 'Main', altOf: '', notes: 'Guardian Main' },
+  { id: 4, name: 'Ytknight', class: 'Paladin', ms: 'Holy', os: 'Protection', role: 'Healer', status: 'Main', altOf: '', notes: '' },
+  { id: 5, name: 'Healkinz', class: 'Druid', ms: 'Restoration', os: 'Balance', role: 'Healer', status: 'Main', altOf: '', notes: '' },
+  { id: 6, name: 'Mivian', class: 'Priest', ms: 'Holy', os: 'Holy', role: 'Healer', status: 'Main', altOf: '', notes: '' },
+  { id: 7, name: 'Koldhottie', class: 'Priest', ms: 'Holy', os: '', role: 'Healer', status: 'Main', altOf: '', notes: '' },
+  { id: 8, name: 'Zabanya', class: 'Shaman', ms: 'Restoration', os: 'Elemental', role: 'Healer', status: 'Main', altOf: '', notes: '' },
+  { id: 9, name: 'Depew', class: 'Shaman', ms: 'Enhancement', os: 'Restoration', role: 'Melee', status: 'Main', altOf: '', notes: '' },
+  { id: 10, name: 'Totemy', class: 'Shaman', ms: 'Enhancement', os: '', role: 'Melee', status: 'Main', altOf: '', notes: '' },
+  { id: 11, name: 'Darwin', class: 'Druid', ms: 'Feral', os: 'Feral', role: 'Melee', status: 'Main', altOf: '', notes: '' },
+  { id: 12, name: 'Oshika', class: 'Shaman', ms: 'Elemental', os: 'Combat', role: 'Ranged', status: 'Main', altOf: '', notes: '' },
+  { id: 13, name: 'Adili', class: 'Warlock', ms: 'Demonology', os: '', role: 'Ranged', status: 'Main', altOf: '', notes: '' },
+  { id: 14, name: 'Murrduh', class: 'Warlock', ms: 'Destruction', os: 'Enhancement', role: 'Ranged', status: 'Main', altOf: '', notes: '' },
+  { id: 15, name: 'Aniviah', class: 'Mage', ms: 'Arcane', os: 'Arcane', role: 'Ranged', status: 'Main', altOf: '', notes: '' },
+  { id: 16, name: 'Naetho', class: 'Mage', ms: 'Arcane', os: 'Destruction', role: 'Ranged', status: 'Main', altOf: '', notes: '' },
+  { id: 17, name: 'Magusalhan', class: 'Mage', ms: 'Frost', os: 'Protection', role: 'Ranged', status: 'Main', altOf: '', notes: '' },
+  { id: 18, name: 'Sucmelowmane', class: 'Mage', ms: 'Frost', os: '', role: 'Ranged', status: 'Main', altOf: '', notes: '' },
+  { id: 19, name: 'Krunkette', class: 'Priest', ms: 'Shadow', os: 'Holy', role: 'Ranged', status: 'Main', altOf: '', notes: '' },
+  { id: 20, name: 'Howiebling', class: 'Hunter', ms: 'Beastmastery', os: '', role: 'Ranged', status: 'Main', altOf: '', notes: '' },
+  { id: 21, name: 'Akohre', class: 'Hunter', ms: 'Beastmastery', os: 'Beastmastery', role: 'Ranged', status: 'Main', altOf: '', notes: '' },
+  // Alts / casuals from data
+  { id: 22, name: 'TuxedoKamen', class: 'Paladin', ms: 'Protection', os: 'Retribution', role: 'Tank', status: 'Alt', altOf: 'Bradpitiful', notes: '' },
+  { id: 23, name: 'Kiricolo', class: 'Paladin', ms: 'Retribution', os: 'Protection', role: 'Melee', status: 'Alt', altOf: 'Depew', notes: '' },
+  { id: 24, name: 'Tilatia', class: 'Hunter', ms: 'Beastmastery', os: '', role: 'Ranged', status: 'Alt', altOf: 'Healkinz', notes: '' },
+  { id: 25, name: 'Akohre', class: 'Hunter', ms: 'Beastmastery', os: 'Beastmastery', role: 'Ranged', status: 'Alt', altOf: 'Krunkette', notes: '' },
+  { id: 26, name: 'Infernomatik', class: 'Warlock', ms: 'Destruction', os: '', role: 'Ranged', status: 'Alt', altOf: 'Sobadai', notes: '' },
+  { id: 27, name: 'Vestuvian', class: 'Priest', ms: 'Shadow', os: '', role: 'Ranged', status: 'Alt', altOf: 'Depew', notes: '' },
+  { id: 28, name: 'Suboptimalsp', class: 'Priest', ms: 'Shadow', os: 'Holy', role: 'Ranged', status: 'Alt', altOf: 'Totemy', notes: '' },
+  { id: 29, name: 'Thanil', class: 'Druid', ms: 'Restoration', os: '', role: 'Healer', status: 'Alt', altOf: 'Naetho', notes: '' },
+  // Screenshots - additional 70s
+  { id: 30, name: 'Oshika', class: 'Shaman', ms: 'Elemental', os: '', role: 'Ranged', status: 'Main', altOf: '', notes: '' },
+  { id: 31, name: 'Giantwoww', class: 'Warrior', ms: 'Fury', os: 'Protection', role: 'Melee', status: 'Casual', altOf: '', notes: '' },
+  { id: 32, name: 'Gunslinger', class: 'Hunter', ms: 'Marksmanship', os: '', role: 'Ranged', status: 'Casual', altOf: '', notes: '' },
+  { id: 33, name: 'Muvrin', class: 'Warrior', ms: 'Arms', os: '', role: 'Melee', status: 'Casual', altOf: '', notes: '' },
+  { id: 34, name: 'Minotoru', class: 'Mage', ms: 'Arcane', os: '', role: 'Ranged', status: 'Casual', altOf: '', notes: '' },
+  { id: 35, name: 'Rodentmage', class: 'Mage', ms: 'Arcane', os: '', role: 'Ranged', status: 'Casual', altOf: '', notes: '' },
+  { id: 36, name: 'Romelex', class: 'Mage', ms: 'Arcane', os: 'Destruction', role: 'Ranged', status: 'Casual', altOf: '', notes: '' },
+  { id: 37, name: 'Melam', class: 'Paladin', ms: 'Protection', os: '', role: 'Tank', status: 'Casual', altOf: '', notes: '' },
+  { id: 38, name: 'Sugarmoose', class: 'Druid', ms: 'Restoration', os: '', role: 'Healer', status: 'Casual', altOf: '', notes: '' },
+  { id: 39, name: 'Oltakk', class: 'Warrior', ms: 'Fury', os: '', role: 'Melee', status: 'Casual', altOf: '', notes: '' },
+  { id: 40, name: 'Bradpitiful', class: 'Warrior', ms: 'Protection', os: '', role: 'Tank', status: 'Casual', altOf: '', notes: '' },
+  { id: 41, name: 'Clutchlack', class: 'Rogue', ms: 'Combat', os: '', role: 'Melee', status: 'Casual', altOf: '', notes: '' },
+  { id: 42, name: 'Sucmelowmane', class: 'Mage', ms: 'Frost', os: '', role: 'Ranged', status: 'Casual', altOf: '', notes: '' },
+];
+
+// De-duplicate by name — keep unique names only, first occurrence wins
+(function dedup() {
+  const seen = new Set();
+  roster = roster.filter(p => {
+    if (seen.has(p.name.toLowerCase())) return false;
+    seen.add(p.name.toLowerCase());
+    return true;
+  });
+  roster.forEach((p, i) => p.id = i + 1);
+})();
+
+let nextId = roster.length + 1;
+let editingId = null;
+let sortKey = 'name';
+let sortAsc = true;
+
+// Groups: 5 groups of up to 5
+let groups = [[], [], [], [], []];
+
+// Attendance: weeks array, each week = { label, data: {name: state} }
+let attendance = [];
+// attendance states cycle: 'absent' -> 'present' -> 'excused'
+const ATT_CYCLE = ['absent', 'present', 'excused'];
+const ATT_ICON = { present: '✓', absent: '✗', excused: '⊘' };
+const ATT_CLASS = { present: 'present', absent: 'absent', excused: 'excused' };
+
+// Init 4 past weeks with proper ISO date strings for correct sorting/display
+(function initAttendance() {
+  const dates = ['2026-03-24', '2026-03-31', '2026-04-07', '2026-04-14'];
+  dates.forEach(d => attendance.push({ iso: d, data: {} }));
+})();
+
+// ======================================================
+// TAB NAVIGATION
+// ======================================================
+function showTab(tab) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  event.currentTarget.classList.add('active');
+  if (tab === 'overview') renderOverview();
+  if (tab === 'builder') renderBuilder();
+  if (tab === 'attendance') renderAttendance();
+}
+
+// ======================================================
+// OVERVIEW
+// ======================================================
+function renderOverview() {
+  // About
+  const aboutEl = document.getElementById('ov-about');
+  if (aboutEl) aboutEl.innerHTML = guildInfo.about;
+
+  // Schedule
+  const schedEl = document.getElementById('ov-schedule');
+  if (schedEl) {
+    schedEl.innerHTML = guildInfo.raidSchedule.map(r => `
+      <div style="padding:12px 14px;background:var(--bg-hover);border-radius:3px;border:1px solid var(--border-bright);">
+        <div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:4px;">
+          <span style="font-family:'Cinzel',serif;font-size:13px;font-weight:600;color:var(--gold);">${r.day}</span>
+          <span style="font-size:12px;color:var(--text-dim);">${r.note}</span>
+        </div>
+        <div style="font-size:14px;font-weight:600;color:var(--text-bright);margin-bottom:3px;">${r.content}</div>
+        <div style="font-size:12px;color:var(--text-mid);">${r.time}</div>
+      </div>`).join('');
+  }
+
+  // Recruitment
+  const recEl = document.getElementById('ov-recruitment');
+  if (recEl) recEl.innerHTML = guildInfo.recruitment;
+
+  // Loot rules
+  const lootEl = document.getElementById('ov-loot-rules');
+  if (lootEl) lootEl.innerHTML = guildInfo.lootRules;
+
+  // Roster snapshot — role breakdown bars
+  const snapEl = document.getElementById('ov-roster-snapshot');
+  if (snapEl) {
+    const mains = roster.filter(p => p.status === 'Main');
+    const total = mains.length;
+    const roles = [
+      { label: 'Tanks',      role: 'Tank',   color: 'var(--warrior)' },
+      { label: 'Healers',    role: 'Healer', color: 'var(--druid)' },
+      { label: 'Melee DPS',  role: 'Melee',  color: 'var(--red-bright)' },
+      { label: 'Ranged DPS', role: 'Ranged', color: 'var(--teal)' },
+    ];
+    const goal = 25;
+
+    snapEl.innerHTML = `
+      <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:10px;">
+        <span style="font-size:28px;font-family:'Cinzel',serif;font-weight:700;color:var(--gold);">${total}</span>
+        <span style="font-size:13px;color:var(--text-dim);">/ ${goal} target roster</span>
+      </div>
+      <div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin-bottom:14px;">
+        <div style="height:100%;width:${Math.min(100,(total/goal)*100)}%;background:var(--gold);border-radius:3px;transition:width 0.4s;"></div>
+      </div>
+      ${roles.map(r => {
+        const count = mains.filter(p => p.role === r.role).length;
+        const pct = total > 0 ? Math.round((count/total)*100) : 0;
+        return `<div style="display:flex;align-items:center;gap:10px;">
+          <span style="font-size:12px;color:var(--text-dim);width:80px;flex-shrink:0;">${r.label}</span>
+          <div style="flex:1;height:4px;background:var(--border);border-radius:2px;overflow:hidden;">
+            <div style="height:100%;width:${pct}%;background:${r.color};border-radius:2px;"></div>
+          </div>
+          <span style="font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--text-mid);width:20px;text-align:right;">${count}</span>
+        </div>`;
+      }).join('')}
+      <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border);display:flex;flex-wrap:wrap;gap:5px;">
+        ${mains.map(p => {
+          const cc = classColor(p.class);
+          return `<span class="class-${cc}" style="font-size:12px;font-weight:600;">${p.name}</span>`;
+        }).join('<span style="color:var(--text-dim);font-size:11px;"> · </span>')}
+      </div>`;
+  }
+}
+
+// ======================================================
+// HELPERS
+// ======================================================
+function classColor(cls) {
+  const map = {
+    Druid: 'druid', Hunter: 'hunter', Mage: 'mage', Paladin: 'paladin',
+    Priest: 'priest', Rogue: 'rogue', Shaman: 'shaman', Warlock: 'warlock', Warrior: 'warrior'
+  };
+  return map[cls] || 'warrior';
+}
+
+function roleBadge(role) {
+  const map = { Tank: 'role-tank', Healer: 'role-healer', Melee: 'role-melee', Ranged: 'role-ranged' };
+  return `<span class="role-badge ${map[role] || ''}">${role}</span>`;
+}
+
+function statusBadge(status) {
+  const map = { Main: 'status-main', Alt: 'status-alt', Casual: 'status-casual' };
+  return `<span class="status-badge ${map[status] || ''}">${status}</span>`;
+}
+
+function getActiveRaiders() {
+  return roster.filter(p => p.status === 'Main');
+}
+
+// ======================================================
+// ROSTER
+// ======================================================
+function renderStats() {
+  const mains = roster.filter(p => p.status === 'Main');
+  const tanks = mains.filter(p => p.role === 'Tank').length;
+  const healers = mains.filter(p => p.role === 'Healer').length;
+  const melee = mains.filter(p => p.role === 'Melee').length;
+  const ranged = mains.filter(p => p.role === 'Ranged').length;
+  const alts = roster.filter(p => p.status === 'Alt').length;
+  const casuals = roster.filter(p => p.status === 'Casual').length;
+
+  document.getElementById('roster-stats').innerHTML = `
+    <div class="stat-block"><div class="stat-label">Active Raiders</div><div class="stat-value gold">${mains.length}</div></div>
+    <div class="stat-block"><div class="stat-label">Tanks</div><div class="stat-value">${tanks}</div></div>
+    <div class="stat-block"><div class="stat-label">Healers</div><div class="stat-value">${healers}</div></div>
+    <div class="stat-block"><div class="stat-label">Melee DPS</div><div class="stat-value">${melee}</div></div>
+    <div class="stat-block"><div class="stat-label">Ranged DPS</div><div class="stat-value">${ranged}</div></div>
+    <div class="stat-block"><div class="stat-label">Alts</div><div class="stat-value teal">${alts}</div></div>
+    <div class="stat-block"><div class="stat-label">Casuals</div><div class="stat-value">${casuals}</div></div>
+    <div class="stat-block"><div class="stat-label">Total</div><div class="stat-value">${roster.length}</div></div>
+  `;
+}
+
+function getFilteredRoster() {
+  const search = document.getElementById('roster-search').value.toLowerCase();
+  const cls = document.getElementById('filter-class').value;
+  const role = document.getElementById('filter-role').value;
+  const status = document.getElementById('filter-status').value;
+
+  let r = roster.filter(p => {
+    if (search && !p.name.toLowerCase().includes(search)) return false;
+    if (cls && p.class !== cls) return false;
+    if (role && p.role !== role) return false;
+    if (status && p.status !== status) return false;
+    return true;
+  });
+
+  r.sort((a, b) => {
+    let av = a[sortKey] || '', bv = b[sortKey] || '';
+    if (typeof av === 'string') av = av.toLowerCase();
+    if (typeof bv === 'string') bv = bv.toLowerCase();
+    if (av < bv) return sortAsc ? -1 : 1;
+    if (av > bv) return sortAsc ? 1 : -1;
+    return 0;
+  });
+
+  return r;
+}
+
+function sortRoster(key) {
+  if (sortKey === key) sortAsc = !sortAsc;
+  else { sortKey = key; sortAsc = true; }
+  renderRoster();
+}
+
+function renderRoster() {
+  renderStats();
+  const r = getFilteredRoster();
+  document.getElementById('roster-count').textContent = `${r.length} members`;
+
+  const tbody = document.getElementById('roster-tbody');
+  if (r.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:32px;color:var(--text-dim);">No members match the current filters.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = r.map(p => {
+    const cc = classColor(p.class);
+    const altLabel = p.altOf ? `<div class="alt-of-label">alt of ${p.altOf}</div>` : '';
+    return `
+    <tr>
+      <td>
+        <span class="char-name class-${cc}">${p.name}</span>
+        ${altLabel}
+      </td>
+      <td>
+        <span class="class-dot" style="background:var(--${cc})"></span>
+        <span class="class-${cc}">${p.class}</span>
+      </td>
+      <td style="color:var(--text-mid);">${p.ms || '—'}</td>
+      <td style="color:var(--text-dim);">${p.os || '—'}</td>
+      <td>${roleBadge(p.role)}</td>
+      <td>${statusBadge(p.status)}</td>
+      <td style="color:var(--text-dim);font-size:12px;">${p.altOf || '—'}</td>
+      <td style="color:var(--text-dim);font-size:12px;">${p.notes || ''}</td>
+
+    </tr>`;
+  }).join('');
+}
+
+// ======================================================
+// GROUP BUILDER
+// ======================================================
+function getGroupCount() {
+  return parseInt(document.getElementById('builder-mode').value) === 25 ? 5 : 2;
+}
+
+function renderBuilder() {
+  const groupCount = getGroupCount();
+  const container = document.getElementById('groups-container');
+
+  // Render groups
+  container.innerHTML = '';
+  container.style.gridTemplateColumns = `repeat(${groupCount}, 1fr)`;
+
+  for (let g = 0; g < groupCount; g++) {
+    const members = groups[g] || [];
+    const slots = Array.from({ length: 5 }, (_, i) => {
+      const pid = members[i];
+      const p = pid ? roster.find(r => r.id === pid) : null;
+      if (p) {
+        const cc = classColor(p.class);
+        return `<div class="group-slot-row filled" id="slot-${g}-${i}"
+          draggable="true"
+          ondragstart="onDragStart(event,${p.id},${g},${i})"
+          ondragend="onDragEnd(event)"
+          ondragover="event.preventDefault();event.stopPropagation();this.classList.add('slot-drag-over')"
+          ondragleave="this.classList.remove('slot-drag-over')"
+          ondrop="this.classList.remove('slot-drag-over');onDropSlot(event,${g},${i})"
+          style="cursor:grab;">
+          <span class="class-dot" style="background:var(--${cc})"></span>
+          <span class="slot-row-name class-${cc}">${p.name}</span>
+          <span class="slot-row-spec">${p.ms}</span>
+          <span class="slot-row-role">${roleBadge(p.role)}</span>
+          <button class="slot-row-rm" onclick="event.stopPropagation();removeFromGroup(${g},${i})" title="Remove">✕</button>
+        </div>`;
+      } else {
+        return `<div class="group-slot-row empty-slot"
+          ondragover="event.preventDefault();this.classList.add('slot-drag-over')"
+          ondragleave="this.classList.remove('slot-drag-over')"
+          ondrop="this.classList.remove('slot-drag-over');onDropSlot(event,${g},${i})"
+          onclick="openAddToGroup(${g})" style="cursor:pointer;">
+          <span style="color:var(--text-dim);font-size:11px;">+ Add player</span>
+        </div>`;
+      }
+    }).join('');
+
+    const countFilled = members.length;
+    container.innerHTML += `
+      <div class="group-box" id="group-box-${g}">
+        <div class="group-box-header">
+          <span class="group-box-title">Group ${g + 1}</span>
+          <span style="font-size:11px;color:var(--text-dim);">${countFilled}/5</span>
+        </div>
+        <div class="group-box-body" ondragover="onDragOver(event,${g})" ondrop="onDrop(event,${g})" ondragleave="onDragLeave(${g})">
+          ${slots}
+        </div>
+      </div>`;
+  }
+
+  renderPool();
+  renderCoverage();
+}
+
+function renderPool() {
+  const groupCount = getGroupCount();
+  // Players assigned to active groups
+  const assigned = new Set();
+  for (let g = 0; g < groupCount; g++) {
+    (groups[g] || []).forEach(id => assigned.add(id));
+  }
+
+  const pool = document.getElementById('player-pool');
+  const raiders = getActiveRaiders();
+
+  pool.innerHTML = raiders.map(p => {
+    const cc = classColor(p.class);
+    const isAssigned = assigned.has(p.id);
+    return `<div class="pool-player ${isAssigned ? 'assigned' : ''} class-${cc}"
+      draggable="${!isAssigned}"
+      ondragstart="onDragStart(event,${p.id},-1,-1)"
+      ondragend="onDragEnd(event)"
+      onclick="quickAddToNextGroup(${p.id})"
+      title="${p.ms} ${p.class} — click to assign / unassign">
+      <span class="class-dot" style="background:var(--${cc})"></span>
+      ${p.name}
+    </div>`;
+  }).join('');
+}
+
+// drag state: track both the player id AND the source group/slot
+// so we can do true swap operations
+let dragState = null; // { pid, fromGroup, fromSlot }
+
+function onDragStart(e, pid, fromGroup, fromSlot) {
+  dragState = { pid, fromGroup: fromGroup ?? -1, fromSlot: fromSlot ?? -1 };
+  e.dataTransfer.effectAllowed = 'move';
+  // small ghost delay so the element doesn't disappear instantly
+  setTimeout(() => {
+    const el = document.getElementById(`slot-${fromGroup}-${fromSlot}`);
+    if (el) el.style.opacity = '0.4';
+  }, 0);
+}
+
+function onDragEnd(e) {
+  // Restore opacity on any slot that was dimmed
+  document.querySelectorAll('.group-slot-row').forEach(el => el.style.opacity = '');
+  dragState = null;
+}
+
+function onDragOver(e, gIdx) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  document.getElementById('group-box-' + gIdx)?.querySelector('.group-box-body')?.classList.add('drag-over');
+}
+
+function onDragLeave(gIdx) {
+  document.getElementById('group-box-' + gIdx)?.querySelector('.group-box-body')?.classList.remove('drag-over');
+}
+
+// Drop onto a group body (open slot) — appends to end or swaps
+function onDrop(e, toGroup) {
+  e.preventDefault();
+  document.getElementById('group-box-' + toGroup)?.querySelector('.group-box-body')?.classList.remove('drag-over');
+  if (!dragState) return;
+  const { pid, fromGroup, fromSlot } = dragState;
+  dragState = null;
+
+  if (!groups[toGroup]) groups[toGroup] = [];
+
+  if (fromGroup === toGroup) { renderBuilder(); return; } // same group, no-op on body drop
+
+  // Remove from source
+  if (fromGroup >= 0) groups[fromGroup] = groups[fromGroup].filter(id => id !== pid);
+
+  // Add to target if space
+  if (!groups[toGroup].includes(pid) && groups[toGroup].length < 5) {
+    groups[toGroup].push(pid);
+  } else if (!groups[toGroup].includes(pid)) {
+    // Target full — put back in source
+    if (fromGroup >= 0) groups[fromGroup].push(pid);
+  }
+
+  renderBuilder();
+}
+
+// Drop onto a specific filled slot → swap
+function onDropSlot(e, toGroup, toSlot) {
+  e.preventDefault();
+  e.stopPropagation();
+  document.getElementById('group-box-' + toGroup)?.querySelector('.group-box-body')?.classList.remove('drag-over');
+  if (!dragState) return;
+  const { pid: dragPid, fromGroup, fromSlot } = dragState;
+  dragState = null;
+
+  const targetPid = (groups[toGroup] || [])[toSlot];
+
+  if (dragPid === targetPid) { renderBuilder(); return; }
+
+  // Remove dragged player from its source
+  if (fromGroup >= 0 && fromSlot >= 0) {
+    groups[fromGroup][fromSlot] = null; // placeholder
+  } else {
+    // came from pool — no source slot to blank
+  }
+
+  // Place dragged player into target slot
+  if (!groups[toGroup]) groups[toGroup] = [];
+  const displaced = groups[toGroup][toSlot]; // who was there
+  groups[toGroup][toSlot] = dragPid;
+
+  // Put displaced player into the source slot (swap)
+  if (displaced != null && fromGroup >= 0 && fromSlot >= 0) {
+    groups[fromGroup][fromSlot] = displaced;
+  } else if (displaced != null) {
+    // dragged from pool — displaced goes back to pool (just remove)
+    // they'll show as unassigned
+  }
+
+  // Clean nulls
+  groups = groups.map(g => g.filter(id => id != null));
+
+  renderBuilder();
+}
+
+function addToGroup(gIdx, pid) {
+  groups = groups.map(g => g.filter(id => id !== pid));
+  if (!groups[gIdx]) groups[gIdx] = [];
+  if (groups[gIdx].length < 5 && !groups[gIdx].includes(pid)) {
+    groups[gIdx].push(pid);
+  }
+  renderBuilder();
+}
+
+function quickAddToNextGroup(pid) {
+  const groupCount = getGroupCount();
+  for (let g = 0; g < groupCount; g++) {
+    if ((groups[g] || []).includes(pid)) {
+      groups[g] = groups[g].filter(id => id !== pid);
+      renderBuilder();
+      return;
+    }
+  }
+  for (let g = 0; g < groupCount; g++) {
+    if (!groups[g]) groups[g] = [];
+    if (groups[g].length < 5) {
+      groups[g].push(pid);
+      renderBuilder();
+      return;
+    }
+  }
+}
+
+function removeFromGroup(gIdx, slotIdx) {
+  if (groups[gIdx]) {
+    groups[gIdx].splice(slotIdx, 1);
+    renderBuilder();
+  }
+}
+
+function clearGroups() {
+  groups = [[], [], [], [], []];
+  renderBuilder();
+}
+
+function autoFillGroups() {
+  const groupCount = getGroupCount();
+  const raiders = getActiveRaiders();
+  clearGroups();
+
+  // Sort: tanks first, then healers, then melee, then ranged
+  const order = { Tank: 0, Healer: 1, Melee: 2, Ranged: 3 };
+  const sorted = [...raiders].sort((a, b) => (order[a.role] || 3) - (order[b.role] || 3));
+
+  let gIdx = 0;
+  sorted.forEach(p => {
+    if (gIdx >= groupCount) return;
+    if (!groups[gIdx]) groups[gIdx] = [];
+    if (groups[gIdx].length >= 5) gIdx++;
+    if (gIdx < groupCount) {
+      groups[gIdx].push(p.id);
+      if (groups[gIdx].length >= 5) gIdx++;
+    }
+  });
+
+  renderBuilder();
+}
+
+function openAddToGroup(gIdx) {
+  // Simple picker - quick add unassigned raider
+  const groupCount = getGroupCount();
+  const assigned = new Set();
+  for (let g = 0; g < groupCount; g++) (groups[g] || []).forEach(id => assigned.add(id));
+  const available = getActiveRaiders().filter(p => !assigned.has(p.id));
+  if (available.length === 0) return;
+  // Just add first available
+  addToGroup(gIdx, available[0].id);
+}
+
+// Coverage check
+const KEY_BUFFS = [
+  { name: 'Bloodlust', classes: ['Shaman'] },
+  { name: 'Innervate', classes: ['Druid'] },
+  { name: 'Misdirection', classes: ['Hunter'] },
+  { name: 'Soulstone', classes: ['Warlock'] },
+  { name: 'Battle Shout', classes: ['Warrior'] },
+  { name: 'Devotion Aura', classes: ['Paladin'] },
+  { name: 'Arcane Int.', classes: ['Mage', 'Priest'] },
+  { name: 'Fortitude', classes: ['Priest'] },
+];
+
+function renderCoverage() {
+  const groupCount = getGroupCount();
+  const classesPresent = new Set();
+  for (let g = 0; g < groupCount; g++) {
+    (groups[g] || []).forEach(pid => {
+      const p = roster.find(r => r.id === pid);
+      if (p) classesPresent.add(p.class);
+    });
+  }
+
+  const total = KEY_BUFFS.reduce((acc, b) => acc + (groups.flat().length > 0 ? 1 : 0), 0);
+  const tags = KEY_BUFFS.map(b => {
+    const has = b.classes.some(c => classesPresent.has(c));
+    return `<span class="buff-tag ${has ? 'buff-present' : 'buff-missing'}">${has ? '✓' : '✗'} ${b.name}</span>`;
+  }).join('');
+
+  const filled = groups.slice(0, groupCount).flat().length;
+  document.getElementById('builder-coverage').innerHTML = `
+    <div class="card" style="padding:12px 16px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <span style="font-size:12px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-dim);font-weight:600;">Buff Coverage</span>
+        <span style="font-family:'Share Tech Mono',monospace;font-size:13px;color:var(--text-mid);">${filled}/${groupCount * 5} slots filled</span>
+      </div>
+      <div class="coverage-strip">${tags}</div>
+    </div>`;
+}
+
+// ======================================================
+// ATTENDANCE
+// ======================================================
+function renderAttendance() {
+  const raiders = getActiveRaiders();
+  const thead = document.getElementById('att-thead');
+  const tbody = document.getElementById('att-tbody');
+
+  // Header — format iso date as "Tue\nMay 12"
+  function fmtWeek(iso) {
+    const d = new Date(iso + 'T12:00:00');
+    const day = d.toLocaleDateString('en-US', { weekday: 'short' });
+    const mon = d.toLocaleDateString('en-US', { month: 'short' });
+    const dt  = d.getDate();
+    return `<span style="font-size:10px;color:var(--text-dim);display:block;letter-spacing:0.06em;">${day}</span><span style="font-size:12px;">${mon} ${dt}</span>`;
+  }
+  thead.innerHTML = `<tr>
+    <th>Raider</th>
+    ${attendance.map((w, wi) => `<th style="text-align:center;padding:6px 10px;white-space:nowrap;">${fmtWeek(w.iso)}</th>`).join('')}
+    <th>Rate</th>
+  </tr>`;
+
+  // Body
+  tbody.innerHTML = raiders.map(p => {
+    const cells = attendance.map((w, wi) => {
+      const state = w.data[p.id] || 'absent';
+      return `<td style="text-align:center;">
+        <span class="att-check ${ATT_CLASS[state]}" title="${state}" style="cursor:default;">
+          ${ATT_ICON[state]}
+        </span>
+      </td>`;
+    }).join('');
+
+    const present = attendance.filter(w => (w.data[p.id] || 'absent') === 'present').length;
+    const total = attendance.length;
+    const pct = total > 0 ? Math.round((present / total) * 100) : 0;
+    const barColor = pct >= 80 ? 'var(--green)' : pct >= 50 ? 'var(--gold)' : 'var(--red)';
+
+    const cc = classColor(p.class);
+
+    return `<tr>
+      <td>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="class-dot" style="background:var(--${cc})"></span>
+          <div>
+            <div class="char-name class-${cc}">${p.name}</div>
+            <div style="font-size:10px;color:var(--text-dim);">${p.role}</div>
+          </div>
+        </div>
+      </td>
+      ${cells}
+      <td style="text-align:center;">
+        <div class="att-pct" style="color:${barColor};">${pct}%</div>
+        <div class="att-bar"><div class="att-bar-fill" style="width:${pct}%;background:${barColor};"></div></div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+
+
+// ======================================================
+// KEYBOARD
+// ======================================================
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { }
+});
+
+// ======================================================
+// FETCH DATA FROM kaizen_data.json
+// ======================================================
+async function loadFromServer() {
+  try {
+    const res = await fetch('kaizen_data.json?v=' + Date.now());
+    if (!res.ok) throw new Error('No data file found');
+    const data = await res.json();
+    if (data.roster) roster = data.roster;
+    if (data.groups) groups = data.groups;
+    if (data.attendance) attendance = data.attendance;
+    if (data.nextId) nextId = data.nextId;
+    if (data.guildInfo) guildInfo = { ...guildInfo, ...data.guildInfo };
+    renderRoster();
+    renderOverview();
+    console.log('Kaizen data loaded from kaizen_data.json');
+  } catch(err) {
+    console.warn('Could not load kaizen_data.json — showing default data.', err);
+    renderRoster();
+    renderOverview();
+  }
+}
+
+loadFromServer();
+</script>
+</body>
+</html>
