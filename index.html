@@ -1441,19 +1441,8 @@ function renderStats() {
 }
 
 function getFilteredRoster() {
-  const search = document.getElementById('roster-search').value.toLowerCase();
-  const cls = document.getElementById('filter-class').value;
-  const role = document.getElementById('filter-role').value;
-  const status = document.getElementById('filter-status').value;
-
-  let r = roster.filter(p => {
-    if (search && !p.name.toLowerCase().includes(search)) return false;
-    if (cls && p.class !== cls) return false;
-    if (role && p.role !== role) return false;
-    if (status && p.status !== status) return false;
-    return true;
-  });
-
+  // Public version — no filter controls, just sort
+  let r = [...roster];
   r.sort((a, b) => {
     let av = a[sortKey] || '', bv = b[sortKey] || '';
     if (typeof av === 'string') av = av.toLowerCase();
@@ -1462,7 +1451,6 @@ function getFilteredRoster() {
     if (av > bv) return sortAsc ? 1 : -1;
     return 0;
   });
-
   return r;
 }
 
@@ -1475,7 +1463,7 @@ function sortRoster(key) {
 function renderRoster() {
   renderStats();
   const r = getFilteredRoster();
-  document.getElementById('roster-count').textContent = `${r.length} members`;
+  const countEl = document.getElementById('roster-count'); if (countEl) countEl.textContent = `${r.length} members`;
 
   const tbody = document.getElementById('roster-tbody');
   if (r.length === 0) {
