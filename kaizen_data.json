@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "savedAt": "2026-05-14T18:11:29.865Z",
+  "savedAt": "2026-05-15T18:28:59.869Z",
   "roster": [
     {
       "id": 1,
@@ -419,6 +419,17 @@
       "status": "Main",
       "altOf": "",
       "notes": ""
+    },
+    {
+      "id": 39,
+      "name": "Xtacii",
+      "class": "Warlock",
+      "ms": "Destruction",
+      "os": "",
+      "role": "Ranged",
+      "status": "Casual",
+      "altOf": "",
+      "notes": ""
     }
   ],
   "groups": [
@@ -570,7 +581,7 @@
       }
     }
   ],
-  "nextId": 39,
+  "nextId": 40,
   "guildInfo": {
     "about": "Kaizen is a chill but serious Horde raiding guild pushing into 25-man progression content on TBC Classic. We're building a solid, consistent roster of players who show up prepared, respect each other's time, and want to actually clear content — without the toxicity. If that sounds like you, come hang.",
     "raidSchedule": [
