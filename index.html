@@ -555,7 +555,7 @@ tr:last-child td { border-bottom: none; }
   background: var(--bg-card);
   cursor: pointer;
   transition: all 0.12s;
-  font-size:14px;
+  font-size:12px;
   font-weight: 600;
   user-select: none;
 }
@@ -1339,6 +1339,7 @@ let sortAsc = true;
 
 // Groups: 5 groups of up to 5
 let groups = [[], [], [], [], []];
+let pugs = [];
 
 // Attendance: weeks array, each week = { label, data: {name: state} }
 let attendance = [];
@@ -1561,7 +1562,7 @@ function renderBuilder() {
     const members = groups[g] || [];
     const slots = Array.from({ length: 5 }, (_, i) => {
       const pid = members[i];
-      const p = pid ? roster.find(r => r.id === pid) : null;
+      const p = pid ? getPlayerById(pid) : null;
       if (p) {
         const cc = classColor(p.class);
         return `<div class="group-slot-row filled" id="slot-${g}-${i}"
@@ -1606,6 +1607,11 @@ function renderBuilder() {
   renderCoverage();
 }
 
+function getPlayerById(id) {
+  if (id < 0) return pugs.find(p => p.id === id);
+  return roster.find(r => r.id === id);
+}
+
 function renderPool() {
   const groupCount = getGroupCount();
   // Players assigned to active groups
@@ -1615,19 +1621,21 @@ function renderPool() {
   }
 
   const pool = document.getElementById('player-pool');
-  const raiders = getActiveRaiders();
+  const raiders = [...getActiveRaiders(), ...pugs];
 
   pool.innerHTML = raiders.map(p => {
     const cc = classColor(p.class);
     const isAssigned = assigned.has(p.id);
+    const isPug = p.id < 0;
     return `<div class="pool-player ${isAssigned ? 'assigned' : ''} class-${cc}"
       draggable="${!isAssigned}"
       ondragstart="onDragStart(event,${p.id},-1,-1)"
       ondragend="onDragEnd(event)"
       onclick="quickAddToNextGroup(${p.id})"
-      title="${p.ms} ${p.class} — click to assign / unassign">
+      title="${p.ms} ${p.class}"
+      style="${isPug ? 'border-style:dashed;' : ''}">
       <span class="class-dot" style="background:var(--${cc})"></span>
-      ${p.name}
+      ${p.name}${isPug ? ' <span style="font-size:10px;color:var(--gold);font-weight:700;opacity:0.8;">PUG</span>' : ''}
     </div>`;
   }).join('');
 }
@@ -1802,41 +1810,65 @@ function openAddToGroup(gIdx) {
 }
 
 // Coverage check
-const KEY_BUFFS = [
-  { name: 'Bloodlust', classes: ['Shaman'] },
-  { name: 'Innervate', classes: ['Druid'] },
+const RAID_BUFFS = [
+  { name: 'Bloodlust',    classes: ['Shaman'] },
+  { name: 'Arcane Int.',  classes: ['Mage'] },
+  { name: 'Fortitude',    classes: ['Priest'] },
+  { name: 'Blessings',    classes: ['Paladin'] },
+  { name: 'Innervate',    classes: ['Druid'] },
   { name: 'Misdirection', classes: ['Hunter'] },
-  { name: 'Soulstone', classes: ['Warlock'] },
+  { name: 'Soulstone',    classes: ['Warlock'] },
   { name: 'Battle Shout', classes: ['Warrior'] },
-  { name: 'Devotion Aura', classes: ['Paladin'] },
-  { name: 'Arcane Int.', classes: ['Mage', 'Priest'] },
-  { name: 'Fortitude', classes: ['Priest'] },
+];
+const GROUP_BUFFS = [
+  { name: 'Unleashed Rage',  matchSpec: p => p.class === 'Shaman' && p.ms === 'Enhancement' },
+  { name: 'Mana Tide',       matchSpec: p => p.class === 'Shaman' && p.ms === 'Restoration' },
+  { name: 'Totem of Wrath',  matchSpec: p => p.class === 'Shaman' && p.ms === 'Elemental' },
+  { name: 'LotP',            matchSpec: p => p.class === 'Druid' && p.ms === 'Feral' },
+  { name: 'Sanc Aura',       matchSpec: p => p.class === 'Paladin' && p.ms === 'Retribution' },
+  { name: 'Vampiric Emb.',   matchSpec: p => p.class === 'Priest' && p.ms === 'Shadow' },
+  { name: 'Ferocious Insp.', matchSpec: p => p.class === 'Hunter' && p.ms === 'Beastmastery' },
 ];
 
 function renderCoverage() {
   const groupCount = getGroupCount();
-  const classesPresent = new Set();
+  const filled = groups.slice(0, groupCount).flat().length;
+
+  const classesInRaid = new Set();
   for (let g = 0; g < groupCount; g++) {
     (groups[g] || []).forEach(pid => {
-      const p = roster.find(r => r.id === pid);
-      if (p) classesPresent.add(p.class);
+      const p = getPlayerById(pid);
+      if (p) classesInRaid.add(p.class);
     });
   }
 
-  const total = KEY_BUFFS.reduce((acc, b) => acc + (groups.flat().length > 0 ? 1 : 0), 0);
-  const tags = KEY_BUFFS.map(b => {
-    const has = b.classes.some(c => classesPresent.has(c));
+  const raidTags = RAID_BUFFS.map(b => {
+    const has = b.classes.some(c => classesInRaid.has(c));
     return `<span class="buff-tag ${has ? 'buff-present' : 'buff-missing'}">${has ? '✓' : '✗'} ${b.name}</span>`;
   }).join('');
 
-  const filled = groups.slice(0, groupCount).flat().length;
+  const groupCoverageRows = Array.from({ length: groupCount }, (_, g) => {
+    const members = (groups[g] || []).map(pid => getPlayerById(pid)).filter(Boolean);
+    if (members.length === 0) return `<div style="font-size:11px;color:var(--text-dim);padding:4px 0;">Group ${g+1}: empty</div>`;
+    const tags = GROUP_BUFFS.map(b => {
+      const has = members.some(p => b.matchSpec(p));
+      return has ? `<span class="buff-tag buff-present" style="font-size:11px;padding:2px 6px;">✓ ${b.name}</span>` : '';
+    }).filter(Boolean).join('');
+    return `<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:3px 0;border-bottom:1px solid var(--border);">
+      <span style="font-size:11px;font-weight:600;color:var(--text-mid);width:56px;flex-shrink:0;">Grp ${g+1}</span>
+      ${tags || '<span style="font-size:11px;color:var(--text-dim);">No group buffs</span>'}
+    </div>`;
+  }).join('');
+
   document.getElementById('builder-coverage').innerHTML = `
     <div class="card" style="padding:12px 16px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-        <span style="font-size:14px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-dim);font-weight:600;">Buff Coverage</span>
-        <span style="font-family:'Share Tech Mono',monospace;font-size:14px;color:var(--text-mid);">${filled}/${groupCount * 5} slots filled</span>
+        <span style="font-size:12px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-dim);font-weight:600;">Raid-Wide Buffs</span>
+        <span style="font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--text-mid);">${filled}/${groupCount * 5} slots filled</span>
       </div>
-      <div class="coverage-strip">${tags}</div>
+      <div class="coverage-strip" style="margin-bottom:12px;">${raidTags}</div>
+      <div style="font-size:12px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-dim);font-weight:600;margin-bottom:6px;">Group Buffs</div>
+      ${groupCoverageRows}
     </div>`;
 }
 
