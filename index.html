@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Kaizen — TBC Classic Guild</title>
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Inter:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
 :root {
   --bg-deep: #0a0b0d;
@@ -44,7 +44,7 @@
 body {
   background: var(--bg-deep);
   color: var(--text-bright);
-  font-family: 'Rajdhani', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size:15px;
   min-height: 100vh;
   overflow-x: hidden;
@@ -127,7 +127,7 @@ nav { display: flex; gap: 2px; flex: 1; }
   background: none;
   border: none;
   color: var(--text-mid);
-  font-family: 'Rajdhani', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size:14px;
   font-weight: 600;
   letter-spacing: 0.08em;
@@ -202,7 +202,7 @@ main {
   border: 1px solid var(--border-bright);
   background: var(--bg-card);
   color: var(--text-mid);
-  font-family: 'Rajdhani', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size:14px;
   font-weight: 600;
   letter-spacing: 0.08em;
@@ -290,7 +290,7 @@ main {
   border: 1px solid var(--border-bright);
   color: var(--text-bright);
   padding: 7px 12px;
-  font-family: 'Rajdhani', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size:15px;
   border-radius: 2px;
   outline: none;
@@ -305,7 +305,7 @@ main {
   border: 1px solid var(--border-bright);
   color: var(--text-bright);
   padding: 7px 12px;
-  font-family: 'Rajdhani', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size:14px;
   border-radius: 2px;
   outline: none;
@@ -345,7 +345,7 @@ td {
   padding: 9px 12px;
   border-bottom: 1px solid var(--border);
   vertical-align: middle;
-  font-size:15px;
+  font-size:13px;
 }
 
 tr:hover td { background: rgba(255,255,255,0.02); }
@@ -391,11 +391,11 @@ tr:last-child td { border-bottom: none; }
 .bg-warrior { background: rgba(199,156,110,0.15); }
 
 .role-badge {
-  font-size:13px;
-  letter-spacing: 0.08em;
+  font-size:11px;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   font-weight: 700;
-  padding: 2px 7px;
+  padding: 1px 7px;
   border-radius: 2px;
 }
 
@@ -405,11 +405,11 @@ tr:last-child td { border-bottom: none; }
 .role-ranged { background: rgba(26,175,192,0.2); color: #1aafc0; border: 1px solid rgba(26,175,192,0.3); }
 
 .status-badge {
-  font-size:13px;
-  letter-spacing: 0.08em;
+  font-size:11px;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   font-weight: 700;
-  padding: 2px 7px;
+  padding: 1px 6px;
   border-radius: 2px;
 }
 
@@ -417,7 +417,7 @@ tr:last-child td { border-bottom: none; }
 .status-alt { background: rgba(138,143,168,0.15); color: var(--text-mid); border: 1px solid var(--border-bright); }
 .status-casual { background: rgba(68,74,90,0.3); color: var(--text-dim); border: 1px solid var(--border); }
 
-.char-name { font-weight: 600; letter-spacing: 0.02em; font-size: 17px; }
+.char-name { font-weight: 600; letter-spacing: 0.02em; font-size: 13px; }
 .main-of { font-size:13px; color: var(--text-dim); margin-top: 1px; }
 
 .action-cell { display: flex; gap: 6px; }
@@ -429,7 +429,7 @@ tr:last-child td { border-bottom: none; }
   border: 1px solid var(--teal-dim);
   color: var(--text-bright);
   padding: 3px 8px;
-  font-family: 'Rajdhani', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size:14px;
   border-radius: 2px;
   outline: none;
@@ -751,7 +751,7 @@ tr:last-child td { border-bottom: none; }
   border: 1px solid var(--border-bright);
   color: var(--text-bright);
   padding: 9px 12px;
-  font-family: 'Rajdhani', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size:15px;
   border-radius: 2px;
   outline: none;
@@ -807,6 +807,43 @@ tr:last-child td { border-bottom: none; }
 /* ===== SCROLLBAR ===== */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 
+/* ===== TOOL CARDS ===== */
+.tool-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--bg-hover);
+  border-radius: 3px;
+  border: 1px solid var(--border-bright);
+  text-decoration: none;
+  transition: border-color 0.15s;
+  color: var(--text-bright);
+  font-size: 13px;
+  font-family: 'Inter', sans-serif;
+}
+.tool-card:hover { text-decoration: none; }
+.tool-card-body { flex: 1; }
+.tool-card-name {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 3px;
+  font-family: 'Inter', sans-serif;
+}
+.tool-card-desc {
+  font-size: 13px;
+  color: var(--text-bright);
+  line-height: 1.6;
+  font-family: 'Inter', sans-serif;
+}
+.tool-card-link {
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
 /* Force tool card description text color — overrides browser link styles */
 a[href] > div > div[style*="line-height:1.6"] {
   color: #e8e0d0 !important;
@@ -814,8 +851,8 @@ a[href] > div > div[style*="line-height:1.6"] {
 }
 
 /* Consistent descriptor text sizing */
-#ov-loot-rules, #ov-recruitment, #ov-about { font-size: 16px !important; line-height: 1.7; }
-#ov-recruitment strong, #ov-loot-rules strong { font-size: 16px !important; }
+#ov-loot-rules, #ov-recruitment, #ov-about { font-size: 13px !important; line-height: 1.6; }
+#ov-recruitment strong, #ov-loot-rules strong { font-size: 13px !important; }
 #ov-schedule .schedule-content { font-size: 17px; }
 ::-webkit-scrollbar-track { background: var(--bg-deep); }
 ::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 3px; }
@@ -916,8 +953,8 @@ a[href] > div > div[style*="line-height:1.6"] {
 .group-slot-row {
   display: flex;
   align-items: center;
-  gap: 7px;
-  padding: 5px 7px;
+  gap: 5px;
+  padding: 4px 6px;
   border-radius: 2px;
   border: 1px solid transparent;
   font-size:14px;
@@ -935,7 +972,7 @@ a[href] > div > div[style*="line-height:1.6"] {
   font-size:13px;
 }
 
-.slot-row-name { flex: 1; font-weight: 600; font-size: 17px; }
+.slot-row-name { flex: 1; font-weight: 600; font-size: 13px; }
 .slot-row-spec { font-size:13px; color: var(--text-mid); }
 .slot-row-role { flex-shrink: 0; }
 
@@ -1022,7 +1059,7 @@ a[href] > div > div[style*="line-height:1.6"] {
             style="width:180px;height:100%;object-fit:contain;display:block;">
         </div>
         <div style="flex:1;min-width:260px;display:flex;flex-direction:column;justify-content:flex-start;">
-          <div style="font-family:'Cinzel',serif;font-size:24px;font-weight:700;color:var(--gold);letter-spacing:0.03em;margin-bottom:4px;">&lt;Kaizen&gt;</div>
+          <div style="font-family:'Cinzel',serif;font-size:20px;font-weight:700;color:var(--gold);letter-spacing:0.03em;margin-bottom:4px;">&lt;Kaizen&gt;</div>
           <div style="font-size:14px;color:var(--text-mid);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:16px;">Horde · TBC Classic · PvE</div>
           <div id="ov-about" style="font-size:17px;color:var(--text-bright);line-height:1.7;margin-bottom:20px;"></div>
           <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:auto;padding-top:16px;">
@@ -1044,13 +1081,13 @@ a[href] > div > div[style*="line-height:1.6"] {
 
     <!-- Raid Schedule -->
     <div class="card">
-      <div style="font-family:'Cinzel',serif;font-size:16px;font-weight:600;color:var(--text-bright);margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--border);">Raid Schedule</div>
+      <div style="font-family:'Cinzel',serif;font-size:13px;font-weight:600;color:var(--text-bright);margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--border);">Raid Schedule</div>
       <div style="display:flex;flex-direction:column;gap:10px;" id="ov-schedule"></div>
     </div>
 
     <!-- Recruitment -->
     <div class="card">
-      <div style="font-family:'Cinzel',serif;font-size:16px;font-weight:600;color:var(--text-bright);margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--border);">Recruitment</div>
+      <div style="font-family:'Cinzel',serif;font-size:13px;font-weight:600;color:var(--text-bright);margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--border);">Recruitment</div>
       <div id="ov-recruitment" style="font-size:15px;color:var(--text-mid);line-height:1.7;"></div>
     </div>
 
@@ -1060,7 +1097,7 @@ a[href] > div > div[style*="line-height:1.6"] {
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
 
     <div class="card">
-      <div style="font-family:'Cinzel',serif;font-size:14px;font-family:'Cinzel',serif;font-size:16px;font-weight:600;color:var(--text-bright);margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--border);">Loot System</div>
+      <div style="font-family:'Cinzel',serif;font-size:14px;font-family:'Cinzel',serif;font-size:13px;font-weight:600;color:var(--text-bright);margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--border);">Loot System</div>
       <div style="display:flex;flex-direction:column;gap:14px;">
         <div>
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
@@ -1069,28 +1106,22 @@ a[href] > div > div[style*="line-height:1.6"] {
           <div id="ov-loot-rules" style="font-size:15px;color:var(--text-mid);line-height:1.8;"></div>
         </div>
         <div style="border-top:1px solid var(--border);padding-top:12px;">
-          <div style="font-size:13px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-dim);font-weight:600;margin-bottom:10px;">Tools We Use</div>
+          <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-dim);font-weight:600;margin-bottom:8px;">Tools We Use</div>
           <div style="display:flex;flex-direction:column;gap:8px;">
-            <a href="https://thatsmybis.com" target="_blank" style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:var(--bg-hover);border-radius:3px;border:1px solid var(--border-bright);text-decoration:none;transition:border-color 0.15s;color:#e8e0d0;" onmouseover="this.style.borderColor='var(--gold-dim)'" onmouseout="this.style.borderColor='var(--border-bright)'">
-              <div style="flex:1;">
-                <div style="font-size:16px;font-weight:700;color:var(--gold);margin-bottom:4px;">That's My BIS</div>
-                <div style="font-size:16px;color:#e8e0d0;line-height:1.6;">Raiders pre-list their BIS items by priority. When loot drops, loot council can instantly see who has it highest on their list, making decisions fast and transparent. Sign up at thatsmybis.com with your Discord account.</div>
+            <a href="https://thatsmybis.com" target="_blank" class="tool-card" onmouseover="this.style.borderColor='var(--gold-dim)'" onmouseout="this.style.borderColor='var(--border-bright)'">
+              <div class="tool-card-body"><div class="tool-card-name" style="color:var(--gold);">That's My BIS</div><div class="tool-card-desc">Raiders pre-list their BIS items by priority. When loot drops, loot council can instantly see who has it highest on their list, making decisions fast and transparent. Sign up at thatsmybis.com with your Discord account.</div>
               </div>
-              <span style="font-size:13px;color:var(--text-dim);white-space:nowrap;margin-top:2px;">↗ thatsmybis.com</span>
+              <span class="tool-card-link">↗ thatsmybis.com</span>
             </a>
-            <a href="https://www.curseforge.com/wow/addons/gargul" target="_blank" style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:var(--bg-hover);border-radius:3px;border:1px solid var(--border-bright);text-decoration:none;transition:border-color 0.15s;color:#e8e0d0;" onmouseover="this.style.borderColor='var(--teal-dim)'" onmouseout="this.style.borderColor='var(--border-bright)'">
-              <div style="flex:1;">
-                <div style="font-size:16px;font-weight:700;color:var(--teal);margin-bottom:4px;">Gargul</div>
-                <div style="font-size:16px;color:#e8e0d0;line-height:1.6;">In-game addon used by the loot master to manage rolls, track MS/OS, and distribute loot cleanly. Integrates directly with TMB. Install via CurseForge — only the loot master strictly needs it, but raiders benefit from having it too.</div>
+            <a href="https://www.curseforge.com/wow/addons/gargul" target="_blank" class="tool-card" onmouseover="this.style.borderColor='var(--teal-dim)'" onmouseout="this.style.borderColor='var(--border-bright)'">
+              <div class="tool-card-body"><div class="tool-card-name" style="color:var(--teal);">Gargul</div><div class="tool-card-desc">In-game addon used by the loot master to manage rolls, track MS/OS, and distribute loot cleanly. Integrates directly with TMB. Install via CurseForge — only the loot master strictly needs it, but raiders benefit from having it too.</div>
               </div>
-              <span style="font-size:13px;color:var(--text-dim);white-space:nowrap;margin-top:2px;">↗ CurseForge</span>
+              <span class="tool-card-link">↗ CurseForge</span>
             </a>
-            <a href="https://www.curseforge.com/wow/addons/method-raid-tools" target="_blank" style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:var(--bg-hover);border-radius:3px;border:1px solid var(--border-bright);text-decoration:none;transition:border-color 0.15s;color:#e8e0d0;" onmouseover="this.style.borderColor='var(--purple, #8e44ad)'" onmouseout="this.style.borderColor='var(--border-bright)'">
-              <div style="flex:1;">
-                <div style="font-size:16px;font-weight:700;color:var(--purple, #9b59b6);margin-bottom:4px;">Method Raid Tools</div>
-                <div style="font-size:16px;color:#e8e0d0;line-height:1.6;">Essential raid leader addon. Tracks raid cooldowns, manages assignments, handles notes and reminders, and inspects raiders gear and specs. Required for officers, strongly recommended for all raiders. Install via CurseForge — make sure to grab the Classic TBC version.</div>
+            <a href="https://www.curseforge.com/wow/addons/method-raid-tools" target="_blank" class="tool-card" onmouseover="this.style.borderColor='var(--purple, #8e44ad)'" onmouseout="this.style.borderColor='var(--border-bright)'">
+              <div class="tool-card-body"><div class="tool-card-name" style="color:var(--purple, #9b59b6);">Method Raid Tools</div><div class="tool-card-desc">Essential raid leader addon. Tracks raid cooldowns, manages assignments, handles notes and reminders, and inspects raiders gear and specs. Required for officers, strongly recommended for all raiders. Install via CurseForge — make sure to grab the Classic TBC version.</div>
               </div>
-              <span style="font-size:13px;color:var(--text-dim);white-space:nowrap;margin-top:2px;">↗ CurseForge</span>
+              <span class="tool-card-link">↗ CurseForge</span>
             </a>
           </div>
         </div>
@@ -1099,7 +1130,7 @@ a[href] > div > div[style*="line-height:1.6"] {
 
     <!-- Roster snapshot -->
     <div class="card">
-      <div style="font-family:'Cinzel',serif;font-size:14px;font-family:'Cinzel',serif;font-size:16px;font-weight:600;color:var(--text-bright);margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--border);">Roster Snapshot</div>
+      <div style="font-family:'Cinzel',serif;font-size:14px;font-family:'Cinzel',serif;font-size:13px;font-weight:600;color:var(--text-bright);margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--border);">Roster Snapshot</div>
       <div id="ov-roster-snapshot" style="display:flex;flex-direction:column;gap:6px;"></div>
     </div>
 
@@ -1351,10 +1382,10 @@ function renderOverview() {
       <div style="padding:12px 14px;background:var(--bg-hover);border-radius:3px;border:1px solid var(--border-bright);">
         <div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:4px;">
           <span style="font-family:'Cinzel',serif;font-size:16px;font-weight:600;color:var(--gold);">${r.day}</span>
-          <span style="font-size:14px;color:var(--text-dim);">${r.note}</span>
+          <span style="font-size:11px;color:var(--text-dim);">${r.note}</span>
         </div>
-        <div style="font-size:16px;font-weight:600;color:var(--text-bright);margin-bottom:4px;">${r.content}</div>
-        <div style="font-size:15px;color:var(--text-mid);">${r.time}</div>
+        <div style="font-size:13px;font-weight:600;color:var(--text-bright);margin-bottom:3px;">${r.content}</div>
+        <div style="font-size:13px;color:var(--text-mid);">${r.time}</div>
       </div>`).join('');
   }
 
@@ -1381,7 +1412,7 @@ function renderOverview() {
 
     snapEl.innerHTML = `
       <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:10px;">
-        <span style="font-size:28px;font-family:'Cinzel',serif;font-weight:700;color:var(--gold);">${total}</span>
+        <span style="font-size:20px;font-family:'Cinzel',serif;font-weight:700;color:var(--gold);">${total}</span>
         <span style="font-size:14px;color:var(--text-dim);">/ ${goal} target roster</span>
       </div>
       <div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin-bottom:14px;">
@@ -1855,7 +1886,7 @@ function renderAttendance() {
           <span class="class-dot" style="background:var(--${cc})"></span>
           <div>
             <div class="char-name class-${cc}">${p.name}</div>
-            <div style="font-size:14px;color:var(--text-mid);">${p.role}</div>
+            <div style="font-size:11px;color:var(--text-mid);">${p.role}</div>
           </div>
         </div>
       </td>
