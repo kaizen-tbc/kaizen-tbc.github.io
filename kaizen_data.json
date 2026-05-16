@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "savedAt": "2026-05-15T18:28:59.869Z",
+  "savedAt": "2026-05-16T22:29:18.071Z",
   "roster": [
     {
       "id": 1,
@@ -28,8 +28,8 @@
       "id": 3,
       "name": "Sobadai",
       "class": "Druid",
-      "ms": "Restoration",
-      "os": "Feral",
+      "ms": "Feral",
+      "os": "Restoration",
       "role": "Tank",
       "status": "Main",
       "altOf": "",
@@ -182,8 +182,8 @@
       "id": 17,
       "name": "Magusalhan",
       "class": "Mage",
-      "ms": "Frost",
-      "os": "Protection",
+      "ms": "Arcane",
+      "os": "",
       "role": "Ranged",
       "status": "Main",
       "altOf": "",
@@ -193,7 +193,7 @@
       "id": 18,
       "name": "Sucmelowmane",
       "class": "Mage",
-      "ms": "Frost",
+      "ms": "Arcane",
       "os": "",
       "role": "Ranged",
       "status": "Main",
@@ -435,14 +435,13 @@
   "groups": [
     [
       4,
-      36,
-      17,
-      15
+      -2,
+      -1
     ],
     [
-      2,
-      23,
+      -4,
       3,
+      23,
       8
     ],
     [
@@ -460,11 +459,10 @@
       10
     ],
     [
-      13,
-      14,
       38,
+      -3,
       34,
-      16
+      17
     ]
   ],
   "attendance": [
@@ -600,5 +598,51 @@
     ],
     "recruitment": "We are actively building our 25-man roster and looking for reliable, raid-ready players.<br><br>Current loot system:<br><strong style='color:var(--gold);font-size:15px;'>2 Soft Reserves · MS &gt; OS + 1</strong><br><br>All specs considered — reach out on Discord if you're interested in running with us.",
     "lootRules": "<strong style='color:var(--text-bright)'>2 Soft Reserves (SR)</strong> — each raider may reserve up to 2 items per raid week.<br><strong style='color:var(--text-bright)'>MS > OS</strong> — main spec rolls beat off spec rolls on all items.<br><strong style='color:var(--text-bright)'>+1 Rule</strong> — once you win a main spec item, you go to the back of the line for subsequent drops that night."
-  }
+  },
+  "pugs": [
+    {
+      "id": -1,
+      "name": "Babylonian",
+      "class": "Priest",
+      "ms": "Holy",
+      "os": "",
+      "role": "Healer",
+      "status": "Main",
+      "altOf": "",
+      "notes": "PUG"
+    },
+    {
+      "id": -2,
+      "name": "Selesta",
+      "class": "Paladin",
+      "ms": "Holy",
+      "os": "",
+      "role": "Healer",
+      "status": "Main",
+      "altOf": "",
+      "notes": "PUG"
+    },
+    {
+      "id": -3,
+      "name": "Coldhottie",
+      "class": "Warlock",
+      "ms": "Destruction",
+      "os": "",
+      "role": "Ranged",
+      "status": "Main",
+      "altOf": "",
+      "notes": "PUG"
+    },
+    {
+      "id": -4,
+      "name": "Wowanderthal",
+      "class": "Paladin",
+      "ms": "Protection",
+      "os": "",
+      "role": "Tank",
+      "status": "Main",
+      "altOf": "",
+      "notes": "PUG"
+    }
+  ]
 }
