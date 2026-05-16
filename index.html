@@ -806,6 +806,9 @@ tr:last-child td { border-bottom: none; }
 
 /* ===== SCROLLBAR ===== */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
+
+/* Prevent anchor tag from overriding text colors inside tool cards */
+a div { color: inherit; }
 ::-webkit-scrollbar-track { background: var(--bg-deep); }
 ::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
@@ -1064,21 +1067,21 @@ tr:last-child td { border-bottom: none; }
             <a href="https://thatsmybis.com" target="_blank" style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:var(--bg-hover);border-radius:3px;border:1px solid var(--border-bright);text-decoration:none;transition:border-color 0.15s;" onmouseover="this.style.borderColor='var(--gold-dim)'" onmouseout="this.style.borderColor='var(--border-bright)'">
               <div style="flex:1;">
                 <div style="font-size:15px;font-weight:700;color:var(--gold);margin-bottom:2px;">That's My BIS</div>
-                <div style="font-size:14px;color:var(--text-dim);line-height:1.5;">Raiders pre-list their BIS items by priority. When loot drops, loot council can instantly see who has it highest on their list, making decisions fast and transparent. Sign up at thatsmybis.com with your Discord account.</div>
+                <div style="font-size:14px;color:#e8e0d0;line-height:1.5;">Raiders pre-list their BIS items by priority. When loot drops, loot council can instantly see who has it highest on their list, making decisions fast and transparent. Sign up at thatsmybis.com with your Discord account.</div>
               </div>
               <span style="font-size:13px;color:var(--text-dim);white-space:nowrap;margin-top:2px;">↗ thatsmybis.com</span>
             </a>
             <a href="https://www.curseforge.com/wow/addons/gargul" target="_blank" style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:var(--bg-hover);border-radius:3px;border:1px solid var(--border-bright);text-decoration:none;transition:border-color 0.15s;" onmouseover="this.style.borderColor='var(--teal-dim)'" onmouseout="this.style.borderColor='var(--border-bright)'">
               <div style="flex:1;">
                 <div style="font-size:15px;font-weight:700;color:var(--teal);margin-bottom:2px;">Gargul</div>
-                <div style="font-size:14px;color:var(--text-dim);line-height:1.5;">In-game addon used by the loot master to manage rolls, track MS/OS, and distribute loot cleanly. Integrates directly with TMB. Install via CurseForge — only the loot master strictly needs it, but raiders benefit from having it too.</div>
+                <div style="font-size:14px;color:#e8e0d0;line-height:1.5;">In-game addon used by the loot master to manage rolls, track MS/OS, and distribute loot cleanly. Integrates directly with TMB. Install via CurseForge — only the loot master strictly needs it, but raiders benefit from having it too.</div>
               </div>
               <span style="font-size:13px;color:var(--text-dim);white-space:nowrap;margin-top:2px;">↗ CurseForge</span>
             </a>
             <a href="https://www.curseforge.com/wow/addons/method-raid-tools" target="_blank" style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:var(--bg-hover);border-radius:3px;border:1px solid var(--border-bright);text-decoration:none;transition:border-color 0.15s;" onmouseover="this.style.borderColor='var(--purple, #8e44ad)'" onmouseout="this.style.borderColor='var(--border-bright)'">
               <div style="flex:1;">
                 <div style="font-size:15px;font-weight:700;color:var(--purple, #9b59b6);margin-bottom:2px;">Method Raid Tools</div>
-                <div style="font-size:14px;color:var(--text-dim);line-height:1.5;">Essential raid leader addon. Tracks raid cooldowns, manages assignments, handles notes and reminders, and inspects raiders gear and specs. Required for officers, strongly recommended for all raiders. Install via CurseForge — make sure to grab the Classic TBC version.</div>
+                <div style="font-size:14px;color:#e8e0d0;line-height:1.5;">Essential raid leader addon. Tracks raid cooldowns, manages assignments, handles notes and reminders, and inspects raiders gear and specs. Required for officers, strongly recommended for all raiders. Install via CurseForge — make sure to grab the Classic TBC version.</div>
               </div>
               <span style="font-size:13px;color:var(--text-dim);white-space:nowrap;margin-top:2px;">↗ CurseForge</span>
             </a>
