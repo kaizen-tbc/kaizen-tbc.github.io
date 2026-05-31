@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "savedAt": "2026-05-30T00:00:42.082Z",
+  "savedAt": "2026-05-31T01:16:07.674Z",
   "roster": [
     {
       "id": 1,
@@ -507,29 +507,47 @@
       "status": "Main",
       "altOf": "",
       "notes": ""
+    },
+    {
+      "id": 49,
+      "name": "Roguegpt",
+      "class": "Rogue",
+      "ms": "Combat",
+      "os": "",
+      "role": "Melee",
+      "status": "Main",
+      "altOf": "",
+      "notes": ""
     }
   ],
   "groups": [
     [
-      3,
-      40
+      40,
+      48,
+      4
     ],
     [
-      23,
+      3,
+      -27,
+      45,
+      49,
       10
     ],
     [
       31,
       38,
+      -26,
       12
     ],
     [
       24,
       21,
-      11
+      11,
+      46
     ],
     [
       19,
+      -25,
       8
     ]
   ],
@@ -647,7 +665,7 @@
       }
     }
   ],
-  "nextId": 49,
+  "nextId": 50,
   "guildInfo": {
     "about": "Kaizen is a chill but serious Horde raiding guild pushing into 25-man progression content on TBC Classic. We're building a solid, consistent roster of players who show up prepared, respect each other's time, and want to actually clear content — without the toxicity. If that sounds like you, come hang.",
     "raidSchedule": [
@@ -667,8 +685,42 @@
     "recruitment": "We are actively building our 25-man roster and looking for reliable, raid-ready players.<br><br>Current loot system:<br><strong style='color:var(--gold);font-size:15px;'>2 Soft Reserves · MS &gt; OS + 1</strong><br><br>All specs considered — reach out on Discord if you're interested in running with us.",
     "lootRules": "<strong style='color:var(--text-bright)'>2 Soft Reserves (SR)</strong> — each raider may reserve up to 2 items per raid week.<br><strong style='color:var(--text-bright)'>MS > OS</strong> — main spec rolls beat off spec rolls on all items.<br><strong style='color:var(--text-bright)'>+1 Rule</strong> — once you win a main spec item, you go to the back of the line for subsequent drops that night."
   },
-  "pugs": [],
-  "nextPugId": -25,
+  "pugs": [
+    {
+      "id": -25,
+      "name": "Badmoosbear",
+      "class": "Druid",
+      "ms": "Balance",
+      "os": "",
+      "role": "Ranged",
+      "status": "Main",
+      "altOf": "",
+      "notes": "PUG"
+    },
+    {
+      "id": -26,
+      "name": "Loxhlet",
+      "class": "Warlock",
+      "ms": "Destruction",
+      "os": "",
+      "role": "Ranged",
+      "status": "Main",
+      "altOf": "",
+      "notes": "PUG"
+    },
+    {
+      "id": -27,
+      "name": "Rodentp",
+      "class": "Paladin",
+      "ms": "Protection",
+      "os": "",
+      "role": "Tank",
+      "status": "Main",
+      "altOf": "",
+      "notes": "PUG"
+    }
+  ],
+  "nextPugId": -28,
   "strats": [
     {
       "id": 2,
