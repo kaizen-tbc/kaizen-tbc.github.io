@@ -1677,7 +1677,7 @@ a[href] > div > div[style*="line-height:1.6"] {
 
 <!-- ==================== ASSIGN PICKER MODAL ==================== -->
 <div class="modal-overlay" id="assign-picker-overlay" onclick="if(event.target===this)closeAssignPicker()">
-  <div class="modal" style="width:440px;">
+  <div class="modal" style="width:600px;max-width:95vw;">
     <div class="modal-header">
       <div class="modal-title" id="assign-picker-title">Assign Player</div>
       <button class="modal-close" onclick="closeAssignPicker()">✕</button>
@@ -3175,12 +3175,8 @@ function renderStrats() {
       </div>
     </div>` : '';
 
-  // Player pool (shown below image in raid manager)
-  const poolSection = active ? `
-    <div style="margin-top:10px;">
-      <div class="strat-pool-label">Raid Members — drag or click to assign</div>
-      <div class="strat-pool">${poolHtml}</div>
-    </div>` : '';
+  // No pool shown in strats tab — use the + assign picker instead
+  const poolSection = '';
 
   // Image area with replace button
   const imageArea = active ? `
