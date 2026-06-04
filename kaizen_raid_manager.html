@@ -1505,6 +1505,7 @@ a[href] > div > div[style*="line-height:1.6"] {
         <option value="25">25-Man Raid</option>
         <option value="10">10-Man Raid</option>
       </select>
+      <button class="btn" onclick="openGuildieModal()">+ Add Guildie</button>
       <button class="btn" onclick="openPugModal()">+ Add Pug</button>
       <button class="btn" onclick="clearGroups()">Clear All</button>
       <button class="btn btn-gold" onclick="autoFillGroups()">Auto-Fill</button>
@@ -1521,6 +1522,23 @@ a[href] > div > div[style*="line-height:1.6"] {
       <div id="pug-strip" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;"></div>
     </div>
     <div class="player-pool" id="player-pool"></div>
+  </div>
+</div>
+
+<!-- GUILDIE MODAL -->
+<div class="modal-overlay" id="guildie-modal-overlay" onclick="if(event.target===this)closeGuildieModal()">
+  <div class="modal" style="width:420px;">
+    <div class="modal-header">
+      <div class="modal-title">Add Guildie to Pool</div>
+      <button class="modal-close" onclick="closeGuildieModal()">✕</button>
+    </div>
+    <div class="modal-body" style="padding:12px;">
+      <div class="notice notice-info" style="margin-bottom:12px;">
+        <span>ℹ</span> Alts and Casuals only — Mains are already in the pool.
+      </div>
+      <input type="text" class="filter-input" id="guildie-search" placeholder="Search name..." oninput="renderGuildieList()" style="width:100%;margin-bottom:10px;">
+      <div id="guildie-list" style="display:flex;flex-direction:column;gap:4px;max-height:340px;overflow-y:auto;"></div>
+    </div>
   </div>
 </div>
 
@@ -1916,6 +1934,7 @@ let sortAsc = true;
 let groups = [[], [], [], [], []];
 let pugs = []; // temp players for group builder only, not saved to main roster
 let nextPugId = -1; // pugs use negative IDs to avoid collision with roster
+let guildies = []; // alts/casuals temporarily added to group builder pool
 
 // Attendance: weeks array, each week = { label, data: {name: state} }
 let attendance = [];
@@ -2321,15 +2340,16 @@ function renderPool() {
   }
 
   const pool = document.getElementById('player-pool');
-  const allPool = [...getActiveRaiders(), ...pugs];
+  const allPool = [...getActiveRaiders(), ...guildies, ...pugs];
 
   pool.innerHTML = allPool.map(p => {
     const cc = classColor(p.class);
     const numId = Number(p.id);
     const isAssigned = assignedIds.has(numId);
-    const isPug = numId < 0;
+    const isPug = numId < 0 && !guildies.find(g => g.id === numId);
+    const isGuildie = numId < 0 && !!guildies.find(g => g.id === numId);
     const dimStyle = isAssigned ? 'opacity:0.35;cursor:pointer;' : 'cursor:pointer;';
-    const borderStyle = isPug ? 'border-style:dashed;' : '';
+    const borderStyle = isGuildie ? 'border-style:dotted;' : isPug ? 'border-style:dashed;' : '';
     const clickHandler = isAssigned ? `onclick="removeFromPool(${numId})"` : `onclick="quickAddToNextGroup(${numId})"`;
     const dragHandler = isAssigned ? '' : `ondragstart="onDragStart(event,${numId},-1,-1)"`;
     return `<div class="pool-player class-${cc}"
@@ -2340,7 +2360,9 @@ function renderPool() {
       title="${p.ms} ${p.class}"
       style="${dimStyle}${borderStyle}">
       <span class="class-dot" style="background:var(--${cc})"></span>
-      ${p.name}${isPug ? ` <span style="font-size:10px;color:var(--gold);font-weight:700;">PUG</span><button onclick="event.stopPropagation();removePug(${numId})" style="background:none;border:none;color:var(--red-bright);font-size:12px;cursor:pointer;padding:0 0 0 4px;line-height:1;opacity:0.7;" title="Remove pug">✕</button>` : ''}
+      ${p.name}
+      ${isPug ? `<span style="font-size:10px;color:var(--gold);font-weight:700;">PUG</span><button onclick="event.stopPropagation();removePug(${numId})" style="background:none;border:none;color:var(--red-bright);font-size:12px;cursor:pointer;padding:0 0 0 4px;line-height:1;opacity:0.7;" title="Remove">✕</button>` : ''}
+      ${isGuildie ? `<span style="font-size:10px;color:var(--teal);font-weight:700;">ALT</span><button onclick="event.stopPropagation();removeGuildie(${numId})" style="background:none;border:none;color:var(--red-bright);font-size:12px;cursor:pointer;padding:0 0 0 4px;line-height:1;opacity:0.7;" title="Remove">✕</button>` : ''}
     </div>`;
   }).join('');
 
@@ -2789,8 +2811,17 @@ function removePug(id) {
 }
 
 function clearPugs() {
-  groups = groups.map(g => g.filter(id => Number(id) >= 0));
+  // Remove pugs from groups (negative IDs not in guildies)
+  const guildieIds = new Set(guildies.map(g => g.id));
+  groups = groups.map(g => g.filter(id => Number(id) >= 0 || guildieIds.has(Number(id))));
   pugs = [];
+  renderBuilder();
+}
+
+function removeGuildie(id) {
+  id = Number(id);
+  groups = groups.map(g => g.filter(gid => Number(gid) !== id));
+  guildies = guildies.filter(g => Number(g.id) !== id);
   renderBuilder();
 }
 
@@ -2808,6 +2839,7 @@ function saveData() {
     guildInfo,
     pugs,
     nextPugId,
+    guildies,
     strats,
     nextStratId,
   };
@@ -2845,6 +2877,7 @@ function loadData(event) {
       }
       if (data.strats) strats = data.strats;
       if (data.nextStratId) nextStratId = data.nextStratId;
+      if (data.guildies) guildies = data.guildies;
       renderRoster();
       renderOverview();
       renderAttendance();
@@ -3033,7 +3066,7 @@ function renderStrats() {
   const sid = active ? active.id : 0;
 
   // All players available for slots
-  const allPlayers = [...getActiveRaiders(), ...pugs];
+  const allPlayers = [...roster, ...pugs];
   const assignedIds = new Set(Object.values(assigns).filter(v => typeof v === 'number'));
 
   // Render a player slot
@@ -3554,10 +3587,68 @@ async function saveToGitHub() {
 }
 
 // ======================================================
+// GUILDIE PICKER
+// ======================================================
+function openGuildieModal() {
+  document.getElementById('guildie-search').value = '';
+  renderGuildieList();
+  document.getElementById('guildie-modal-overlay').classList.add('open');
+  setTimeout(() => document.getElementById('guildie-search').focus(), 50);
+}
+
+function closeGuildieModal() {
+  document.getElementById('guildie-modal-overlay').classList.remove('open');
+}
+
+function renderGuildieList() {
+  const search = document.getElementById('guildie-search').value.toLowerCase();
+  const guildieIds = new Set(guildies.map(g => g.id));
+
+  // Show alts and casuals only
+  let players = roster.filter(p => p.status === 'Alt' || p.status === 'Casual');
+  if (search) players = players.filter(p => p.name.toLowerCase().includes(search));
+
+  const list = document.getElementById('guildie-list');
+  if (players.length === 0) {
+    list.innerHTML = '<div style="color:var(--text-dim);font-size:13px;padding:8px;">No players found.</div>';
+    return;
+  }
+
+  list.innerHTML = players.map(p => {
+    const cc = classColor(p.class);
+    const already = guildieIds.has(p.id);
+    return `<div onclick="${already ? '' : `addGuildie(${p.id})`}"
+      style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:3px;
+             border:1px solid var(--border);background:var(--bg-card);
+             ${already ? 'opacity:0.4;cursor:not-allowed;' : 'cursor:pointer;'}
+             transition:background 0.12s;"
+      onmouseover="if(!${already})this.style.background='var(--bg-hover)'"
+      onmouseout="this.style.background='var(--bg-card)'">
+      <span class="class-dot" style="background:var(--${cc});width:9px;height:9px;flex-shrink:0;border-radius:50%;"></span>
+      <span class="class-${cc}" style="font-weight:600;font-size:14px;">${p.name}</span>
+      <span style="font-size:12px;color:var(--text-dim);margin-left:4px;">${p.ms} ${p.class}</span>
+      <span style="font-size:11px;color:var(--text-dim);margin-left:auto;">${p.status}</span>
+      ${already ? '<span style="font-size:10px;color:var(--teal);">in pool</span>' : ''}
+    </div>`;
+  }).join('');
+}
+
+function addGuildie(id) {
+  const p = roster.find(r => r.id === id);
+  if (!p || guildies.find(g => g.id === id)) return;
+  // Use negative ID to not conflict with mains, offset from pugs
+  const tempId = -(1000 + id); // unique negative ID based on roster ID
+  guildies.push({ ...p, id: tempId, _rosterId: id });
+  closeGuildieModal();
+  renderBuilder();
+  showToast(`${p.name} added to pool.`);
+}
+
+// ======================================================
 // KEYBOARD
 // ======================================================
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') { closeModal(); closeConfirm(); closePugModal(); closeAssignPicker(); closeGitHubSettings(); }
+  if (e.key === 'Escape') { closeModal(); closeConfirm(); closePugModal(); closeAssignPicker(); closeGitHubSettings(); closeGuildieModal(); }
 });
 
 // ======================================================
@@ -3583,6 +3674,7 @@ async function initFromJson() {
     }
     if (data.strats) strats = data.strats;
     if (data.nextStratId) nextStratId = data.nextStratId;
+    if (data.guildies) guildies = data.guildies;
     showToast('📂 Loaded kaizen_data.json automatically.');
     console.log('Auto-loaded kaizen_data.json');
   } catch(err) {
