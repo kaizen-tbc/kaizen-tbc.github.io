@@ -807,6 +807,14 @@ tr:last-child td { border-bottom: none; }
 /* ===== SCROLLBAR ===== */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 
+/* ===== ASSIGNS COLLAPSE ===== */
+.assigns-section-header { display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none; }
+.assigns-section-header:hover { background:rgba(255,255,255,0.05); }
+.assigns-collapse-icon { font-size:10px;color:var(--text-dim);transition:transform 0.15s;flex-shrink:0; }
+.assigns-section.collapsed .assigns-collapse-icon { transform:rotate(-90deg); }
+.assigns-section.collapsed .assigns-section-body { display:none; }
+
+
 /* ===== ASSIGNS PANEL (read-only) ===== */
 .assigns-panel { display:flex;flex-direction:column;gap:10px;min-width:260px;max-width:300px;flex-shrink:0; }
 .assigns-section { background:var(--bg-panel);border:1px solid var(--border);border-radius:4px;overflow:hidden; }
@@ -2123,35 +2131,55 @@ function renderStrats() {
     <div class="assigns-panel">
       ${hasTanks ? `
       <div class="assigns-section">
-        <div class="assigns-section-header">🛡 Tanks</div>
+        <div class="assigns-section-header" onclick="toggleAssignSection(${active.id}, 'tanks')">
+          <span>🛡 Tanks</span><span class="assigns-collapse-icon">▼</span>
+        </div>
+        <div class="assigns-section-body">
         ${assigns.tank1_pid ? `<div class="assigns-tank-row"><div class="assigns-role-label">${assigns.tank1_role||'Tank'}</div><div class="assigns-player-ro">${roPlayer(assigns.tank1_pid)}</div></div>` : ''}
         ${assigns.tank2_pid ? `<div class="assigns-tank-row"><div class="assigns-role-label">${assigns.tank2_role||'OT'}</div><div class="assigns-player-ro">${roPlayer(assigns.tank2_pid)}</div></div>` : ''}
         ${assigns.tank3_pid ? `<div class="assigns-tank-row"><div class="assigns-role-label">${assigns.tank3_role||'OT2'}</div><div class="assigns-player-ro">${roPlayer(assigns.tank3_pid)}</div></div>` : ''}
+        </div>
       </div>` : ''}
       ${hasHeal ? `
       <div class="assigns-section">
-        <div class="assigns-section-header">✚ Healer Assigns</div>
+        <div class="assigns-section-header" onclick="toggleAssignSection(${active.id}, 'heals')">
+          <span>✚ Healer Assigns</span><span class="assigns-collapse-icon">▼</span>
+        </div>
+        <div class="assigns-section-body">
         ${assigns.heal1a_pid ? `<div class="assigns-arrow-row"><div class="assigns-player-ro">${roPlayer(assigns.heal1a_pid)}</div><span class="assigns-arrow">→</span><div class="assigns-player-ro">${roPlayer(assigns.heal1b_pid)}</div></div>` : ''}
         ${assigns.heal2a_pid ? `<div class="assigns-arrow-row"><div class="assigns-player-ro">${roPlayer(assigns.heal2a_pid)}</div><span class="assigns-arrow">→</span><div class="assigns-player-ro">${roPlayer(assigns.heal2b_pid)}</div></div>` : ''}
         ${assigns.heal3a_pid ? `<div class="assigns-arrow-row"><div class="assigns-player-ro">${roPlayer(assigns.heal3a_pid)}</div><span class="assigns-arrow">→</span><div class="assigns-player-ro">${roPlayer(assigns.heal3b_pid)}</div></div>` : ''}
         ${assigns.heal4a_pid ? `<div class="assigns-arrow-row"><div class="assigns-player-ro">${roPlayer(assigns.heal4a_pid)}</div><span class="assigns-arrow">→</span><div class="assigns-player-ro">${roPlayer(assigns.heal4b_pid)}</div></div>` : ''}
+        </div>
       </div>` : ''}
       ${hasMd ? `
       <div class="assigns-section">
-        <div class="assigns-section-header">🏹 Misdirection</div>
+        <div class="assigns-section-header" onclick="toggleAssignSection(${active.id}, 'md')">
+          <span>🏹 Misdirection</span><span class="assigns-collapse-icon">▼</span>
+        </div>
+        <div class="assigns-section-body">
         ${assigns.md1a_pid ? `<div class="assigns-arrow-row"><div class="assigns-player-ro">${roPlayer(assigns.md1a_pid)}</div><span class="assigns-arrow">→</span><div class="assigns-player-ro">${roPlayer(assigns.md1b_pid)}</div></div>` : ''}
         ${assigns.md2a_pid ? `<div class="assigns-arrow-row"><div class="assigns-player-ro">${roPlayer(assigns.md2a_pid)}</div><span class="assigns-arrow">→</span><div class="assigns-player-ro">${roPlayer(assigns.md2b_pid)}</div></div>` : ''}
+        </div>
       </div>` : ''}
       ${assigns.lust_timing ? `
       <div class="assigns-section">
-        <div class="assigns-section-header">🔊 Lust / Drums</div>
+        <div class="assigns-section-header" onclick="toggleAssignSection(${active.id}, 'lust')">
+          <span>🔊 Lust / Drums</span><span class="assigns-collapse-icon">▼</span>
+        </div>
+        <div class="assigns-section-body">
         <div class="assigns-text-field"><div class="assigns-text-label">Timing</div><div class="assigns-text-value">${assigns.lust_timing}</div></div>
         ${assigns.lust_notes ? `<div class="assigns-text-field"><div class="assigns-text-label">Notes</div><div class="assigns-text-value">${assigns.lust_notes}</div></div>` : ''}
+        </div>
       </div>` : ''}
       ${assigns.notes ? `
       <div class="assigns-section">
-        <div class="assigns-section-header">📋 Strategy Notes</div>
+        <div class="assigns-section-header" onclick="toggleAssignSection(${active.id}, 'notes')">
+          <span>📋 Strategy Notes</span><span class="assigns-collapse-icon">▼</span>
+        </div>
+        <div class="assigns-section-body">
         <div class="assigns-notes-ro">${assigns.notes}</div>
+        </div>
       </div>` : ''}
     </div>` : '';
 
@@ -2184,6 +2212,17 @@ window.addEventListener('hashchange', () => {
   const valid = ['overview', 'roster', 'builder', 'attendance', 'strats'];
   if (hash && valid.includes(hash)) showTab(hash, false);
 });
+
+// Collapse state for assigns (UI only)
+const _assignCollapsed = {};
+function toggleAssignSection(stratId, section) {
+  const key = stratId + '-' + section;
+  _assignCollapsed[key] = !_assignCollapsed[key];
+  renderStrats();
+}
+function isCollapsed(stratId, section) {
+  return !!_assignCollapsed[stratId + '-' + section];
+}
 
 // ======================================================
 // KEYBOARD

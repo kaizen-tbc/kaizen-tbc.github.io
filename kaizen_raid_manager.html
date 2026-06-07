@@ -807,6 +807,25 @@ tr:last-child td { border-bottom: none; }
 /* ===== SCROLLBAR ===== */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 
+/* ===== ASSIGNS COLLAPSE ===== */
+.assigns-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  user-select: none;
+}
+.assigns-section-header:hover { background: rgba(255,255,255,0.05); }
+.assigns-collapse-icon {
+  font-size: 10px;
+  color: var(--text-dim);
+  transition: transform 0.15s;
+  flex-shrink: 0;
+}
+.assigns-section.collapsed .assigns-collapse-icon { transform: rotate(-90deg); }
+.assigns-section.collapsed .assigns-section-body { display: none; }
+
+
 /* ===== ASSIGNS PANEL ===== */
 .assigns-panel {
   display: flex;
@@ -3128,8 +3147,11 @@ function renderStrats() {
 
   const assignsPanel = active ? `
     <div class="assigns-panel">
-      <div class="assigns-section">
-        <div class="assigns-section-header">🛡 Tanks</div>
+      <div class="assigns-section ${isCollapsed(sid, 'tanks') ? 'collapsed' : ''}">
+        <div class="assigns-section-header" onclick="toggleAssignSection(${sid}, 'tanks')">
+          <span>🛡 Tanks</span><span class="assigns-collapse-icon">▼</span>
+        </div>
+        <div class="assigns-section-body">
         <div class="assigns-tank-row">
           ${roleInput('tank1_role','MT / role...')}
           ${playerSlot('tank1_pid')}
@@ -3142,21 +3164,33 @@ function renderStrats() {
           ${roleInput('tank3_role','OT2 / role...')}
           ${playerSlot('tank3_pid')}
         </div>
+        </div>
       </div>
-      <div class="assigns-section">
-        <div class="assigns-section-header">✚ Healer Assigns</div>
+      <div class="assigns-section ${isCollapsed(sid, 'heals') ? 'collapsed' : ''}">
+        <div class="assigns-section-header" onclick="toggleAssignSection(${sid}, 'heals')">
+          <span>✚ Healer Assigns</span><span class="assigns-collapse-icon">▼</span>
+        </div>
+        <div class="assigns-section-body">
         <div class="assigns-arrow-row">${playerSlot('heal1a_pid')}<span class="assigns-arrow">→</span>${playerSlot('heal1b_pid')}</div>
         <div class="assigns-arrow-row">${playerSlot('heal2a_pid')}<span class="assigns-arrow">→</span>${playerSlot('heal2b_pid')}</div>
         <div class="assigns-arrow-row">${playerSlot('heal3a_pid')}<span class="assigns-arrow">→</span>${playerSlot('heal3b_pid')}</div>
         <div class="assigns-arrow-row">${playerSlot('heal4a_pid')}<span class="assigns-arrow">→</span>${playerSlot('heal4b_pid')}</div>
+        </div>
       </div>
-      <div class="assigns-section">
-        <div class="assigns-section-header">🏹 Misdirection</div>
+      <div class="assigns-section ${isCollapsed(sid, 'md') ? 'collapsed' : ''}">
+        <div class="assigns-section-header" onclick="toggleAssignSection(${sid}, 'md')">
+          <span>🏹 Misdirection</span><span class="assigns-collapse-icon">▼</span>
+        </div>
+        <div class="assigns-section-body">
         <div class="assigns-arrow-row">${playerSlot('md1a_pid')}<span class="assigns-arrow">→</span>${playerSlot('md1b_pid')}</div>
         <div class="assigns-arrow-row">${playerSlot('md2a_pid')}<span class="assigns-arrow">→</span>${playerSlot('md2b_pid')}</div>
+        </div>
       </div>
-      <div class="assigns-section">
-        <div class="assigns-section-header">🔊 Lust / Drums</div>
+      <div class="assigns-section ${isCollapsed(sid, 'lust') ? 'collapsed' : ''}">
+        <div class="assigns-section-header" onclick="toggleAssignSection(${sid}, 'lust')">
+          <span>🔊 Lust / Drums</span><span class="assigns-collapse-icon">▼</span>
+        </div>
+        <div class="assigns-section-body">
         <div class="assigns-text-field">
           <div class="assigns-text-label">Timing</div>
           <input class="assigns-text-input" value="${(assigns.lust_timing||'').replace(/"/g,'&quot;')}" placeholder="e.g. On pull" onchange="updateAssignField(${sid},'lust_timing',this.value)">
@@ -3165,10 +3199,16 @@ function renderStrats() {
           <div class="assigns-text-label">Notes</div>
           <input class="assigns-text-input" value="${(assigns.lust_notes||'').replace(/"/g,'&quot;')}" placeholder="Notes..." onchange="updateAssignField(${sid},'lust_notes',this.value)">
         </div>
+        </div>
+        </div>
       </div>
-      <div class="assigns-section">
-        <div class="assigns-section-header">📋 Strategy Notes</div>
+      <div class="assigns-section ${isCollapsed(sid, 'notes') ? 'collapsed' : ''}">
+        <div class="assigns-section-header" onclick="toggleAssignSection(${sid}, 'notes')">
+          <span>📋 Strategy Notes</span><span class="assigns-collapse-icon">▼</span>
+        </div>
+        <div class="assigns-section-body">
         <textarea class="assigns-textarea" placeholder="Key notes, reminders, kill order..." onchange="updateAssignField(${sid},'notes',this.value)">${assigns.notes||''}</textarea>
+        </div>
       </div>
     </div>` : '';
 
@@ -3214,6 +3254,19 @@ function setActiveStat(id) {
 
 // ── Assign interaction ──────────────────────────────────────
 let dragAssignPid = null;
+
+// Collapse state — UI only, not saved to JSON
+const _assignCollapsed = {}; // key: stratId + '-' + section
+
+function toggleAssignSection(stratId, section) {
+  const key = stratId + '-' + section;
+  _assignCollapsed[key] = !_assignCollapsed[key];
+  renderStrats();
+}
+
+function isCollapsed(stratId, section) {
+  return !!_assignCollapsed[stratId + '-' + section];
+}
 
 function updateAssignField(stratId, field, value) {
   const strat = strats.find(s => s.id === stratId);
