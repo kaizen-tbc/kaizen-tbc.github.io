@@ -3661,9 +3661,9 @@ function renderGuildieList() {
 
 function addGuildie(id) {
   const p = roster.find(r => r.id === id);
-  if (!p || guildies.find(g => g.id === id)) return;
-  // Use negative ID to not conflict with mains, offset from pugs
-  const tempId = -(1000 + id); // unique negative ID based on roster ID
+  if (!p) return;
+  const tempId = -(1000 + id);
+  if (guildies.find(g => g.id === tempId)) return; // already added
   guildies.push({ ...p, id: tempId, _rosterId: id });
   closeGuildieModal();
   renderBuilder();
