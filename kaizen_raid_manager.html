@@ -3560,7 +3560,7 @@ async function saveToGitHub() {
   const payload = {
     version: 2,
     savedAt: new Date().toISOString(),
-    roster, groups, attendance, nextId, guildInfo, pugs, nextPugId, strats, nextStratId,
+    roster, groups, attendance, nextId, guildInfo, pugs, nextPugId, guildies, strats, nextStratId,
   };
 
   const jsonContent = JSON.stringify(payload, null, 2);
