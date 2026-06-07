@@ -1445,6 +1445,7 @@ let strats = [];
 let nextStratId = 1;
 let pugs = [];
 let nextPugId = -1;
+let guildies = [];
 
 // Attendance: weeks array, each week = { label, data: {name: state} }
 let attendance = [];
@@ -1725,7 +1726,7 @@ function renderBuilder() {
 }
 
 function getPlayerById(id) {
-  if (id < 0) return pugs.find(p => p.id === id);
+  if (id < 0) return guildies.find(g => g.id === id) || pugs.find(p => p.id === id);
   return roster.find(r => r.id === id);
 }
 
@@ -2207,6 +2208,7 @@ async function loadFromServer() {
     if (data.guildInfo) guildInfo = { ...guildInfo, ...data.guildInfo };
     if (data.pugs) pugs = data.pugs;
     if (data.nextPugId) nextPugId = data.nextPugId;
+    if (data.guildies) guildies = data.guildies;
     if (data.strats) strats = data.strats;
     if (data.nextStratId) nextStratId = data.nextStratId;
     console.log('Kaizen data loaded successfully');
