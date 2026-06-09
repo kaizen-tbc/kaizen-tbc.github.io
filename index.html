@@ -2213,6 +2213,21 @@ function toggleAssignSection(stratId, section) {
   _assignCollapsed[key] = !_assignCollapsed[key];
   renderStrats();
 }
+
+function collapseAllSections(stratId) {
+  const strat = strats.find(s => s.id === stratId);
+  if (!strat || !strat.sections) return;
+  strat.sections.forEach(s => { _assignCollapsed[stratId + '-sec-' + s.id] = true; });
+  renderStrats();
+}
+
+function expandAllSections(stratId) {
+  const strat = strats.find(s => s.id === stratId);
+  if (!strat || !strat.sections) return;
+  strat.sections.forEach(s => { _assignCollapsed[stratId + '-sec-' + s.id] = false; });
+  renderStrats();
+}
+
 function isCollapsed(stratId, section) {
   return !!_assignCollapsed[stratId + '-' + section];
 }
