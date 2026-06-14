@@ -2442,12 +2442,25 @@ document.addEventListener('keydown', e => {
 // ======================================================
 // FETCH DATA FROM kaizen_data.json
 // ======================================================
+async function fetchWithRetry(url, retries = 4, delayMs = 2000) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      return data;
+    } catch(err) {
+      console.warn(`Fetch attempt ${i + 1} failed:`, err.message);
+      if (i < retries - 1) await new Promise(r => setTimeout(r, delayMs));
+    }
+  }
+  throw new Error('All fetch attempts failed');
+}
+
 async function loadFromServer() {
   try {
     const base = window.location.href.replace(/\/[^\/]*$/, '/');
-    const res = await fetch(base + 'kaizen_data.json?v=' + Date.now());
-    if (!res.ok) throw new Error('No data file found');
-    const data = await res.json();
+    const data = await fetchWithRetry(base + 'kaizen_data.json?v=' + Date.now());
     if (data.roster) roster = data.roster;
     if (data.groups) groups = data.groups;
     if (data.attendance) attendance = data.attendance;
@@ -2460,7 +2473,7 @@ async function loadFromServer() {
     if (data.nextStratId) nextStratId = data.nextStratId;
     console.log('Kaizen data loaded successfully');
   } catch(err) {
-    console.warn('Could not load kaizen_data.json:', err);
+    console.warn('Could not load kaizen_data.json after retries:', err);
   }
 
   // Render everything now that data is loaded
@@ -2472,7 +2485,6 @@ async function loadFromServer() {
   // Jump to hash tab after data loads
   const hash = window.location.hash.replace('#', '');
   if (hash) applyHash(hash, false);
-
 }
 
 // On load, check URL hash and open matching tab
