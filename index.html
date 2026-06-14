@@ -1733,9 +1733,6 @@ function showTab(tab, updateHash = true) {
   if (tab === 'roster') renderRoster();
   if (tab === 'builder') renderBuilder();
   if (tab === 'attendance') renderAttendance();
-
-  // Hide skeleton after render — use rAF to ensure DOM has updated
-  requestAnimationFrame(() => hideSkeleton());
 }
 
 // Raid slug map
@@ -2530,7 +2527,7 @@ async function fetchWithRetry(url, retries = 4, delayMs = 2000) {
 
 async function loadFromServer() {
   try {
-    const base = window.location.href.replace(/\/[^\/]*$/, '/');
+    const base = window.location.origin + window.location.pathname.replace(/[^\/]*$/, '');
     const data = await fetchWithRetry(base + 'kaizen_data.json?v=' + Date.now());
     if (data.roster) roster = data.roster;
     if (data.groups) groups = data.groups;
@@ -2560,16 +2557,8 @@ async function loadFromServer() {
   } else {
     showTab('overview', false);
   }
-  // Safety re-render after paint to handle any timing edge cases
-  setTimeout(() => {
-    const activeTab = document.querySelector('.tab-panel.active');
-    if (activeTab) {
-      const tabId = activeTab.id.replace('tab-', '');
-      if (tabId === 'strats') renderStrats();
-      else if (tabId === 'overview') renderOverview();
-    }
-    hideSkeleton();
-  }, 100);
+  // All done — hide skeleton and reveal content
+  hideSkeleton();
 }
 
 // On load, check URL hash and open matching tab
