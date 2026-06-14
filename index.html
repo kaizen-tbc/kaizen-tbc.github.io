@@ -1730,6 +1730,11 @@ function showTab(tab, updateHash = true) {
       history.replaceState(null, '', window.location.pathname);
     }
   }
+  // Always ensure content divs are visible when switching tabs
+  const ov = document.getElementById('overview-content');
+  const st = document.getElementById('strats-content');
+  if (ov) ov.style.display = tab === 'overview' ? 'block' : 'none';
+  if (st) st.style.display = tab === 'strats' ? 'block' : 'none';
   if (tab === 'overview') renderOverview();
   if (tab === 'strats') renderStrats();
   if (tab === 'roster') renderRoster();
