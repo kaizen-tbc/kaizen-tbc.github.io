@@ -1724,8 +1724,10 @@ function showTab(tab, updateHash = true) {
   if (updateHash) {
     if (tab === 'strats' && activeRaid) {
       window.location.hash = 'strats/' + raidToSlug(activeRaid);
-    } else {
+    } else if (tab !== 'overview') {
       window.location.hash = tab;
+    } else {
+      history.replaceState(null, '', window.location.pathname);
     }
   }
   if (tab === 'overview') renderOverview();
