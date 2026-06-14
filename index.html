@@ -807,6 +807,75 @@ tr:last-child td { border-bottom: none; }
 /* ===== SCROLLBAR ===== */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 
+/* ===== LOADING SPINNER (fallback) ===== */
+.spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid var(--border);
+  border-top-color: var(--gold);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ===== SKELETON LOADER ===== */
+.skeleton-wrap {
+  display: none;
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.skeleton-wrap.active { display: block; }
+
+@keyframes shimmer {
+  0% { background-position: -600px 0; }
+  100% { background-position: 600px 0; }
+}
+.skel {
+  background: linear-gradient(90deg, var(--bg-panel) 25%, var(--bg-card) 50%, var(--bg-panel) 75%);
+  background-size: 600px 100%;
+  animation: shimmer 1.4s infinite linear;
+  border-radius: 3px;
+}
+.skel-line { height: 14px; margin-bottom: 10px; }
+.skel-line.short { width: 40%; }
+.skel-line.med { width: 65%; }
+.skel-line.full { width: 100%; }
+.skel-block { border-radius: 4px; }
+.skel-title { height: 20px; width: 200px; margin-bottom: 20px; }
+
+/* Overview skeleton */
+.skel-overview-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.skel-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 16px;
+}
+.skel-card-header { height: 16px; width: 120px; margin-bottom: 14px; }
+.skel-row { display: flex; gap: 10px; margin-bottom: 8px; align-items: center; }
+.skel-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.skel-badge { height: 20px; width: 60px; border-radius: 10px; }
+
+/* Strats skeleton */
+.skel-strats-pills { display: flex; gap: 8px; margin-bottom: 16px; }
+.skel-pill { height: 28px; width: 120px; border-radius: 14px; }
+.skel-tabs { display: flex; gap: 4px; margin-bottom: 16px; }
+.skel-tab { height: 32px; width: 90px; border-radius: 3px; }
+.skel-strats-body { display: flex; gap: 16px; }
+.skel-image { flex: 1; height: 400px; border-radius: 4px; }
+.skel-assigns { width: 300px; flex-shrink: 0; display: flex; flex-direction: column; gap: 10px; }
+.skel-assign-card { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 4px; padding: 12px; }
+.skel-assign-header { height: 12px; width: 80px; margin-bottom: 10px; }
+.skel-assign-row { display: flex; gap: 8px; margin-bottom: 6px; }
+.skel-assign-slot { height: 26px; flex: 1; border-radius: 3px; }
+
 /* ===== ASSIGNS READ-ONLY ===== */
 .assigns-panel { display:flex;flex-direction:column;gap:10px;min-width:260px;max-width:300px;flex-shrink:0; }
 .assigns-section { background:var(--bg-panel);border:1px solid var(--border);border-radius:4px;overflow:hidden; }
@@ -1153,6 +1222,83 @@ a[href] > div > div[style*="line-height:1.6"] {
 
 <main>
 
+<!-- Overview skeleton -->
+<div class="skeleton-wrap" id="skel-overview">
+  <div class="skel skel-title"></div>
+  <div class="skel-overview-grid">
+    <div class="skel-card">
+      <div class="skel skel-card-header"></div>
+      <div class="skel-row"><div class="skel skel-dot"></div><div class="skel skel-line med"></div></div>
+      <div class="skel-row"><div class="skel skel-dot"></div><div class="skel skel-line short"></div></div>
+      <div class="skel-row"><div class="skel skel-dot"></div><div class="skel skel-line med"></div></div>
+      <div class="skel-row"><div class="skel skel-dot"></div><div class="skel skel-line short"></div></div>
+    </div>
+    <div class="skel-card">
+      <div class="skel skel-card-header"></div>
+      <div class="skel-row"><div class="skel skel-line full"></div></div>
+      <div class="skel-row"><div class="skel skel-line med"></div></div>
+      <div class="skel-row"><div class="skel skel-line full"></div></div>
+    </div>
+    <div class="skel-card">
+      <div class="skel skel-card-header"></div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        <div class="skel skel-badge"></div>
+        <div class="skel skel-badge"></div>
+        <div class="skel skel-badge"></div>
+        <div class="skel skel-badge"></div>
+        <div class="skel skel-badge"></div>
+      </div>
+    </div>
+    <div class="skel-card">
+      <div class="skel skel-card-header"></div>
+      <div class="skel-row"><div class="skel skel-line med"></div></div>
+      <div class="skel-row"><div class="skel skel-line short"></div></div>
+      <div class="skel-row"><div class="skel skel-line full"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- Strats skeleton -->
+<div class="skeleton-wrap" id="skel-strats">
+  <div class="skel-strats-pills">
+    <div class="skel skel-pill"></div>
+    <div class="skel skel-pill"></div>
+    <div class="skel skel-pill" style="width:160px;"></div>
+  </div>
+  <div class="skel-tabs">
+    <div class="skel skel-tab"></div>
+    <div class="skel skel-tab"></div>
+    <div class="skel skel-tab"></div>
+    <div class="skel skel-tab"></div>
+    <div class="skel skel-tab"></div>
+  </div>
+  <div class="skel-strats-body">
+    <div class="skel skel-block skel-image"></div>
+    <div class="skel-assigns">
+      <div class="skel-assign-card">
+        <div class="skel skel-assign-header"></div>
+        <div class="skel-assign-row"><div class="skel skel-assign-slot"></div><div class="skel skel-assign-slot"></div></div>
+        <div class="skel-assign-row"><div class="skel skel-assign-slot"></div><div class="skel skel-assign-slot"></div></div>
+        <div class="skel-assign-row"><div class="skel skel-assign-slot"></div><div class="skel skel-assign-slot"></div></div>
+      </div>
+      <div class="skel-assign-card">
+        <div class="skel skel-assign-header"></div>
+        <div class="skel-assign-row"><div class="skel skel-assign-slot"></div><div class="skel skel-assign-slot"></div></div>
+        <div class="skel-assign-row"><div class="skel skel-assign-slot"></div><div class="skel skel-assign-slot"></div></div>
+      </div>
+      <div class="skel-assign-card">
+        <div class="skel skel-assign-header"></div>
+        <div class="skel-assign-row"><div class="skel skel-assign-slot" style="height:60px;"></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Generic spinner for other tabs -->
+<div id="skel-spinner" style="display:none;padding:60px;text-align:center;">
+  <div class="spinner"></div>
+</div>
+
 <!-- ==================== OVERVIEW TAB ==================== -->
 <div class="tab-panel active" id="tab-overview">
 
@@ -1481,6 +1627,21 @@ const ATT_CLASS = { present: 'present', absent: 'absent', excused: 'excused' };
 // ======================================================
 // TAB NAVIGATION
 // ======================================================
+function showSkeleton(tab) {
+  document.getElementById('skel-overview').classList.remove('active');
+  document.getElementById('skel-strats').classList.remove('active');
+  document.getElementById('skel-spinner').style.display = 'none';
+  if (tab === 'overview') document.getElementById('skel-overview').classList.add('active');
+  else if (tab === 'strats') document.getElementById('skel-strats').classList.add('active');
+  else document.getElementById('skel-spinner').style.display = 'block';
+}
+
+function hideSkeleton() {
+  document.getElementById('skel-overview').classList.remove('active');
+  document.getElementById('skel-strats').classList.remove('active');
+  document.getElementById('skel-spinner').style.display = 'none';
+}
+
 function showTab(tab, updateHash = true) {
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
@@ -2214,7 +2375,7 @@ function renderStrats() {
       <div class="strat-tabs">${tabs}</div>
       <div style="display:flex;gap:16px;align-items:flex-start;">
         <div style="flex:1;min-width:0;">
-          ${active ? `<img src="${active.image}" alt="${active.name}" style="max-width:100%;max-height:70vh;border-radius:3px;object-fit:contain;">` : ''}
+          ${active ? `<img src="${active.image}" alt="${active.name}" style="max-width:100%;max-height:70vh;border-radius:3px;object-fit:contain;" onload="hideSkeleton()">` : ''}
         </div>
         ${assignsPanel}
       </div>` : ''}`;
@@ -2308,12 +2469,18 @@ async function loadFromServer() {
   // Jump to hash tab after data loads
   const hash = window.location.hash.replace('#', '');
   if (hash) applyHash(hash, false);
+
+  // Hide skeleton
+  hideSkeleton();
 }
 
 // On load, check URL hash and open matching tab
 (function() {
   const hash = window.location.hash.replace('#', '');
   if (hash) window._initialHash = hash;
+  // Show appropriate skeleton immediately
+  const tab = (hash || '').split('/')[0] || 'overview';
+  showSkeleton(tab);
 })();
 
 loadFromServer();
