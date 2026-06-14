@@ -1662,6 +1662,9 @@ function showTab(tab, updateHash = true) {
   if (tab === 'roster') renderRoster();
   if (tab === 'builder') renderBuilder();
   if (tab === 'attendance') renderAttendance();
+
+  // Hide skeleton after render — use rAF to ensure DOM has updated
+  requestAnimationFrame(() => hideSkeleton());
 }
 
 // Raid slug map
@@ -2375,7 +2378,7 @@ function renderStrats() {
       <div class="strat-tabs">${tabs}</div>
       <div style="display:flex;gap:16px;align-items:flex-start;">
         <div style="flex:1;min-width:0;">
-          ${active ? `<img src="${active.image}" alt="${active.name}" style="max-width:100%;max-height:70vh;border-radius:3px;object-fit:contain;" onload="hideSkeleton()">` : ''}
+          ${active ? `<img src="${active.image}" alt="${active.name}" style="max-width:100%;max-height:70vh;border-radius:3px;object-fit:contain;" >` : ''}
         </div>
         ${assignsPanel}
       </div>` : ''}`;
@@ -2470,8 +2473,6 @@ async function loadFromServer() {
   const hash = window.location.hash.replace('#', '');
   if (hash) applyHash(hash, false);
 
-  // Hide skeleton
-  hideSkeleton();
 }
 
 // On load, check URL hash and open matching tab
