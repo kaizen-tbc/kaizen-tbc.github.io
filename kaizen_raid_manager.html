@@ -1656,6 +1656,15 @@ a[href] > div > div[style*="line-height:1.6"] {
     </div>
   </div>
 
+  <!-- PROGRESSION -->
+  <div class="card" style="margin-bottom:20px;padding:20px 24px;">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px;">
+      <div style="font-family:'Fraunces',serif;font-weight:600;font-size:16px;color:var(--gold);">Progression</div>
+      <span style="font-size:11px;color:var(--text-dim);">Click a number to edit</span>
+    </div>
+    <div id="ov-progression" style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;"></div>
+  </div>
+
   <!-- RAID SCHEDULE + RECRUITMENT -->
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
 
@@ -2274,6 +2283,14 @@ let guildInfo = {
   ],
   recruitment: "We are actively building our 25-man roster and looking for reliable, raid-ready players.<br><br>Current loot system:<br><strong style='color:var(--gold);font-size:14px;'>2 Soft Reserves · MS &gt; OS + 1</strong><br><br>All specs considered — reach out on Discord if you're interested in running with us.",
   lootRules: "<strong style='color:var(--text-bright)'>2 Soft Reserves (SR)</strong> — each raider may reserve up to 2 items per raid week.<br><strong style='color:var(--text-bright)'>MS > OS</strong> — main spec rolls beat off spec rolls on all items.<br><strong style='color:var(--text-bright)'>+1 Rule</strong> — once you win a main spec item, you go to the back of the line for subsequent drops that night.",
+  progression: [
+    { label: 'Karazhan', killed: 10, total: 10 },
+    { label: "Gruul's / Magtheridon", killed: 3, total: 3 },
+    { label: 'SSC / TK', killed: 10, total: 10 },
+    { label: 'Black Temple / Hyjal', killed: 0, total: 14 },
+    { label: 'Zul\'Aman', killed: 0, total: 6 },
+    { label: 'Sunwell Plateau', killed: 0, total: 6 },
+  ],
 };
 
 // Preset roster from guild screenshots + Excel data
@@ -3255,10 +3272,41 @@ function renderActiveRosterSubTab() {
 // ======================================================
 // OVERVIEW
 // ======================================================
+function updateProgressionKilled(index, val) {
+  const p = guildInfo.progression[index];
+  if (!p) return;
+  const n = Math.max(0, Math.min(p.total, parseInt(val || '0', 10)));
+  p.killed = n;
+  renderOverview();
+}
+
 function renderOverview() {
   // About
   const aboutEl = document.getElementById('ov-about');
   if (aboutEl) aboutEl.innerHTML = guildInfo.about;
+
+  // Progression (editable: click killed count to adjust)
+  const progEl = document.getElementById('ov-progression');
+  if (progEl && guildInfo.progression) {
+    progEl.innerHTML = guildInfo.progression.map((p, i) => {
+      const pct = p.total > 0 ? Math.round((p.killed / p.total) * 100) : 0;
+      const cleared = p.killed >= p.total && p.total > 0;
+      const inactive = p.killed === 0;
+      return `<div style="${inactive ? 'opacity:0.7;' : ''}">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;">
+          <span style="font-size:13px;font-weight:600;color:${cleared ? 'var(--gold)' : 'var(--text-bright)'};">${p.label}</span>
+          <span style="display:flex;align-items:center;gap:3px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--text-dim);">
+            <input type="number" min="0" max="${p.total}" value="${p.killed}" onchange="updateProgressionKilled(${i}, this.value)"
+              style="width:42px;background:var(--bg-deep);border:1px solid var(--border-bright);color:var(--text-bright);border-radius:3px;padding:2px 2px 2px 6px;font-family:'IBM Plex Mono',monospace;font-size:12px;text-align:left;">
+            <span>/ ${p.total}</span>
+          </span>
+        </div>
+        <div style="height:7px;border-radius:4px;background:var(--border);overflow:hidden;">
+          <div style="width:${inactive ? '0' : pct}%;height:100%;background:${cleared ? 'var(--gold)' : 'var(--teal)'};transition:width 0.3s;"></div>
+        </div>
+      </div>`;
+    }).join('');
+  }
 
   // Schedule
   const schedEl = document.getElementById('ov-schedule');
