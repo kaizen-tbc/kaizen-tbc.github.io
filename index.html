@@ -201,7 +201,7 @@ main {
 .bench-pool-card { background: var(--bg-panel); border: 1px solid var(--border); border-left: 4px solid var(--c, var(--gold)); border-radius: 6px; padding: 18px 18px 14px; }
 .bench-pool-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
 .bench-pool-head h3 { font-family: 'Fraunces', serif; font-weight: 600; font-size: 19px; margin: 0; color: var(--c, var(--text-bright)); }
-.bench-row { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 10px; padding: 7px 4px; border-radius: 4px; }
+.bench-row { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 10px; padding: 7px 4px; border-radius: 4px; }
 .bench-row:hover { background: var(--bg-hover); }
 .bench-name { font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
 .bench-rate-text { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--text-dim); }
@@ -1799,8 +1799,8 @@ function renderBenchReadOnlyRow(entry) {
     <div class="bench-name">
       <span class="class-dot" style="background:var(--${cc});width:7px;height:7px;flex-shrink:0;"></span>
       <span class="class-${cc}">${p.name}</span>
-      <span style="font-size:11px;color:var(--text-dim);">${p.ms || ''}</span>
     </div>
+    <div style="font-size:11px;color:var(--text-dim);text-align:right;">${p.ms || ''}</div>
     ${benchedCount > 0 ? `<div class="bench-rate-text">Benched ${benchedCount}x</div>` : '<div></div>'}
   </div>`;
 }
