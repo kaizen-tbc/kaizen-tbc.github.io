@@ -1635,7 +1635,27 @@ a[href] > div > div[style*="line-height:1.6"] {
   padding: 8px 4px;
 }
 
-/* ===== INLINE OVERVIEW EDITING ===== */
+/* ===== RICH TEXT EDITOR ===== */
+.rte-wrap { border: 1px solid var(--border); border-radius: 4px; overflow: hidden; }
+.rte-tabs { display: flex; background: var(--bg-deep); border-bottom: 1px solid var(--border); }
+.rte-tab { padding: 6px 12px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; cursor: pointer; color: var(--text-dim); border: none; background: none; transition: all 0.12s; }
+.rte-tab.active { color: var(--gold); border-bottom: 2px solid var(--gold); margin-bottom: -1px; }
+.rte-toolbar { display: flex; gap: 2px; padding: 6px 8px; background: var(--bg-panel); border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.rte-btn { background: none; border: 1px solid transparent; color: var(--text-dim); border-radius: 3px; padding: 3px 7px; font-size: 12px; cursor: pointer; font-family: inherit; transition: all 0.1s; line-height: 1.4; }
+.rte-btn:hover { background: var(--bg-hover); border-color: var(--border-bright); color: var(--text-bright); }
+.rte-btn.active { background: rgba(201,162,39,0.12); border-color: var(--gold-dim); color: var(--gold); }
+.rte-editor { min-height: 80px; padding: 10px 12px; font-size: 14px; color: var(--text-bright); line-height: 1.7; outline: none; background: var(--bg-deep); }
+.rte-editor:focus { background: rgba(255,255,255,0.02); }
+.rte-html { min-height: 80px; padding: 10px 12px; font-size: 12px; color: var(--text-mid); line-height: 1.7; background: var(--bg-deep); border: none; width: 100%; box-sizing: border-box; font-family: 'IBM Plex Mono', monospace; resize: vertical; outline: none; }
+.rte-html:focus { color: var(--text-bright); }
+
+/* ===== TOOL CARD EDITOR ===== */
+.tool-card-rm { display: none; position: absolute; top: 6px; right: 6px; background: none; border: none; color: var(--red-bright); cursor: pointer; font-size: 13px; padding: 0 4px; }
+.tool-card:hover .tool-card-rm { display: block; }
+.color-swatches { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.color-swatch { width: 22px; height: 22px; border-radius: 4px; cursor: pointer; border: 2px solid transparent; transition: all 0.12s; flex-shrink: 0; }
+.color-swatch.selected, .color-swatch:hover { border-color: white; transform: scale(1.1); }
+
 .ov-inline-input {
   background: transparent;
   border: none;
@@ -1764,24 +1784,11 @@ a[href] > div > div[style*="line-height:1.6"] {
           <div id="ov-loot-rules" style="font-size:15px;color:var(--text-mid);line-height:1.8;"></div>
         </div>
         <div style="border-top:1px solid var(--border);padding-top:12px;">
-          <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-dim);font-weight:600;margin-bottom:8px;">Tools We Use</div>
-          <div style="display:flex;flex-direction:column;gap:8px;">
-            <a href="https://thatsmybis.com" target="_blank" class="tool-card" onmouseover="this.style.borderColor='var(--gold-dim)'" onmouseout="this.style.borderColor='var(--border-bright)'">
-              <div class="tool-card-body"><div class="tool-card-name" style="color:var(--gold);">That's My BIS</div><div class="tool-card-desc">Raiders pre-list their BIS items by priority. When loot drops, loot council can instantly see who has it highest on their list, making decisions fast and transparent. Sign up at thatsmybis.com with your Discord account.</div>
-              </div>
-              <span class="tool-card-link">↗ thatsmybis.com</span>
-            </a>
-            <a href="https://www.curseforge.com/wow/addons/gargul" target="_blank" class="tool-card" onmouseover="this.style.borderColor='var(--teal-dim)'" onmouseout="this.style.borderColor='var(--border-bright)'">
-              <div class="tool-card-body"><div class="tool-card-name" style="color:var(--teal);">Gargul</div><div class="tool-card-desc">In-game addon used by the loot master to manage rolls, track MS/OS, and distribute loot cleanly. Integrates directly with TMB. Install via CurseForge — only the loot master strictly needs it, but raiders benefit from having it too.</div>
-              </div>
-              <span class="tool-card-link">↗ CurseForge</span>
-            </a>
-            <a href="https://www.curseforge.com/wow/addons/method-raid-tools" target="_blank" class="tool-card" onmouseover="this.style.borderColor='var(--purple, #8e44ad)'" onmouseout="this.style.borderColor='var(--border-bright)'">
-              <div class="tool-card-body"><div class="tool-card-name" style="color:var(--purple, #9b59b6);">Method Raid Tools</div><div class="tool-card-desc">Essential raid leader addon. Tracks raid cooldowns, manages assignments, handles notes and reminders, and inspects raiders gear and specs. Required for officers, strongly recommended for all raiders. Install via CurseForge — make sure to grab the Classic TBC version.</div>
-              </div>
-              <span class="tool-card-link">↗ CurseForge</span>
-            </a>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+            <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-dim);font-weight:600;">Tools We Use</div>
+            <button class="btn btn-small" onclick="openAddToolModal()" style="font-size:11px;">+ Add Tool</button>
           </div>
+          <div id="ov-tools" style="display:flex;flex-direction:column;gap:8px;"></div>
         </div>
       </div>
     </div>
@@ -2360,6 +2367,11 @@ let guildInfo = {
   ],
   recruitment: "We are actively building our 25-man roster and looking for reliable, raid-ready players.<br><br>Current loot system:<br><strong style='color:var(--gold);font-size:14px;'>2 Soft Reserves · MS &gt; OS + 1</strong><br><br>All specs considered — reach out on Discord if you're interested in running with us.",
   lootRules: "<strong style='color:var(--text-bright)'>2 Soft Reserves (SR)</strong> — each raider may reserve up to 2 items per raid week.<br><strong style='color:var(--text-bright)'>MS > OS</strong> — main spec rolls beat off spec rolls on all items.<br><strong style='color:var(--text-bright)'>+1 Rule</strong> — once you win a main spec item, you go to the back of the line for subsequent drops that night.",
+  tools: [
+    { name: "That's My BIS", desc: "Raiders pre-list their BIS items by priority. When loot drops, loot council can instantly see who has it highest on their list, making decisions fast and transparent. Sign up at thatsmybis.com with your Discord account.", url: "https://thatsmybis.com", color: "#c9a227" },
+    { name: "Gargul", desc: "In-game addon used by the loot master to manage rolls, track MS/OS, and distribute loot cleanly. Integrates directly with TMB. Install via CurseForge — only the loot master strictly needs it, but raiders benefit from having it too.", url: "https://www.curseforge.com/wow/addons/gargul", color: "#1aafc0" },
+    { name: "Method Raid Tools", desc: "Essential raid leader addon. Tracks raid cooldowns, manages assignments, handles notes and reminders, and inspects raiders gear and specs. Required for officers, strongly recommended for all raiders. Install via CurseForge.", url: "https://www.curseforge.com/wow/addons/method-raid-tools", color: "#9b59b6" },
+  ],
   progression: [
     { label: 'Karazhan', killed: 10, total: 10 },
     { label: "Gruul's / Magtheridon", killed: 3, total: 3 },
@@ -3399,9 +3411,7 @@ function renderOverview() {
               <input class="ov-inline-input" style="font-size:13px;color:var(--text-mid);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:14px;"
                 value="${(guildInfo.realm||'').replace(/"/g,'&quot;')}" placeholder="Realm · Faction · Version"
                 onchange="guildInfo.realm=this.value">
-              <textarea class="ov-inline-textarea" rows="3" placeholder="Guild description..."
-                onchange="guildInfo.about=this.value"
-                style="font-size:15px;color:var(--text-bright);line-height:1.7;margin-bottom:16px;resize:vertical;">${guildInfo.about||''}</textarea>
+              <div style="margin-bottom:16px;">${buildRTE('about', guildInfo.about||'')}</div>
               <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:auto;padding-top:12px;">
                 <a href="${guildInfo.discord||'#'}" target="_blank"
                   style="display:inline-flex;align-items:center;gap:8px;padding:9px 16px;background:#5865F2;border-radius:4px;text-decoration:none;color:white;font-weight:600;font-size:14px;">
@@ -3474,17 +3484,37 @@ function renderOverview() {
 
   // ── Recruitment ────────────────────────────────────────
   const recEl = document.getElementById('ov-recruitment');
-  if (recEl) {
-    recEl.innerHTML = `<textarea class="ov-inline-textarea" rows="5" style="font-size:14px;color:var(--text-mid);line-height:1.7;resize:vertical;width:100%;"
-      onchange="guildInfo.recruitment=this.value">${guildInfo.recruitment||''}</textarea>`;
+  if (recEl && !recEl.dataset.rteInit) {
+    recEl.innerHTML = buildRTE('recruitment', guildInfo.recruitment || '');
+    recEl.dataset.rteInit = '1';
   }
 
   // ── Loot rules ─────────────────────────────────────────
   const lootEl = document.getElementById('ov-loot-rules');
-  if (lootEl) {
-    lootEl.innerHTML = `<textarea class="ov-inline-textarea" rows="4" style="font-size:14px;color:var(--text-mid);line-height:1.8;resize:vertical;width:100%;"
-      onchange="guildInfo.lootRules=this.value">${guildInfo.lootRules||''}</textarea>`;
+  if (lootEl && !lootEl.dataset.rteInit) {
+    lootEl.innerHTML = buildRTE('lootRules', guildInfo.lootRules || '');
+    lootEl.dataset.rteInit = '1';
   }
+
+  // ── Tools We Use ──────────────────────────────────────
+  const toolsEl = document.getElementById('ov-tools');
+  if (toolsEl) {
+    const tools = guildInfo.tools || [];
+    toolsEl.innerHTML = tools.map((t, i) => {
+      const domain = (() => { try { return new URL(t.url).hostname.replace('www.',''); } catch(e) { return t.url; } })();
+      return `<div style="position:relative;">
+        <a href="${t.url}" target="_blank" class="tool-card" onmouseover="this.style.borderColor='${t.color}44'" onmouseout="this.style.borderColor='var(--border-bright)'">
+          <div class="tool-card-body">
+            <div class="tool-card-name" style="color:${t.color};">${t.name}</div>
+            <div class="tool-card-desc">${t.desc}</div>
+          </div>
+          <span class="tool-card-link">↗ ${domain}</span>
+        </a>
+        <button class="tool-card-rm" onclick="event.preventDefault();removeTool(${i})" title="Remove">✕</button>
+      </div>`;
+    }).join('');
+  }
+
 
   // ── Roster snapshot ────────────────────────────────────
   const snapEl = document.getElementById('ov-roster-snapshot');
@@ -3531,6 +3561,167 @@ function addScheduleEntry() {
   guildInfo.raidSchedule.push({ day: '', content: '', time: '', note: '' });
   renderOverview();
 }
+
+// ======================================================
+// RICH TEXT EDITOR (WYSIWYG + HTML tab)
+// ======================================================
+function buildRTE(field, initialHtml) {
+  const id = 'rte-' + field;
+  return `<div class="rte-wrap">
+    <div class="rte-tabs">
+      <button class="rte-tab active" onclick="rteSetTab('${id}','visual',this)">Visual</button>
+      <button class="rte-tab" onclick="rteSetTab('${id}','html',this)">HTML</button>
+    </div>
+    <div class="rte-toolbar" id="${id}-toolbar">
+      <button class="rte-btn" onclick="rteExec('${id}','bold')" title="Bold"><b>B</b></button>
+      <button class="rte-btn" onclick="rteExec('${id}','italic')" title="Italic"><i>I</i></button>
+      <button class="rte-btn" onclick="rteExec('${id}','strikethrough')" title="Strikethrough"><s>S</s></button>
+      <div style="width:1px;background:var(--border);margin:0 4px;align-self:stretch;"></div>
+      <button class="rte-btn" onclick="rteExec('${id}','insertUnorderedList')" title="Bullet list">• List</button>
+      <button class="rte-btn" onclick="rteExec('${id}','insertOrderedList')" title="Numbered list">1. List</button>
+      <div style="width:1px;background:var(--border);margin:0 4px;align-self:stretch;"></div>
+      <button class="rte-btn" onclick="rteInsertLink('${id}')" title="Link">🔗 Link</button>
+      <button class="rte-btn" onclick="rteExec('${id}','removeFormat')" title="Clear formatting" style="margin-left:auto;">✕ Clear</button>
+    </div>
+    <div class="rte-editor" id="${id}-editor" contenteditable="true"
+      oninput="rteSave('${id}','${field}')"
+      onblur="rteSave('${id}','${field}')">${initialHtml}</div>
+    <textarea class="rte-html" id="${id}-html" style="display:none;"
+      oninput="rteHtmlSave('${id}','${field}')">${initialHtml.replace(/</g,'&lt;')}</textarea>
+  </div>`;
+}
+
+function rteSetTab(id, tab, btn) {
+  const editor = document.getElementById(id + '-editor');
+  const html = document.getElementById(id + '-html');
+  const toolbar = document.getElementById(id + '-toolbar');
+  document.querySelectorAll(`[id^="${id}"]`).forEach(el => {
+    if (el.classList.contains('rte-tab')) el.classList.remove('active');
+  });
+  btn.classList.add('active');
+  if (tab === 'html') {
+    html.value = editor.innerHTML;
+    editor.style.display = 'none';
+    html.style.display = 'block';
+    toolbar.style.display = 'none';
+  } else {
+    editor.innerHTML = html.value;
+    html.style.display = 'none';
+    editor.style.display = 'block';
+    toolbar.style.display = 'flex';
+  }
+}
+
+function rteExec(id, cmd) {
+  const editor = document.getElementById(id + '-editor');
+  editor.focus();
+  document.execCommand(cmd, false, null);
+}
+
+function rteInsertLink(id) {
+  const url = prompt('Enter URL:');
+  if (!url) return;
+  const editor = document.getElementById(id + '-editor');
+  editor.focus();
+  document.execCommand('createLink', false, url);
+  const links = editor.querySelectorAll('a:not([target])');
+  links.forEach(a => { a.target = '_blank'; a.rel = 'noopener'; });
+}
+
+function rteSave(id, field) {
+  const editor = document.getElementById(id + '-editor');
+  if (editor) guildInfo[field] = editor.innerHTML;
+}
+
+function rteHtmlSave(id, field) {
+  const html = document.getElementById(id + '-html');
+  if (html) guildInfo[field] = html.value;
+}
+
+// ======================================================
+// TOOLS WE USE — add/remove
+// ======================================================
+const TOOL_COLOR_SWATCHES = [
+  '#c9a227', '#1aafc0', '#9b59b6', '#e74c3c', '#2ecc71',
+  '#e67e22', '#3498db', '#f39c12', '#1abc9c', '#e91e63',
+];
+
+function removeTool(i) {
+  if (!guildInfo.tools) return;
+  guildInfo.tools.splice(i, 1);
+  renderOverview();
+}
+
+function openAddToolModal() {
+  let selectedColor = TOOL_COLOR_SWATCHES[0];
+
+  const swatchHtml = TOOL_COLOR_SWATCHES.map((c, i) =>
+    `<div class="color-swatch${i === 0 ? ' selected' : ''}" style="background:${c};" onclick="selectToolColor('${c}',this)" title="${c}"></div>`
+  ).join('');
+
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay open';
+  overlay.id = 'add-tool-overlay';
+  overlay.innerHTML = `
+    <div class="modal" style="max-width:440px;">
+      <div class="modal-header">
+        <h3>Add Tool</h3>
+        <button class="modal-close" onclick="document.getElementById('add-tool-overlay').remove()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group" style="margin-bottom:14px;">
+          <label class="form-label">Tool Name</label>
+          <input type="text" class="form-input" id="tool-name" placeholder="e.g. That's My BIS" style="width:100%;">
+        </div>
+        <div class="form-group" style="margin-bottom:14px;">
+          <label class="form-label">URL</label>
+          <input type="url" class="form-input" id="tool-url" placeholder="https://..." style="width:100%;">
+        </div>
+        <div class="form-group" style="margin-bottom:14px;">
+          <label class="form-label">Description</label>
+          <textarea class="form-input" id="tool-desc" rows="3" placeholder="What is this tool and why should raiders use it?" style="width:100%;resize:vertical;"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Title Color</label>
+          <div class="color-swatches" style="margin-bottom:8px;" id="tool-swatches">${swatchHtml}</div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:12px;color:var(--text-dim);">Custom hex:</span>
+            <input type="text" id="tool-color-hex" value="${TOOL_COLOR_SWATCHES[0]}" maxlength="7"
+              style="width:90px;background:var(--bg-deep);border:1px solid var(--border-bright);color:var(--text-bright);border-radius:3px;padding:4px 8px;font-family:'IBM Plex Mono',monospace;font-size:12px;"
+              oninput="selectToolColor(this.value,null)">
+            <div id="tool-color-preview" style="width:20px;height:20px;border-radius:3px;background:${TOOL_COLOR_SWATCHES[0]};border:1px solid var(--border-bright);"></div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="document.getElementById('add-tool-overlay').remove()">Cancel</button>
+        <button class="btn btn-gold" onclick="confirmAddTool()">Add Tool</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+}
+
+function selectToolColor(color, swatchEl) {
+  document.querySelectorAll('#add-tool-overlay .color-swatch').forEach(s => s.classList.remove('selected'));
+  if (swatchEl) swatchEl.classList.add('selected');
+  document.getElementById('tool-color-hex').value = color;
+  document.getElementById('tool-color-preview').style.background = color;
+}
+
+function confirmAddTool() {
+  const name = document.getElementById('tool-name').value.trim();
+  const url = document.getElementById('tool-url').value.trim();
+  const desc = document.getElementById('tool-desc').value.trim();
+  const color = document.getElementById('tool-color-hex').value.trim() || '#c9a227';
+  if (!name || !url) { showToast('Name and URL are required.', true); return; }
+  if (!guildInfo.tools) guildInfo.tools = [];
+  guildInfo.tools.push({ name, url, desc, color });
+  document.getElementById('add-tool-overlay').remove();
+  renderOverview();
+  showToast(`"${name}" added.`);
+}
+
 
 function removeScheduleEntry(i) {
   guildInfo.raidSchedule.splice(i, 1);
