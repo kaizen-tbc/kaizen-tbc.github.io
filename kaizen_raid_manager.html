@@ -1353,6 +1353,46 @@ a[href] > div > div[style*="line-height:1.6"] {
 
 .slot-row-name { flex: 1; font-weight: 600; font-size: 13px; }
 .slot-row-spec { font-size: 13px; color: var(--text-mid); }
+
+.spec-override-wrap { position: relative; }
+.spec-pill {
+  font-size: 11px;
+  color: var(--text-dim);
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 0.5px solid var(--border-bright);
+  cursor: pointer;
+  white-space: nowrap;
+  background: var(--bg-card);
+  transition: all 0.12s;
+  user-select: none;
+}
+.spec-pill:hover { border-color: var(--gold-dim); color: var(--text-mid); }
+.spec-pill.overridden { color: var(--gold); border-color: var(--gold-dim); background: rgba(201,162,39,0.08); }
+.spec-dropdown {
+  display: none;
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  background: var(--bg-panel);
+  border: 1px solid var(--border-bright);
+  border-radius: 6px;
+  padding: 4px;
+  z-index: 200;
+  min-width: 120px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+}
+.spec-dropdown.open { display: block; }
+.spec-option {
+  font-size: 12px;
+  padding: 5px 8px;
+  border-radius: 3px;
+  cursor: pointer;
+  color: var(--text-mid);
+  white-space: nowrap;
+}
+.spec-option:hover { background: var(--bg-hover); color: var(--text-bright); }
+.spec-option.active { color: var(--gold); font-weight: 600; }
 .slot-row-role { flex-shrink: 0; }
 
 /* Remove from group btn */
@@ -2359,6 +2399,7 @@ let sortAsc = true;
 
 // Groups: 5 groups of up to 5
 let groups = [[], [], [], [], []];
+let specOverrides = {}; // { [pid]: 'specName' } — weekly override, not persisted to roster
 let pugs = []; // temp players for group builder only, not saved to main roster
 let nextPugId = -1; // pugs use negative IDs to avoid collision with roster
 let guildies = []; // alts/casuals temporarily added to group builder pool
@@ -3621,6 +3662,12 @@ function renderBuilder() {
       const p = pid ? getPlayerById(pid) : null;
       if (p) {
         const cc = classColor(p.class);
+        const currentSpec = specOverrides[p.id] || p.ms;
+        const isOverridden = !!specOverrides[p.id];
+        const specs = CLASS_SPECS[p.class] || [];
+        const specOptions = specs.map(s =>
+          `<div class="spec-option${s === currentSpec ? ' active' : ''}" onmousedown="event.preventDefault();pickSpecOverride(${p.id},${g},${i},'${s}')">${s}</div>`
+        ).join('');
         return `<div class="group-slot-row filled" id="slot-${g}-${i}"
           draggable="true"
           ondragstart="onDragStart(event,${p.id},${g},${i})"
@@ -3631,7 +3678,10 @@ function renderBuilder() {
           style="cursor:grab;">
           <span class="class-dot" style="background:var(--${cc})"></span>
           <span class="slot-row-name class-${cc}">${p.name}</span>
-          <span class="slot-row-spec">${p.ms}</span>
+          <div class="spec-override-wrap" onclick="event.stopPropagation()">
+            <div class="spec-pill${isOverridden ? ' overridden' : ''}" onclick="toggleSpecDropdown(event,'spec-dd-${p.id}')">${currentSpec}${isOverridden ? ' ✎' : ''}</div>
+            <div class="spec-dropdown" id="spec-dd-${p.id}">${specOptions}</div>
+          </div>
           <span class="slot-row-role">${roleBadge(p.role)}</span>
           <button class="slot-row-rm" onclick="event.stopPropagation();removeFromGroup(${g},${i})" title="Remove">✕</button>
         </div>`;
@@ -3851,8 +3901,35 @@ function removeFromGroup(gIdx, slotIdx) {
   }
 }
 
+function toggleSpecDropdown(event, ddId) {
+  event.stopPropagation();
+  const dd = document.getElementById(ddId);
+  if (!dd) return;
+  const isOpen = dd.classList.contains('open');
+  document.querySelectorAll('.spec-dropdown.open').forEach(el => el.classList.remove('open'));
+  if (!isOpen) dd.classList.add('open');
+}
+
+function pickSpecOverride(pid, g, i, spec) {
+  const p = getPlayerById(pid);
+  if (!p) return;
+  if (spec === p.ms) {
+    delete specOverrides[pid];
+  } else {
+    specOverrides[pid] = spec;
+  }
+  document.querySelectorAll('.spec-dropdown.open').forEach(el => el.classList.remove('open'));
+  renderBuilder();
+}
+
+// Close spec dropdowns when clicking outside
+document.addEventListener('click', () => {
+  document.querySelectorAll('.spec-dropdown.open').forEach(el => el.classList.remove('open'));
+});
+
 function clearGroups() {
   groups = [[], [], [], [], []];
+  specOverrides = {};
   renderBuilder();
 }
 
@@ -4173,6 +4250,7 @@ function saveData() {
     savedAt: new Date().toISOString(),
     roster,
     groups,
+    specOverrides,
     attendance,
     nextId,
     guildInfo,
@@ -4205,6 +4283,7 @@ function loadData(event) {
       if (!data.roster) throw new Error('Invalid save file');
       roster = data.roster;
       groups = data.groups || [[], [], [], [], []];
+      specOverrides = data.specOverrides || {};
       attendance = data.attendance || [];
       nextId = data.nextId || (roster.length + 1);
       if (data.guildInfo) guildInfo = { ...guildInfo, ...data.guildInfo };
@@ -4946,7 +5025,7 @@ async function saveToGitHub() {
   const payload = {
     version: 2,
     savedAt: new Date().toISOString(),
-    roster, groups, attendance, nextId, guildInfo, pugs, nextPugId, guildies, strats, nextStratId,
+    roster, groups, specOverrides, attendance, nextId, guildInfo, pugs, nextPugId, guildies, strats, nextStratId,
     attendanceLedger, nextLedgerId,
     benchConfig,
   };
@@ -5449,6 +5528,7 @@ async function initFromJson() {
     const data = await res.json();
     if (data.roster) roster = data.roster;
     if (data.groups) groups = data.groups;
+    if (data.specOverrides) specOverrides = data.specOverrides;
     if (data.attendance) attendance = data.attendance;
     if (data.nextId) nextId = data.nextId;
     if (data.guildInfo) guildInfo = { ...guildInfo, ...data.guildInfo };
