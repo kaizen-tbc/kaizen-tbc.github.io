@@ -1958,6 +1958,9 @@ a[href] > div > div[style*="line-height:1.6"] {
 
   <div id="builder-coverage" style="margin-bottom:16px;"></div>
 
+  <!-- AD ZONE: Weekly Roster top — 728×90 leaderboard -->
+  <div class="ad-zone" style="height:90px;margin-bottom:16px;" id="ad-roster-top">Ad · 728×90</div>
+
   <div class="groups-container" id="groups-container"></div>
 
   <div class="bench-section">
@@ -2450,6 +2453,7 @@ let sortAsc = true;
 
 // Groups: 5 groups of up to 5
 let groups = [[], [], [], [], []];
+let groupTitles = ["", "", "", "", ""];
 let specOverrides = {}; // { [pid]: 'specName' } — weekly override, not persisted to roster
 let roleOverrides = {}; // { [pid]: 'Tank'|'Healer'|'Melee'|'Ranged' } — weekly role override
 let pugs = []; // temp players for group builder only, not saved to main roster
@@ -4071,8 +4075,12 @@ function renderBuilder() {
     container.innerHTML += `
       <div class="group-box" id="group-box-${g}">
         <div class="group-box-header">
-          <span class="group-box-title">Group ${g + 1}</span>
-          <span style="font-size:14px;color:var(--text-mid);">${countFilled}/5</span>
+          <input class="group-title-input" placeholder="Group ${g + 1}" value="${(groupTitles[g]||'').replace(/"/g,'&quot;')}"
+            onchange="groupTitles[${g}]=this.value"
+            style="font-family:'Cinzel',serif;font-size:13px;font-weight:600;color:var(--text-mid);letter-spacing:0.06em;background:none;border:none;border-bottom:1px solid transparent;outline:none;width:100%;padding:0;transition:border-color 0.15s;"
+            onfocus="this.style.borderBottomColor='var(--gold-dim)'"
+            onblur="this.style.borderBottomColor='transparent'">
+          <span style="font-size:14px;color:var(--text-mid);flex-shrink:0;">${countFilled}/5</span>
         </div>
         <div class="group-box-body" ondragover="onDragOver(event,${g})" ondrop="onDrop(event,${g})" ondragleave="onDragLeave(${g})">
           ${slots}
@@ -4330,6 +4338,7 @@ document.addEventListener('click', () => {
 
 function clearGroups() {
   groups = [[], [], [], [], []];
+  groupTitles = ["", "", "", "", ""];
   specOverrides = {};
   roleOverrides = {};
   renderBuilder();
@@ -4652,6 +4661,7 @@ function saveData() {
     savedAt: new Date().toISOString(),
     roster,
     groups,
+    groupTitles,
     specOverrides,
     roleOverrides,
     attendance,
@@ -4686,6 +4696,7 @@ function loadData(event) {
       if (!data.roster) throw new Error('Invalid save file');
       roster = data.roster;
       groups = data.groups || [[], [], [], [], []];
+      groupTitles = data.groupTitles || ["", "", "", "", ""];
       specOverrides = data.specOverrides || {};
       roleOverrides = data.roleOverrides || {};
       attendance = data.attendance || [];
@@ -4971,6 +4982,9 @@ function renderStrats() {
           ${imageArea}
         </div>
         ${assignsPanel}
+        <div class="ad-zone" style="width:160px;min-height:600px;flex-shrink:0;" id="ad-strats-side">
+          <span style="writing-mode:vertical-rl;transform:rotate(180deg);">Ad · 160×600</span>
+        </div>
       </div>` : ''}`;
 }
 
@@ -5429,7 +5443,7 @@ async function saveToGitHub() {
   const payload = {
     version: 2,
     savedAt: new Date().toISOString(),
-    roster, groups, specOverrides, roleOverrides, attendance, nextId, guildInfo, pugs, nextPugId, guildies, strats, nextStratId,
+    roster, groups, groupTitles, specOverrides, roleOverrides, attendance, nextId, guildInfo, pugs, nextPugId, guildies, strats, nextStratId,
     attendanceLedger, nextLedgerId,
     benchConfig,
   };
@@ -5932,6 +5946,7 @@ async function initFromJson() {
     const data = await res.json();
     if (data.roster) roster = data.roster;
     if (data.groups) groups = data.groups;
+    if (data.groupTitles) groupTitles = data.groupTitles;
     if (data.specOverrides) specOverrides = data.specOverrides;
     if (data.roleOverrides) roleOverrides = data.roleOverrides;
     if (data.attendance) attendance = data.attendance;

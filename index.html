@@ -1524,26 +1524,17 @@ a[href] > div > div[style*="line-height:1.6"] {
   <div class="section-header">
     <div>
       <div class="section-title">Weekly Roster</div>
-      <div class="section-subtitle">The set roster for this week's raid, built with the Group Builder — up to 5 groups of 5 (25-man) or 2 groups of 5 (10-man)</div>
-    </div>
-    <div style="display:flex;gap:8px;align-items:center;">
-      <select class="filter-select" id="builder-mode" onchange="renderBuilder()">
-        <option value="25">25-Man Raid</option>
-        <option value="10">10-Man Raid</option>
-      </select>
-      <button class="btn" onclick="clearGroups()">Clear All</button>
-      <button class="btn btn-gold" onclick="autoFillGroups()">Auto-Fill</button>
+      <div class="section-subtitle" id="roster-week-subtitle"></div>
     </div>
   </div>
 
-  <div id="builder-coverage" style="margin-bottom:16px;"></div>
+  <!-- AD ZONE: Weekly Roster top — 728×90 leaderboard -->
+  <div class="ad-zone" style="height:90px;margin-bottom:16px;" id="ad-roster-top">Ad · 728×90</div>
 
   <div class="groups-container" id="groups-container"></div>
 
-  <div class="bench-section">
-    <div class="pool-label">Unassigned Raiders</div>
-    <div class="player-pool" id="player-pool"></div>
-  </div>
+  <!-- AD ZONE: Weekly Roster bottom — 728×90 leaderboard -->
+  <div class="ad-zone" style="height:90px;margin-top:20px;" id="ad-roster-bottom">Ad · 728×90</div>
 </div>
 
 <!-- ==================== STRATS TAB ==================== -->
@@ -1596,8 +1587,6 @@ a[href] > div > div[style*="line-height:1.6"] {
     </div>
   </div>
   <div id="strat-list"></div>
-  <!-- AD ZONE: Strats sidebar — 300x250 rectangle -->
-  <div class="ad-zone" style="width:300px;height:250px;margin-top:20px;" id="ad-strats-side">Ad · 300×250</div>
   </div><!-- /strats-content -->
 </div>
 
@@ -1730,6 +1719,7 @@ let sortAsc = true;
 
 // Groups: 5 groups of up to 5
 let groups = [[], [], [], [], []];
+let groupTitles = ["", "", "", "", ""];
 let specOverrides = {};
 let roleOverrides = {};
 let strats = [];
@@ -2209,67 +2199,58 @@ function getGroupCount() {
 }
 
 function renderBuilder() {
-  const groupCount = getGroupCount();
   const container = document.getElementById('groups-container');
+  if (!container) return;
 
-  // Render groups
+  // Show only non-empty groups
+  const activeCols = groups.filter(g => g && g.length > 0);
+  const count = Math.max(activeCols.length, 1);
+  container.style.gridTemplateColumns = `repeat(${Math.min(count, 5)}, 1fr)`;
   container.innerHTML = '';
-  container.style.gridTemplateColumns = `repeat(${groupCount}, 1fr)`;
 
-  for (let g = 0; g < groupCount; g++) {
-    const members = groups[g] || [];
-    const slots = Array.from({ length: 5 }, (_, i) => {
-      const pid = members[i];
+  // Update subtitle with group title if set (first non-empty title)
+  const sub = document.getElementById('roster-week-subtitle');
+  const mainTitle = (groupTitles || []).find(t => t && t.trim());
+  if (sub) sub.textContent = mainTitle || '';
+
+  let hasAnyPlayer = false;
+
+  groups.forEach((members, g) => {
+    if (!members || members.length === 0) return;
+    hasAnyPlayer = true;
+
+    const title = (groupTitles && groupTitles[g]) || `Group ${g + 1}`;
+    const slots = members.map(pid => {
       const p = pid ? getPlayerById(pid) : null;
-      if (p) {
-        const cc = classColor(p.class);
-        return `<div class="group-slot-row filled" id="slot-${g}-${i}"
-          draggable="true"
-          ondragstart="onDragStart(event,${p.id},${g},${i})"
-          ondragend="onDragEnd(event)"
-          ondragover="event.preventDefault();event.stopPropagation();this.classList.add('slot-drag-over')"
-          ondragleave="this.classList.remove('slot-drag-over')"
-          ondrop="this.classList.remove('slot-drag-over');onDropSlot(event,${g},${i})"
-          style="cursor:grab;">
-          <span class="class-dot" style="background:var(--${cc})"></span>
-          <span class="slot-row-name class-${cc}">${p.name}</span>
-          <div class="spec-override-wrap" onclick="event.stopPropagation()">
-            <div class="spec-pill${specOverrides[p.id] ? ' overridden' : ''}" onclick="toggleSpecDropdown(event,'spec-dd-${p.id}')">${specOverrides[p.id] || p.ms}${specOverrides[p.id] ? ' ✎' : ''}</div>
-            <div class="spec-dropdown" id="spec-dd-${p.id}">${(CLASS_SPECS[p.class]||[]).map(s=>`<div class="spec-option${(specOverrides[p.id]||p.ms)===s?' active':''}" onmousedown="event.preventDefault();pickSpecOverride(${p.id},'${s}')">${s}</div>`).join('')}</div>
-          </div>
-          <div class="spec-override-wrap" onclick="event.stopPropagation()">
-            <div class="spec-pill${roleOverrides[p.id] ? ' overridden' : ''}" onclick="toggleSpecDropdown(event,'role-dd-${p.id}')">${roleOverrides[p.id] || p.role}${roleOverrides[p.id] ? ' ✎' : ''}</div>
-            <div class="spec-dropdown" id="role-dd-${p.id}">${['Tank','Healer','Melee','Ranged'].map(r=>`<div class="spec-option${(roleOverrides[p.id]||p.role)===r?' active':''}" onmousedown="event.preventDefault();pickRoleOverride(${p.id},'${r}')">${r}</div>`).join('')}</div>
-          </div>
-          <button class="slot-row-rm" onclick="event.stopPropagation();removeFromGroup(${g},${i})" title="Remove">✕</button>
-        </div>`;
-      } else {
-        return `<div class="group-slot-row empty-slot"
-          ondragover="event.preventDefault();this.classList.add('slot-drag-over')"
-          ondragleave="this.classList.remove('slot-drag-over')"
-          ondrop="this.classList.remove('slot-drag-over');onDropSlot(event,${g},${i})"
-          onclick="openAddToGroup(${g})" style="cursor:pointer;">
-          <span style="color:var(--text-dim);font-size:13px;">+ Add player</span>
-        </div>`;
-      }
-    }).join('');
-
-    const countFilled = members.length;
-    container.innerHTML += `
-      <div class="group-box" id="group-box-${g}">
-        <div class="group-box-header">
-          <span class="group-box-title">Group ${g + 1}</span>
-          <span style="font-size:14px;color:var(--text-mid);">${countFilled}/5</span>
-        </div>
-        <div class="group-box-body" ondragover="onDragOver(event,${g})" ondrop="onDrop(event,${g})" ondragleave="onDragLeave(${g})">
-          ${slots}
-        </div>
+      if (!p) return '';
+      const cc = classColor(p.class);
+      const displaySpec = specOverrides[p.id] || p.ms;
+      const displayRole = roleOverrides[p.id] || p.role;
+      return `<div class="group-slot-row filled" style="cursor:default;">
+        <span class="class-dot" style="background:var(--${cc})"></span>
+        <span class="slot-row-name class-${cc}">${p.name}</span>
+        <span style="font-size:11px;color:var(--text-dim);">${displaySpec}</span>
+        <span style="font-size:11px;color:var(--text-dim);margin-left:auto;">${displayRole}</span>
       </div>`;
-  }
+    }).filter(Boolean).join('');
 
-  renderPool();
-  renderCoverage();
+    if (!slots) return;
+
+    container.innerHTML += `
+      <div class="group-box">
+        <div class="group-box-header">
+          <span class="group-box-title">${title}</span>
+          <span style="font-size:12px;color:var(--text-dim);">${members.length}/5</span>
+        </div>
+        <div class="group-box-body">${slots}</div>
+      </div>`;
+  });
+
+  if (!hasAnyPlayer) {
+    container.innerHTML = `<div style="color:var(--text-dim);font-size:13px;font-style:italic;padding:8px 0;">No roster set for this week yet.</div>`;
+  }
 }
+
 
 function getPlayerById(id) {
   if (id < 0) return guildies.find(g => g.id === id) || pugs.find(p => p.id === id);
@@ -2487,6 +2468,7 @@ document.addEventListener('click', () => {
 
 function clearGroups() {
   groups = [[], [], [], [], []];
+  groupTitles = ["", "", "", "", ""];
   specOverrides = {};
   roleOverrides = {};
   renderBuilder();
@@ -2767,6 +2749,9 @@ function renderStrats() {
           ${active ? `<img src="${active.image}${active.image && !active.image.startsWith('data:') ? '?v=' + Date.now() : ''}" alt="${active.name}" style="max-width:100%;max-height:70vh;border-radius:3px;object-fit:contain;">` : ''}
         </div>
         ${assignsPanel}
+        <div class="ad-zone" style="width:160px;min-height:600px;flex-shrink:0;" id="ad-strats-side">
+          <span style="writing-mode:vertical-rl;transform:rotate(180deg);">Ad · 160×600</span>
+        </div>
       </div>` : ''}`;
 }
 
@@ -2849,6 +2834,7 @@ async function loadFromServer() {
     const data = await fetchWithRetry(base + 'kaizen_data.json?v=' + Date.now());
     if (data.roster) roster = data.roster;
     if (data.groups) groups = data.groups;
+    if (data.groupTitles) groupTitles = data.groupTitles;
     if (data.specOverrides) specOverrides = data.specOverrides;
     if (data.roleOverrides) roleOverrides = data.roleOverrides;
     if (data.nextId) nextId = data.nextId;
