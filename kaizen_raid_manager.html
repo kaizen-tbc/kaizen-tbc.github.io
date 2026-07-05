@@ -2218,7 +2218,7 @@ a[href] > div > div[style*="line-height:1.6"] {
       <div class="form-row">
         <div class="form-group">
           <label class="form-label">Main Spec</label>
-          <select class="form-select" id="f-ms"></select>
+          <select class="form-select" id="f-ms" onchange="updateRoleFromSpec()"></select>
         </div>
         <div class="form-group">
           <label class="form-label">Off Spec</label>
@@ -2298,9 +2298,9 @@ const SPEC_ROLE = {
   'Holy': 'Healer', 'Protection': 'Tank', 'Retribution': 'Melee', // Paladin
   'Discipline': 'Healer', 'Shadow': 'Ranged', // Priest
   'Assassination': 'Melee', 'Combat': 'Melee', 'Subtlety': 'Melee', // Rogue
-  'Elemental': 'Ranged', 'Enhancement': 'Melee', // Shaman
+  'Elemental': 'Ranged', 'Enhancement': 'Melee', 'Restoration': 'Healer', // Shaman
   'Affliction': 'Ranged', 'Demonology': 'Ranged', 'Destruction': 'Ranged', // Warlock
-  'Arms': 'Melee', 'Fury': 'Melee', // Warrior
+  'Arms': 'Melee', 'Fury': 'Melee', 'Protection': 'Tank', // Warrior
 };
 
 // Override when spec doesn't determine role (tank specs)
@@ -2449,6 +2449,7 @@ let sortAsc = true;
 // Groups: 5 groups of up to 5
 let groups = [[], [], [], [], []];
 let specOverrides = {}; // { [pid]: 'specName' } — weekly override, not persisted to roster
+let roleOverrides = {}; // { [pid]: 'Tank'|'Healer'|'Melee'|'Ranged' } — weekly role override
 let pugs = []; // temp players for group builder only, not saved to main roster
 let nextPugId = -1; // pugs use negative IDs to avoid collision with roster
 let guildies = []; // alts/casuals temporarily added to group builder pool
@@ -3899,10 +3900,17 @@ function updateSpecOptions(selectedMs = '', selectedOs = '') {
   osEl.innerHTML = opts;
   if (selectedMs) msEl.value = selectedMs;
   if (selectedOs) osEl.value = selectedOs;
-  // auto-role
-  if (specs.length > 0 && !selectedMs) {
-    const autoRole = SPEC_ROLE[specs[0]] || 'Ranged';
-    document.getElementById('f-role').value = autoRole;
+  // Auto-set role from whichever spec ends up selected
+  updateRoleFromSpec();
+}
+
+function updateRoleFromSpec() {
+  const msEl = document.getElementById('f-ms');
+  const roleEl = document.getElementById('f-role');
+  if (!msEl || !roleEl) return;
+  const spec = msEl.value;
+  if (spec && SPEC_ROLE[spec]) {
+    roleEl.value = SPEC_ROLE[spec];
   }
 }
 
@@ -4016,10 +4024,15 @@ function renderBuilder() {
       if (p) {
         const cc = classColor(p.class);
         const currentSpec = specOverrides[p.id] || p.ms;
-        const isOverridden = !!specOverrides[p.id];
+        const isSpecOverridden = !!specOverrides[p.id];
+        const currentRole = roleOverrides[p.id] || p.role;
+        const isRoleOverridden = !!roleOverrides[p.id];
         const specs = CLASS_SPECS[p.class] || [];
         const specOptions = specs.map(s =>
           `<div class="spec-option${s === currentSpec ? ' active' : ''}" onmousedown="event.preventDefault();pickSpecOverride(${p.id},${g},${i},'${s}')">${s}</div>`
+        ).join('');
+        const roleOptions = ['Tank','Healer','Melee','Ranged'].map(r =>
+          `<div class="spec-option${r === currentRole ? ' active' : ''}" onmousedown="event.preventDefault();pickRoleOverride(${p.id},'${r}')">${r}</div>`
         ).join('');
         return `<div class="group-slot-row filled" id="slot-${g}-${i}"
           draggable="true"
@@ -4032,10 +4045,13 @@ function renderBuilder() {
           <span class="class-dot" style="background:var(--${cc})"></span>
           <span class="slot-row-name class-${cc}">${p.name}</span>
           <div class="spec-override-wrap" onclick="event.stopPropagation()">
-            <div class="spec-pill${isOverridden ? ' overridden' : ''}" onclick="toggleSpecDropdown(event,'spec-dd-${p.id}')">${currentSpec}${isOverridden ? ' ✎' : ''}</div>
+            <div class="spec-pill${isSpecOverridden ? ' overridden' : ''}" onclick="toggleSpecDropdown(event,'spec-dd-${p.id}')">${currentSpec}${isSpecOverridden ? ' ✎' : ''}</div>
             <div class="spec-dropdown" id="spec-dd-${p.id}">${specOptions}</div>
           </div>
-          <span class="slot-row-role">${roleBadge(p.role)}</span>
+          <div class="spec-override-wrap" onclick="event.stopPropagation()">
+            <div class="spec-pill${isRoleOverridden ? ' overridden' : ''}" onclick="toggleSpecDropdown(event,'role-dd-${p.id}')">${currentRole}${isRoleOverridden ? ' ✎' : ''}</div>
+            <div class="spec-dropdown" id="role-dd-${p.id}">${roleOptions}</div>
+          </div>
           <button class="slot-row-rm" onclick="event.stopPropagation();removeFromGroup(${g},${i})" title="Remove">✕</button>
         </div>`;
       } else {
@@ -4271,11 +4287,30 @@ function pickSpecOverride(pid, g, i, spec) {
   } else {
     specOverrides[pid] = spec;
   }
+  // Auto-suggest role from new spec, but only if not already manually overridden
+  if (!roleOverrides[pid]) {
+    const suggestedRole = SPEC_ROLE[spec];
+    if (suggestedRole && suggestedRole !== p.role) {
+      roleOverrides[pid] = suggestedRole;
+    }
+  }
   document.querySelectorAll('.spec-dropdown.open').forEach(el => el.classList.remove('open'));
   renderBuilder();
 }
 
-// Close spec dropdowns when clicking outside
+function pickRoleOverride(pid, role) {
+  const p = getPlayerById(pid);
+  if (!p) return;
+  if (role === p.role) {
+    delete roleOverrides[pid];
+  } else {
+    roleOverrides[pid] = role;
+  }
+  document.querySelectorAll('.spec-dropdown.open').forEach(el => el.classList.remove('open'));
+  renderBuilder();
+}
+
+// Close spec/role dropdowns when clicking outside
 document.addEventListener('click', () => {
   document.querySelectorAll('.spec-dropdown.open').forEach(el => el.classList.remove('open'));
 });
@@ -4283,6 +4318,7 @@ document.addEventListener('click', () => {
 function clearGroups() {
   groups = [[], [], [], [], []];
   specOverrides = {};
+  roleOverrides = {};
   renderBuilder();
 }
 
@@ -4604,6 +4640,7 @@ function saveData() {
     roster,
     groups,
     specOverrides,
+    roleOverrides,
     attendance,
     nextId,
     guildInfo,
@@ -4637,6 +4674,7 @@ function loadData(event) {
       roster = data.roster;
       groups = data.groups || [[], [], [], [], []];
       specOverrides = data.specOverrides || {};
+      roleOverrides = data.roleOverrides || {};
       attendance = data.attendance || [];
       nextId = data.nextId || (roster.length + 1);
       if (data.guildInfo) guildInfo = { ...guildInfo, ...data.guildInfo };
@@ -5378,7 +5416,7 @@ async function saveToGitHub() {
   const payload = {
     version: 2,
     savedAt: new Date().toISOString(),
-    roster, groups, specOverrides, attendance, nextId, guildInfo, pugs, nextPugId, guildies, strats, nextStratId,
+    roster, groups, specOverrides, roleOverrides, attendance, nextId, guildInfo, pugs, nextPugId, guildies, strats, nextStratId,
     attendanceLedger, nextLedgerId,
     benchConfig,
   };
@@ -5882,6 +5920,7 @@ async function initFromJson() {
     if (data.roster) roster = data.roster;
     if (data.groups) groups = data.groups;
     if (data.specOverrides) specOverrides = data.specOverrides;
+    if (data.roleOverrides) roleOverrides = data.roleOverrides;
     if (data.attendance) attendance = data.attendance;
     if (data.nextId) nextId = data.nextId;
     if (data.guildInfo) guildInfo = { ...guildInfo, ...data.guildInfo };

@@ -1729,6 +1729,7 @@ let sortAsc = true;
 // Groups: 5 groups of up to 5
 let groups = [[], [], [], [], []];
 let specOverrides = {};
+let roleOverrides = {};
 let strats = [];
 let nextStratId = 1;
 let pugs = [];
@@ -2234,7 +2235,10 @@ function renderBuilder() {
             <div class="spec-pill${specOverrides[p.id] ? ' overridden' : ''}" onclick="toggleSpecDropdown(event,'spec-dd-${p.id}')">${specOverrides[p.id] || p.ms}${specOverrides[p.id] ? ' ✎' : ''}</div>
             <div class="spec-dropdown" id="spec-dd-${p.id}">${(CLASS_SPECS[p.class]||[]).map(s=>`<div class="spec-option${(specOverrides[p.id]||p.ms)===s?' active':''}" onmousedown="event.preventDefault();pickSpecOverride(${p.id},'${s}')">${s}</div>`).join('')}</div>
           </div>
-          <span class="slot-row-role">${roleBadge(p.role)}</span>
+          <div class="spec-override-wrap" onclick="event.stopPropagation()">
+            <div class="spec-pill${roleOverrides[p.id] ? ' overridden' : ''}" onclick="toggleSpecDropdown(event,'role-dd-${p.id}')">${roleOverrides[p.id] || p.role}${roleOverrides[p.id] ? ' ✎' : ''}</div>
+            <div class="spec-dropdown" id="role-dd-${p.id}">${['Tank','Healer','Melee','Ranged'].map(r=>`<div class="spec-option${(roleOverrides[p.id]||p.role)===r?' active':''}" onmousedown="event.preventDefault();pickRoleOverride(${p.id},'${r}')">${r}</div>`).join('')}</div>
+          </div>
           <button class="slot-row-rm" onclick="event.stopPropagation();removeFromGroup(${g},${i})" title="Remove">✕</button>
         </div>`;
       } else {
@@ -2445,6 +2449,22 @@ function pickSpecOverride(pid, spec) {
   } else {
     specOverrides[pid] = spec;
   }
+  if (!roleOverrides[pid]) {
+    const suggestedRole = SPEC_ROLE[spec];
+    if (suggestedRole && suggestedRole !== p.role) roleOverrides[pid] = suggestedRole;
+  }
+  document.querySelectorAll('.spec-dropdown.open').forEach(el => el.classList.remove('open'));
+  renderBuilder();
+}
+
+function pickRoleOverride(pid, role) {
+  const p = getPlayerById(pid);
+  if (!p) return;
+  if (role === p.role) {
+    delete roleOverrides[pid];
+  } else {
+    roleOverrides[pid] = role;
+  }
   document.querySelectorAll('.spec-dropdown.open').forEach(el => el.classList.remove('open'));
   renderBuilder();
 }
@@ -2456,6 +2476,7 @@ document.addEventListener('click', () => {
 function clearGroups() {
   groups = [[], [], [], [], []];
   specOverrides = {};
+  roleOverrides = {};
   renderBuilder();
 }
 
@@ -2817,6 +2838,7 @@ async function loadFromServer() {
     if (data.roster) roster = data.roster;
     if (data.groups) groups = data.groups;
     if (data.specOverrides) specOverrides = data.specOverrides;
+    if (data.roleOverrides) roleOverrides = data.roleOverrides;
     if (data.nextId) nextId = data.nextId;
     if (data.guildInfo) guildInfo = { ...guildInfo, ...data.guildInfo };
     if (data.pugs) pugs = data.pugs;
