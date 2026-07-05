@@ -468,13 +468,14 @@ tr:last-child td { border-bottom: none; }
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: 4px;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .group-header {
   padding: 10px 14px;
   background: rgba(255,255,255,0.03);
   border-bottom: 1px solid var(--border);
+  border-radius: 4px 4px 0 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -4276,7 +4277,18 @@ function toggleSpecDropdown(event, ddId) {
   if (!dd) return;
   const isOpen = dd.classList.contains('open');
   document.querySelectorAll('.spec-dropdown.open').forEach(el => el.classList.remove('open'));
-  if (!isOpen) dd.classList.add('open');
+  if (!isOpen) {
+    dd.classList.add('open');
+    // Flip upward if dropdown would clip below the viewport
+    const rect = dd.getBoundingClientRect();
+    if (rect.bottom > window.innerHeight - 16) {
+      dd.style.top = 'auto';
+      dd.style.bottom = 'calc(100% + 4px)';
+    } else {
+      dd.style.top = '';
+      dd.style.bottom = '';
+    }
+  }
 }
 
 function pickSpecOverride(pid, g, i, spec) {
