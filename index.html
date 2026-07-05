@@ -1376,7 +1376,7 @@ a[href] > div > div[style*="line-height:1.6"] {
   </div>
 
   <!-- AD ZONE: Overview below progression -->
-  <div class="ad-zone" style="height:90px;margin-bottom:20px;" id="ad-overview-top">Ad · 728×90</div>
+  <div id="ad-overview-top" style="margin-bottom:20px;"><ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-8959237604087556" data-ad-slot="1757499443" data-ad-format="auto" data-full-width-responsive="true"></ins></div>
 
   <!-- RAID SCHEDULE + RECRUITMENT -->
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
@@ -1529,12 +1529,12 @@ a[href] > div > div[style*="line-height:1.6"] {
   </div>
 
   <!-- AD ZONE: Weekly Roster top — 728×90 leaderboard -->
-  <div class="ad-zone" style="height:90px;margin-bottom:16px;" id="ad-roster-top">Ad · 728×90</div>
+  <div id="ad-roster-top" style="margin-bottom:16px;"><ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-8959237604087556" data-ad-slot="1757499443" data-ad-format="auto" data-full-width-responsive="true"></ins></div>
 
   <div class="groups-container" id="groups-container"></div>
 
   <!-- AD ZONE: Weekly Roster bottom — 728×90 leaderboard -->
-  <div class="ad-zone" style="height:90px;margin-top:20px;" id="ad-roster-bottom">Ad · 728×90</div>
+  <div id="ad-roster-bottom" style="margin-top:20px;"><ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-8959237604087556" data-ad-slot="1757499443" data-ad-format="auto" data-full-width-responsive="true"></ins></div>
 </div>
 
 <!-- ==================== STRATS TAB ==================== -->
@@ -2227,11 +2227,17 @@ function renderBuilder() {
       const cc = classColor(p.class);
       const displaySpec = specOverrides[p.id] || p.ms;
       const displayRole = roleOverrides[p.id] || p.role;
+      const specStyle = specOverrides[p.id]
+        ? 'color:var(--gold);border:0.5px solid var(--gold-dim);background:rgba(201,162,39,0.08);'
+        : 'color:var(--text-dim);border:0.5px solid var(--border-bright);';
+      const roleStyle = roleOverrides[p.id]
+        ? 'color:var(--gold);border:0.5px solid var(--gold-dim);background:rgba(201,162,39,0.08);'
+        : 'color:var(--text-dim);border:0.5px solid var(--border-bright);';
       return `<div class="group-slot-row filled" style="cursor:default;">
         <span class="class-dot" style="background:var(--${cc})"></span>
         <span class="slot-row-name class-${cc}">${p.name}</span>
-        <span style="font-size:11px;color:var(--text-dim);">${displaySpec}</span>
-        <span style="font-size:11px;color:var(--text-dim);margin-left:auto;">${displayRole}</span>
+        <span style="font-size:11px;padding:2px 6px;border-radius:4px;white-space:nowrap;${specStyle}">${displaySpec}</span>
+        <span style="font-size:11px;padding:2px 6px;border-radius:4px;white-space:nowrap;${roleStyle}">${displayRole}</span>
       </div>`;
     }).filter(Boolean).join('');
 
@@ -2750,9 +2756,7 @@ function renderStrats() {
           ${active ? `<img src="${active.image}${active.image && !active.image.startsWith('data:') ? '?v=' + Date.now() : ''}" alt="${active.name}" style="max-width:100%;max-height:70vh;border-radius:3px;object-fit:contain;">` : ''}
         </div>
         ${assignsPanel}
-        <div class="ad-zone" style="width:160px;min-height:600px;flex-shrink:0;" id="ad-strats-side">
-          <span style="writing-mode:vertical-rl;transform:rotate(180deg);">Ad · 160×600</span>
-        </div>
+        <div id="ad-strats-side" style="width:160px;flex-shrink:0;"><ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-8959237604087556" data-ad-slot="6600808186" data-ad-format="auto" data-full-width-responsive="true"></ins></div>
       </div>` : ''}`;
 }
 
@@ -2881,6 +2885,16 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 loadFromServer();
+</script>
+
+<script>
+// Initialize all AdSense ad units
+(function() {
+  var ads = document.querySelectorAll('.adsbygoogle');
+  ads.forEach(function() {
+    (adsbygoogle = window.adsbygoogle || []).push({});
+  });
+})();
 </script>
 </body>
 </html>
