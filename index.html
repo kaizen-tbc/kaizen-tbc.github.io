@@ -2195,7 +2195,8 @@ function renderRoster() {
 // GROUP BUILDER
 // ======================================================
 function getGroupCount() {
-  return parseInt(document.getElementById('builder-mode').value) === 25 ? 5 : 2;
+  const el = document.getElementById('builder-mode');
+  return el ? (parseInt(el.value) === 25 ? 5 : 2) : 5;
 }
 
 function renderBuilder() {
@@ -2854,8 +2855,6 @@ async function loadFromServer() {
   // Render everything now that data is loaded
   renderRoster();
   renderOverview();
-  const groupCount = getGroupCount();
-  renderBuilder();
   // Jump to hash tab after data loads
   const hash = window.location.hash.replace('#', '');
   if (hash) {
