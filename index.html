@@ -626,6 +626,125 @@ tr:last-child td { border-bottom: none; }
   .groups-layout { grid-template-columns: repeat(2, 1fr); }
 }
 
+/* ===== HAMBURGER BUTTON — hidden on desktop ===== */
+.hamburger {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+.hamburger span {
+  display: block;
+  width: 22px;
+  height: 2px;
+  background: var(--text-mid);
+  border-radius: 2px;
+  transition: all 0.2s;
+}
+.hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.hamburger.open span:nth-child(2) { opacity: 0; }
+.hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+/* ===== MOBILE ===== */
+@media (max-width: 640px) {
+
+  /* Header */
+  header { padding: 0 16px; position: relative; }
+  .guild-realm { display: none; }
+  .header-right { display: none; }
+  .hamburger { display: flex; }
+
+  /* Nav — hidden by default, drops down when open */
+  nav#main-nav {
+    display: none;
+    flex-direction: column;
+    position: absolute;
+    top: 56px;
+    left: 0;
+    right: 0;
+    background: rgba(10,11,13,0.98);
+    border-bottom: 1px solid var(--border-bright);
+    z-index: 200;
+    padding: 8px 0;
+  }
+  nav#main-nav.open { display: flex; }
+  .nav-btn {
+    height: auto;
+    padding: 14px 20px;
+    text-align: left;
+    border-bottom: none;
+    border-left: 3px solid transparent;
+    font-size: 13px;
+  }
+  .nav-btn.active {
+    border-bottom-color: transparent;
+    border-left-color: var(--gold);
+    color: var(--gold);
+    background: rgba(201,162,39,0.06);
+  }
+
+  /* Main padding */
+  main { padding: 12px; }
+
+  /* Overview — stack 2-col grids */
+  .skel-overview-grid { grid-template-columns: 1fr !important; }
+  #ov-progression { grid-template-columns: 1fr !important; }
+  .bench-pools-grid { grid-template-columns: 1fr !important; }
+  .bench-rule-cards { grid-template-columns: 1fr !important; }
+
+  /* Inline grid overrides — target by display:grid with 2 cols */
+  [style*="grid-template-columns:1fr 1fr"],
+  [style*="grid-template-columns: 1fr 1fr"] {
+    grid-template-columns: 1fr !important;
+  }
+  [style*="grid-template-columns:repeat(3"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Roster table */
+  .table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+  /* Weekly roster — single column */
+  .groups-container { grid-template-columns: 1fr !important; }
+
+  /* Strats — column layout */
+  .strat-content-wrap {
+    flex-direction: column !important;
+    gap: 16px;
+  }
+  .strat-content-wrap img {
+    max-height: 55vw !important;
+    width: 100% !important;
+    object-fit: contain;
+  }
+  #ad-strats-side { width: 100% !important; min-height: 90px !important; }
+
+  /* Strats tabs -> dropdown */
+  .strat-tabs { display: none !important; }
+  .strat-tab-dropdown { display: block !important; }
+
+  /* Strat raid pills — scrollable */
+  .strat-raid-pills { overflow-x: auto; flex-wrap: nowrap !important; padding-bottom: 4px; }
+  .strat-raid-pill { flex-shrink: 0; font-size: 11px !important; padding: 5px 10px !important; }
+
+  /* Sub-nav */
+  .sub-nav { overflow-x: auto; flex-wrap: nowrap; }
+  .sub-nav-btn { white-space: nowrap; flex-shrink: 0; }
+
+  /* Assigns panel full width on mobile */
+  .assigns-panel { min-width: 0 !important; max-width: 100% !important; }
+  .strat-content-wrap > div:last-child { width: 100% !important; min-width: 0 !important; max-width: 100% !important; }
+
+  /* Modals */
+  .modal { width: 95vw !important; max-width: 95vw !important; }
+}
+
 /* ===== ATTENDANCE ===== */
 .attendance-grid {
   overflow-x: auto;
@@ -964,6 +1083,23 @@ tr:last-child td { border-bottom: none; }
   border-bottom: 1px solid var(--border-bright);
   padding-bottom: 0;
 }
+
+/* Mobile dropdown — shown only on small screens */
+.strat-tab-dropdown {
+  display: none;
+  width: 100%;
+  margin-bottom: 16px;
+  padding: 8px 12px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-bright);
+  border-radius: 4px;
+  color: var(--text-bright);
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  appearance: auto;
+}
 .strat-tab-btn {
   padding: 8px 16px;
   background: none;
@@ -1271,7 +1407,7 @@ a[href] > div > div[style*="line-height:1.6"] {
       <div class="guild-realm">Horde · TBC Classic</div>
     </div>
   </div>
-  <nav>
+  <nav id="main-nav">
     <button class="nav-btn active" onclick="showTab('overview')">Overview</button>
     <button class="nav-btn" onclick="showTab('roster')">Raiders</button>
     <button class="nav-btn" onclick="showTab('builder')">Weekly Roster</button>
@@ -1279,8 +1415,10 @@ a[href] > div > div[style*="line-height:1.6"] {
   </nav>
   <div class="header-right">
     <span class="raid-tier-badge">T4 · T5 · T6</span>
-
   </div>
+  <button class="hamburger" onclick="toggleMobileNav()" aria-label="Menu">
+    <span></span><span></span><span></span>
+  </button>
 </header>
 
 <main>
@@ -1892,7 +2030,19 @@ function hideSkeleton() {
   }
 }
 
+function toggleMobileNav() {
+  const nav = document.getElementById('main-nav');
+  const btn = document.querySelector('.hamburger');
+  nav.classList.toggle('open');
+  btn.classList.toggle('open');
+}
+
 function showTab(tab, updateHash = true) {
+  // Close mobile nav if open
+  const nav = document.getElementById('main-nav');
+  const hamburger = document.querySelector('.hamburger');
+  if (nav) nav.classList.remove('open');
+  if (hamburger) hamburger.classList.remove('open');
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('tab-' + tab).classList.add('active');
@@ -2747,11 +2897,17 @@ function renderStrats() {
       <div class="assigns-panel">${panelSections}</div>
     </div>` : '';
 
+  const tabDropdown = raidStrats.length > 0 ? `
+    <select class="strat-tab-dropdown" onchange="setActiveStat(parseInt(this.value))">
+      ${raidStrats.map(s => `<option value="${s.id}" ${s.id === activeStratId ? 'selected' : ''}>${s.name}</option>`).join('')}
+    </select>` : '';
+
   list.innerHTML = `
     <div class="strat-raid-pills">${raidPills}</div>
     ${raidStrats.length > 0 ? `
       <div class="strat-tabs">${tabs}</div>
-      <div style="display:flex;gap:16px;align-items:flex-start;">
+      ${tabDropdown}
+      <div class="strat-content-wrap">
         <div style="flex:1;min-width:0;">
           ${active ? `<img src="${active.image}${active.image && !active.image.startsWith('data:') ? '?v=' + Date.now() : ''}" alt="${active.name}" style="max-width:100%;max-height:70vh;border-radius:3px;object-fit:contain;">` : ''}
         </div>
