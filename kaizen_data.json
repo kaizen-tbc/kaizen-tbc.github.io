@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-08-22T22:24:08.415Z",
+  "savedAt": "2026-08-22T22:33:24.870Z",
   "roster": [
     {
       "id": 1,
@@ -4018,53 +4018,6 @@
     }
   ],
   "nextLedgerId": 16,
-  "benchConfig": {
-    "pools": [
-      {
-        "id": "warrior",
-        "className": "Warrior",
-        "label": "Warrior",
-        "slots": 3
-      },
-      {
-        "id": "hunter",
-        "className": "Hunter",
-        "label": "Hunter",
-        "slots": 2
-      },
-      {
-        "id": "priest_healing",
-        "className": "Priest",
-        "label": "Priest (Healing)",
-        "slots": 1,
-        "specExclude": [
-          "Shadow"
-        ]
-      }
-    ],
-    "overrides": {
-      "Tilatia": "excluded",
-      "Akohre": "bench",
-      "Diomedés": "bench",
-      "Priestous": "excluded"
-    },
-    "confirmations": {
-      "Priestous": true,
-      "Papapoultice": true,
-      "Zuulman": true,
-      "Howiebling": true,
-      "Akohre": true,
-      "Nechristo": true,
-      "Darwín": true,
-      "Diomedés": true,
-      "Darthorg": true,
-      "Mivian": true
-    },
-    "manuallyAdded": [
-      "Diomedés"
-    ],
-    "benchedByDecision": {}
-  },
   "nameAliases": {
     "Depew/Kiricolo": [
       5
