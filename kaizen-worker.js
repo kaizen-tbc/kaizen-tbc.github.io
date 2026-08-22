@@ -626,7 +626,11 @@ function buildRosterEmbed(raid, roster, pugs, notify = true) {
           if (!p) return null;
           const spec = specOv[p.id] || p.ms || p.class;
           const icon = getSpecEmoji(p.class, spec);
-          const mention = userIdMap[p.id] ? `<@${userIdMap[p.id]}>` : p.name;
+          // Discord pings for <@id> mentions anywhere in a message, including
+          // inside embed fields — not just the top summary line. Only use
+          // real mentions here when notify is on, otherwise plain names, or
+          // unchecking "notify" silently still pings everyone individually.
+          const mention = (notify && userIdMap[p.id]) ? `<@${userIdMap[p.id]}>` : p.name;
           return `${icon} ${mention}`;
         })
         .filter(Boolean)
