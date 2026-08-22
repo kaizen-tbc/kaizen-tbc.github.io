@@ -32,6 +32,12 @@ export default {
       return handleLatestLogsData(request, env);
     }
 
+    // ── Direct log-summary post from the Guild Logs tab (bypasses the
+    // Discord slash command entirely) ── /post-log-summary
+    if (url.pathname === '/post-log-summary' && request.method === 'POST') {
+      return handleDirectLogPost(request, env);
+    }
+
     // ── Discord interactions ── /discord
     if (url.pathname === '/discord' && request.method === 'POST') {
       return handleDiscord(request, env, ctx);
@@ -347,13 +353,17 @@ async function getReportFightsAndStats(env, code) {
     query($code: String!) {
       reportData {
         report(code: $code) {
+          title
+          startTime
+          endTime
           fights { id name encounterID kill startTime endTime }
         }
       }
     }
   `, { code });
 
-  const fights = fightsData?.reportData?.report?.fights || [];
+  const reportInfo = fightsData?.reportData?.report;
+  const fights = reportInfo?.fights || [];
   const killFights = fights.filter(f => f.kill);
   const allFightIds = fights.map(f => f.id);
   const killFightIds = killFights.map(f => f.id);
@@ -370,6 +380,9 @@ async function getReportFightsAndStats(env, code) {
   `, { code, allIds: allFightIds, killIds: killFightIds });
 
   return {
+    // Full report info (title/dates), for callers that only have a code and
+    // skipped findLatestGuildReport's own discovery query.
+    report: reportInfo ? { code, title: reportInfo.title, startTime: reportInfo.startTime, endTime: reportInfo.endTime } : null,
     fights,
     killFights,
     rankingsRaw: statsData?.reportData?.report?.rankings ?? null,
@@ -501,8 +514,7 @@ async function runPostLogs(interaction, env) {
   }
 }
 
-// GET /logs/latest — raw-ish log data for the raid manager's attendance
-// review UI (not built yet — this is the seam it'll call into).
+// GET /logs/latest — raw-ish log data for the raid manager's Guild Logs tab.
 async function handleLatestLogsData(request, env) {
   try {
     if (!env.WCL_CLIENT_ID || !env.WCL_CLIENT_SECRET) {
@@ -521,6 +533,55 @@ async function handleLatestLogsData(request, env) {
       participants,
       topParses,
     }), 200);
+  } catch (err) {
+    return corsResponse(JSON.stringify({ error: err.message }), 500);
+  }
+}
+
+// POST /post-log-summary — direct HTTP post from the raid manager's Guild
+// Logs tab, bypassing the Discord slash command entirely (its registration/
+// visibility is an unresolved separate issue as of this writing). If
+// reportCode is given, posts that exact report — matching what the app
+// already previewed rather than re-discovering "latest" a second time and
+// risking a mismatch; falls back to auto-detecting latest if omitted.
+async function handleDirectLogPost(request, env) {
+  try {
+    if (!env.WCL_CLIENT_ID || !env.WCL_CLIENT_SECRET) {
+      throw new Error('Warcraft Logs API credentials not configured.');
+    }
+    const { channelId, reportCode } = await request.json();
+    if (!channelId) throw new Error('No channel ID provided.');
+
+    let report, details;
+    if (reportCode) {
+      details = await getReportFightsAndStats(env, reportCode);
+      report = details.report;
+      if (!report?.title) throw new Error(`Report ${reportCode} not found.`);
+    } else {
+      report = await findLatestGuildReport(env);
+      if (!report) throw new Error('No recent reports found for the guild on Warcraft Logs.');
+      details = await getReportFightsAndStats(env, report.code);
+    }
+
+    const dataRes = await fetch(`https://kaizen-tbc.github.io/kaizen_data.json?v=${Date.now()}`);
+    const guildData = dataRes.ok ? await dataRes.json() : { roster: [] };
+
+    const embed = buildLogSummaryEmbed(report, details, guildData.roster || []);
+
+    const postRes = await fetch(`${DISCORD_API}/channels/${channelId}/messages`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bot ${env.DISCORD_BOT_TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ embeds: [embed] }),
+    });
+    if (!postRes.ok) {
+      const err = await postRes.json();
+      throw new Error(err.message || `Discord API error ${postRes.status}`);
+    }
+
+    return corsResponse(JSON.stringify({ ok: true, report: { title: report.title, code: report.code } }), 200);
   } catch (err) {
     return corsResponse(JSON.stringify({ error: err.message }), 500);
   }

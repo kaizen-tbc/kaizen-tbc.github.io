@@ -1544,6 +1544,7 @@ a[href] > div > div[style*="line-height:1.6"] {
     <button class="nav-btn" onclick="showTab('roster', this)">Raiders</button>
     <button class="nav-btn" onclick="showTab('builder', this)">Weekly Roster</button>
     <button class="nav-btn" onclick="showTab('strats', this)">Strats</button>
+    <button class="nav-btn" onclick="showTab('guild-logs', this)">Guild Logs</button>
   </nav>
   <div class="header-right">
     <button class="btn btn-small btn-gold" onclick="saveToGitHub()" title="Push kaizen_data.json to GitHub">⬆ Save to GitHub</button>
@@ -1940,6 +1941,32 @@ a[href] > div > div[style*="line-height:1.6"] {
   <div id="strat-list"></div>
 
   <!-- AD ZONE: Strats below content — 300x250 rectangle -->
+</div>
+
+<!-- ==================== GUILD LOGS TAB ==================== -->
+<div class="tab-panel" id="tab-guild-logs">
+  <div class="section-header">
+    <div>
+      <div class="section-title">Guild Logs</div>
+      <div class="section-subtitle">Pull the latest Warcraft Logs report — top parses, attendance, post to Discord</div>
+    </div>
+    <button class="btn btn-gold" onclick="fetchLatestLog()">⬇ Fetch Latest Log</button>
+  </div>
+
+  <div class="card" style="padding:16px 20px;margin-bottom:16px;">
+    <div class="form-group" style="max-width:360px;margin-bottom:0;">
+      <label class="form-label">Discord channel to post to</label>
+      <input type="text" class="form-input" id="logs-channel-input" placeholder="Discord channel ID"
+        onchange="updateLogsChannelId(this.value)">
+      <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">Point this at a test channel first if you just want to check the output.</div>
+    </div>
+  </div>
+
+  <div id="guild-logs-content">
+    <div class="empty-note" style="padding:32px;text-align:center;color:var(--text-dim);">
+      Click "⬇ Fetch Latest Log" to pull the most recent report.
+    </div>
+  </div>
 </div>
 
 
@@ -2523,6 +2550,10 @@ let nextLedgerId = 1;
 // it's unambiguous, and only ask the officer again when it isn't.
 let nameAliases = {};
 
+// Discord channel the Guild Logs tab posts to — separate from any raid's
+// own discordChannelId so you can point it at a test channel first.
+let logsChannelId = '';
+
 // ======================================================
 // ATTENDANCE IMPORT (Warcraft Logs — replaces manual CSV upload)
 // ======================================================
@@ -2638,6 +2669,127 @@ function confirmWCLAttendanceImport() {
   _pendingWCLAttendance = null;
   document.getElementById('wcl-attendance-overlay')?.remove();
   renderAttendanceLedger();
+}
+
+// ======================================================
+// GUILD LOGS TAB — top parses + attendance from Warcraft Logs,
+// posted directly via HTTP (not the Discord slash command, which has its
+// own unresolved registration/visibility issue as of this writing).
+// ======================================================
+let _lastLogFetch = null; // cached /logs/latest response — posting reuses
+                          // this exact report code so what you preview is
+                          // exactly what gets posted, not a re-fetched
+                          // "latest" that could've changed in between.
+
+function renderGuildLogsTab() {
+  const input = document.getElementById('logs-channel-input');
+  if (input) input.value = logsChannelId || '';
+}
+
+function updateLogsChannelId(value) {
+  logsChannelId = value.trim();
+}
+
+async function fetchLatestLog() {
+  const container = document.getElementById('guild-logs-content');
+  container.innerHTML = `<div style="padding:32px;text-align:center;color:var(--text-dim);">Fetching latest report...</div>`;
+  try {
+    const res = await fetch(`${RH_WORKER}/logs/latest`);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    _lastLogFetch = data;
+    renderLogPreview(data);
+  } catch (err) {
+    container.innerHTML = `<div class="notice notice-info" style="color:var(--red-bright);border-color:var(--red);">Couldn't fetch: ${err.message}</div>`;
+  }
+}
+
+function renderLogPreview(data) {
+  const container = document.getElementById('guild-logs-content');
+  const report = data.report || {};
+  const rosterByName = new Map(roster.map(p => [p.name.toLowerCase(), p]));
+
+  const matched = [];
+  const unmatchedNames = [];
+  (data.participants || []).forEach(n => {
+    const p = rosterByName.get(String(n).toLowerCase());
+    if (p) matched.push(p);
+    else unmatchedNames.push(n);
+  });
+
+  const topParses = (data.topParses || []).slice(0, 5);
+  const parseRows = topParses.map((p, i) => {
+    const rp = p.rankPercent != null ? ` <span style="color:var(--text-dim);">(${Math.round(p.rankPercent)}%)</span>` : '';
+    return `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:13px;">
+      <span><strong style="color:var(--gold);">${i + 1}.</strong> ${p.name}${rp}</span>
+      <span style="font-family:'IBM Plex Mono',monospace;color:var(--text-dim);">${Math.round(p.amount).toLocaleString()}</span>
+    </div>`;
+  }).join('') || `<div style="color:var(--text-dim);font-size:12px;font-style:italic;">No parse data available.</div>`;
+
+  const attendanceHtml = matched.length
+    ? matched.map(p => {
+        const cc = classColor(p.class);
+        return `<span class="class-dot" style="background:var(--${cc});width:7px;height:7px;display:inline-block;border-radius:50%;margin-right:4px;"></span><span class="class-${cc}" style="font-weight:600;font-size:12px;margin-right:10px;">${p.name}</span>`;
+      }).join('')
+    : `<div style="color:var(--text-dim);font-size:12px;font-style:italic;">No roster matches found.</div>`;
+
+  container.innerHTML = `
+    <div class="card" style="padding:18px 20px;margin-bottom:16px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;gap:12px;">
+        <div>
+          <div style="font-weight:700;font-size:15px;color:var(--text-bright);">${report.title || 'Raid Log Summary'}</div>
+          <div style="font-size:11px;color:var(--text-dim);margin-top:2px;">
+            ${data.killFights?.length || 0}/${data.fights?.length || 0} encounters killed · ${matched.length} guildie${matched.length === 1 ? '' : 's'} detected${unmatchedNames.length ? ` · ${unmatchedNames.length} unmatched (${unmatchedNames.join(', ')})` : ''}
+          </div>
+        </div>
+        ${report.code ? `<a href="https://www.warcraftlogs.com/reports/${report.code}" target="_blank" rel="noopener" class="btn btn-small" style="flex-shrink:0;">View on WCL ↗</a>` : ''}
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+      <div class="card" style="padding:16px 18px;">
+        <div class="section-title" style="font-size:14px;margin-bottom:8px;">⚔️ Top Parses</div>
+        ${parseRows}
+      </div>
+      <div class="card" style="padding:16px 18px;">
+        <div class="section-title" style="font-size:14px;margin-bottom:8px;">👥 Attendance (${matched.length})</div>
+        <div>${attendanceHtml}</div>
+      </div>
+    </div>
+
+    <button class="btn btn-gold" onclick="confirmPostLogSummary()">↑ Post to Discord</button>
+  `;
+}
+
+function confirmPostLogSummary() {
+  if (!_lastLogFetch) { showToast('Fetch a log first.', true); return; }
+  if (!logsChannelId) { showToast('Enter a Discord channel ID first.', true); return; }
+
+  document.getElementById('confirm-text').textContent =
+    `Post this log summary ("${_lastLogFetch.report?.title || 'latest report'}") to channel ${logsChannelId}?`;
+  const existingCheck = document.getElementById('confirm-notify-wrap');
+  if (existingCheck) existingCheck.remove();
+  document.getElementById('confirm-ok').onclick = () => {
+    closeConfirm();
+    postLogSummaryToDiscord();
+  };
+  document.getElementById('confirm-overlay').classList.add('open');
+}
+
+async function postLogSummaryToDiscord() {
+  showToast('↑ Posting log summary to Discord...');
+  try {
+    const res = await fetch(`${RH_WORKER}/post-log-summary`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ channelId: logsChannelId, reportCode: _lastLogFetch?.report?.code || null }),
+    });
+    const data = await res.json();
+    if (!res.ok || data.error) throw new Error(data.error || `Worker returned ${res.status}`);
+    showToast(`✓ Log summary posted!`);
+  } catch (err) {
+    showToast(`✗ Failed to post: ${err.message}`, true);
+  }
 }
 
 function removeNameFromLedgerWeek(weekId, name) {
@@ -3647,6 +3799,7 @@ function showTab(tab, btn) {
   if (tab === 'roster') renderActiveRosterSubTab();
   if (tab === 'strats') renderStrats();
   if (tab === 'builder') renderBuilder();
+  if (tab === 'guild-logs') renderGuildLogsTab();
 }
 
 function showRosterSubTab(subtab, btn) {
@@ -5350,6 +5503,7 @@ function saveData() {
     attendanceLedger,
     nextLedgerId,
     nameAliases,
+    logsChannelId,
   };
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
@@ -5393,6 +5547,7 @@ function loadData(event) {
       if (data.attendanceLedger) attendanceLedger = data.attendanceLedger;
       if (data.nextLedgerId) nextLedgerId = data.nextLedgerId;
       if (data.nameAliases) nameAliases = data.nameAliases;
+      if (data.logsChannelId) logsChannelId = data.logsChannelId;
       renderRoster();
       renderOverview();
       renderAttendance();
@@ -6152,6 +6307,7 @@ async function saveToGitHub() {
     roster, raids, nextRaidId, attendance, nextId, guildInfo, pugs, nextPugId, guildies, strats, nextStratId,
     attendanceLedger, nextLedgerId,
     nameAliases,
+    logsChannelId,
   };
 
   const jsonContent = JSON.stringify(payload, null, 2);
@@ -6689,6 +6845,7 @@ async function initFromJson() {
     if (data.attendanceLedger) attendanceLedger = data.attendanceLedger;
     if (data.nextLedgerId) nextLedgerId = data.nextLedgerId;
     if (data.nameAliases) nameAliases = data.nameAliases;
+    if (data.logsChannelId) logsChannelId = data.logsChannelId;
     showToast('📂 Loaded kaizen_data.json automatically.');
     updateVersionFooter(data.savedAt);
     console.log('Auto-loaded kaizen_data.json');
