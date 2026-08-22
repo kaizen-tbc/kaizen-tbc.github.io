@@ -4716,20 +4716,29 @@ document.addEventListener('click', () => {
   document.querySelectorAll('.spec-dropdown.open').forEach(el => el.classList.remove('open'));
 });
 
-function clearGroups() {
+// resetOverrides defaults to true for the explicit "wipe the board" actions
+// (the Clear button, Clear Import). autoFillGroups passes false — it only
+// needs to reset physical slot placement, and must NOT wipe specOverrides/
+// roleOverrides, which hold this week's RH-imported spec/role data and would
+// otherwise get destroyed the moment Auto-Fill runs right after Import.
+function clearGroups(resetOverrides = true) {
   const r = getActiveRaid();
   if (r) {
     const count = r.size === 10 ? 2 : 5;
     r.groups = Array.from({ length: count }, () => []);
     r.groupTitles = Array.from({ length: count }, () => '');
-    r.specOverrides = {};
-    r.roleOverrides = {};
+    if (resetOverrides) {
+      r.specOverrides = {};
+      r.roleOverrides = {};
+    }
     syncActiveRaid();
   } else {
     groups = [[], [], [], [], []];
     groupTitles = ['', '', '', '', ''];
-    specOverrides = {};
-    roleOverrides = {};
+    if (resetOverrides) {
+      specOverrides = {};
+      roleOverrides = {};
+    }
   }
 }
 
@@ -4740,7 +4749,7 @@ function clearGroupsToPool() {
 }
 
 function autoFillGroups() {
-  clearGroups();
+  clearGroups(false); // reset placement only — keep this week's imported spec/role overrides
 
   // Get all available players from signUpPool or active raiders
   const pool = signUpPool.length > 0
