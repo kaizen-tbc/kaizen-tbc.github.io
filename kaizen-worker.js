@@ -320,13 +320,14 @@ async function wclQuery(env, query, variables = {}) {
 async function findLatestGuildReport(env) {
   if (!env.WCL_GUILD_ID) throw new Error('WCL_GUILD_ID is not configured.');
 
+  // reports lives on the top-level reportData container, filtered by
+  // guildID - NOT nested under guildData.guild (confirmed live: querying it
+  // that way errors with "Cannot query field 'reports' on type 'Guild'").
   const data = await wclQuery(env, `
     query($id: Int!) {
-      guildData {
-        guild(id: $id) {
-          reports(limit: 5) {
-            data { code title startTime endTime zone { name } }
-          }
+      reportData {
+        reports(guildID: $id, limit: 5) {
+          data { code title startTime endTime zone { name } }
         }
       }
     }
@@ -334,7 +335,7 @@ async function findLatestGuildReport(env) {
     id: Number(env.WCL_GUILD_ID),
   });
 
-  const reports = data?.guildData?.guild?.reports?.data || [];
+  const reports = data?.reportData?.reports?.data || [];
   if (reports.length === 0) return null;
 
   const cutoff = Date.now() - 36 * 60 * 60 * 1000;
