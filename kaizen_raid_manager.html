@@ -1675,7 +1675,7 @@ a[href] > div > div[style*="line-height:1.6"] {
             <th onclick="sortRoster('status')">Status ↕</th>
             <th onclick="sortRoster('level')">Lvl ↕</th>
             <th>Alt Of</th>
-            <th>Attendance</th>
+            <th onclick="sortRoster('attendance')">Attendance ↕</th>
             <th style="width:90px;">Actions</th>
           </tr>
         </thead>
@@ -4124,6 +4124,15 @@ function getFilteredRoster() {
   });
 
   r.sort((a, b) => {
+    // Attendance isn't a stored field — it's computed from the ledger, so
+    // it needs its own comparator rather than the generic property lookup.
+    if (sortKey === 'attendance') {
+      const av = getPlayerAttendanceStats(a.name).rate;
+      const bv = getPlayerAttendanceStats(b.name).rate;
+      if (av < bv) return sortAsc ? -1 : 1;
+      if (av > bv) return sortAsc ? 1 : -1;
+      return 0;
+    }
     let av = a[sortKey] || '', bv = b[sortKey] || '';
     if (typeof av === 'string') av = av.toLowerCase();
     if (typeof bv === 'string') bv = bv.toLowerCase();
@@ -5465,27 +5474,6 @@ function renderStats() {
     <div class="stat-block"><div class="stat-label">Total</div><div class="stat-value">${roster.length}</div></div>
   `;
 }
-
-function getFilteredRoster() {
-  // Public version — no filter controls, just sort
-  let r = [...roster];
-  r.sort((a, b) => {
-    let av = a[sortKey] || '', bv = b[sortKey] || '';
-    if (typeof av === 'string') av = av.toLowerCase();
-    if (typeof bv === 'string') bv = bv.toLowerCase();
-    if (av < bv) return sortAsc ? -1 : 1;
-    if (av > bv) return sortAsc ? 1 : -1;
-    return 0;
-  });
-  return r;
-}
-
-function sortRoster(key) {
-  if (sortKey === key) sortAsc = !sortAsc;
-  else { sortKey = key; sortAsc = true; }
-  renderRoster();
-}
-
 
 
 // ======================================================
