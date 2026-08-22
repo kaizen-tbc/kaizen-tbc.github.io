@@ -4,7 +4,7 @@
 // ============================================================
 
 const DISCORD_API = 'https://discord.com/api/v10';
-const RH_API      = 'https://raid-helper.dev/api/v2';
+const RH_API      = 'https://raid-helper.xyz/api/v4';
 
 // ── Entry point ──────────────────────────────────────────────
 export default {
@@ -21,6 +21,11 @@ export default {
       return handleRHProxy(request, url, env);
     }
 
+    // ── Direct roster post from raid manager ── /post-roster
+    if (url.pathname === '/post-roster' && request.method === 'POST') {
+      return handleDirectRosterPost(request, env);
+    }
+
     // ── Discord interactions ── /discord
     if (url.pathname === '/discord' && request.method === 'POST') {
       return handleDiscord(request, env);
@@ -30,7 +35,45 @@ export default {
   }
 };
 
-// ── Raid Helper Proxy ────────────────────────────────────────
+// ── Direct roster post from raid manager ─────────────────────
+async function handleDirectRosterPost(request, env) {
+  try {
+    const { raidId, channelId, notify = true } = await request.json();
+
+    // Fetch latest data from GitHub Pages
+    const dataRes = await fetch(`https://kaizen-tbc.github.io/kaizen_data.json?v=${Date.now()}`);
+    if (!dataRes.ok) throw new Error('Could not load raid data');
+    const data = await dataRes.json();
+
+    const raids  = data.raids || [];
+    const roster = data.roster || [];
+    const raid   = raids.find(r => r.id === raidId) || raids[0];
+
+    if (!raid) throw new Error('Raid not found');
+
+    const embed = buildRosterEmbed(raid, roster, data.pugs || [], notify);
+
+    const postRes = await fetch(`${DISCORD_API}/channels/${channelId}/messages`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bot ${env.DISCORD_BOT_TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ embeds: [embed] })
+    });
+
+    if (!postRes.ok) {
+      const err = await postRes.json();
+      throw new Error(err.message || `Discord API error ${postRes.status}`);
+    }
+
+    return corsResponse(JSON.stringify({ ok: true }), 200);
+  } catch(err) {
+    return corsResponse(JSON.stringify({ error: err.message }), 500);
+  }
+}
+
+// ── Raid Helper Proxy ─────────────────────────────────────────
 async function handleRHProxy(request, url, env) {
   // /rh/events/:id  → GET single event (no auth)
   // /rh/servers/:id/events → GET server events (needs RH API key)
@@ -162,7 +205,7 @@ async function handlePostRosterCommand(interaction, guildId, options, env) {
 
     // Find the raid matching this channel or use first
     const channelId = interaction.channel_id;
-    const raid = raids.find(r => r.discordWebhookUrl?.includes(channelId)) || raids[0];
+    const raid = raids.find(r => r.discordChannelId === channelId) || raids[0];
 
     if (!raid) {
       return jsonResponse({
@@ -173,23 +216,27 @@ async function handlePostRosterCommand(interaction, guildId, options, env) {
 
     const embed = buildRosterEmbed(raid, roster, data.pugs || []);
 
-    // Post to the webhook for this raid
-    if (raid.discordWebhookUrl) {
-      await fetch(raid.discordWebhookUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ embeds: [embed] })
-      });
+    // Post via bot token to the configured channel
+    const postChannelId = raid.discordChannelId || channelId;
+    if (!postChannelId) {
       return jsonResponse({
         type: 4,
-        data: { content: `✅ Roster posted for **${raid.name}**`, flags: 64 }
+        data: { content: '⚠️ No Discord channel ID set for this raid. Add one in the raid manager under ⚙ Raid Settings.', flags: 64 }
       });
     }
 
-    // No webhook — post inline
+    await fetch(`${DISCORD_API}/channels/${postChannelId}/messages`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bot ${env.DISCORD_BOT_TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ embeds: [embed] })
+    });
+
     return jsonResponse({
       type: 4,
-      data: { embeds: [embed] }
+      data: { content: `✅ Roster posted for **${raid.name}**`, flags: 64 }
     });
 
   } catch (err) {
@@ -201,54 +248,135 @@ async function handlePostRosterCommand(interaction, guildId, options, env) {
 }
 
 // ── Build roster embed ───────────────────────────────────────
-function buildRosterEmbed(raid, roster, pugs) {
-  const CLASS_COLORS = {
-    Druid: 0xFF7D0A, Hunter: 0xABD473, Mage: 0x69CCF0,
-    Paladin: 0xF58CBA, Priest: 0xFFFFFF, Rogue: 0xFFF569,
-    Shaman: 0x0070DE, Warlock: 0x9482C9, Warrior: 0xC79C6E,
-  };
-  const CLASS_EMOJI = {
-    Druid: '🐾', Hunter: '🏹', Mage: '🔮', Paladin: '⚔️',
-    Priest: '✚', Rogue: '🗡️', Shaman: '⚡', Warlock: '🔥', Warrior: '🛡️',
-  };
+const SPEC_EMOJI = {
+  // Druid
+  'Balance':      '<:druid_balance:1539392826398347344>',
+  'Feral':        '<:druid_feral:1539392865652842586>',
+  'Restoration':  '<:druid_restoration:1539392882740437042>',
+  // Hunter
+  'Beastmastery': '<:hunter_beastmastery:1539392899580698634>',
+  'Marksmanship': '<:hunter_marksmanship:1539392915028050010>',
+  'Survival':     '<:hunter_survival:1539392930299781161>',
+  // Mage
+  'Arcane':       '<:mage_arcane:1539392959412445234>',
+  'Fire':         '<:mage_fire:1539392977896607905>',
+  'Frost':        '<:mage_frost:1539392995017756672>',
+  // Paladin
+  'Holy':         '<:paladin_holy:1539393014777253928>',
+  'Protection':   '<:paladin_protection:1539393029100666982>',
+  'Retribution':  '<:paladin_retribution:1539393045349535774>',
+  // Priest
+  'Discipline':   '<:priest_discipline:1539393066371121253>',
+  'Shadow':       '<:priest_shadow:1539393107387219989>',
+  // Rogue
+  'Assassination':'<:rogue_assassination:1539393134717567027>',
+  'Combat':       '<:rogue_combat:1539393158180245594>',
+  'Subtlety':     '<:rogue_subtlety:1539393176643698839>',
+  // Shaman
+  'Elemental':    '<:shaman_elemental:1539393194201063465>',
+  'Enhancement':  '<:shaman_enhancement:1539393215109796011>',
+  // Warlock
+  'Affliction':   '<:warlock_affliction:1539393255031054469>',
+  'Demonology':   '<:warlock_demonology:1539393274224316567>',
+  'Destruction':  '<:warlock_destruction:1539393293480230995>',
+  // Warrior
+  'Arms':         '<:warrior_arms:1539393314535768224>',
+  'Fury':         '<:warrior_fury:1539393335914135672>',
+  // Shared (class fallbacks)
+  'priest_holy':  '<:priest_holy:1539393087334391859>',
+  'shaman_restoration': '<:shaman_restoration:1539393235397513256>',
+  'warrior_protection': '<:warrior_protection:1539393353362309232>',
+};
 
-  function getPlayer(id, allRoster, allPugs) {
-    if (id < 0) return allPugs.find(p => p.id === id);
-    return allRoster.find(p => p.id === id);
+// Map specs that share names across classes
+const CLASS_SPEC_EMOJI = {
+  'Priest-Holy':   '<:priest_holy:1539393087334391859>',
+  'Druid-Restoration': '<:druid_restoration:1539392882740437042>',
+  'Shaman-Restoration': '<:shaman_restoration:1539393235397513256>',
+  'Paladin-Holy':  '<:paladin_holy:1539393014777253928>',
+  'Warrior-Protection': '<:warrior_protection:1539393353362309232>',
+  'Paladin-Protection': '<:paladin_protection:1539393029100666982>',
+  'Druid-Feral':   '<:druid_feral:1539392865652842586>',
+};
+
+function getSpecEmoji(cls, spec) {
+  // Try class+spec combo first for ambiguous specs
+  const combo = `${cls}-${spec}`;
+  if (CLASS_SPEC_EMOJI[combo]) return CLASS_SPEC_EMOJI[combo];
+  // Fall back to spec name alone
+  return SPEC_EMOJI[spec] || '';
+}
+
+function buildRosterEmbed(raid, roster, pugs, notify = true) {
+  function getPlayer(id) {
+    if (id < 0) return pugs.find(p => p.id === id);
+    return roster.find(p => p.id === id);
   }
 
   const groups = raid.groups || [];
+  const specOv = raid.specOverrides || {};
+  const roleOv = raid.roleOverrides || {};
+
+  // Role counts
+  const roleCounts = { Tank: 0, Healer: 0, DPS: 0 };
+  groups.flat().forEach(id => {
+    const p = getPlayer(id);
+    if (!p) return;
+    const role = roleOv[p.id] || p.role;
+    if (role === 'Tank') roleCounts.Tank++;
+    else if (role === 'Healer') roleCounts.Healer++;
+    else roleCounts.DPS++;
+  });
+
+  const total = roleCounts.Tank + roleCounts.Healer + roleCounts.DPS;
+  const userIdMap = raid.userIdMap || {};
+
+  // @mention line at top like Raid Helper — all raiders pinged
+  const allPlayers = groups.flat().map(id => getPlayer(id)).filter(Boolean);
+  const mentionLine = notify
+    ? allPlayers.map(p => userIdMap[p.id] ? `<@${userIdMap[p.id]}>` : p.name).join(' ')
+    : '';
+
+  // Build group fields
   const fields = groups
     .map((group, g) => {
       if (!group || group.length === 0) return null;
-      const members = group
-        .map(id => getPlayer(id, roster, pugs))
+      const lines = group
+        .map(id => {
+          const p = getPlayer(id);
+          if (!p) return null;
+          const spec = specOv[p.id] || p.ms || p.class;
+          const icon = getSpecEmoji(p.class, spec);
+          const mention = userIdMap[p.id] ? `<@${userIdMap[p.id]}>` : p.name;
+          return `${icon} ${mention}`;
+        })
         .filter(Boolean)
-        .map(p => `${CLASS_EMOJI[p.class] || '•'} **${p.name}** — ${raid.specOverrides?.[p.id] || p.ms || p.class}`)
         .join('\n');
+
       return {
-        name: raid.groupTitles?.[g] || `Group ${g + 1}`,
-        value: members || 'Empty',
+        name: `Group ${g + 1}${raid.groupTitles?.[g] ? ` — ${raid.groupTitles[g]}` : ''}`,
+        value: lines || 'Empty',
         inline: true,
       };
     })
     .filter(Boolean);
 
-  // Role counts
-  const roleCounts = { Tank: 0, Healer: 0, Melee: 0, Ranged: 0 };
-  groups.flat().forEach(id => {
-    const p = getPlayer(id, roster, pugs);
-    if (!p) return;
-    const role = raid.roleOverrides?.[p.id] || p.role;
-    if (roleCounts[role] !== undefined) roleCounts[role]++;
+  // Insert blank fields to force 2-column layout with breathing room
+  const spacedFields = [];
+  fields.forEach((f, i) => {
+    spacedFields.push(f);
+    if ((i + 1) % 2 === 0 && i < fields.length - 1) {
+      spacedFields.push({ name: '​', value: '​', inline: false });
+    }
   });
-
-  const total = Object.values(roleCounts).reduce((a, b) => a + b, 0);
+  if (spacedFields.length % 2 === 1) {
+    spacedFields.push({ name: '​', value: '​', inline: true });
+  }
 
   return {
     title: `${raid.name} — ${total} Raiders`,
-    description: `🛡 ${roleCounts.Tank} Tanks  ✚ ${roleCounts.Healer} Healers  ⚔️ ${roleCounts.Melee} Melee  🏹 ${roleCounts.Ranged} Ranged`,
-    fields,
+    description: `${mentionLine ? mentionLine + '\n\n' : ''}🛡 **${roleCounts.Tank}** Tanks  |  ✚ **${roleCounts.Healer}** Healers  |  ⚔ **${roleCounts.DPS}** DPS`,
+    fields: spacedFields,
     color: 0xC9A227,
     footer: { text: 'Kaizen Raid Manager • kaizen-tbc.github.io' },
     timestamp: new Date().toISOString(),
@@ -261,13 +389,13 @@ async function verifyDiscordSignature(publicKey, signature, timestamp, body) {
     const key = await crypto.subtle.importKey(
       'raw',
       hexToBytes(publicKey),
-      { name: 'NODE-ED25519', namedCurve: 'NODE-ED25519' },
+      { name: 'Ed25519' },
       false,
       ['verify']
     );
     const encoder = new TextEncoder();
     return await crypto.subtle.verify(
-      'NODE-ED25519',
+      'Ed25519',
       key,
       hexToBytes(signature),
       encoder.encode(timestamp + body)
