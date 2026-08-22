@@ -1,0 +1,19 @@
+# Deploy config for the kaizen-bot Cloudflare Worker (kaizen-worker.js).
+# `name` below must exactly match the existing Worker's name in the
+# Cloudflare dashboard (Workers & Pages -> your worker) or `wrangler deploy`
+# will create a NEW worker instead of updating the live one - please confirm
+# this against the dashboard before the first deploy.
+name = "kaizen-bot"
+main = "kaizen-worker.js"
+compatibility_date = "2026-08-22"
+
+# Fill in from the Cloudflare dashboard sidebar (or `wrangler whoami` once
+# logged in) - not required if your API token is scoped to a single account,
+# but safer to pin explicitly if you have more than one.
+# account_id = "your-account-id-here"
+
+# Secrets (RH_API_KEY, RH_SERVER_ID, DISCORD_BOT_TOKEN, DISCORD_PUBLIC_KEY,
+# WCL_CLIENT_ID, WCL_CLIENT_SECRET, WCL_GUILD_NAME, WCL_GUILD_SERVER_SLUG,
+# WCL_GUILD_SERVER_REGION) already live on the Worker stay untouched by
+# `wrangler deploy` - they're managed separately via `wrangler secret put`
+# or the dashboard, never committed here.

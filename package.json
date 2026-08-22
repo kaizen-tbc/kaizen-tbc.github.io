@@ -1,0 +1,12 @@
+{
+  "name": "kaizen-raid-manager",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Deploy tooling for the kaizen-bot Cloudflare Worker. The site itself (kaizen_raid_manager.html, index.html) is plain HTML/JS with no build step - this package.json exists only for wrangler.",
+  "scripts": {
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^3"
+  }
+}
