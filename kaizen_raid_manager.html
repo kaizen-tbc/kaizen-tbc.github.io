@@ -2763,33 +2763,56 @@ function openRaidHelperImport() {
       </div>
       <div class="modal-body">
         ${hasAutoConfig ? `
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-mid);margin:0 0 14px;cursor:pointer;">
+            <input type="checkbox" id="rh-use-latest-check" checked onchange="toggleRHImportMode()" style="cursor:pointer;width:15px;height:15px;flex-shrink:0;">
+            Use the latest event posted in <strong style="color:var(--text-bright);">#${channelId}</strong>
+          </label>
+        ` : ''}
+        <div id="rh-auto-section" style="${hasAutoConfig ? '' : 'display:none;'}">
           <p style="font-size:13px;color:var(--text-dim);margin:0 0 14px;">
             Fetching the most recent Raid Helper event from <strong style="color:var(--text-bright);">#${channelId}</strong>...
           </p>
           <div id="rh-event-list"><div style="color:var(--text-dim);font-size:13px;">Loading...</div></div>
-        ` : `
+        </div>
+        <div id="rh-manual-section" style="${hasAutoConfig ? 'display:none;' : ''}">
           <p style="font-size:13px;color:var(--text-dim);margin:0 0 14px;">
             ${!channelId ? `<strong style="color:var(--gold);">No Raid Helper channel set for this raid.</strong> Add one in ⚙ Raid Settings, or paste an event URL below.<br><br>` : ''}
             ${!rh.serverId || !rh.apiKey ? `<strong style="color:var(--gold);">Server ID or API key missing.</strong> Add them in ⚙ Settings.<br><br>` : ''}
-            Paste the <strong style="color:var(--text-bright);">Web View</strong> link from any Raid Helper event embed:
+            ${hasAutoConfig
+              ? `Paste the link to a <em>specific</em> event instead — useful if a newer event got posted before this week's is actually done:`
+              : `Paste the <strong style="color:var(--text-bright);">Web View</strong> link from any Raid Helper event embed:`}
           </p>
           <div class="form-group">
             <label class="form-label">Event URL or ID</label>
             <input type="text" class="form-input" id="rh-event-url-input"
               placeholder="https://raid-helper.dev/event/123... or just the event ID">
           </div>
-        `}
+        </div>
       </div>
       <div class="modal-footer">
         <button class="btn" onclick="document.getElementById('rh-import-overlay').remove()">Cancel</button>
-        ${hasAutoConfig
-          ? `<button class="btn btn-gold" onclick="fetchRHLatestForChannel('${channelId}')">Fetch Latest Event</button>`
-          : `<button class="btn btn-gold" onclick="fetchRHEventByUrl()">Fetch Sign-Ups</button>`}
+        <button class="btn btn-gold" id="rh-auto-fetch-btn" style="${hasAutoConfig ? '' : 'display:none;'}" onclick="fetchRHLatestForChannel('${channelId}')">Fetch Latest Event</button>
+        <button class="btn btn-gold" id="rh-manual-fetch-btn" style="${hasAutoConfig ? 'display:none;' : ''}" onclick="fetchRHEventByUrl()">Fetch Sign-Ups</button>
       </div>
     </div>`;
   document.body.appendChild(overlay);
 
   if (hasAutoConfig) fetchRHLatestForChannel(channelId);
+}
+
+// Toggles the "Use latest Discord event" checkbox — checked (default) keeps
+// today's auto-fetch-most-recent behavior; unchecked swaps to a manual
+// event URL/ID paste, for when an officer posts a newer event before the
+// current week's is actually finished, so "latest" isn't the right one.
+function toggleRHImportMode() {
+  const useLatest = document.getElementById('rh-use-latest-check').checked;
+  document.getElementById('rh-auto-section').style.display = useLatest ? '' : 'none';
+  document.getElementById('rh-manual-section').style.display = useLatest ? 'none' : '';
+  document.getElementById('rh-auto-fetch-btn').style.display = useLatest ? '' : 'none';
+  document.getElementById('rh-manual-fetch-btn').style.display = useLatest ? 'none' : '';
+  if (!useLatest) {
+    setTimeout(() => document.getElementById('rh-event-url-input')?.focus(), 50);
+  }
 }
 
 async function fetchRHLatestForChannel(channelId) {
