@@ -263,8 +263,10 @@ async function handlePostRosterCommand(interaction, guildId, options, env) {
 //   WCL_CLIENT_ID, WCL_CLIENT_SECRET   — from an API v2 client you create
 //     at warcraftlogs.com under your account's Client Management page
 //     (client_credentials flow — no redirect URI needed).
-//   WCL_GUILD_NAME, WCL_GUILD_SERVER_SLUG, WCL_GUILD_SERVER_REGION
-//     — e.g. "Kaizen", "Dreamscythe", "US".
+//   WCL_GUILD_ID — the numeric guild id, e.g. from
+//     https://fresh.warcraftlogs.com/guild/id/816169 it's 816169. Looking
+//     up by id sidesteps any case/spelling mismatch on guild name or
+//     server slug entirely.
 //
 // NOTE: rankings/playerDetails are JSON-scalar fields in WCL's v2 schema
 // (not fully-typed GraphQL), so their exact key names are the part of this
@@ -310,10 +312,12 @@ async function wclQuery(env, query, variables = {}) {
 // both auto-uploading the same raid night — takes whichever log covers
 // more of the raid rather than whichever finished uploading last.
 async function findLatestGuildReport(env) {
+  if (!env.WCL_GUILD_ID) throw new Error('WCL_GUILD_ID is not configured.');
+
   const data = await wclQuery(env, `
-    query($name: String!, $serverSlug: String!, $serverRegion: String!) {
+    query($id: Int!) {
       guildData {
-        guild(name: $name, serverSlug: $serverSlug, serverRegion: $serverRegion) {
+        guild(id: $id) {
           reports(limit: 5) {
             data { code title startTime endTime zone { name } }
           }
@@ -321,9 +325,7 @@ async function findLatestGuildReport(env) {
       }
     }
   `, {
-    name: env.WCL_GUILD_NAME,
-    serverSlug: env.WCL_GUILD_SERVER_SLUG,
-    serverRegion: env.WCL_GUILD_SERVER_REGION,
+    id: Number(env.WCL_GUILD_ID),
   });
 
   const reports = data?.guildData?.guild?.reports?.data || [];
