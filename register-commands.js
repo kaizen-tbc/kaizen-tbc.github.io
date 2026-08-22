@@ -1,8 +1,22 @@
-// Run once to register slash commands with Discord:
-// node register-commands.js
+// Run once (or whenever commands change) to register slash commands with
+// Discord. Reads the bot token from an environment variable rather than a
+// hardcoded line, so it's never written to disk / at risk of being
+// accidentally committed - same token you already have in the Cloudflare
+// DISCORD_BOT_TOKEN secret, just passed in for this one process:
+//
+//   PowerShell:
+//     $env:DISCORD_BOT_TOKEN = "your-token-here"
+//     node register-commands.js
+//
+//   (the env var only lives in that terminal session - closing it clears it)
 
 const APPLICATION_ID = '1539371978983604314';
-const BOT_TOKEN = 'YOUR_BOT_TOKEN_HERE'; // paste your bot token here before running
+const BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;
+
+if (!BOT_TOKEN) {
+  console.error('❌ Set the DISCORD_BOT_TOKEN environment variable first (see comment at top of this file).');
+  process.exit(1);
+}
 
 const commands = [
   {
