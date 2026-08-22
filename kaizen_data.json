@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-08-22T22:33:24.870Z",
+  "savedAt": "2026-08-22T23:26:00.739Z",
   "roster": [
     {
       "id": 1,
@@ -949,7 +949,9 @@
       "groups": [
         [
           40,
+          22,
           35,
+          14,
           5
         ],
         [
@@ -958,23 +960,22 @@
         ],
         [
           33,
+          28,
+          4,
           39,
-          22,
-          12,
-          7
+          12
         ],
         [
-          25,
+          null,
           41,
-          28,
+          25,
+          19,
           68
         ],
         [
-          27,
           55,
-          19,
-          10,
-          14
+          27,
+          10
         ]
       ],
       "groupTitles": [
@@ -984,11 +985,49 @@
         "",
         ""
       ],
-      "specOverrides": {},
-      "roleOverrides": {},
+      "specOverrides": {
+        "4": "Balance",
+        "5": "Retribution",
+        "10": "Restoration",
+        "12": "Destruction",
+        "14": "Feral",
+        "19": "Holy",
+        "22": "Destruction",
+        "25": "Arcane",
+        "27": "Restoration",
+        "28": "Shadow",
+        "29": "Beastmastery",
+        "35": "Combat",
+        "39": "Destruction",
+        "40": "Enhancement",
+        "41": "Shadow",
+        "46": "Enhancement",
+        "55": "Protection",
+        "68": "Holy"
+      },
+      "roleOverrides": {
+        "4": "Ranged",
+        "5": "Melee",
+        "10": "Healer",
+        "12": "Ranged",
+        "14": "Tank",
+        "19": "Ranged",
+        "22": "Ranged",
+        "25": "Ranged",
+        "27": "Healer",
+        "28": "Ranged",
+        "29": "Ranged",
+        "35": "Melee",
+        "39": "Ranged",
+        "40": "Melee",
+        "41": "Ranged",
+        "46": "Melee",
+        "55": "Tank",
+        "68": "Healer"
+      },
       "userIdMap": {
+        "4": "137777201792811008",
         "5": "227110510972108810",
-        "7": "137777201792811008",
         "10": "185994214352486400",
         "12": "595869887952322561",
         "14": "458021620251099147",
@@ -4030,6 +4069,9 @@
     ],
     "Clutch": [
       12
+    ],
+    "Tilatia": [
+      4
     ]
   }
 }
