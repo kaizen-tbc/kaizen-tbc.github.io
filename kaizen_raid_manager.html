@@ -4873,6 +4873,28 @@ function autoFillGroups() {
     else place(4, p); // all groups covered — G5
   });
 
+  // ── PHASE 1b: Spread Shadow Priests, secure Balance Druid ─
+  // Same "don't stack redundant utility in one group" logic as Shamans —
+  // two Shadow Priests in the same group is wasted raid design, spread
+  // them like a shaman. Shadow Priest's home is G4 (with mages, for
+  // Vampiric Touch synergy); overflow goes to G3. Balance Druid's home is
+  // G3 (caster group) — placed here, before warlocks/mages fill those
+  // groups in later phases, so it can't get crowded out into the G5 dump.
+  const shadowPriests = find('Priest', 'Shadow');
+  const balanceDruids = find('Druid', 'Balance');
+
+  shadowPriests.forEach((p, i) => {
+    if (i === 0) { if (!place(3, p)) place(2, p); }
+    else if (i === 1) { if (!place(2, p)) place(3, p); }
+    else place(4, p); // extra shadow priests → dump group
+  });
+
+  balanceDruids.forEach((p, i) => {
+    if (i === 0) { if (!place(2, p)) place(3, p); }
+    else if (i === 1) { if (!place(3, p)) place(2, p); }
+    else place(4, p); // extra boomkins → dump group
+  });
+
   // ── PHASE 2: Group 1 — Tanks first, then Melee ───────────
   // Prot Warrior tanks first
   findClass('Warrior').filter(p => getSpec(p) === 'Protection').forEach(p => place(0, p));
@@ -4899,25 +4921,17 @@ function autoFillGroups() {
   find('Warlock', 'Demonology').forEach(p => place(2, p));
   // Affliction → G3 if slots, else G5
   find('Warlock', 'Affliction').forEach(p => { if (!place(2, p)) place(4, p); });
-  // Balance Druid
-  find('Druid', 'Balance').forEach(p => place(2, p));
-  // Shadow Priest
-  find('Priest', 'Shadow').forEach(p => place(2, p));
-  // Disc Priest fill
+  // Disc Priest fill (Shadow Priest / Balance Druid already placed — PHASE 1b)
   find('Priest', 'Discipline').forEach(p => place(2, p));
 
   // ── PHASE 5: Group 4 — Mage/Shadow ──────────────────────
   // All Mages
   findClass('Mage').forEach(p => place(3, p));
-  // Shadow Priest (needs to be with mages)
-  find('Priest', 'Shadow').forEach(p => place(3, p));
-  // Disc Priest
+  // Disc Priest (Shadow Priest / Balance Druid already placed — PHASE 1b)
   find('Priest', 'Discipline').forEach(p => place(3, p));
   // Warlock overflow (Destro/Demo first)
   find('Warlock', 'Destruction').forEach(p => place(3, p));
   find('Warlock', 'Demonology').forEach(p => place(3, p));
-  // Balance Druid overflow
-  find('Druid', 'Balance').forEach(p => place(3, p));
   // Holy Priest fill
   find('Priest', 'Holy').forEach(p => place(3, p));
 
