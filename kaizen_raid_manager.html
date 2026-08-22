@@ -2259,6 +2259,20 @@ function translateRHSpec(rhSpecName, className) {
   return { spec: normalized, role: SPEC_ROLE[normalized] || SPEC_ROLE[rhSpecName] || 'Ranged' };
 }
 
+// Raid Helper tracks role separately from spec on every sign-up (roleName /
+// cRoleName: "Tanks"/"Healers"/"Melee"/"Ranged") — this is more reliable
+// than re-deriving role from spec name ourselves, since that guessing
+// breaks for off-meta builds (Smite Priest: Holy spec, Ranged role) and
+// because RH's className field is NOT always the real WoW class — for
+// tank sign-ups specifically, RH reports className "Tank" (a generic role
+// bucket) rather than "Paladin"/"Druid"/"Warrior". Confirmed directly
+// against a live event: Hasu (a Paladin, Protection1) and Sobadai (a
+// Druid, Guardian) both come back with className "Tank".
+const RH_ROLE_MAP = { 'Tanks': 'Tank', 'Tank': 'Tank', 'Healers': 'Healer', 'Healer': 'Healer', 'Melee': 'Melee', 'Ranged': 'Ranged', 'DPS': 'Ranged' };
+function normalizeRHRole(roleName) {
+  return RH_ROLE_MAP[roleName] || null;
+}
+
 // ======================================================
 // GUILD INFO — editable, saved/loaded with JSON
 // ======================================================
@@ -2952,12 +2966,12 @@ function processRHSignUps(event) {
   overlay.dataset.attending = JSON.stringify(attendingRows.map(r => ({
     name: r.su.name, matchId: r.match ? r.match.player.id : null,
     userId: r.su.userId || null,
-    className: r.cls, specName: r.spec, _status: 'attending'
+    className: r.cls, specName: r.spec, roleName: r.su.roleName || r.su.cRoleName || null, _status: 'attending'
   })));
   overlay.dataset.benched = JSON.stringify(benchedRows.map(r => ({
     name: r.su.name, matchId: r.match ? r.match.player.id : null,
     userId: r.su.userId || null,
-    className: r.cls, specName: r.spec, _status: 'bench'
+    className: r.cls, specName: r.spec, roleName: r.su.roleName || r.su.cRoleName || null, _status: 'bench'
   })));
 
   overlay.innerHTML = `
@@ -3244,6 +3258,7 @@ function applyRHImport() {
   nextPugId = -1;
   signUpPool = [];
   specOverrides = {};
+  roleOverrides = {};
 
   const allSignUps = [...attendingData, ...benchedData];
 
@@ -3252,24 +3267,36 @@ function applyRHImport() {
       const p = roster.find(r => r.id === su.matchId);
       if (p) {
         const poolEntry = { ...p, _rhStatus: su._status || 'attending', _userId: su.userId || null };
-        // Translate RH spec name to our internal spec/role
-        const translated = translateRHSpec(su.specName, su.className);
+        // Roster is authoritative for class once matched — RH's own
+        // className is NOT reliably the real WoW class: for tank sign-ups
+        // specifically it reports a generic "Tank" bucket instead of
+        // "Paladin"/"Druid"/"Warrior" (confirmed directly against a live
+        // event), which broke Guardian-spec disambiguation and worse.
+        const translated = translateRHSpec(su.specName, p.class);
         if (translated) {
+          // RH tracks role separately per sign-up (roleName) and is more
+          // reliable than re-deriving it from spec name ourselves — that
+          // guessing breaks for off-meta builds (Smite Priest: Holy spec,
+          // Ranged role) and anything else we haven't seen yet.
+          const rhRole = normalizeRHRole(su.roleName) || translated.role;
           poolEntry._rhSpec  = translated.spec;
-          poolEntry._rhClass = su.className || p.class;
+          poolEntry._rhClass = p.class;
           poolEntry.ms       = translated.spec;
-          poolEntry.class    = su.className || p.class;
-          poolEntry.role     = translated.role;
+          poolEntry.class    = p.class;
+          poolEntry.role     = rhRole;
           specOverrides[p.id] = translated.spec;
+          roleOverrides[p.id] = rhRole;
         }
         signUpPool.push(poolEntry);
       }
     } else {
+      // No roster match, so we have no real class to fall back on — RH's
+      // className is our only option here, generic "Tank" bucket and all.
       const pugId = nextPugId--;
       const cls   = su.className || 'Warrior';
       const translated = translateRHSpec(su.specName, cls);
       const spec  = translated?.spec || (CLASS_SPECS[cls] || [])[0] || '';
-      const role  = translated?.role || SPEC_ROLE[spec] || 'Ranged';
+      const role  = normalizeRHRole(su.roleName) || translated?.role || SPEC_ROLE[spec] || 'Ranged';
       const pug = {
         id: pugId, name: su.name, class: cls, ms: spec, os: '',
         role,
@@ -3282,15 +3309,16 @@ function applyRHImport() {
     }
   }
 
-  // Save to active raid BEFORE syncing so specOverrides aren't wiped
+  // Save to active raid BEFORE syncing so specOverrides/roleOverrides aren't wiped
   const r = getActiveRaid();
   if (r) {
     r.specOverrides = { ...specOverrides };
+    r.roleOverrides = { ...roleOverrides };
     r.userIdMap = {};
     signUpPool.forEach(p => {
       if (p._userId) r.userIdMap[p.id] = p._userId;
     });
-    // Now sync — this will set global specOverrides from r.specOverrides
+    // Now sync — this will set global specOverrides/roleOverrides from raid
     syncActiveRaid();
   }
 
