@@ -24,6 +24,11 @@ const commands = [
     ]
   },
   {
+    name: 'post-logs',
+    description: 'Post top parses + attendance from the latest Warcraft Logs report to this channel',
+    default_member_permissions: '8', // Administrator only
+  },
+  {
     name: 'help',
     description: 'Show available Kaizen raid manager commands',
   },

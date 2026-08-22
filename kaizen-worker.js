@@ -8,7 +8,7 @@ const RH_API      = 'https://raid-helper.xyz/api/v4';
 
 // ── Entry point ──────────────────────────────────────────────
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
     // CORS preflight
@@ -26,9 +26,15 @@ export default {
       return handleDirectRosterPost(request, env);
     }
 
+    // ── Latest Warcraft Logs report, for the raid manager's attendance
+    // review UI ── /logs/latest
+    if (url.pathname === '/logs/latest' && request.method === 'GET') {
+      return handleLatestLogsData(request, env);
+    }
+
     // ── Discord interactions ── /discord
     if (url.pathname === '/discord' && request.method === 'POST') {
-      return handleDiscord(request, env);
+      return handleDiscord(request, env, ctx);
     }
 
     return new Response('Kaizen Worker running.', { status: 200 });
@@ -93,7 +99,7 @@ async function handleRHProxy(request, url, env) {
 }
 
 // ── Discord Interaction Handler ──────────────────────────────
-async function handleDiscord(request, env) {
+async function handleDiscord(request, env, ctx) {
   // Verify the request is genuinely from Discord
   const signature = request.headers.get('x-signature-ed25519');
   const timestamp = request.headers.get('x-signature-timestamp');
@@ -113,13 +119,13 @@ async function handleDiscord(request, env) {
 
   // Slash command
   if (interaction.type === 2) {
-    return handleSlashCommand(interaction, env);
+    return handleSlashCommand(interaction, env, ctx);
   }
 
   return jsonResponse({ type: 1 });
 }
 
-async function handleSlashCommand(interaction, env) {
+async function handleSlashCommand(interaction, env, ctx) {
   const cmd     = interaction.data.name;
   const guildId = interaction.guild_id;
   const options = Object.fromEntries(
@@ -131,6 +137,8 @@ async function handleSlashCommand(interaction, env) {
       return handleImportCommand(interaction, guildId, options, env);
     case 'post-roster':
       return handlePostRosterCommand(interaction, guildId, options, env);
+    case 'post-logs':
+      return handlePostLogsCommand(interaction, guildId, options, env, ctx);
     case 'help':
       return jsonResponse({
         type: 4,
@@ -141,6 +149,7 @@ async function handleSlashCommand(interaction, env) {
               '**Commands:**',
               '`/import` — Fetch the latest sign-ups from Raid Helper and import to the raid manager',
               '`/post-roster` — Post the current roster groups to this channel',
+              '`/post-logs` — Post top parses + attendance from the latest Warcraft Logs report',
               '`/help` — Show this message',
             ].join('\n'),
             color: 0xC9A227,
@@ -244,6 +253,274 @@ async function handlePostRosterCommand(interaction, guildId, options, env) {
       type: 4,
       data: { content: `❌ Error: ${err.message}`, flags: 64 }
     });
+  }
+}
+
+// ============================================================
+// WARCRAFT LOGS INTEGRATION
+// ============================================================
+// Env vars required (Cloudflare secrets, same pattern as RH_API_KEY):
+//   WCL_CLIENT_ID, WCL_CLIENT_SECRET   — from an API v2 client you create
+//     at warcraftlogs.com under your account's Client Management page
+//     (client_credentials flow — no redirect URI needed).
+//   WCL_GUILD_NAME, WCL_GUILD_SERVER_SLUG, WCL_GUILD_SERVER_REGION
+//     — e.g. "Kaizen", "Dreamscythe", "US".
+//
+// NOTE: rankings/playerDetails are JSON-scalar fields in WCL's v2 schema
+// (not fully-typed GraphQL), so their exact key names are the part of this
+// integration most likely to need a quick follow-up tweak once tested
+// against a real report — extractParticipantNames/extractTopParses are
+// written defensively (try/catch, several key-name fallbacks) so a shape
+// mismatch degrades to an empty list + a visible error in the Discord
+// reply rather than a crash.
+const WCL_TOKEN_URL = 'https://www.warcraftlogs.com/oauth/token';
+const WCL_API       = 'https://www.warcraftlogs.com/api/v2/client';
+
+async function getWCLToken(env) {
+  const creds = btoa(`${env.WCL_CLIENT_ID}:${env.WCL_CLIENT_SECRET}`);
+  const res = await fetch(WCL_TOKEN_URL, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Basic ${creds}`,
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: 'grant_type=client_credentials',
+  });
+  if (!res.ok) throw new Error(`Warcraft Logs auth failed: ${res.status}`);
+  const data = await res.json();
+  return data.access_token;
+}
+
+async function wclQuery(env, query, variables = {}) {
+  const token = await getWCLToken(env);
+  const res = await fetch(WCL_API, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ query, variables }),
+  });
+  const json = await res.json();
+  if (json.errors?.length) throw new Error(json.errors.map(e => e.message).join('; '));
+  return json.data;
+}
+
+// Picks the most complete report from the last ~36h. Handles two people
+// both auto-uploading the same raid night — takes whichever log covers
+// more of the raid rather than whichever finished uploading last.
+async function findLatestGuildReport(env) {
+  const data = await wclQuery(env, `
+    query($name: String!, $serverSlug: String!, $serverRegion: String!) {
+      guildData {
+        guild(name: $name, serverSlug: $serverSlug, serverRegion: $serverRegion) {
+          reports(limit: 5) {
+            data { code title startTime endTime zone { name } }
+          }
+        }
+      }
+    }
+  `, {
+    name: env.WCL_GUILD_NAME,
+    serverSlug: env.WCL_GUILD_SERVER_SLUG,
+    serverRegion: env.WCL_GUILD_SERVER_REGION,
+  });
+
+  const reports = data?.guildData?.guild?.reports?.data || [];
+  if (reports.length === 0) return null;
+
+  const cutoff = Date.now() - 36 * 60 * 60 * 1000;
+  const recent = reports.filter(r => r.endTime >= cutoff);
+  const pool = recent.length ? recent : [reports[0]];
+  return pool.reduce((best, r) =>
+    (r.endTime - r.startTime) > (best.endTime - best.startTime) ? r : best
+  , pool[0]);
+}
+
+// Fight list, rankings, and participant data for one report. Two queries:
+// rankings/playerDetails need fight ID arrays as arguments, which we only
+// have after the first query returns the fight list.
+async function getReportFightsAndStats(env, code) {
+  const fightsData = await wclQuery(env, `
+    query($code: String!) {
+      reportData {
+        report(code: $code) {
+          fights { id name encounterID kill startTime endTime }
+        }
+      }
+    }
+  `, { code });
+
+  const fights = fightsData?.reportData?.report?.fights || [];
+  const killFights = fights.filter(f => f.kill);
+  const allFightIds = fights.map(f => f.id);
+  const killFightIds = killFights.map(f => f.id);
+
+  const statsData = await wclQuery(env, `
+    query($code: String!, $allIds: [Int]!, $killIds: [Int]!) {
+      reportData {
+        report(code: $code) {
+          rankings(fightIDs: $killIds)
+          playerDetails(fightIDs: $allIds)
+        }
+      }
+    }
+  `, { code, allIds: allFightIds, killIds: killFightIds });
+
+  return {
+    fights,
+    killFights,
+    rankingsRaw: statsData?.reportData?.report?.rankings ?? null,
+    playerDetailsRaw: statsData?.reportData?.report?.playerDetails ?? null,
+  };
+}
+
+// playerDetails is a JSON blob shaped roughly like
+// { data: { playerDetails: { dps: [...], healers: [...], tanks: [...] } } },
+// each entry carrying at least a `name`. Tried a couple of likely nesting
+// variants defensively since this is the part most likely to drift.
+function extractParticipantNames(playerDetailsRaw) {
+  try {
+    const pd = playerDetailsRaw?.data?.playerDetails
+      || playerDetailsRaw?.playerDetails
+      || playerDetailsRaw
+      || {};
+    const buckets = [pd.dps, pd.healers, pd.tanks].filter(Array.isArray).flat();
+    return [...new Set(buckets.map(p => p.name).filter(Boolean))];
+  } catch {
+    return [];
+  }
+}
+
+// Only count guildies (exact character-name match against the roster) —
+// log-derived attendance sidesteps the Discord-alias problem entirely
+// since combat logs use real in-game character names.
+function matchAttendanceToRoster(participantNames, roster) {
+  const byName = new Map(roster.map(p => [p.name.toLowerCase(), p.name]));
+  return [...new Set(
+    participantNames.map(n => byName.get(String(n).toLowerCase())).filter(Boolean)
+  )];
+}
+
+// rankings is a JSON blob — best-effort shape:
+// { data: [ { name, class, spec, amount, rankPercent }, ... ] }.
+// Percentile parses are conventionally computed per kill, so this only
+// gets fightIDs for killed encounters (see killFightIds above).
+function extractTopParses(rankingsRaw) {
+  try {
+    const entries = rankingsRaw?.data?.rankings
+      || rankingsRaw?.rankings
+      || rankingsRaw?.data
+      || [];
+    if (!Array.isArray(entries)) return [];
+    // Keep each player's single best pull if they show up more than once
+    // (multiple kills of the same boss, or entries per-fight).
+    const best = new Map();
+    for (const e of entries) {
+      const name = e.name || e.player;
+      if (!name) continue;
+      const amount = e.amount ?? e.total ?? 0;
+      const rankPercent = e.rankPercent ?? e.percentile ?? null;
+      const existing = best.get(name);
+      if (!existing || amount > existing.amount) {
+        best.set(name, { name, amount, rankPercent });
+      }
+    }
+    return [...best.values()].sort((a, b) => b.amount - a.amount);
+  } catch {
+    return [];
+  }
+}
+
+function formatParseLines(list) {
+  if (!list.length) return '—';
+  return list
+    .map((p, i) => `**${i + 1}.** ${p.name} — ${Math.round(p.amount).toLocaleString()}${p.rankPercent != null ? ` (${Math.round(p.rankPercent)}%)` : ''}`)
+    .join('\n');
+}
+
+function buildLogSummaryEmbed(report, details, roster) {
+  const participants = extractParticipantNames(details.playerDetailsRaw);
+  const attendance = matchAttendanceToRoster(participants, roster);
+  const topParses = extractTopParses(details.rankingsRaw);
+
+  return {
+    title: `📊 ${report.title || 'Raid Log Summary'}`,
+    url: `https://www.warcraftlogs.com/reports/${report.code}`,
+    description: `${details.killFights.length}/${details.fights.length} encounters killed · ${attendance.length} guildies logged`,
+    fields: [
+      { name: '⚔️ Top 5 Parses', value: formatParseLines(topParses.slice(0, 5)), inline: true },
+      { name: '👥 Attendance', value: attendance.length ? attendance.join(', ') : '—', inline: false },
+    ],
+    color: 0xC9A227,
+    footer: { text: 'Kaizen Raid Manager • click title for the full report' },
+    timestamp: new Date().toISOString(),
+  };
+}
+
+// /post-logs — deferred, since the WCL round trips (auth + 2 queries) can
+// exceed Discord's 3-second initial-response window. Respond immediately,
+// then patch the real content in via ctx.waitUntil once it's ready.
+async function handlePostLogsCommand(interaction, guildId, options, env, ctx) {
+  if (!env.WCL_CLIENT_ID || !env.WCL_CLIENT_SECRET) {
+    return jsonResponse({
+      type: 4,
+      data: { content: '⚠️ Warcraft Logs API credentials not configured. Ask an admin to set WCL_CLIENT_ID/WCL_CLIENT_SECRET in the Worker.', flags: 64 }
+    });
+  }
+  ctx.waitUntil(runPostLogs(interaction, env));
+  return jsonResponse({ type: 5, data: {} }); // deferred, public
+}
+
+async function runPostLogs(interaction, env) {
+  const followupUrl = `${DISCORD_API}/webhooks/${interaction.application_id}/${interaction.token}/messages/@original`;
+  try {
+    const report = await findLatestGuildReport(env);
+    if (!report) throw new Error('No recent reports found for the guild on Warcraft Logs.');
+
+    const details = await getReportFightsAndStats(env, report.code);
+
+    const dataRes = await fetch(`https://kaizen-tbc.github.io/kaizen_data.json?v=${Date.now()}`);
+    const guildData = dataRes.ok ? await dataRes.json() : { roster: [] };
+
+    const embed = buildLogSummaryEmbed(report, details, guildData.roster || []);
+
+    await fetch(followupUrl, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ embeds: [embed] }),
+    });
+  } catch (err) {
+    await fetch(followupUrl, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content: `❌ Couldn't post log summary: ${err.message}` }),
+    });
+  }
+}
+
+// GET /logs/latest — raw-ish log data for the raid manager's attendance
+// review UI (not built yet — this is the seam it'll call into).
+async function handleLatestLogsData(request, env) {
+  try {
+    if (!env.WCL_CLIENT_ID || !env.WCL_CLIENT_SECRET) {
+      throw new Error('Warcraft Logs API credentials not configured.');
+    }
+    const report = await findLatestGuildReport(env);
+    if (!report) throw new Error('No recent reports found for the guild.');
+    const details = await getReportFightsAndStats(env, report.code);
+    const participants = extractParticipantNames(details.playerDetailsRaw);
+    const topParses = extractTopParses(details.rankingsRaw);
+
+    return corsResponse(JSON.stringify({
+      report,
+      fights: details.fights,
+      killFights: details.killFights,
+      participants,
+      topParses,
+    }), 200);
+  } catch (err) {
+    return corsResponse(JSON.stringify({ error: err.message }), 500);
   }
 }
 
