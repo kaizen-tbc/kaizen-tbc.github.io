@@ -1441,202 +1441,6 @@ a[href] > div > div[style*="line-height:1.6"] {
   margin-bottom: 8px;
 }
 
-/* ===== BENCH ROTATION (Step 4) ===== */
-.bench-rule-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 14px;
-  margin-bottom: 4px;
-}
-.bench-rule-card {
-  background: var(--bg-panel);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 18px 14px;
-  text-align: center;
-}
-.bench-rule-icon { margin-bottom: 10px; color: var(--gold); display: flex; justify-content: center; }
-.bench-rule-icon svg { width: 26px; height: 26px; }
-.bench-rule-title {
-  font-family: 'Fraunces', serif;
-  font-weight: 600;
-  font-size: 15px;
-  color: var(--gold);
-  margin-bottom: 6px;
-}
-.bench-rule-text {
-  font-size: 12px;
-  color: var(--text-dim);
-  line-height: 1.5;
-}
-
-.bench-pools-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(330px, 1fr));
-  gap: 20px;
-}
-
-.bench-pool-card {
-  background: var(--bg-panel);
-  border: 1px solid var(--border);
-  border-left: 4px solid var(--c, var(--gold));
-  border-radius: 6px;
-  padding: 18px 18px 14px;
-}
-.bench-pool-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 10px;
-}
-.bench-pool-head h3 {
-  font-family: 'Fraunces', serif;
-  font-weight: 600;
-  font-size: 19px;
-  margin: 0;
-  color: var(--c, var(--text-bright));
-}
-.bench-slots-control {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 11px;
-  color: var(--text-dim);
-}
-.bench-slots-control input {
-  width: 32px;
-  text-align: center;
-  background: var(--bg-card);
-  border: 1px solid var(--border-bright);
-  color: var(--text-bright);
-  border-radius: 3px;
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 12px;
-  padding: 2px 0;
-}
-
-.bench-row {
-  display: grid;
-  grid-template-columns: 1fr auto auto;
-  align-items: center;
-  gap: 10px;
-  padding: 7px 4px;
-  border-radius: 4px;
-}
-.bench-row:hover { background: var(--bg-hover); }
-.bench-row .bench-name {
-  font-size: 13px;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.bench-rate-bar {
-  height: 4px;
-  border-radius: 2px;
-  background: var(--border);
-  overflow: hidden;
-  width: 80px;
-}
-.bench-rate-bar > span {
-  display: block;
-  height: 100%;
-  background: var(--c, var(--gold));
-}
-.bench-rate-text {
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 11px;
-  color: var(--text-dim);
-  min-width: 70px;
-  text-align: right;
-}
-.bench-override-chip {
-  font-family: 'Inter', sans-serif;
-  font-size: 10px;
-  font-weight: 600;
-  padding: 3px 8px;
-  border-radius: 10px;
-  border: 1px solid var(--border-bright);
-  cursor: pointer;
-  white-space: nowrap;
-  color: var(--text-dim);
-  background: transparent;
-  transition: all 0.12s;
-}
-.bench-override-chip:hover { border-color: var(--gold-dim); color: var(--gold); }
-.bench-override-chip.active {
-  background: rgba(201, 162, 39, 0.15);
-  border-color: var(--gold-dim);
-  color: var(--gold);
-}
-
-.bench-kebab-btn {
-  background: transparent;
-  border: 1px solid var(--border-bright);
-  color: var(--text-dim);
-  border-radius: 4px;
-  width: 22px;
-  height: 22px;
-  font-size: 13px;
-  line-height: 1;
-  cursor: pointer;
-  flex-shrink: 0;
-  transition: all 0.12s;
-}
-.bench-kebab-btn:hover { color: var(--gold); border-color: var(--gold-dim); }
-
-.bench-menu {
-  display: none;
-  position: absolute;
-  top: 100%;
-  right: 0;
-  z-index: 100;
-  background: var(--bg-panel);
-  border: 1px solid var(--border-bright);
-  border-radius: 4px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
-  min-width: 160px;
-  margin-top: 4px;
-  overflow: hidden;
-}
-.bench-menu.open { display: block; }
-.bench-menu-item {
-  padding: 8px 12px;
-  font-size: 12px;
-  color: var(--text-mid);
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background 0.1s;
-}
-.bench-menu-item:hover { background: var(--bg-hover); color: var(--text-bright); }
-.bench-menu-item.danger:hover { color: var(--red-bright); }
-
-.bench-divider {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 12px 0 6px;
-  color: var(--text-dim);
-}
-.bench-divider .tick { flex: 1; border-top: 2px dashed var(--border); }
-.bench-divider .lbl {
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 10px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  padding: 3px 9px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-}
-
-.bench-empty {
-  font-size: 12px;
-  color: var(--text-dim);
-  font-style: italic;
-  padding: 8px 4px;
-}
-
 /* ===== CMS DASHBOARD — Overview editor sections ===== */
 .cms-section {
   background: var(--bg-panel);
@@ -1823,7 +1627,6 @@ a[href] > div > div[style*="line-height:1.6"] {
   <div class="sub-nav" style="display:flex;gap:6px;margin-bottom:20px;border-bottom:1px solid var(--border);padding-bottom:0;">
     <button class="sub-nav-btn active" onclick="showRosterSubTab('guild-roster', this)">Guild Roster</button>
     <button class="sub-nav-btn" onclick="showRosterSubTab('attendance-ledger', this)">Attendance</button>
-    <button class="sub-nav-btn" onclick="showRosterSubTab('bench-rotation', this)">Bench Rotation</button>
   </div>
 
   <!-- ===== SUB-TAB: GUILD ROSTER ===== -->
@@ -1881,72 +1684,16 @@ a[href] > div > div[style*="line-height:1.6"] {
     </div>
   </div>
 
-  <!-- ===== SUB-TAB: ATTENDANCE (CSV LEDGER) ===== -->
+  <!-- ===== SUB-TAB: ATTENDANCE LEDGER ===== -->
   <div class="sub-tab-panel" id="subtab-attendance-ledger">
     <div class="section-header">
       <div>
         <div class="section-title">Attendance Ledger</div>
-        <div class="section-subtitle">Upload Damage Taken CSVs from Warcraft Logs to build attendance history</div>
+        <div class="section-subtitle">Imports attendance straight from Warcraft Logs — no manual upload</div>
       </div>
-      <label class="btn btn-small btn-gold" style="cursor:pointer;">
-        + Upload CSV
-        <input type="file" accept=".csv" onchange="handleLedgerCSVUpload(event)" style="display:none;">
-      </label>
-    </div>
-    <div class="notice notice-info" style="margin-bottom:16px;">
-      <span>ℹ</span> Export "Damage Taken — All Encounters and Trash Fights" from Warcraft Logs. Names highlighted gold aren't in your roster yet — click + to add them.
+      <button class="btn btn-small btn-gold" onclick="openWCLAttendanceImport()">⬇ Import from Warcraft Logs</button>
     </div>
     <div id="ledger-list"></div>
-
-    <div style="margin-top:28px;">
-      <div class="section-header" style="margin-bottom:10px;">
-        <div>
-          <div class="section-title" style="font-size:16px;">Protected Bench Weeks</div>
-          <div class="section-subtitle">Weeks where a player was confirmed and available but officer-benched — excluded from their attendance rate</div>
-        </div>
-        <button class="btn btn-small btn-gold" onclick="openAddProtectedWeekModal()">+ Add Protected Week</button>
-      </div>
-      <div id="protected-weeks-list"></div>
-    </div>
-  </div>
-
-  <!-- ===== SUB-TAB: BENCH ROTATION ===== -->
-  <div class="sub-tab-panel" id="subtab-bench-rotation">
-    <div class="section-header">
-      <div>
-        <div class="section-title">Bench Rotation</div>
-        <div class="section-subtitle">Class-locked rotation, ranked by attendance consistency</div>
-      </div>
-      <button class="btn btn-small btn-gold" onclick="resetAllConfirmations()">Start New Week (Reset Confirmations)</button>
-    </div>
-
-    <p style="font-size:13px;color:var(--text-dim);margin:0 0 16px;max-width:75%;">
-      Rotation is typically class-based, not role-based, because raid comp and class utility matter. We rotate where we have more raiders than slots in the exact same class, so raid comp is never affected, only the surplus. We want this to be fair and transparent for the classes we're heavily stacked on, but attendance, performance, and comp can also factor into the decision. If you're on the bench, just confirm you're ready to fill in on raid night. It's a rotation, and your turn comes around.
-    </p>
-
-    <div class="bench-rule-cards">
-      <div class="bench-rule-card">
-        <div class="bench-rule-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3z" stroke-linejoin="round"/></svg></div>
-        <div class="bench-rule-title">Tanks Don't Rotate</div>
-        <div class="bench-rule-text">Tanks aren't part of the bench. We plan around tank absences with an off-spec sub or a pugged tank if needed.</div>
-      </div>
-      <div class="bench-rule-card">
-        <div class="bench-rule-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><line x1="6" y1="18" x2="18" y2="6"/></svg></div>
-        <div class="bench-rule-title">No Sign Up, No Slot</div>
-        <div class="bench-rule-text">Confirming each week is what claims your spot. History sets priority. Confirming claims it.</div>
-      </div>
-      <div class="bench-rule-card">
-        <div class="bench-rule-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><line x1="5" y1="20" x2="5" y2="11"/><line x1="12" y1="20" x2="12" y2="6"/><line x1="19" y1="20" x2="19" y2="14"/></svg></div>
-        <div class="bench-rule-title">Rank = Attendance Rate</div>
-        <div class="bench-rule-text">Raids attended ÷ raids eligible for, since your first raid. New joiners aren't penalized for history before they arrived.</div>
-      </div>
-    </div>
-
-    <p style="font-size:12px;color:var(--text-dim);margin:14px 0 20px;max-width:75%;">
-      Only a few classes are tracked here right now, wherever we're currently stacked. That list grows as recruiting shifts. Officers can manually override any status below for edge cases the math can't see.
-    </p>
-
-    <div class="bench-pools-grid" id="bench-pools-grid"></div>
   </div>
 
 </div>
@@ -2747,124 +2494,100 @@ let nextLedgerId = 1;
 let nameAliases = {};
 
 // ======================================================
-// BENCH ROTATION (Step 4)
+// ATTENDANCE IMPORT (Warcraft Logs — replaces manual CSV upload)
 // ======================================================
-// Class-locked rotation pools. Tanks, Shaman, Warlock, Mage are excluded
-// entirely by omission — they're never oversubscribed enough to need this.
-let benchConfig = {
-  pools: [
-    { id: 'warrior', className: 'Warrior', label: 'Warrior', slots: 2 },
-    { id: 'hunter', className: 'Hunter', label: 'Hunter', slots: 2 },
-    { id: 'priest_healing', className: 'Priest', label: 'Priest (Healing)', slots: 3, specExclude: ['Shadow'] },
-  ],
-  overrides: {}, // { "PlayerName": "raiding" | "bench" | "excluded" }
-  confirmations: {}, // { "PlayerName": true } — present + true means confirmed for THIS week; absent = unconfirmed
-  manuallyAdded: [], // player names explicitly added even though they have zero ledger history yet
-  benchedByDecision: {}, // { "PlayerName": ["2026-06-16", ...] } — weeks where they were confirmed+available but officer-benched; excluded entirely from their rate (neither eligible nor attended)
-};
+let _pendingWCLAttendance = null; // { reportTitle, reportDate, matched: [names], checked: Set, unmatchedNames: [] }
 
-function parseAttendanceCSV(file, callback) {
-  const reader = new FileReader();
-  reader.onload = e => {
-    const text = e.target.result;
-    const lines = text.split(/\r?\n/).filter(l => l.trim());
-    if (lines.length < 2) { callback([]); return; }
+async function openWCLAttendanceImport() {
+  showToast('⬇ Fetching latest Warcraft Logs report...');
+  try {
+    const res = await fetch(`${RH_WORKER}/logs/latest`);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
 
-    const header = parseCSVLine(lines[0]);
-    const nameIdx = header.findIndex(h => h.trim().toLowerCase() === 'name');
-    if (nameIdx === -1) { callback(null); return; }
+    // Match the log's raw participant names against the live roster —
+    // done here (not by the Worker) so it always reflects any unsaved
+    // local roster edits, same as the RH import's matching does.
+    const rosterByName = new Map(roster.map(p => [p.name.toLowerCase(), p.name]));
+    const matched = [];
+    const unmatchedNames = [];
+    (data.participants || []).forEach(n => {
+      const rosterName = rosterByName.get(String(n).toLowerCase());
+      if (rosterName) matched.push(rosterName);
+      else unmatchedNames.push(n);
+    });
+    const uniqueMatched = [...new Set(matched)];
 
-    const names = [];
-    for (let i = 1; i < lines.length; i++) {
-      const cols = parseCSVLine(lines[i]);
-      const name = (cols[nameIdx] || '').trim();
-      if (name) names.push(name);
-    }
-    callback(names);
-  };
-  reader.readAsText(file);
-}
-
-function parseCSVLine(line) {
-  const result = [];
-  let cur = '';
-  let inQuotes = false;
-  for (let i = 0; i < line.length; i++) {
-    const ch = line[i];
-    if (ch === '"') {
-      inQuotes = !inQuotes;
-    } else if (ch === ',' && !inQuotes) {
-      result.push(cur);
-      cur = '';
-    } else {
-      cur += ch;
-    }
+    _pendingWCLAttendance = {
+      reportTitle: data.report?.title || 'Raid Log',
+      reportDate: data.report?.startTime ? new Date(data.report.startTime).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10),
+      matched: uniqueMatched,
+      checked: new Set(uniqueMatched),
+      unmatchedNames,
+    };
+    renderWCLAttendanceModal();
+  } catch (err) {
+    showToast(`Couldn't fetch log data: ${err.message}`, true);
   }
-  result.push(cur);
-  return result;
 }
 
-function handleLedgerCSVUpload(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-  parseAttendanceCSV(file, (names) => {
-    if (names === null) {
-      showToast('Could not find a "Name" column in this CSV.', true);
-      event.target.value = '';
-      return;
-    }
-    if (names.length === 0) {
-      showToast('No names found in this CSV.', true);
-      event.target.value = '';
-      return;
-    }
-    _pendingCSVUpload = { names, filename: file.name };
-    openLedgerDateModal();
-  });
-  event.target.value = '';
-}
-
-let _pendingCSVUpload = null;
-
-function openLedgerDateModal() {
-  const today = new Date().toISOString().slice(0, 10);
+function renderWCLAttendanceModal() {
+  const p = _pendingWCLAttendance;
+  if (!p) return;
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay open';
-  overlay.id = 'ledger-date-overlay';
+  overlay.id = 'wcl-attendance-overlay';
   overlay.innerHTML = `
-    <div class="modal" style="max-width:380px;">
+    <div class="modal" style="max-width:460px;">
       <div class="modal-header">
-        <h3>Raid Date</h3>
-        <button class="modal-close" onclick="cancelLedgerUpload()">✕</button>
+        <h3>Import Attendance</h3>
+        <button class="modal-close" onclick="cancelWCLAttendanceImport()">✕</button>
       </div>
       <div class="modal-body">
-        <p style="font-size:12px;color:var(--text-dim);margin:0 0 14px;">
-          If you already uploaded a log for this same date (e.g. SSC and TK same night), this will merge into that week instead of creating a duplicate.
-        </p>
+        <p style="font-size:13px;color:var(--text-bright);margin:0 0 10px;font-weight:600;">${p.reportTitle}</p>
         <div class="form-group">
-          <label class="form-label">Date of this raid</label>
-          <input type="date" class="form-input" id="ledger-date-input" value="${today}" style="width:100%;">
+          <label class="form-label">Raid date</label>
+          <input type="date" class="form-input" id="wcl-attendance-date" value="${p.reportDate}" style="width:100%;">
         </div>
+        <p style="font-size:12px;color:var(--text-dim);margin:10px 0 8px;">${p.matched.length} guildie${p.matched.length === 1 ? '' : 's'} detected. Uncheck anyone who shouldn't count.</p>
+        <div style="max-height:280px;overflow-y:auto;border:1px solid var(--border);border-radius:4px;padding:8px;">
+          ${p.matched.map(name => `
+            <label style="display:flex;align-items:center;gap:8px;padding:5px 4px;font-size:13px;cursor:pointer;">
+              <input type="checkbox" checked onchange="toggleWCLAttendanceName('${name.replace(/'/g, "\\'")}', this.checked)">
+              ${name}
+            </label>
+          `).join('') || '<div style="color:var(--text-dim);font-size:12px;font-style:italic;">No roster matches found in this report.</div>'}
+        </div>
+        ${p.unmatchedNames.length ? `
+          <p style="font-size:11px;color:var(--text-dim);margin-top:10px;">
+            ${p.unmatchedNames.length} name${p.unmatchedNames.length === 1 ? '' : 's'} in the log didn't match your roster (not counted): ${p.unmatchedNames.join(', ')}
+          </p>` : ''}
       </div>
       <div class="modal-footer">
-        <button class="btn" onclick="cancelLedgerUpload()">Cancel</button>
-        <button class="btn btn-gold" onclick="confirmLedgerUpload()">Add</button>
+        <button class="btn" onclick="cancelWCLAttendanceImport()">Cancel</button>
+        <button class="btn btn-gold" onclick="confirmWCLAttendanceImport()">Add to Ledger</button>
       </div>
     </div>
   `;
   document.body.appendChild(overlay);
 }
 
-function cancelLedgerUpload() {
-  _pendingCSVUpload = null;
-  const overlay = document.getElementById('ledger-date-overlay');
-  if (overlay) overlay.remove();
+function toggleWCLAttendanceName(name, checked) {
+  if (!_pendingWCLAttendance) return;
+  if (checked) _pendingWCLAttendance.checked.add(name);
+  else _pendingWCLAttendance.checked.delete(name);
 }
 
-function confirmLedgerUpload() {
-  if (!_pendingCSVUpload) return;
-  const date = document.getElementById('ledger-date-input').value;
-  const { names, filename } = _pendingCSVUpload;
+function cancelWCLAttendanceImport() {
+  _pendingWCLAttendance = null;
+  document.getElementById('wcl-attendance-overlay')?.remove();
+}
+
+function confirmWCLAttendanceImport() {
+  const p = _pendingWCLAttendance;
+  if (!p) return;
+  const date = document.getElementById('wcl-attendance-date').value;
+  const names = [...p.checked];
 
   const existing = attendanceLedger.find(w => w.date === date);
   if (existing) {
@@ -2876,14 +2599,14 @@ function confirmLedgerUpload() {
     attendanceLedger.push({
       id: nextLedgerId++,
       date,
-      label: filename.replace(/\.[^.]+$/, ''),
+      label: p.reportTitle,
       names,
     });
     showToast(`Added ${names.length} names for ${date}.`);
   }
 
-  _pendingCSVUpload = null;
-  document.getElementById('ledger-date-overlay').remove();
+  _pendingWCLAttendance = null;
+  document.getElementById('wcl-attendance-overlay')?.remove();
   renderAttendanceLedger();
 }
 
@@ -2917,8 +2640,7 @@ function renderAttendanceLedger() {
   const sorted = [...attendanceLedger].sort((a, b) => (a.date || '').localeCompare(b.date || ''));
 
   if (sorted.length === 0) {
-    container.innerHTML = `<div class="empty-note" style="padding:24px;text-align:center;color:var(--text-dim);">No raid logs uploaded yet. Upload a Damage Taken CSV from Warcraft Logs to start tracking attendance.</div>`;
-    renderProtectedWeeks();
+    container.innerHTML = `<div class="empty-note" style="padding:24px;text-align:center;color:var(--text-dim);">No raid logs yet. Click "⬇ Import from Warcraft Logs" to start tracking attendance.</div>`;
     return;
   }
 
@@ -2953,8 +2675,6 @@ function renderAttendanceLedger() {
       <div>${namesHtml}</div>
     </div>`;
   }).join('');
-
-  renderProtectedWeeks();
 }
 
 function confirmRemoveLedgerWeek(weekId) {
@@ -3546,14 +3266,6 @@ function applyRHImport() {
     }
   }
 
-  // Bench confirmations
-  for (const su of benchedData) {
-    if (su.matchId) {
-      const p = roster.find(r => r.id === su.matchId);
-      if (p) benchConfig.confirmations[p.name] = true;
-    }
-  }
-
   // Save to active raid BEFORE syncing so specOverrides aren't wiped
   const r = getActiveRaid();
   if (r) {
@@ -3568,7 +3280,6 @@ function applyRHImport() {
 
   overlay.remove();
   renderBuilder();
-  renderBenchRotation();
   showToast(`Import complete — ${signUpPool.length} sign-ups in pool. Hit Auto-Fill to assign groups.`);
 }
 
@@ -3702,90 +3413,6 @@ function applyFullRosterReplace(parsed) {
 }
 
 // ======================================================
-// PROTECTED BENCH WEEKS (manual after-the-fact management)
-// ======================================================
-function renderProtectedWeeks() {
-  const container = document.getElementById('protected-weeks-list');
-  if (!container) return;
-
-  const entries = [];
-  Object.entries(benchConfig.benchedByDecision).forEach(([name, dates]) => {
-    (dates || []).forEach(date => entries.push({ name, date }));
-  });
-  entries.sort((a, b) => b.date.localeCompare(a.date) || a.name.localeCompare(b.name));
-
-  if (entries.length === 0) {
-    container.innerHTML = `<div class="empty-note" style="padding:16px 4px;color:var(--text-dim);font-style:italic;font-size:12px;">No protected weeks yet. These get added automatically when you Start New Week, or you can add one manually above.</div>`;
-    return;
-  }
-
-  container.innerHTML = entries.map(e => {
-    const player = roster.find(p => p.name === e.name);
-    const cc = player ? classColor(player.class) : 'warrior';
-    const safeName = e.name.replace(/'/g, "\\'");
-    return `<div style="display:flex;align-items:center;gap:10px;padding:7px 10px;border-bottom:1px solid var(--border);font-size:13px;">
-      <span class="class-dot" style="background:var(--${cc});width:7px;height:7px;flex-shrink:0;"></span>
-      <span class="class-${cc}" style="font-weight:600;">${e.name}</span>
-      <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-dim);">${e.date}</span>
-      <button onclick="removeProtectedWeek('${safeName}', '${e.date}')" style="margin-left:auto;background:none;border:none;color:var(--red-bright);cursor:pointer;font-size:11px;opacity:0.7;" title="Remove protection for this week">✕</button>
-    </div>`;
-  }).join('');
-}
-
-function removeProtectedWeek(name, date) {
-  if (!benchConfig.benchedByDecision[name]) return;
-  benchConfig.benchedByDecision[name] = benchConfig.benchedByDecision[name].filter(d => d !== date);
-  if (benchConfig.benchedByDecision[name].length === 0) delete benchConfig.benchedByDecision[name];
-  renderProtectedWeeks();
-  renderBenchRotation();
-}
-
-function openAddProtectedWeekModal() {
-  const namesHtml = roster.map(p => `<option value="${p.name.replace(/"/g, '&quot;')}">${p.name}</option>`).join('');
-
-  const overlay = document.createElement('div');
-  overlay.className = 'modal-overlay open';
-  overlay.id = 'add-protected-week-overlay';
-  overlay.innerHTML = `
-    <div class="modal" style="max-width:360px;">
-      <div class="modal-header">
-        <h3>Add Protected Week</h3>
-        <button class="modal-close" onclick="document.getElementById('add-protected-week-overlay').remove()">✕</button>
-      </div>
-      <div class="modal-body">
-        <div class="form-group" style="margin-bottom:14px;">
-          <label class="form-label">Player</label>
-          <select class="form-select" id="protected-week-name" style="width:100%;">${namesHtml}</select>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Raid Date</label>
-          <input type="date" class="form-input" id="protected-week-date" style="width:100%;">
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn" onclick="document.getElementById('add-protected-week-overlay').remove()">Cancel</button>
-        <button class="btn btn-gold" onclick="confirmAddProtectedWeek()">Add</button>
-      </div>
-    </div>
-  `;
-  document.body.appendChild(overlay);
-}
-
-function confirmAddProtectedWeek() {
-  const name = document.getElementById('protected-week-name').value;
-  const date = document.getElementById('protected-week-date').value;
-  if (!name || !date) { showToast('Pick a player and a date.', true); return; }
-  if (!benchConfig.benchedByDecision[name]) benchConfig.benchedByDecision[name] = [];
-  if (!benchConfig.benchedByDecision[name].includes(date)) {
-    benchConfig.benchedByDecision[name].push(date);
-  }
-  document.getElementById('add-protected-week-overlay').remove();
-  renderProtectedWeeks();
-  renderBenchRotation();
-  showToast(`Protected ${name}'s attendance for ${date}.`);
-}
-
-// ======================================================
 // FUZZY NAME MATCHING (Step 3)
 // ======================================================
 // Get all unique names that have ever appeared in the attendance ledger
@@ -3888,7 +3515,7 @@ function hideNameSuggestions() {
 }
 
 // ======================================================
-// BENCH ROTATION CALCULATION
+// ATTENDANCE CALCULATION
 // ======================================================
 // Ledger sorted oldest-first — the basis for eligibility windows
 function getSortedLedger() {
@@ -3897,16 +3524,12 @@ function getSortedLedger() {
 
 // For a given player name, find their eligible weeks (every ledger week
 // from their first appearance forward) and how many of those they attended.
-// Weeks they were confirmed+available but officer-benched are excluded
-// entirely — neither eligible nor attended, as if that week didn't happen
-// for their personal rate.
 function getPlayerAttendanceStats(name) {
   const sorted = getSortedLedger();
   const firstIdx = sorted.findIndex(week => week.names.includes(name));
   if (firstIdx === -1) return { eligible: 0, attended: 0, rate: 0, startDate: null };
 
-  const benchedDates = new Set(benchConfig.benchedByDecision[name] || []);
-  const eligibleWeeks = sorted.slice(firstIdx).filter(week => !benchedDates.has(week.date));
+  const eligibleWeeks = sorted.slice(firstIdx);
   const attended = eligibleWeeks.filter(week => week.names.includes(name)).length;
 
   return {
@@ -3934,403 +3557,6 @@ function renderAttendanceBar(name) {
   </div>`;
 }
 
-// Build the full computed view for one bench pool: who's raiding, who's
-// benched, ranked by attendance rate, with manual overrides applied last.
-function computeBenchPool(pool) {
-  let eligiblePlayers = roster.filter(p => p.class === pool.className);
-  if (pool.specExclude && pool.specExclude.length) {
-    eligiblePlayers = eligiblePlayers.filter(p => !pool.specExclude.includes(p.ms));
-  }
-
-  // Excluded players are gone, full stop — no restore list cluttering the card.
-  // To bring someone back, use "+ Add Player" on the pool, same as adding anyone new.
-  eligiblePlayers = eligiblePlayers.filter(p => benchConfig.overrides[p.name] !== 'excluded');
-
-  const ranked = eligiblePlayers
-    .map(p => {
-      const stats = getPlayerAttendanceStats(p.name);
-      const override = benchConfig.overrides[p.name] || null;
-      const confirmed = !!benchConfig.confirmations[p.name];
-      const manuallyAdded = benchConfig.manuallyAdded.includes(p.name);
-      return { player: p, ...stats, override, confirmed, manuallyAdded };
-    })
-    // Nobody with zero ledger history shows up here unless an officer
-    // explicitly added them — otherwise every fresh class member would
-    // clutter the pool with meaningless 0/0 rows.
-    .filter(r => r.eligible > 0 || r.manuallyAdded);
-
-  // Sort by rate desc, then by attended count desc, then eligible count desc
-  ranked.sort((a, b) => b.rate - a.rate || b.attended - a.attended || b.eligible - a.eligible);
-
-  // Manual overrides always win regardless of confirmation — an officer
-  // placing someone is an explicit decision, not subject to "no sign up, no slot."
-  const forcedRaiding = ranked.filter(r => r.override === 'raiding');
-  const forcedBench = ranked.filter(r => r.override === 'bench');
-  const natural = ranked.filter(r => !r.override);
-
-  // Among natural (non-overridden) players, only confirmed ones compete for
-  // open Raiding slots — unconfirmed players drop to bench regardless of rate.
-  const naturalConfirmed = natural.filter(r => r.confirmed);
-  const naturalUnconfirmed = natural.filter(r => !r.confirmed);
-
-  const remainingSlots = Math.max(0, pool.slots - forcedRaiding.length);
-  const naturalRaiding = naturalConfirmed.slice(0, remainingSlots);
-  const naturalBenchConfirmed = naturalConfirmed.slice(remainingSlots);
-
-  const raiding = [...forcedRaiding, ...naturalRaiding]
-    .sort((a, b) => b.rate - a.rate || b.attended - a.attended);
-
-  // Bench order: confirmed-but-not-selected first (ranked by rate — these are
-  // your real call-up list), then unconfirmed (ranked by rate within that
-  // group, but always below confirmed players), then any forced-bench overrides.
-  const bench = [
-    ...naturalBenchConfirmed.sort((a, b) => b.rate - a.rate || b.attended - a.attended),
-    ...naturalUnconfirmed.sort((a, b) => b.rate - a.rate || b.attended - a.attended),
-    ...forcedBench.sort((a, b) => b.rate - a.rate || b.attended - a.attended),
-  ];
-
-  return { pool, raiding, bench };
-}
-
-function setBenchOverride(playerName, value) {
-  // value: 'raiding' | 'bench' | null (null clears the override)
-  if (value === null) {
-    delete benchConfig.overrides[playerName];
-  } else {
-    benchConfig.overrides[playerName] = value;
-  }
-  renderBenchRotation();
-}
-
-function setPoolSlots(poolId, val) {
-  const pool = benchConfig.pools.find(p => p.id === poolId);
-  if (pool) pool.slots = Math.max(0, parseInt(val || '0', 10));
-  renderBenchRotation();
-}
-
-// ======================================================
-// BENCH ROTATION RENDERING
-// ======================================================
-function renderBenchPlayerRow(entry, pool, side) {
-  const p = entry.player;
-  const cc = classColor(p.class);
-  const pct = Math.round(entry.rate * 100);
-  const overrideLabel = entry.override === 'raiding' ? 'Manually Raiding' : entry.override === 'bench' ? 'Manually Benched' : null;
-  const safeName = p.name.replace(/'/g, "\\'");
-  const isUnconfirmedNatural = !entry.override && !entry.confirmed;
-
-  const confirmChip = entry.confirmed
-    ? `<button class="bench-override-chip active" onclick="toggleBenchConfirmation('${safeName}')" title="Confirmed — click to unconfirm">✓ Confirmed</button>`
-    : `<button class="bench-override-chip" onclick="toggleBenchConfirmation('${safeName}')" title="Not confirmed for this raid yet" style="color:var(--red-bright);border-color:var(--red);">Not Confirmed</button>`;
-
-  // Less-frequent actions (move, exclude) live behind a small kebab menu so
-  // the row stays scannable — confirming is the action you take constantly,
-  // these are occasional officer judgment calls.
-  const moveAction = side === 'raiding'
-    ? (entry.override === 'raiding'
-        ? `<div class="bench-menu-item" onclick="clearBenchOverride('${safeName}');closeBenchMenu()">Clear manual placement</div>`
-        : `<div class="bench-menu-item" onclick="setBenchOverride('${safeName}','bench');closeBenchMenu()">Move to bench</div>`)
-    : (entry.override === 'bench'
-        ? `<div class="bench-menu-item" onclick="clearBenchOverride('${safeName}');closeBenchMenu()">Clear manual placement</div>`
-        : `<div class="bench-menu-item" onclick="setBenchOverride('${safeName}','raiding');closeBenchMenu()">Move to raiding</div>`);
-
-  const menuId = `benchmenu-${pool.id}-${p.id}`;
-
-  return `<div class="bench-row" style="${isUnconfirmedNatural ? 'opacity:0.6;' : ''}">
-    <div class="bench-name">
-      <span class="class-dot" style="background:var(--${cc});width:7px;height:7px;flex-shrink:0;"></span>
-      <span class="class-${cc}">${p.name}</span>
-      ${overrideLabel ? `<span style="font-size:9px;color:var(--gold);font-weight:700;">${overrideLabel}</span>` : ''}
-    </div>
-    <div class="bench-rate-text">${entry.attended}/${entry.eligible} (${pct}%)</div>
-    <div style="display:flex;align-items:center;gap:6px;position:relative;">
-      ${confirmChip}
-      <button class="bench-kebab-btn" onclick="toggleBenchMenu('${menuId}', event)" title="More actions">⋮</button>
-      <div class="bench-menu" id="${menuId}">
-        ${moveAction}
-        <div class="bench-menu-item danger" onclick="setBenchOverride('${safeName}','excluded');closeBenchMenu()">Remove from rotation</div>
-      </div>
-    </div>
-  </div>`;
-}
-
-function toggleBenchMenu(menuId, event) {
-  event.stopPropagation();
-  const menu = document.getElementById(menuId);
-  const wasOpen = menu.classList.contains('open');
-  closeBenchMenu();
-  if (!wasOpen) menu.classList.add('open');
-}
-
-function closeBenchMenu() {
-  document.querySelectorAll('.bench-menu.open').forEach(m => m.classList.remove('open'));
-}
-document.addEventListener('click', closeBenchMenu);
-
-function clearBenchOverride(playerName) {
-  delete benchConfig.overrides[playerName];
-  renderBenchRotation();
-}
-
-function toggleBenchConfirmation(playerName) {
-  if (benchConfig.confirmations[playerName]) {
-    delete benchConfig.confirmations[playerName];
-  } else {
-    benchConfig.confirmations[playerName] = true;
-  }
-  renderBenchRotation();
-}
-
-// Collect everyone currently confirmed AND sitting on a pool's bench (not
-// excluded, not already forced elsewhere) — these are the candidates for
-// "benched by decision" protection when starting a new week.
-function getConfirmedBenchCandidates() {
-  const candidates = [];
-  benchConfig.pools.forEach(pool => {
-    const computed = computeBenchPool(pool);
-    computed.bench.forEach(entry => {
-      if (entry.confirmed) candidates.push({ name: entry.player.name, pool: pool.label, class: entry.player.class });
-    });
-  });
-  return candidates;
-}
-
-function resetAllConfirmations() {
-  const candidates = getConfirmedBenchCandidates();
-
-  if (candidates.length === 0) {
-    // Nobody to protect — just confirm and reset normally
-    document.getElementById('confirm-text').textContent = 'Start a new raid week? Everyone\'s confirmation will reset — they\'ll need to confirm again before they\'re eligible for a Raiding slot.';
-    document.getElementById('confirm-ok').onclick = () => {
-      benchConfig.confirmations = {};
-      renderBenchRotation();
-      closeConfirm();
-      showToast('Confirmations reset for the new week.');
-    };
-    document.getElementById('confirm-overlay').classList.add('open');
-    return;
-  }
-
-  openStartWeekModal(candidates);
-}
-
-function openStartWeekModal(candidates) {
-  const today = new Date().toISOString().slice(0, 10);
-  const cc = c => classColor(c);
-
-  const rowsHtml = candidates.map((c, i) => `
-    <label style="display:flex;align-items:center;gap:10px;padding:8px 4px;border-bottom:1px solid var(--border);cursor:pointer;">
-      <input type="checkbox" id="protect-${i}" checked style="width:16px;height:16px;cursor:pointer;">
-      <span class="class-dot" style="background:var(--${cc(c.class)});width:8px;height:8px;flex-shrink:0;"></span>
-      <span class="class-${cc(c.class)}" style="font-weight:600;font-size:13px;">${c.name}</span>
-      <span style="font-size:11px;color:var(--text-dim);margin-left:auto;">${c.pool}</span>
-    </label>`).join('');
-
-  const overlay = document.createElement('div');
-  overlay.className = 'modal-overlay open';
-  overlay.id = 'start-week-overlay';
-  overlay.innerHTML = `
-    <div class="modal" style="max-width:440px;">
-      <div class="modal-header">
-        <h3>Start New Week</h3>
-        <button class="modal-close" onclick="document.getElementById('start-week-overlay').remove()">✕</button>
-      </div>
-      <div class="modal-body">
-        <p style="font-size:13px;color:var(--text-dim);margin:0 0 14px;">
-          These players were confirmed and available but didn't get a raid slot this week. Check anyone whose attendance rate should be protected, their bench week won't count against them. Uncheck anyone you don't want protected (e.g. they were benched for reasons unrelated to roster numbers).
-        </p>
-    <div data-candidates='${JSON.stringify(candidates).replace(/'/g, "&apos;")}'>${rowsHtml}</div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn" onclick="document.getElementById('start-week-overlay').remove()">Cancel</button>
-        <button class="btn btn-gold" onclick="confirmStartWeek('${today}')">Start New Week</button>
-      </div>
-    </div>
-  `;
-  document.body.appendChild(overlay);
-}
-
-function confirmStartWeek(dateStr) {
-  const overlay = document.getElementById('start-week-overlay');
-  const candidates = JSON.parse(overlay.querySelector('[data-candidates]').dataset.candidates);
-
-  candidates.forEach((c, i) => {
-    const checked = document.getElementById(`protect-${i}`).checked;
-    if (checked) {
-      if (!benchConfig.benchedByDecision[c.name]) benchConfig.benchedByDecision[c.name] = [];
-      if (!benchConfig.benchedByDecision[c.name].includes(dateStr)) {
-        benchConfig.benchedByDecision[c.name].push(dateStr);
-      }
-    }
-  });
-
-  benchConfig.confirmations = {};
-  overlay.remove();
-  renderBenchRotation();
-  showToast('New week started. Protected attendance applied where selected.');
-}
-
-function renderBenchPoolCard(pool) {
-  const computed = computeBenchPool(pool);
-  const cc = classColor(pool.className);
-  const colorVar = `var(--${cc})`;
-
-  const raidingHtml = computed.raiding.length
-    ? computed.raiding.map(e => renderBenchPlayerRow(e, pool, 'raiding')).join('')
-    : `<div class="bench-empty">No one currently eligible for this pool.</div>`;
-
-  const benchHtml = computed.bench.length
-    ? computed.bench.map(e => renderBenchPlayerRow(e, pool, 'bench')).join('')
-    : `<div class="bench-empty">Nobody on bench right now.</div>`;
-
-  return `<div class="bench-pool-card" style="--c:${colorVar};">
-    <div class="bench-pool-head">
-      <h3>${pool.label}</h3>
-      <div class="bench-slots-control">
-        Slots: <input type="number" min="0" value="${pool.slots}" onchange="setPoolSlots('${pool.id}', this.value)">
-        <button class="bench-override-chip" onclick="confirmRemoveBenchPool('${pool.id}', '${pool.label.replace(/'/g, "\\'")}')" title="Remove this class from rotation" style="margin-left:4px;color:var(--text-dim);">✕</button>
-      </div>
-    </div>
-    ${raidingHtml}
-    ${computed.bench.length > 0 ? `
-      <div class="bench-divider"><span class="tick"></span><span class="lbl">Bench</span><span class="tick"></span></div>
-      ${benchHtml}
-    ` : ''}
-    <button class="add-row-btn" onclick="openAddToPoolModal('${pool.id}')" style="margin-top:8px;">+ Add Player</button>
-  </div>`;
-}
-
-function renderBenchRotation() {
-  const grid = document.getElementById('bench-pools-grid');
-  if (!grid) return;
-  const poolCards = benchConfig.pools.map(renderBenchPoolCard).join('');
-  const addCard = `<div class="bench-pool-card" style="border-left-style:dashed;border-left-color:var(--border-bright);display:flex;align-items:center;justify-content:center;min-height:120px;cursor:pointer;color:var(--text-dim);" onclick="openAddPoolModal()" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='var(--text-dim)'">
-    + Add a class to rotation
-  </div>`;
-  grid.innerHTML = poolCards + addCard;
-}
-
-function removeBenchPool(poolId) {
-  benchConfig.pools = benchConfig.pools.filter(p => p.id !== poolId);
-  renderBenchRotation();
-}
-
-function confirmRemoveBenchPool(poolId, poolLabel) {
-  document.getElementById('confirm-text').textContent = `Remove "${poolLabel}" from the rotation? Slot count and overrides for this class will be lost — attendance history is unaffected.`;
-  document.getElementById('confirm-ok').onclick = () => { removeBenchPool(poolId); closeConfirm(); };
-  document.getElementById('confirm-overlay').classList.add('open');
-}
-
-let _addPoolModalOpen = false;
-
-function openAddToPoolModal(poolId) {
-  const pool = benchConfig.pools.find(p => p.id === poolId);
-  if (!pool) return;
-
-  // Anyone of this pool's class who isn't already showing in the pool —
-  // i.e. zero ledger history and not yet manually added, OR previously excluded.
-  let candidates = roster.filter(p => p.class === pool.className);
-  if (pool.specExclude && pool.specExclude.length) {
-    candidates = candidates.filter(p => !pool.specExclude.includes(p.ms));
-  }
-  candidates = candidates.filter(p => {
-    const stats = getPlayerAttendanceStats(p.name);
-    const alreadyVisible = stats.eligible > 0 && benchConfig.overrides[p.name] !== 'excluded';
-    const alreadyManual = benchConfig.manuallyAdded.includes(p.name) && benchConfig.overrides[p.name] !== 'excluded';
-    return !alreadyVisible && !alreadyManual;
-  });
-
-  if (candidates.length === 0) {
-    showToast(`Every eligible ${pool.className} is already in this pool.`, true);
-    return;
-  }
-
-  const optionsHtml = candidates.map(p => `<option value="${p.name}">${p.name}</option>`).join('');
-
-  const overlay = document.createElement('div');
-  overlay.className = 'modal-overlay open';
-  overlay.id = 'add-to-pool-overlay';
-  overlay.innerHTML = `
-    <div class="modal" style="max-width:360px;">
-      <div class="modal-header">
-        <h3>Add to ${pool.label}</h3>
-        <button class="modal-close" onclick="document.getElementById('add-to-pool-overlay').remove()">✕</button>
-      </div>
-      <div class="modal-body">
-        <div class="form-group">
-          <label class="form-label">Player</label>
-          <select class="form-select" id="add-to-pool-name" style="width:100%;">${optionsHtml}</select>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn" onclick="document.getElementById('add-to-pool-overlay').remove()">Cancel</button>
-        <button class="btn btn-gold" onclick="confirmAddToPool('${poolId}')">Add</button>
-      </div>
-    </div>
-  `;
-  document.body.appendChild(overlay);
-}
-
-function confirmAddToPool(poolId) {
-  const name = document.getElementById('add-to-pool-name').value;
-  if (!name) return;
-  if (!benchConfig.manuallyAdded.includes(name)) benchConfig.manuallyAdded.push(name);
-  // If they were previously excluded, adding them back clears that
-  if (benchConfig.overrides[name] === 'excluded') delete benchConfig.overrides[name];
-  document.getElementById('add-to-pool-overlay').remove();
-  renderBenchRotation();
-  showToast(`${name} added to rotation.`);
-}
-
-function openAddPoolModal() {
-  const usedClasses = new Set(benchConfig.pools.map(p => p.className));
-  const allClasses = ['Druid', 'Hunter', 'Mage', 'Paladin', 'Priest', 'Rogue', 'Shaman', 'Warlock', 'Warrior'];
-  const available = allClasses.filter(c => !usedClasses.has(c));
-
-  if (available.length === 0) {
-    showToast('Every class already has a rotation pool.', true);
-    return;
-  }
-
-  const optionsHtml = available.map(c => `<option value="${c}">${c}</option>`).join('');
-
-  const overlay = document.createElement('div');
-  overlay.className = 'modal-overlay open';
-  overlay.id = 'add-pool-overlay';
-  overlay.innerHTML = `
-    <div class="modal" style="max-width:380px;">
-      <div class="modal-header">
-        <h3>Add Class to Rotation</h3>
-        <button class="modal-close" onclick="document.getElementById('add-pool-overlay').remove()">✕</button>
-      </div>
-      <div class="modal-body">
-        <div class="form-group" style="margin-bottom:14px;">
-          <label class="form-label">Class</label>
-          <select class="form-select" id="add-pool-class" style="width:100%;">${optionsHtml}</select>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Number of Slots</label>
-          <input type="number" class="form-input" id="add-pool-slots" value="2" min="0" style="width:100%;">
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn" onclick="document.getElementById('add-pool-overlay').remove()">Cancel</button>
-        <button class="btn btn-gold" onclick="confirmAddPool()">Add Pool</button>
-      </div>
-    </div>
-  `;
-  document.body.appendChild(overlay);
-}
-
-function confirmAddPool() {
-  const className = document.getElementById('add-pool-class').value;
-  const slots = Math.max(0, parseInt(document.getElementById('add-pool-slots').value || '2', 10));
-  const id = className.toLowerCase().replace(/\s+/g, '_');
-  benchConfig.pools.push({ id, className, label: className, slots });
-  document.getElementById('add-pool-overlay').remove();
-  renderBenchRotation();
-  showToast(`${className} added to rotation.`);
-}
 
 const ATT_CLASS = { present: 'present', absent: 'absent', excused: 'excused' };
 
@@ -4367,7 +3593,6 @@ function renderActiveRosterSubTab() {
   if (!active) { renderRoster(); return; }
   if (active.id === 'subtab-guild-roster') renderRoster();
   if (active.id === 'subtab-attendance-ledger') renderAttendanceLedger();
-  if (active.id === 'subtab-bench-rotation' && typeof renderBenchRotation === 'function') renderBenchRotation();
 }
 
 // ======================================================
@@ -5798,7 +5023,7 @@ function renderAttendance() {
   const raiders = getActiveRaiders();
   const thead = document.getElementById('att-thead');
   const tbody = document.getElementById('att-tbody');
-  if (!thead || !tbody) return; // old Attendance tab removed — manual tracking retired in favor of CSV ledger
+  if (!thead || !tbody) return; // old Attendance tab removed — manual tracking retired in favor of the attendance ledger
 
   function fmtWeek(iso) {
     const d = new Date(iso + 'T12:00:00');
@@ -6023,7 +5248,6 @@ function saveData() {
     nextStratId,
     attendanceLedger,
     nextLedgerId,
-    benchConfig,
     nameAliases,
   };
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
@@ -6067,13 +5291,11 @@ function loadData(event) {
       if (data.guildies) guildies = data.guildies;
       if (data.attendanceLedger) attendanceLedger = data.attendanceLedger;
       if (data.nextLedgerId) nextLedgerId = data.nextLedgerId;
-      if (data.benchConfig) benchConfig = data.benchConfig;
       if (data.nameAliases) nameAliases = data.nameAliases;
       renderRoster();
       renderOverview();
       renderAttendance();
       renderAttendanceLedger();
-      renderBenchRotation();
       setTimeout(() => renderStrats(), 100);
       showToast('📂 Loaded! Strats may take a moment due to image data size.');
     } catch(err) {
@@ -6849,7 +6071,6 @@ async function saveToGitHub() {
     savedAt: new Date().toISOString(),
     roster, raids, nextRaidId, attendance, nextId, guildInfo, pugs, nextPugId, guildies, strats, nextStratId,
     attendanceLedger, nextLedgerId,
-    benchConfig,
     nameAliases,
   };
 
@@ -7387,7 +6608,6 @@ async function initFromJson() {
     if (data.guildies) guildies = data.guildies;
     if (data.attendanceLedger) attendanceLedger = data.attendanceLedger;
     if (data.nextLedgerId) nextLedgerId = data.nextLedgerId;
-    if (data.benchConfig) benchConfig = data.benchConfig;
     if (data.nameAliases) nameAliases = data.nameAliases;
     showToast('📂 Loaded kaizen_data.json automatically.');
     updateVersionFooter(data.savedAt);
@@ -7407,7 +6627,6 @@ async function initFromJson() {
   renderOverview();
   renderAttendance();
   renderAttendanceLedger();
-  renderBenchRotation();
   renderBuilder();
   renderStrats();
 }

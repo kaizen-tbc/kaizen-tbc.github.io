@@ -200,26 +200,6 @@ main {
 .sub-nav-btn:hover { color: var(--text-bright); }
 .sub-nav-btn.active { color: var(--gold); border-bottom-color: var(--gold); }
 
-.bench-rule-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 4px; }
-.bench-rule-card { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 6px; padding: 18px 14px; text-align: center; }
-.bench-rule-icon { margin-bottom: 10px; color: var(--gold); display: flex; justify-content: center; }
-.bench-rule-icon svg { width: 26px; height: 26px; }
-.bench-rule-title { font-family: 'Fraunces', serif; font-weight: 600; font-size: 15px; color: var(--gold); margin-bottom: 6px; }
-.bench-rule-text { font-size: 12px; color: var(--text-dim); line-height: 1.5; }
-
-.bench-pools-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
-.bench-pool-card { background: var(--bg-panel); border: 1px solid var(--border); border-left: 4px solid var(--c, var(--gold)); border-radius: 6px; padding: 18px 18px 14px; }
-.bench-pool-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
-.bench-pool-head h3 { font-family: 'Fraunces', serif; font-weight: 600; font-size: 19px; margin: 0; color: var(--c, var(--text-bright)); }
-.bench-row { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 10px; padding: 7px 4px; border-radius: 4px; }
-.bench-row:hover { background: var(--bg-hover); }
-.bench-name { font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
-.bench-rate-text { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--text-dim); }
-.bench-divider { display: flex; align-items: center; gap: 8px; margin: 12px 0 6px; color: var(--text-dim); }
-.bench-divider .tick { flex: 1; border-top: 2px dashed var(--border); }
-.bench-divider .lbl { font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 9px; border: 1px solid var(--border); border-radius: 10px; }
-.bench-empty { font-size: 12px; color: var(--text-dim); font-style: italic; padding: 8px 4px; }
-
 /* ===== SECTION HEADER ===== */
 .section-header {
   display: flex;
@@ -705,8 +685,6 @@ tr:last-child td { border-bottom: none; }
   /* Overview — stack 2-col grids */
   .skel-overview-grid { grid-template-columns: 1fr !important; }
   #ov-progression { grid-template-columns: 1fr !important; }
-  .bench-pools-grid { grid-template-columns: 1fr !important; }
-  .bench-rule-cards { grid-template-columns: 1fr !important; }
 
   /* Inline grid overrides — target by display:grid with 2 cols */
   [style*="grid-template-columns:1fr 1fr"],
@@ -1833,78 +1811,34 @@ a[href] > div > div[style*="line-height:1.6"] {
 <!-- ==================== ROSTER TAB ==================== -->
 <div class="tab-panel" id="tab-roster">
 
-  <div class="sub-nav" style="display:flex;gap:6px;margin-bottom:20px;border-bottom:1px solid var(--border);">
-    <button class="sub-nav-btn active" onclick="showRosterSubTab('guild-roster', this)">Guild Roster</button>
-    <button class="sub-nav-btn" onclick="showRosterSubTab('bench-rotation', this)">Bench Rotation</button>
-  </div>
-
-  <div class="sub-tab-panel active" id="subtab-guild-roster">
-    <div class="section-header">
-      <div>
-        <div class="section-title">Guild Roster</div>
-        <div class="section-subtitle">Manage members, designate alts, and set raider status</div>
-      </div>
-    </div>
-
-    <div class="stats-strip" id="roster-stats"></div>
-
-    <div style="margin-bottom:12px;"><span id="roster-count" style="font-size:14px;color:var(--text-dim);"></span></div>
-
-    <div class="table-wrapper">
-      <table id="roster-table">
-        <thead>
-          <tr>
-            <th onclick="sortRoster('name')">Character ↕</th>
-            <th onclick="sortRoster('class')">Class ↕</th>
-            <th>Main Spec</th>
-            <th>Off Spec</th>
-            <th onclick="sortRoster('role')">Role ↕</th>
-            <th onclick="sortRoster('status')">Status ↕</th>
-            <th onclick="sortRoster('level')">Lvl ↕</th>
-            <th>Alt Of</th>
-            <th>Attendance</th>
-          </tr>
-        </thead>
-        <tbody id="roster-tbody"></tbody>
-      </table>
+  <div class="section-header">
+    <div>
+      <div class="section-title">Guild Roster</div>
+      <div class="section-subtitle">Manage members, designate alts, and set raider status</div>
     </div>
   </div>
 
-  <div class="sub-tab-panel" id="subtab-bench-rotation">
-    <div class="section-header">
-      <div>
-        <div class="section-title">Bench Rotation</div>
-        <div class="section-subtitle">Class-locked rotation, ranked by attendance consistency</div>
-      </div>
-    </div>
+  <div class="stats-strip" id="roster-stats"></div>
 
-    <p style="font-size:13px;color:var(--text-dim);margin:0 0 16px;max-width:75%;">
-      Rotation is typically class-based, not role-based, because raid comp and class utility matter. We rotate where we have more raiders than slots in the exact same class, so raid comp is never affected, only the surplus. We want this to be fair and transparent for the classes we're heavily stacked on, but attendance, performance, and comp can also factor into the decision. If you're on the bench, just confirm you're ready to fill in on raid night. It's a rotation, and your turn comes around.
-    </p>
+  <div style="margin-bottom:12px;"><span id="roster-count" style="font-size:14px;color:var(--text-dim);"></span></div>
 
-    <div class="bench-rule-cards">
-      <div class="bench-rule-card">
-        <div class="bench-rule-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3z" stroke-linejoin="round"/></svg></div>
-        <div class="bench-rule-title">Tanks Don't Rotate</div>
-        <div class="bench-rule-text">Tanks aren't part of the bench. We plan around tank absences with an off-spec sub or a pugged tank if needed.</div>
-      </div>
-      <div class="bench-rule-card">
-        <div class="bench-rule-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><line x1="6" y1="18" x2="18" y2="6"/></svg></div>
-        <div class="bench-rule-title">No Sign Up, No Slot</div>
-        <div class="bench-rule-text">Confirming each week is what claims your spot. Show up ready, and your turn on the bench comes back around.</div>
-      </div>
-      <div class="bench-rule-card">
-        <div class="bench-rule-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><line x1="5" y1="20" x2="5" y2="11"/><line x1="12" y1="20" x2="12" y2="6"/><line x1="19" y1="20" x2="19" y2="14"/></svg></div>
-        <div class="bench-rule-title">Rotation Is Tracked</div>
-        <div class="bench-rule-text">Officers track who's rotated through bench and for how long, so everyone gets fair time in the raid.</div>
-      </div>
-    </div>
-
-    <p style="font-size:12px;color:var(--text-dim);margin:14px 0 20px;max-width:75%;">
-      Only a few classes are tracked here right now, wherever we're currently stacked. That list grows as recruiting shifts.
-    </p>
-
-    <div class="bench-pools-grid" id="bench-pools-grid"></div>
+  <div class="table-wrapper">
+    <table id="roster-table">
+      <thead>
+        <tr>
+          <th onclick="sortRoster('name')">Character ↕</th>
+          <th onclick="sortRoster('class')">Class ↕</th>
+          <th>Main Spec</th>
+          <th>Off Spec</th>
+          <th onclick="sortRoster('role')">Role ↕</th>
+          <th onclick="sortRoster('status')">Status ↕</th>
+          <th onclick="sortRoster('level')">Lvl ↕</th>
+          <th>Alt Of</th>
+          <th>Attendance</th>
+        </tr>
+      </thead>
+      <tbody id="roster-tbody"></tbody>
+    </table>
   </div>
 
 </div>
@@ -2123,13 +2057,6 @@ let nextPugId = -1;
 let guildies = [];
 
 let attendanceLedger = []; // [{ id, date, label, names: [string] }]
-let benchConfig = {
-  pools: [],
-  overrides: {},
-  confirmations: {},
-  manuallyAdded: [],
-  benchedByDecision: {},
-};
 
 function getSortedLedger() {
   return [...attendanceLedger].sort((a, b) => (a.date || '').localeCompare(b.date || ''));
@@ -2139,8 +2066,7 @@ function getPlayerAttendanceStats(name) {
   const sorted = getSortedLedger();
   const firstIdx = sorted.findIndex(week => week.names.includes(name));
   if (firstIdx === -1) return { eligible: 0, attended: 0, rate: 0, startDate: null };
-  const benchedDates = new Set((benchConfig.benchedByDecision[name]) || []);
-  const eligibleWeeks = sorted.slice(firstIdx).filter(week => !benchedDates.has(week.date));
+  const eligibleWeeks = sorted.slice(firstIdx);
   const attended = eligibleWeeks.filter(week => week.names.includes(name)).length;
   return { eligible: eligibleWeeks.length, attended, rate: eligibleWeeks.length > 0 ? attended / eligibleWeeks.length : 0, startDate: sorted[firstIdx].date || null };
 }
@@ -2156,83 +2082,6 @@ function renderAttendanceBar(name) {
     </div>
     <span style="font-size:11px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;">${pct}%</span>
   </div>`;
-}
-
-function computeBenchPool(pool) {
-  let eligiblePlayers = roster.filter(p => p.class === pool.className);
-  if (pool.specExclude && pool.specExclude.length) {
-    eligiblePlayers = eligiblePlayers.filter(p => !pool.specExclude.includes(p.ms));
-  }
-  eligiblePlayers = eligiblePlayers.filter(p => benchConfig.overrides[p.name] !== 'excluded');
-
-  const ranked = eligiblePlayers
-    .map(p => {
-      const stats = getPlayerAttendanceStats(p.name);
-      const override = benchConfig.overrides[p.name] || null;
-      const confirmed = !!benchConfig.confirmations[p.name];
-      const manuallyAdded = benchConfig.manuallyAdded.includes(p.name);
-      return { player: p, ...stats, override, confirmed, manuallyAdded };
-    })
-    .filter(r => r.eligible > 0 || r.manuallyAdded);
-
-  ranked.sort((a, b) => b.rate - a.rate || b.attended - a.attended || b.eligible - a.eligible);
-
-  const forcedRaiding = ranked.filter(r => r.override === 'raiding');
-  const forcedBench = ranked.filter(r => r.override === 'bench');
-  const natural = ranked.filter(r => !r.override);
-  const naturalConfirmed = natural.filter(r => r.confirmed);
-  const naturalUnconfirmed = natural.filter(r => !r.confirmed);
-
-  const remainingSlots = Math.max(0, pool.slots - forcedRaiding.length);
-  const naturalRaiding = naturalConfirmed.slice(0, remainingSlots);
-  const naturalBenchConfirmed = naturalConfirmed.slice(remainingSlots);
-
-  const raiding = [...forcedRaiding, ...naturalRaiding].sort((a, b) => b.rate - a.rate || b.attended - a.attended);
-  const bench = [
-    ...naturalBenchConfirmed.sort((a, b) => b.rate - a.rate || b.attended - a.attended),
-    ...naturalUnconfirmed.sort((a, b) => b.rate - a.rate || b.attended - a.attended),
-    ...forcedBench.sort((a, b) => b.rate - a.rate || b.attended - a.attended),
-  ];
-
-  return { pool, raiding, bench };
-}
-
-function getBenchedCount(name) {
-  return (benchConfig.benchedByDecision[name] || []).length;
-}
-
-function renderBenchReadOnlyRow(entry) {
-  const p = entry.player;
-  const cc = classColor(p.class);
-  const benchedCount = getBenchedCount(p.name);
-  return `<div class="bench-row">
-    <div class="bench-name">
-      <span class="class-dot" style="background:var(--${cc});width:7px;height:7px;flex-shrink:0;"></span>
-      <span class="class-${cc}">${p.name}</span>
-      ${benchedCount > 0 ? `<span style="font-size:11px;color:var(--text-dim);">&middot; Benched ${benchedCount}x</span>` : ''}
-    </div>
-    <div style="font-size:11px;color:var(--text-dim);text-align:right;">${p.ms || ''}</div>
-  </div>`;
-}
-
-function renderBenchPoolCardReadOnly(pool) {
-  const computed = computeBenchPool(pool);
-  const cc = classColor(pool.className);
-  const raidingHtml = computed.raiding.length
-    ? computed.raiding.map(renderBenchReadOnlyRow).join('')
-    : `<div class="bench-empty">No one currently eligible for this pool.</div>`;
-  const benchHtml = computed.bench.length ? computed.bench.map(renderBenchReadOnlyRow).join('') : '';
-  return `<div class="bench-pool-card" style="--c:var(--${cc});">
-    <div class="bench-pool-head"><h3>${pool.label}</h3></div>
-    ${raidingHtml}
-    ${computed.bench.length > 0 ? `<div class="bench-divider"><span class="tick"></span><span class="lbl">Bench</span><span class="tick"></span></div>${benchHtml}` : ''}
-  </div>`;
-}
-
-function renderBenchRotation() {
-  const grid = document.getElementById('bench-pools-grid');
-  if (!grid) return;
-  grid.innerHTML = benchConfig.pools.map(renderBenchPoolCardReadOnly).join('');
 }
 
 
@@ -2283,23 +2132,8 @@ function showTab(tab, updateHash = true) {
   if (st) st.style.display = tab === 'strats' ? 'block' : 'none';
   if (tab === 'overview') renderOverview();
   if (tab === 'strats') renderStrats();
-  if (tab === 'roster') renderActiveRosterSubTab();
+  if (tab === 'roster') renderRoster();
   if (tab === 'builder') renderBuilder();
-}
-
-function showRosterSubTab(subtab, btn) {
-  document.querySelectorAll('#tab-roster .sub-tab-panel').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('#tab-roster .sub-nav-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('subtab-' + subtab).classList.add('active');
-  if (btn) btn.classList.add('active');
-  renderActiveRosterSubTab();
-}
-
-function renderActiveRosterSubTab() {
-  const active = document.querySelector('#tab-roster .sub-tab-panel.active');
-  if (!active) { renderRoster(); return; }
-  if (active.id === 'subtab-guild-roster') renderRoster();
-  if (active.id === 'subtab-bench-rotation') renderBenchRotation();
 }
 
 // Raid slug map
@@ -2995,7 +2829,7 @@ function renderAttendance() {
   const raiders = getActiveRaiders();
   const thead = document.getElementById('att-thead');
   const tbody = document.getElementById('att-tbody');
-  if (!thead || !tbody) return; // old Attendance tab removed — replaced by CSV ledger + Bench Rotation
+  if (!thead || !tbody) return; // old Attendance tab removed — replaced by the attendance ledger
 
   // Header — format iso date as "Tue\nMay 12"
   function fmtWeek(iso) {
@@ -3266,7 +3100,6 @@ async function loadFromServer() {
     if (data.strats) strats = data.strats;
     if (data.nextStratId) nextStratId = data.nextStratId;
     if (data.attendanceLedger) attendanceLedger = data.attendanceLedger;
-    if (data.benchConfig) benchConfig = data.benchConfig;
     console.log('Kaizen data loaded successfully');
   } catch(err) {
     console.warn('Could not load kaizen_data.json after retries:', err);
