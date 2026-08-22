@@ -2239,8 +2239,20 @@ function translateRHSpec(rhSpecName, className) {
   const mapped = RH_SPEC_MAP[rhSpecName];
   if (mapped) return mapped;
 
+  // Raid Helper suffixes a digit onto spec names shared by two classes to
+  // disambiguate them internally (e.g. "Protection1"/"Protection2" for
+  // Warrior vs Paladin, "Restoration1"/"Restoration2" for Druid vs Shaman,
+  // "Holy1"/"Holy2" for Paladin vs Priest). The digit carries no meaning for
+  // us — the underlying spec+role is identical either way — so strip it and
+  // resolve the base name instead of showing "Protection1" as a literal spec.
+  const normalized = rhSpecName.replace(/\d+$/, '');
+  if (normalized !== rhSpecName) {
+    const normalizedMapped = RH_SPEC_MAP[normalized];
+    if (normalizedMapped) return normalizedMapped;
+  }
+
   // Fall back — return as-is with best-guess role
-  return { spec: rhSpecName, role: SPEC_ROLE[rhSpecName] || 'Ranged' };
+  return { spec: normalized, role: SPEC_ROLE[normalized] || SPEC_ROLE[rhSpecName] || 'Ranged' };
 }
 
 // ======================================================
