@@ -2,7 +2,7 @@
 // node register-commands.js
 
 const APPLICATION_ID = '1539371978983604314';
-const BOT_TOKEN      = 'MTUzOTM3MTk3ODk4MzYwNDMxNA.G_p4-b.p_PLKUqTfCjfqN-YR8qOs93JDJCK70NaRtq0eg'; // paste your bot token
+const BOT_TOKEN = 'YOUR_BOT_TOKEN_HERE'; // paste your bot token here before running
 
 const commands = [
   {
