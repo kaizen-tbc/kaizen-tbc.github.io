@@ -7,10 +7,8 @@ name = "kaizen-bot"
 main = "kaizen-worker.js"
 compatibility_date = "2026-08-22"
 
-# Fill in from the Cloudflare dashboard sidebar (or `wrangler whoami` once
-# logged in) - not required if your API token is scoped to a single account,
-# but safer to pin explicitly if you have more than one.
-# account_id = "your-account-id-here"
+# Confirmed via `wrangler whoami` - Dsd030708@gmail.com's Account
+account_id = "3b9ca148c94560c58ab6cfcc6984406c"
 
 # Secrets (RH_API_KEY, RH_SERVER_ID, DISCORD_BOT_TOKEN, DISCORD_PUBLIC_KEY,
 # WCL_CLIENT_ID, WCL_CLIENT_SECRET, WCL_GUILD_NAME, WCL_GUILD_SERVER_SLUG,
