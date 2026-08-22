@@ -521,6 +521,10 @@ async function handleLatestLogsData(request, env) {
     if (!env.WCL_CLIENT_ID || !env.WCL_CLIENT_SECRET) {
       throw new Error('Warcraft Logs API credentials not configured.');
     }
+    // ?debug=1 includes the raw JSON blobs verbatim - temporary, for
+    // inspecting the real shape of rankings/playerDetails against a live
+    // report rather than guessing at their schema again.
+    const debug = new URL(request.url).searchParams.get('debug');
     const report = await findLatestGuildReport(env);
     if (!report) throw new Error('No recent reports found for the guild.');
     const details = await getReportFightsAndStats(env, report.code);
@@ -533,6 +537,7 @@ async function handleLatestLogsData(request, env) {
       killFights: details.killFights,
       participants,
       topParses,
+      ...(debug ? { rankingsRaw: details.rankingsRaw, playerDetailsRaw: details.playerDetailsRaw } : {}),
     }), 200);
   } catch (err) {
     return corsResponse(JSON.stringify({ error: err.message }), 500);
