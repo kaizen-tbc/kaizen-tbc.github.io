@@ -163,9 +163,19 @@ nav { display: flex; gap: 2px; flex: 1; }
 main {
   position: relative;
   z-index: 1;
+  padding: 24px;
+}
+
+/* Break overview out of main's padding */
+#tab-overview {
+  margin: -24px;
+  width: calc(100% + 48px);
+}
+
+/* Non-overview sections stay padded */
+#tab-roster, #tab-builder, #tab-strats {
   max-width: 1600px;
   margin: 0 auto;
-  padding: 24px;
 }
 
 .tab-panel { display: none; }
@@ -723,7 +733,6 @@ tr:last-child td { border-bottom: none; }
     width: 100% !important;
     object-fit: contain;
   }
-  #ad-strats-side { width: 100% !important; min-height: 90px !important; }
 
   /* Strats tabs -> dropdown */
   .strat-tabs { display: none !important; }
@@ -967,74 +976,6 @@ tr:last-child td { border-bottom: none; }
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 
 /* ===== LOADING SPINNER (fallback) ===== */
-.spinner {
-  width: 36px;
-  height: 36px;
-  border: 3px solid var(--border);
-  border-top-color: var(--gold);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-  margin: 0 auto;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-
-/* ===== SKELETON LOADER ===== */
-.skeleton-wrap {
-  display: none;
-  padding: 24px;
-  max-width: 1200px;
-  margin: 0 auto;
-}
-.skeleton-wrap.active { display: block; }
-
-@keyframes shimmer {
-  0% { background-position: -600px 0; }
-  100% { background-position: 600px 0; }
-}
-.skel {
-  background: linear-gradient(90deg, var(--bg-panel) 25%, var(--bg-card) 50%, var(--bg-panel) 75%);
-  background-size: 600px 100%;
-  animation: shimmer 1.4s infinite linear;
-  border-radius: 3px;
-}
-.skel-line { height: 14px; margin-bottom: 10px; }
-.skel-line.short { width: 40%; }
-.skel-line.med { width: 65%; }
-.skel-line.full { width: 100%; }
-.skel-block { border-radius: 4px; }
-.skel-title { height: 20px; width: 200px; margin-bottom: 20px; }
-
-/* Overview skeleton */
-.skel-overview-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-  margin-bottom: 20px;
-}
-.skel-card {
-  background: var(--bg-panel);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  padding: 16px;
-}
-.skel-card-header { height: 16px; width: 120px; margin-bottom: 14px; }
-.skel-row { display: flex; gap: 10px; margin-bottom: 8px; align-items: center; }
-.skel-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-.skel-badge { height: 20px; width: 60px; border-radius: 10px; }
-
-/* Strats skeleton */
-.skel-strats-pills { display: flex; gap: 8px; margin-bottom: 16px; }
-.skel-pill { height: 28px; width: 120px; border-radius: 14px; }
-.skel-tabs { display: flex; gap: 4px; margin-bottom: 16px; }
-.skel-tab { height: 32px; width: 90px; border-radius: 3px; }
-.skel-strats-body { display: flex; gap: 16px; }
-.skel-image { flex: 1; height: 400px; border-radius: 4px; }
-.skel-assigns { width: 300px; flex-shrink: 0; display: flex; flex-direction: column; gap: 10px; }
-.skel-assign-card { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 4px; padding: 12px; }
-.skel-assign-header { height: 12px; width: 80px; margin-bottom: 10px; }
-.skel-assign-row { display: flex; gap: 8px; margin-bottom: 6px; }
-.skel-assign-slot { height: 26px; flex: 1; border-radius: 3px; }
-
 /* ===== ASSIGNS READ-ONLY ===== */
 .assigns-panel { display:flex;flex-direction:column;gap:10px;min-width:260px;max-width:300px;flex-shrink:0; }
 .assigns-section { background:var(--bg-panel);border:1px solid var(--border);border-radius:4px;overflow:hidden; }
@@ -1395,6 +1336,398 @@ a[href] > div > div[style*="line-height:1.6"] {
   text-transform: uppercase;
   opacity: 0.5;
 }
+
+/* ============================================================
+   CINEMATIC OVERVIEW — full-bleed sections
+   ============================================================ */
+
+/* ── Hero ── */
+.ov-hero-section {
+  position: relative;
+  height: 100vh;
+  min-height: 600px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.ov-hero-bg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  transition: background-image 0.4s ease;
+  will-change: transform;
+}
+/* Fallback when no banner set */
+.ov-hero-bg:not([style*="url"]) {
+  background: linear-gradient(135deg, #0a0b0d 0%, #12151a 50%, #0a0b0d 100%);
+}
+.ov-hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(0,0,0,0.3) 0%,
+    rgba(0,0,0,0.5) 50%,
+    rgba(0,0,0,0.75) 100%
+  );
+}
+.ov-hero-content {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  padding: 0 24px;
+  max-width: 900px;
+  will-change: opacity, transform;
+}
+.ov-guild-eyebrow {
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(11px, 1.2vw, 14px);
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 16px;
+  opacity: 0.9;
+}
+.ov-guild-name {
+  font-family: 'Cinzel', serif;
+  font-size: clamp(56px, 9vw, 120px);
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  margin: 0 0 24px;
+  text-shadow: 0 4px 40px rgba(0,0,0,0.6);
+}
+.ov-hero-divider {
+  width: 60px;
+  height: 2px;
+  background: var(--gold);
+  margin: 0 auto 24px;
+  opacity: 0.8;
+}
+.ov-hero-tagline {
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(14px, 1.4vw, 18px);
+  color: rgba(255,255,255,0.75);
+  line-height: 1.7;
+  max-width: 600px;
+  margin: 0 auto 36px;
+  font-weight: 300;
+}
+.ov-hero-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 32px;
+  background: #5865F2;
+  color: #fff;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: none;
+  border-radius: 2px;
+  transition: background 0.15s, transform 0.15s;
+}
+.ov-hero-cta:hover { background: #4752c4; transform: translateY(-1px); }
+.ov-hero-scroll-hint {
+  position: absolute;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: rgba(255,255,255,0.4);
+  font-size: 20px;
+  animation: ov-bounce 2s infinite;
+  z-index: 2;
+}
+@keyframes ov-bounce {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50% { transform: translateX(-50%) translateY(8px); }
+}
+
+/* ── Shared section styles ── */
+.ov-section {
+  padding: 80px 0;
+}
+.ov-section-dark {
+  background: rgba(0,0,0,0.35);
+}
+.ov-section-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 48px;
+}
+.ov-section-label {
+  font-family: 'Cinzel', serif;
+  font-size: clamp(28px, 3.5vw, 48px);
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 0.04em;
+  margin-bottom: 40px;
+  position: relative;
+  padding-bottom: 16px;
+}
+.ov-section-label::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 40px;
+  height: 2px;
+  background: var(--gold);
+}
+
+/* ── Progression with image panel ── */
+.ov-prog-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 48px;
+  align-items: stretch;
+}
+.ov-prog-tiers {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.ov-prog-tier {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 16px;
+  cursor: pointer;
+  border-left: 3px solid transparent;
+  transition: all 0.2s;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.ov-prog-tier:last-child { border-bottom: none; }
+.ov-prog-tier:hover { background: rgba(255,255,255,0.03); border-left-color: rgba(201,162,39,0.4); }
+.ov-prog-tier.active { background: rgba(201,162,39,0.06); border-left-color: var(--gold); }
+.ov-prog-tier.inactive { opacity: 0.4; }
+.ov-prog-tier.inactive:hover { opacity: 0.6; }
+.ov-prog-tier-text { flex: 1; }
+.ov-prog-tier-name {
+  font-family: 'Cinzel', serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 8px;
+}
+.ov-prog-tier.active .ov-prog-tier-name { color: var(--gold); }
+.ov-prog-tier-bar-track {
+  height: 3px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.ov-prog-tier-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.6s ease;
+}
+.ov-prog-tier-count {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  color: var(--text-dim);
+  flex-shrink: 0;
+}
+.ov-prog-image-wrap {
+  position: sticky;
+  top: 80px;
+  align-self: stretch;
+}
+.ov-prog-image-inner {
+  position: relative;
+  height: 100%;
+  min-height: 300px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: rgba(255,255,255,0.04);
+}
+.ov-prog-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+.ov-prog-img.active { opacity: 1; }
+.ov-prog-img-label {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 24px 20px 16px;
+  background: linear-gradient(transparent, rgba(0,0,0,0.7));
+  font-family: 'Cinzel', serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 0.04em;
+}
+
+/* ── Schedule alternating layout ── */
+.ov-schedule-alt {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.ov-schedule-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 400px;
+  border-radius: 4px;
+  overflow: hidden;
+}
+.ov-schedule-row.reverse { direction: rtl; }
+.ov-schedule-row.reverse > * { direction: ltr; }
+.ov-schedule-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  min-height: 300px;
+  background: rgba(255,255,255,0.04);
+}
+.ov-schedule-img-placeholder {
+  width: 100%;
+  height: 100%;
+  min-height: 300px;
+  background: linear-gradient(135deg, rgba(201,162,39,0.06) 0%, rgba(26,175,192,0.04) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255,255,255,0.15);
+  font-family: 'Cinzel', serif;
+  font-size: 48px;
+  font-weight: 900;
+}
+.ov-schedule-text {
+  padding: 60px 56px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background: rgba(0,0,0,0.2);
+}
+.ov-schedule-day {
+  font-family: 'Cinzel', serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 16px;
+}
+.ov-schedule-content {
+  font-family: 'Cinzel', serif;
+  font-size: clamp(22px, 2.5vw, 32px);
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 16px;
+  line-height: 1.2;
+}
+.ov-schedule-time {
+  font-size: 14px;
+  color: var(--text-dim);
+  line-height: 1.6;
+}
+.ov-schedule-note {
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-top: 10px;
+  opacity: 0.6;
+}
+
+/* ── Two col ── */
+.ov-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1px 1fr;
+  gap: 0 48px;
+  align-items: start;
+}
+.ov-col-divider {
+  background: rgba(255,255,255,0.07);
+  align-self: stretch;
+}
+.ov-col-label {
+  font-family: 'Cinzel', serif;
+  font-size: clamp(22px, 2.5vw, 32px);
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 0.04em;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+}
+.ov-col-body {
+  font-size: 15px;
+  color: var(--text-mid);
+  line-height: 1.8;
+}
+
+/* ── Tools ── */
+.ov-tools-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 20px;
+}
+.ov-tool-card {
+  display: flex;
+  flex-direction: column;
+  padding: 24px;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-top-width: 2px;
+  text-decoration: none;
+  transition: background 0.15s, transform 0.15s;
+}
+.ov-tool-card:hover {
+  background: rgba(255,255,255,0.04);
+  transform: translateY(-2px);
+}
+.ov-tool-name {
+  font-family: 'Cinzel', serif;
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+.ov-tool-desc {
+  font-size: 13px;
+  color: var(--text-dim);
+  line-height: 1.6;
+  flex: 1;
+}
+.ov-tool-link {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-top: 14px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* ── Mobile overrides ── */
+@media (max-width: 640px) {
+  #tab-overview { margin: -12px; width: calc(100% + 24px); }
+  .ov-hero-bg { background-attachment: scroll; }
+  .ov-hero-section { height: 100svh; }
+  .ov-section { padding: 48px 0; }
+  .ov-section-inner { padding: 0 20px; }
+  .ov-prog-layout { grid-template-columns: 1fr; }
+  .ov-prog-image-wrap { position: static; }
+  .ov-prog-grid { grid-template-columns: 1fr; gap: 24px; }
+  .ov-schedule-row { grid-template-columns: 1fr; }
+  .ov-schedule-row.reverse { direction: ltr; }
+  .ov-schedule-text { padding: 32px 24px; }
+  .ov-two-col { grid-template-columns: 1fr; }
+  .ov-col-divider { display: none; }
+  .ov-section-label { font-size: 28px; margin-bottom: 24px; }
+}
 </style>
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8959237604087556" crossorigin="anonymous"></script>
 </head><body>
@@ -1403,7 +1736,7 @@ a[href] > div > div[style*="line-height:1.6"] {
   <div class="guild-brand">
     <div class="guild-icon">K</div>
     <div>
-      <div class="guild-name">&lt;Kaizen&gt;</div>
+      <div class="guild-name">Kaizen</div>
       <div class="guild-realm">Horde · TBC Classic</div>
     </div>
   </div>
@@ -1423,158 +1756,76 @@ a[href] > div > div[style*="line-height:1.6"] {
 
 <main>
 
-<!-- Overview skeleton -->
-<div class="skeleton-wrap" id="skel-overview">
-  <div class="skel skel-title"></div>
-  <div class="skel-overview-grid">
-    <div class="skel-card">
-      <div class="skel skel-card-header"></div>
-      <div class="skel-row"><div class="skel skel-dot"></div><div class="skel skel-line med"></div></div>
-      <div class="skel-row"><div class="skel skel-dot"></div><div class="skel skel-line short"></div></div>
-      <div class="skel-row"><div class="skel skel-dot"></div><div class="skel skel-line med"></div></div>
-      <div class="skel-row"><div class="skel skel-dot"></div><div class="skel skel-line short"></div></div>
-    </div>
-    <div class="skel-card">
-      <div class="skel skel-card-header"></div>
-      <div class="skel-row"><div class="skel skel-line full"></div></div>
-      <div class="skel-row"><div class="skel skel-line med"></div></div>
-      <div class="skel-row"><div class="skel skel-line full"></div></div>
-    </div>
-    <div class="skel-card">
-      <div class="skel skel-card-header"></div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;">
-        <div class="skel skel-badge"></div>
-        <div class="skel skel-badge"></div>
-        <div class="skel skel-badge"></div>
-        <div class="skel skel-badge"></div>
-        <div class="skel skel-badge"></div>
-      </div>
-    </div>
-    <div class="skel-card">
-      <div class="skel skel-card-header"></div>
-      <div class="skel-row"><div class="skel skel-line med"></div></div>
-      <div class="skel-row"><div class="skel skel-line short"></div></div>
-      <div class="skel-row"><div class="skel skel-line full"></div></div>
-    </div>
-  </div>
-</div>
-
-<!-- Strats skeleton -->
-<div class="skeleton-wrap" id="skel-strats">
-  <div class="skel-strats-pills">
-    <div class="skel skel-pill"></div>
-    <div class="skel skel-pill"></div>
-    <div class="skel skel-pill" style="width:160px;"></div>
-  </div>
-  <div class="skel-tabs">
-    <div class="skel skel-tab"></div>
-    <div class="skel skel-tab"></div>
-    <div class="skel skel-tab"></div>
-    <div class="skel skel-tab"></div>
-    <div class="skel skel-tab"></div>
-  </div>
-  <div class="skel-strats-body">
-    <div class="skel skel-block skel-image"></div>
-    <div class="skel-assigns">
-      <div class="skel-assign-card">
-        <div class="skel skel-assign-header"></div>
-        <div class="skel-assign-row"><div class="skel skel-assign-slot"></div><div class="skel skel-assign-slot"></div></div>
-        <div class="skel-assign-row"><div class="skel skel-assign-slot"></div><div class="skel skel-assign-slot"></div></div>
-        <div class="skel-assign-row"><div class="skel skel-assign-slot"></div><div class="skel skel-assign-slot"></div></div>
-      </div>
-      <div class="skel-assign-card">
-        <div class="skel skel-assign-header"></div>
-        <div class="skel-assign-row"><div class="skel skel-assign-slot"></div><div class="skel skel-assign-slot"></div></div>
-        <div class="skel-assign-row"><div class="skel skel-assign-slot"></div><div class="skel skel-assign-slot"></div></div>
-      </div>
-      <div class="skel-assign-card">
-        <div class="skel skel-assign-header"></div>
-        <div class="skel-assign-row"><div class="skel skel-assign-slot" style="height:60px;"></div></div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Generic spinner for other tabs -->
-<div id="skel-spinner" style="display:none;padding:60px;text-align:center;">
-  <div class="spinner"></div>
-</div>
 
 <!-- ==================== OVERVIEW TAB ==================== -->
 <div class="tab-panel active" id="tab-overview">
 
-  <div id="overview-content" style="display:none;">
-  <!-- Hero card — rendered by renderOverview() -->
-  <div id="ov-hero" style="margin-bottom:20px;"></div>
+  <div id="overview-content">
 
-  <!-- PROGRESSION -->
-  <div class="card" style="margin-bottom:20px;padding:20px 24px;">
-    <div style="font-family:'Fraunces',serif;font-weight:600;font-size:16px;color:var(--gold);margin-bottom:14px;">Progression</div>
-    <div id="ov-progression" style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;"></div>
-  </div>
-
-  <!-- AD ZONE: Overview below progression -->
-  <div id="ad-overview-top" style="margin-bottom:20px;"><ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-8959237604087556" data-ad-slot="1757499443" data-ad-format="auto" data-full-width-responsive="true"></ins></div>
-
-  <!-- RAID SCHEDULE + RECRUITMENT -->
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
-
-    <!-- Raid Schedule -->
-    <div class="card">
-      <div style="font-family:'Cinzel',serif;font-size:13px;font-weight:600;color:var(--text-bright);margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--border);">Raid Schedule</div>
-      <div style="display:flex;flex-direction:column;gap:10px;" id="ov-schedule"></div>
+  <!-- ── SECTION 1: HERO ── -->
+  <section class="ov-hero-section" id="ov-hero-section">
+    <div class="ov-hero-bg" id="ov-hero-bg"></div>
+    <div class="ov-hero-overlay"></div>
+    <div class="ov-hero-content">
+      <div class="ov-guild-eyebrow" id="ov-hero-realm">Horde · TBC Classic · PvE</div>
+      <h1 class="ov-guild-name" id="ov-hero-name">Kaizen</h1>
+      <div class="ov-hero-divider"></div>
+      <p class="ov-hero-tagline" id="ov-hero-about"></p>
+      <a class="ov-hero-cta" id="ov-hero-discord" href="#" target="_blank">Join our Discord</a>
     </div>
+    <div class="ov-hero-scroll-hint">↓</div>
+  </section>
 
-    <!-- Recruitment -->
-    <div class="card">
-      <div style="font-family:'Cinzel',serif;font-size:13px;font-weight:600;color:var(--text-bright);margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--border);">Recruitment</div>
-      <div id="ov-recruitment" style="font-size:15px;color:var(--text-mid);line-height:1.7;"></div>
-    </div>
-
-  </div>
-
-  <!-- LOOT SYSTEM -->
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
-
-    <div class="card">
-      <div style="font-family:'Cinzel',serif;font-size:14px;font-family:'Cinzel',serif;font-size:13px;font-weight:600;color:var(--text-bright);margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--border);">Loot System</div>
-      <div style="display:flex;flex-direction:column;gap:14px;">
-        <div>
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-            <span style="font-size:14px;font-weight:700;color:var(--gold);">Priority Rules</span>
-          </div>
-          <div id="ov-loot-rules" style="font-size:15px;color:var(--text-mid);line-height:1.8;"></div>
-        </div>
-        <div style="border-top:1px solid var(--border);padding-top:12px;">
-          <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-dim);font-weight:600;margin-bottom:8px;">Tools We Use</div>
-          <div style="display:flex;flex-direction:column;gap:8px;">
-            <a href="https://thatsmybis.com" target="_blank" class="tool-card" onmouseover="this.style.borderColor='var(--gold-dim)'" onmouseout="this.style.borderColor='var(--border-bright)'">
-              <div class="tool-card-body"><div class="tool-card-name" style="color:var(--gold);">That's My BIS</div><div class="tool-card-desc">Raiders pre-list their BIS items by priority. When loot drops, loot council can instantly see who has it highest on their list, making decisions fast and transparent. Sign up at thatsmybis.com with your Discord account.</div>
-              </div>
-              <span class="tool-card-link">↗ thatsmybis.com</span>
-            </a>
-            <a href="https://www.curseforge.com/wow/addons/gargul" target="_blank" class="tool-card" onmouseover="this.style.borderColor='var(--teal-dim)'" onmouseout="this.style.borderColor='var(--border-bright)'">
-              <div class="tool-card-body"><div class="tool-card-name" style="color:var(--teal);">Gargul</div><div class="tool-card-desc">In-game addon used by the loot master to manage rolls, track MS/OS, and distribute loot cleanly. Integrates directly with TMB. Install via CurseForge — only the loot master strictly needs it, but raiders benefit from having it too.</div>
-              </div>
-              <span class="tool-card-link">↗ CurseForge</span>
-            </a>
-            <a href="https://www.curseforge.com/wow/addons/method-raid-tools" target="_blank" class="tool-card" onmouseover="this.style.borderColor='var(--purple, #8e44ad)'" onmouseout="this.style.borderColor='var(--border-bright)'">
-              <div class="tool-card-body"><div class="tool-card-name" style="color:var(--purple, #9b59b6);">Method Raid Tools</div><div class="tool-card-desc">Essential raid leader addon. Tracks raid cooldowns, manages assignments, handles notes and reminders, and inspects raiders gear and specs. Required for officers, strongly recommended for all raiders. Install via CurseForge — make sure to grab the Classic TBC version.</div>
-              </div>
-              <span class="tool-card-link">↗ CurseForge</span>
-            </a>
+  <!-- ── SECTION 2: PROGRESSION ── -->
+  <section class="ov-section ov-section-dark">
+    <div class="ov-section-inner">
+      <div class="ov-section-label">Progression</div>
+      <div class="ov-prog-layout">
+        <!-- Tier tiles -->
+        <div class="ov-prog-tiers" id="ov-progression"></div>
+        <!-- Image panel -->
+        <div class="ov-prog-image-wrap">
+          <div class="ov-prog-image-inner">
+            <img id="ov-prog-img-a" class="ov-prog-img active" src="" alt="">
+            <img id="ov-prog-img-b" class="ov-prog-img" src="" alt="">
+            <div id="ov-prog-img-label" class="ov-prog-img-label"></div>
           </div>
         </div>
       </div>
     </div>
+  </section>
 
-    <!-- Roster snapshot -->
-    <div class="card">
-      <div style="font-family:'Cinzel',serif;font-size:14px;font-family:'Cinzel',serif;font-size:13px;font-weight:600;color:var(--text-bright);margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--border);">Roster Snapshot</div>
-      <div id="ov-roster-snapshot" style="display:flex;flex-direction:column;gap:6px;"></div>
+  <!-- ── SECTION 3: RAID SCHEDULE ── -->
+  <section class="ov-section">
+    <div class="ov-section-inner">
+      <div class="ov-section-label">Raid Schedule</div>
+      <div id="ov-schedule"></div>
     </div>
+  </section>
 
-  </div>
+  <!-- ── SECTION 4: RECRUITMENT + LOOT ── -->
+  <section class="ov-section ov-section-dark" style="padding:120px 0;">
+    <div class="ov-section-inner ov-two-col">
+      <div class="ov-col">
+        <div class="ov-col-label">Recruitment</div>
+        <div id="ov-recruitment" class="ov-col-body"></div>
+      </div>
+      <div class="ov-col-divider"></div>
+      <div class="ov-col">
+        <div class="ov-col-label">Loot System</div>
+        <div id="ov-loot-rules" class="ov-col-body"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── SECTION 5: TOOLS ── -->
+  <section class="ov-section" style="padding:120px 0;">
+    <div class="ov-section-inner">
+      <div class="ov-section-label">Tools We Use</div>
+      <div class="ov-tools-row" id="ov-tools"></div>
+    </div>
+  </section>
+
   </div><!-- /overview-content -->
 
 </div>
@@ -1609,6 +1860,7 @@ a[href] > div > div[style*="line-height:1.6"] {
             <th>Off Spec</th>
             <th onclick="sortRoster('role')">Role ↕</th>
             <th onclick="sortRoster('status')">Status ↕</th>
+            <th onclick="sortRoster('level')">Lvl ↕</th>
             <th>Alt Of</th>
             <th>Attendance</th>
           </tr>
@@ -1667,13 +1919,11 @@ a[href] > div > div[style*="line-height:1.6"] {
   </div>
 
   <!-- AD ZONE: Weekly Roster top — 728×90 leaderboard -->
-  <div id="ad-roster-top" style="margin-bottom:16px;"><ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-8959237604087556" data-ad-slot="1757499443" data-ad-format="auto" data-full-width-responsive="true"></ins></div>
 
   <div id="roster-role-strip" style="margin-bottom:14px;"></div>
   <div class="groups-container" id="groups-container"></div>
 
   <!-- AD ZONE: Weekly Roster bottom — 728×90 leaderboard -->
-  <div id="ad-roster-bottom" style="margin-top:20px;"><ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-8959237604087556" data-ad-slot="1757499443" data-ad-format="auto" data-full-width-responsive="true"></ins></div>
 </div>
 
 <!-- ==================== STRATS TAB ==================== -->
@@ -1718,7 +1968,7 @@ a[href] > div > div[style*="line-height:1.6"] {
     </div>
   </div>
 
-  <div id="strats-content" style="display:none;">
+  <div id="strats-content">
   <div class="section-header">
     <div>
       <div class="section-title">Strats</div>
@@ -1777,18 +2027,23 @@ let guildInfo = {
   banner: '',
   about: "Kaizen is a chill but serious Horde raiding guild pushing into 25-man progression content on TBC Classic. We're building a solid, consistent roster of players who show up prepared, respect each other's time, and want to actually clear content — without the toxicity. If that sounds like you, come hang.",
   raidSchedule: [
-    { day: "Tuesday", content: "Progression — SSC or TK", time: "6:30 – 9:30 pm server (8:30 – 11:30 pm EST · 5:30 – 8:30 pm PST)", note: "Invites 30 min before first pull" },
-    { day: "Sunday",  content: "Progression — SSC or TK", time: "6:30 – 9:30 pm server (8:30 – 11:30 pm EST · 5:30 – 8:30 pm PST)", note: "Continue / finish the week's instance" },
+    { day: "Tuesday", content: "Progression — SSC or TK", time: "6:30 – 9:30 pm server (8:30 – 11:30 pm EST · 5:30 – 8:30 pm PST)", note: "Invites 30 min before first pull", image: "" },
+    { day: "Sunday",  content: "Progression — SSC or TK", time: "6:30 – 9:30 pm server (8:30 – 11:30 pm EST · 5:30 – 8:30 pm PST)", note: "Continue / finish the week's instance", image: "" },
   ],
   recruitment: "We are actively building our 25-man roster and looking for reliable, raid-ready players.<br><br>Current loot system:<br><strong style='color:var(--gold);font-size:14px;'>2 Soft Reserves · MS &gt; OS + 1</strong><br><br>All specs considered — reach out on Discord if you're interested in running with us.",
   lootRules: "<strong style='color:var(--text-bright)'>2 Soft Reserves (SR)</strong> — each raider may reserve up to 2 items per raid week.<br><strong style='color:var(--text-bright)'>MS > OS</strong> — main spec rolls beat off spec rolls on all items.<br><strong style='color:var(--text-bright)'>+1 Rule</strong> — once you win a main spec item, you go to the back of the line for subsequent drops that night.",
   progression: [
-    { label: 'Karazhan', killed: 10, total: 10 },
-    { label: "Gruul's / Magtheridon", killed: 3, total: 3 },
-    { label: 'SSC / TK', killed: 10, total: 10 },
-    { label: 'Black Temple / Hyjal', killed: 0, total: 14 },
-    { label: 'Zul\'Aman', killed: 0, total: 6 },
-    { label: 'Sunwell Plateau', killed: 0, total: 6 },
+    { label: 'Karazhan', killed: 10, total: 10, image: '' },
+    { label: "Gruul's / Magtheridon", killed: 3, total: 3, image: '' },
+    { label: 'SSC / TK', killed: 10, total: 10, image: '' },
+    { label: 'Black Temple / Hyjal', killed: 0, total: 14, image: '' },
+    { label: 'Zul\'Aman', killed: 0, total: 6, image: '' },
+    { label: 'Sunwell Plateau', killed: 0, total: 6, image: '' },
+  ],
+  tools: [
+    { name: "That's My BIS", desc: "Raiders pre-list their BIS items by priority. When loot drops, loot council can instantly see who has it highest on their list.", url: "https://thatsmybis.com", color: "#c9a227" },
+    { name: "Gargul", desc: "In-game addon used by the loot master to manage rolls, track MS/OS, and distribute loot cleanly. Integrates directly with TMB.", url: "https://www.curseforge.com/wow/addons/gargul", color: "#1aafc0" },
+    { name: "Method Raid Tools", desc: "Essential raid leader addon. Tracks raid cooldowns, manages assignments, and inspects raiders. Required for officers.", url: "https://www.curseforge.com/wow/addons/method-raid-tools", color: "#9b59b6" },
   ],
 };
 
@@ -1989,47 +2244,8 @@ const ATT_CLASS = { present: 'present', absent: 'absent', excused: 'excused' };
 // ======================================================
 // TAB NAVIGATION
 // ======================================================
-function showSkeleton(tab) {
-  // Hide all skeletons and real content first
-  ['skel-overview','skel-strats','skel-spinner'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.style.display = 'none';
-  });
-  ['overview-content','strats-content'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.style.display = 'none';
-  });
-  // Show the right skeleton
-  if (tab === 'overview') {
-    const el = document.getElementById('skel-overview');
-    if (el) el.style.display = 'block';
-  } else if (tab === 'strats') {
-    const el = document.getElementById('skel-strats');
-    if (el) el.style.display = 'block';
-  } else {
-    const el = document.getElementById('skel-spinner');
-    if (el) el.style.display = 'block';
-  }
-}
-
-function hideSkeleton() {
-  // Hide all skeletons
-  ['skel-overview','skel-strats','skel-spinner'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.style.display = 'none';
-  });
-  // Show real content for active tab
-  const activePanel = document.querySelector('.tab-panel.active');
-  if (activePanel) {
-    if (activePanel.id === 'tab-overview') {
-      const el = document.getElementById('overview-content');
-      if (el) el.style.display = 'block';
-    } else if (activePanel.id === 'tab-strats') {
-      const el = document.getElementById('strats-content');
-      if (el) el.style.display = 'block';
-    }
-  }
-}
+function showSkeleton() {} // skeleton removed — content renders immediately
+function hideSkeleton() {} // skeleton removed — content renders immediately
 
 function toggleMobileNav() {
   const nav = document.getElementById('main-nav');
@@ -2123,119 +2339,129 @@ window.addEventListener('hashchange', () => {
 // OVERVIEW
 // ======================================================
 function renderOverview() {
-  // Hero card (read-only public view)
-  const hero = document.getElementById('ov-hero');
-  if (hero) {
-    const bannerStyle = guildInfo.banner
-      ? `background-image:url('${guildInfo.banner}');background-size:cover;background-position:center;`
-      : `background:linear-gradient(135deg,rgba(201,162,39,0.06),rgba(26,175,192,0.03));`;
-    const logoSrc = guildInfo.logo || 'assets/kaizen-logo.png';
-    hero.innerHTML = `
-      <div class="card" style="padding:0;overflow:hidden;border-color:var(--border-bright);">
-        <div style="${bannerStyle}padding:24px 28px;${guildInfo.banner ? 'backdrop-filter:brightness(0.55);' : ''}">
-          <div style="display:flex;align-items:stretch;gap:20px;flex-wrap:wrap;">
-            <div style="flex-shrink:0;width:160px;height:160px;border-radius:12px;overflow:hidden;background:#000;display:flex;align-items:center;justify-content:center;">
-              <img src="${logoSrc}" alt="Guild Logo"
-                onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
-                style="width:100%;height:100%;object-fit:contain;">
-              <div style="display:none;flex-direction:column;align-items:center;gap:6px;">
-                <div style="font-family:Cinzel,serif;font-size:28px;font-weight:900;color:var(--gold);">${(guildInfo.guildName||'G').charAt(0)}</div>
-              </div>
-            </div>
-            <div style="flex:1;min-width:260px;display:flex;flex-direction:column;">
-              <div style="font-family:'Cinzel',serif;font-size:20px;font-weight:700;color:var(--gold);letter-spacing:0.03em;margin-bottom:4px;">&lt;${guildInfo.guildName||'Guild'}&gt;</div>
-              <div style="font-size:13px;color:var(--text-mid);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:14px;">${guildInfo.realm||''}</div>
-              <div style="font-size:16px;color:var(--text-bright);line-height:1.7;margin-bottom:16px;">${guildInfo.about||''}</div>
-              <div style="display:flex;align-items:center;gap:12px;margin-top:auto;padding-top:12px;">
-                <a href="${guildInfo.discord||'#'}" target="_blank"
-                  style="display:inline-flex;align-items:center;gap:8px;padding:9px 16px;background:#5865F2;border-radius:4px;text-decoration:none;color:white;font-weight:600;font-size:14px;">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg>
-                  Join Discord
-                </a>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>`;
+  // ── Hero ──────────────────────────────────────────────
+  const bg = document.getElementById('ov-hero-bg');
+  if (bg && guildInfo.banner) {
+    bg.style.backgroundImage = `url('${guildInfo.banner}')`;
   }
+  const nameEl = document.getElementById('ov-hero-name');
+  if (nameEl) nameEl.textContent = guildInfo.guildName || 'Kaizen';
+  const realmEl = document.getElementById('ov-hero-realm');
+  if (realmEl) realmEl.textContent = guildInfo.realm || '';
+  const taglineEl = document.getElementById('ov-hero-tagline');
+  if (taglineEl) taglineEl.textContent = (guildInfo.about || '').replace(/<[^>]+>/g, '');
+  const discordEl = document.getElementById('ov-hero-discord');
+  if (discordEl) discordEl.href = guildInfo.discord || '#';
 
-  // About (legacy element — no longer needed but kept as safety)
-  const aboutEl = document.getElementById('ov-about');
-  if (aboutEl) aboutEl.innerHTML = guildInfo.about;
-
-  // Progression
+  // ── Progression (tiles + crossfade image) ─────────────
   const progEl = document.getElementById('ov-progression');
   if (progEl && guildInfo.progression) {
-    progEl.innerHTML = guildInfo.progression.map(p => {
+    const prog = guildInfo.progression;
+    // Default = last tier with killed > 0, fallback to first
+    let defaultIdx = prog.reduce((acc, p, i) => p.killed > 0 ? i : acc, 0);
+
+    progEl.innerHTML = prog.map((p, i) => {
       const pct = p.total > 0 ? Math.round((p.killed / p.total) * 100) : 0;
       const cleared = p.killed >= p.total && p.total > 0;
       const inactive = p.killed === 0;
-      return `<div style="opacity:${inactive ? '0.4' : '1'};transition:opacity 0.2s;">
-        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;">
-          <span style="font-size:13px;font-weight:600;color:${cleared ? 'var(--gold)' : 'var(--text-bright)'};">${p.label}</span>
-          <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--text-dim);">${p.killed}/${p.total}</span>
+      const fillColor = cleared ? 'var(--gold)' : 'var(--teal)';
+      const isActive = i === defaultIdx;
+      const displayLabel = inactive ? `${p.label} (TBD)` : p.label;
+      return `<div class="ov-prog-tier${isActive ? ' active' : ''}${inactive ? ' inactive' : ''}"
+        onclick="switchProgTier(${i})">
+        <div class="ov-prog-tier-text">
+          <div class="ov-prog-tier-name">${displayLabel}</div>
+          <div class="ov-prog-tier-bar-track">
+            <div class="ov-prog-tier-bar-fill" style="width:${inactive ? '0' : pct}%;background:${fillColor};"></div>
+          </div>
         </div>
-        <div style="height:7px;border-radius:4px;background:var(--border);overflow:hidden;">
-          <div style="width:${inactive ? '0' : pct}%;height:100%;background:${cleared ? 'var(--gold)' : 'var(--teal)'};transition:width 0.3s;"></div>
-        </div>
+        <div class="ov-prog-tier-count">${p.killed}/${p.total}</div>
       </div>`;
     }).join('');
+
+    // Set initial image
+    switchProgTier(defaultIdx, true);
   }
 
-  // Schedule
+  // ── Schedule (alternating image/text) ─────────────────
   const schedEl = document.getElementById('ov-schedule');
   if (schedEl) {
-    schedEl.innerHTML = (guildInfo.raidSchedule || []).map(r => `
-      <div style="padding:12px 14px;background:var(--bg-hover);border-radius:3px;border:1px solid var(--border-bright);">
-        <div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:4px;">
-          <span style="font-family:'Cinzel',serif;font-size:16px;font-weight:600;color:var(--gold);">${r.day}</span>
-          <span style="font-size:11px;color:var(--text-dim);">${r.note||''}</span>
-        </div>
-        <div style="font-size:13px;font-weight:600;color:var(--text-bright);margin-bottom:3px;">${r.content}</div>
-        <div style="font-size:13px;color:var(--text-mid);">${r.time}</div>
-      </div>`).join('');
+    schedEl.innerHTML = `<div class="ov-schedule-alt">${
+      (guildInfo.raidSchedule || []).map((r, i) => {
+        const imgEl = r.image
+          ? `<img class="ov-schedule-img" src="${r.image}" alt="${r.day}">`
+          : `<div class="ov-schedule-img-placeholder">⚔</div>`;
+        const textEl = `<div class="ov-schedule-text">
+          <div class="ov-schedule-day">${r.day}</div>
+          <div class="ov-schedule-content">${r.content}</div>
+          <div class="ov-schedule-time">${r.time}</div>
+          ${r.note ? `<div class="ov-schedule-note">${r.note}</div>` : ''}
+        </div>`;
+        const isReverse = i % 2 === 1;
+        return `<div class="ov-schedule-row${isReverse ? ' reverse' : ''}">
+          ${isReverse ? textEl + imgEl : imgEl + textEl}
+        </div>`;
+      }).join('')
+    }</div>`;
   }
 
-  // Recruitment
+  // ── Recruitment & Loot ────────────────────────────────
   const recEl = document.getElementById('ov-recruitment');
   if (recEl) recEl.innerHTML = guildInfo.recruitment || '';
-
-  // Loot rules
   const lootEl = document.getElementById('ov-loot-rules');
   if (lootEl) lootEl.innerHTML = guildInfo.lootRules || '';
 
-  // Roster snapshot
-  const snapEl = document.getElementById('ov-roster-snapshot');
-  if (snapEl) {
-    const mains = roster.filter(p => p.status === 'Main');
-    const total = mains.length;
-    const roles = [
-      { label: 'Tanks',      role: 'Tank',   color: 'var(--warrior)' },
-      { label: 'Healers',    role: 'Healer', color: 'var(--druid)' },
-      { label: 'Melee DPS',  role: 'Melee',  color: 'var(--red-bright)' },
-      { label: 'Ranged DPS', role: 'Ranged', color: 'var(--teal)' },
-    ];
-    const goal = 25;
-    snapEl.innerHTML = `
-      <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:10px;">
-        <span style="font-size:20px;font-family:'Cinzel',serif;font-weight:700;color:var(--gold);">${total}</span>
-        <span style="font-size:14px;color:var(--text-dim);">/ ${goal} target roster</span>
-      </div>
-      <div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin-bottom:14px;">
-        <div style="height:100%;width:${Math.min(100,(total/goal)*100)}%;background:var(--gold);border-radius:3px;"></div>
-      </div>
-      ${roles.map(r => {
-        const count = mains.filter(p => p.role === r.role).length;
-        const pct = total > 0 ? Math.round((count/total)*100) : 0;
-        return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
-          <span style="font-size:13px;color:var(--text-dim);width:80px;flex-shrink:0;">${r.label}</span>
-          <div style="flex:1;height:4px;background:var(--border);border-radius:2px;overflow:hidden;">
-            <div style="height:100%;width:${pct}%;background:${r.color};border-radius:2px;"></div>
-          </div>
-          <span style="font-size:13px;color:var(--text-mid);width:20px;text-align:right;">${count}</span>
-        </div>`;
-      }).join('')}`;
+  // ── Tools ─────────────────────────────────────────────
+  const toolsEl = document.getElementById('ov-tools');
+  if (toolsEl) {
+    const tools = guildInfo.tools || [];
+    toolsEl.innerHTML = tools.map(t => {
+      const domain = (() => { try { return new URL(t.url).hostname.replace('www.',''); } catch(e) { return t.url; } })();
+      return `<a class="ov-tool-card" href="${t.url}" target="_blank" style="border-top-color:${t.color};">
+        <div class="ov-tool-name" style="color:${t.color};">${t.name}</div>
+        <div class="ov-tool-desc">${t.desc}</div>
+        <div class="ov-tool-link">↗ ${domain}</div>
+      </a>`;
+    }).join('');
   }
+}
+
+// Progression image crossfade
+let _progImgActive = 'a';
+function switchProgTier(idx, instant) {
+  const prog = guildInfo.progression;
+  if (!prog || !prog[idx]) return;
+
+  // Update active tile
+  document.querySelectorAll('.ov-prog-tier').forEach((el, i) => {
+    el.classList.toggle('active', i === idx);
+  });
+
+  // Crossfade image
+  const imgA = document.getElementById('ov-prog-img-a');
+  const imgB = document.getElementById('ov-prog-img-b');
+  const label = document.getElementById('ov-prog-img-label');
+  if (!imgA || !imgB) return;
+
+  const src = prog[idx].image || '';
+  const name = prog[idx].label;
+
+  const incoming = _progImgActive === 'a' ? imgB : imgA;
+  const outgoing = _progImgActive === 'a' ? imgA : imgB;
+
+  incoming.src = src;
+  if (label) label.textContent = name;
+
+  if (instant) {
+    incoming.classList.add('active');
+    outgoing.classList.remove('active');
+    _progImgActive = _progImgActive === 'a' ? 'b' : 'a';
+    return;
+  }
+
+  incoming.classList.add('active');
+  outgoing.classList.remove('active');
+  _progImgActive = _progImgActive === 'a' ? 'b' : 'a';
 }
 
 // ======================================================
@@ -2335,6 +2561,7 @@ function renderRoster() {
       <td style="color:var(--text-dim);">${p.os || '—'}</td>
       <td>${roleBadge(p.role)}</td>
       <td>${statusBadge(p.status)}</td>
+      <td style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:${p.level >= 70 ? 'var(--gold)' : 'var(--text-dim)'};">${p.level || '—'}</td>
       <td style="color:var(--text-dim);font-size:14px;">${p.altOf || '—'}</td>
       <td>${renderAttendanceBar(p.name)}</td>
 
@@ -2380,6 +2607,8 @@ function renderBuilder() {
     stripEl.style.display = 'flex';
     stripEl.style.gap = '8px';
     stripEl.style.flexWrap = 'wrap';
+    stripEl.style.marginTop = '0';
+    stripEl.style.marginBottom = '14px';
   } else if (stripEl) {
     stripEl.innerHTML = '';
   }
@@ -2943,7 +3172,6 @@ function renderStrats() {
           ${active ? `<img src="${active.image}${active.image && !active.image.startsWith('data:') ? '?v=' + Date.now() : ''}" alt="${active.name}" style="max-width:100%;max-height:70vh;border-radius:3px;object-fit:contain;">` : ''}
         </div>
         ${assignsPanel}
-        <div id="ad-strats-side" style="width:160px;flex-shrink:0;"><ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-8959237604087556" data-ad-slot="6600808186" data-ad-format="auto" data-full-width-responsive="true"></ins></div>
       </div>` : ''}`;
 }
 
@@ -3025,6 +3253,7 @@ async function loadFromServer() {
     const base = window.location.origin + window.location.pathname.replace(/[^\/]*$/, '');
     const data = await fetchWithRetry(base + 'kaizen_data.json?v=' + Date.now());
     if (data.roster) roster = data.roster;
+    roster.forEach(p => { if (!p.level) p.level = 70; });
     if (data.groups) groups = data.groups;
     if (data.groupTitles) groupTitles = data.groupTitles;
     if (data.specOverrides) specOverrides = data.specOverrides;
@@ -3053,35 +3282,55 @@ async function loadFromServer() {
   } else {
     showTab('overview', false);
   }
-  // All done — hide skeleton and reveal content
-  hideSkeleton();
 }
 
 // On load, check URL hash and open matching tab
 (function() {
   const hash = window.location.hash.replace('#', '');
   if (hash) window._initialHash = hash;
-  // Store target tab for after load
   window._initialTab = (hash || '').split('/')[0] || 'overview';
 })();
 
-// Show skeleton after DOM is ready, then fetch data
 document.addEventListener('DOMContentLoaded', () => {
-  const tab = window._initialTab || 'overview';
-  showSkeleton(tab);
+  // Parallax + hero content fade on scroll
+  const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent);
+
+  window.addEventListener('scroll', () => {
+    const hero = document.getElementById('ov-hero-section');
+    if (!hero) return;
+    const scrolled = window.pageYOffset;
+    const heroH = hero.offsetHeight;
+
+    // Parallax on bg
+    const bg = document.getElementById('ov-hero-bg');
+    if (bg) {
+      if (isIOS) {
+        bg.style.transform = `translateY(${scrolled * 0.4}px)`;
+      }
+    }
+
+    // Fade + slide hero content as user scrolls
+    const content = hero.querySelector('.ov-hero-content');
+    const scrollHint = hero.querySelector('.ov-hero-scroll-hint');
+    if (content) {
+      const progress = Math.min(scrolled / (heroH * 0.5), 1);
+      content.style.opacity = 1 - progress;
+      content.style.transform = `translateY(${progress * -40}px)`;
+    }
+    if (scrollHint) {
+      scrollHint.style.opacity = Math.max(0, 1 - scrolled / 150);
+    }
+  }, { passive: true });
+
+  if (isIOS) {
+    const style = document.createElement('style');
+    style.textContent = '.ov-hero-bg { background-attachment: scroll !important; }';
+    document.head.appendChild(style);
+  }
 });
 
 loadFromServer();
 </script>
 
-<script>
-// Initialize all AdSense ad units
-(function() {
-  var ads = document.querySelectorAll('.adsbygoogle');
-  ads.forEach(function() {
-    (adsbygoogle = window.adsbygoogle || []).push({});
-  });
-})();
-</script>
 </body>
 </html>
