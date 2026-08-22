@@ -2543,6 +2543,42 @@ const RAID_INSTANCES = [
   'Sunwell Plateau',
 ];
 
+// Short codes used for strat asset filenames (strats/{code}-{encounter}.ext),
+// matching the existing ssc-/tk- naming convention already in the repo.
+const RAID_SHORT_CODES = {
+  'Karazhan': 'kara',
+  "Gruul's Lair & Magtheridon's Lair": 'gruul-mag',
+  'Serpentshrine Cavern': 'ssc',
+  'The Eye': 'tk',
+  'Battle for Mount Hyjal': 'hyjal',
+  'Black Temple': 'bt',
+  'Sunwell Plateau': 'swp',
+};
+
+// Builds a deterministic, filesystem-safe base name (no extension) for a
+// strat's image from its raid + encounter name, e.g. "ssc-hydross".
+function slugifyStratFilename(raid, name) {
+  const slug = s => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  const raidSlug = slug(RAID_SHORT_CODES[raid] || raid) || 'raid';
+  const nameSlug = slug(name) || 'strat';
+  return `${raidSlug}-${nameSlug}`;
+}
+
+// Appends -2, -3, ... if another strat already uses this base name, so two
+// encounters that slugify to the same thing never silently share one file.
+function uniqueStratSlug(baseSlug) {
+  const used = new Set(
+    strats
+      .map(s => (typeof s.image === 'string' ? s.image.match(/^strats\/(.+)\.[^.]+$/) : null))
+      .filter(Boolean)
+      .map(m => m[1])
+  );
+  if (!used.has(baseSlug)) return baseSlug;
+  let n = 2;
+  while (used.has(`${baseSlug}-${n}`)) n++;
+  return `${baseSlug}-${n}`;
+}
+
 let guildInfo = {
   guildName: 'Kaizen',
   realm: 'Horde · TBC Classic · PvE',
@@ -6506,8 +6542,12 @@ async function saveStrat() {
   if (cfg.token && _pendingStratFile) {
     showToast('⬆ Uploading image...');
     try {
-      const filename = _pendingStratFile.name;
-      const path = `strats/${filename}`;
+      // Derive a stable name from the raid + encounter name rather than the
+      // uploaded file's own filename — screenshot tools/clipboard pastes
+      // routinely reuse generic names like "image.png", which would silently
+      // overwrite an unrelated strat's picture if used as the GitHub path.
+      const ext = (_pendingStratFile.name.match(/\.[^.]+$/) || ['.png'])[0].toLowerCase();
+      const path = `strats/${uniqueStratSlug(slugifyStratFilename(raid, name))}${ext}`;
       const arrayBuf = await _pendingStratFile.arrayBuffer();
       const bytes = new Uint8Array(arrayBuf);
       let binary = '';
@@ -6525,14 +6565,14 @@ async function saveStrat() {
       const getRes = await fetch(apiUrl, { headers });
       if (getRes.ok) sha = (await getRes.json()).sha;
 
-      const body = { message: `strat image: ${filename}`, content: encoded };
+      const body = { message: `strat image: ${path}`, content: encoded };
       if (sha) body.sha = sha;
 
       const putRes = await fetch(apiUrl, { method: 'PUT', headers, body: JSON.stringify(body) });
       if (!putRes.ok) throw new Error('Image upload failed');
 
       imagePath = path;
-      showToast(`✓ Image uploaded: ${filename}`);
+      showToast(`✓ Image uploaded: ${path}`);
     } catch(err) {
       showToast(`Image upload failed, saving locally: ${err.message}`, true);
     }
@@ -6596,27 +6636,50 @@ async function replaceStratImage(event, id) {
 
   showToast('⬆ Uploading image...');
   try {
-    const filename = file.name;
-    const path = `strats/${filename}`;
+    // Reuse the strat's existing asset path so this truly overwrites the same
+    // file, regardless of what the newly-picked file happens to be named on
+    // disk. Only fall back to a name derived from the upload if this strat
+    // doesn't have a real strats/ path yet (e.g. it was still base64).
+    const newExt = (file.name.match(/\.[^.]+$/) || ['.png'])[0].toLowerCase();
+    const oldPath = (typeof strat.image === 'string' && strat.image.startsWith('strats/')) ? strat.image : null;
+    const path = oldPath
+      ? oldPath.replace(/\.[^.]+$/, newExt)
+      : `strats/${slugifyStratFilename(strat.raid, strat.name)}${newExt}`;
+
     const arrayBuf = await file.arrayBuffer();
     const bytes = new Uint8Array(arrayBuf);
     let binary = '';
     bytes.forEach(b => binary += String.fromCharCode(b));
     const encoded = btoa(binary);
 
-    const apiUrl = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}`;
     const headers = {
       'Authorization': `token ${cfg.token}`,
       'Accept': 'application/vnd.github.v3+json',
       'Content-Type': 'application/json',
     };
+    const apiBase = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/`;
 
-    // Get SHA if file already exists
+    // If the extension changed (e.g. old was .png, new upload is .jpg), the
+    // target path differs from oldPath — delete the stale file so we don't
+    // leave an orphaned duplicate behind.
+    if (oldPath && oldPath !== path) {
+      const staleRes = await fetch(apiBase + oldPath, { headers });
+      if (staleRes.ok) {
+        const staleSha = (await staleRes.json()).sha;
+        await fetch(apiBase + oldPath, {
+          method: 'DELETE',
+          headers,
+          body: JSON.stringify({ message: `remove stale strat image: ${oldPath}`, sha: staleSha }),
+        });
+      }
+    }
+
+    const apiUrl = apiBase + path;
     let sha = null;
     const getRes = await fetch(apiUrl, { headers });
     if (getRes.ok) sha = (await getRes.json()).sha;
 
-    const body = { message: `strat image: ${filename}`, content: encoded };
+    const body = { message: `strat image: ${path}`, content: encoded };
     if (sha) body.sha = sha;
 
     const putRes = await fetch(apiUrl, { method: 'PUT', headers, body: JSON.stringify(body) });
@@ -6627,7 +6690,7 @@ async function replaceStratImage(event, id) {
 
     strat.image = path;
     renderStrats();
-    showToast(`✓ Image uploaded: ${filename}`);
+    showToast(`✓ Image uploaded: ${path}`);
   } catch(err) {
     console.error('Image upload error:', err);
     showToast(`✗ Upload failed: ${err.message}`, true);
