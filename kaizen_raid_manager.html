@@ -2947,10 +2947,12 @@ function processRHSignUps(event) {
             ${r.spec ? `<span style="font-size:11px;color:var(--text-dim);margin-left:6px;">${r.spec}</span>` : ''}
           </div>
           ${r.match
-            ? `<span style="font-size:11px;color:var(--text-dim);">→ ${r.match.player.name}
+            ? `<button onclick="openRHAssignModal('${r.su.name.replace(/'/g,"\\'")}','${r.cls}','${title}')"
+                style="background:none;border:none;cursor:pointer;padding:0;" title="Click to reassign">
+                <span style="font-size:11px;color:var(--text-dim);">→ ${r.match.player.name} ✎</span>
+               </button>
                <button onclick="rhClearAlias('${r.su.name.replace(/'/g,"\\'")}','${title}')"
-                 style="background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:10px;margin-left:4px;opacity:0.6;" title="Clear match">✕</button>
-               </span>`
+                 style="background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:10px;margin-left:4px;opacity:0.6;" title="Clear match">✕</button>`
             : `<button class="btn btn-small rh-assign-btn" style="font-size:11px;padding:3px 8px;"
                 onclick="openRHAssignModal('${r.su.name.replace(/'/g,"\\'")}','${r.cls}','${title}')">
                 Assign →
