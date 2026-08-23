@@ -427,21 +427,50 @@ async function getReportFightsAndStats(env, code) {
   const allFightIds = fights.map(f => f.id);
   const killFightIds = killFights.map(f => f.id);
 
-  // deathsTable/interruptsTable pulled across ALL fights (not just kills) -
-  // wipes matter just as much as kills for "what are we dying to", and
-  // interrupt performance is relevant on trash/wipes too.
   const statsData = await wclQuery(env, `
     query($code: String!, $allIds: [Int]!, $killIds: [Int]!) {
       reportData {
         report(code: $code) {
           rankings(fightIDs: $killIds)
           playerDetails(fightIDs: $allIds)
-          deathsTable: table(fightIDs: $allIds, dataType: Deaths)
-          interruptsTable: table(fightIDs: $allIds, dataType: Interrupts)
         }
       }
     }
   `, { code, allIds: allFightIds, killIds: killFightIds });
+
+  // Deaths/Interrupts tables pulled across ALL fights (not just kills) -
+  // wipes matter just as much as kills for "what are we dying to", and
+  // interrupt performance is relevant on trash/wipes too. Deliberately kept
+  // as their OWN separate requests, not merged into the query above: live
+  // testing showed that bundling both table() calls in with rankings +
+  // playerDetails made WCL silently return null for the table fields (no
+  // GraphQL error, just empty) - almost certainly a per-query cost/
+  // complexity cap that table() blows past when combined with anything
+  // else. Standalone, each one reliably returns real data, so that's worth
+  // the extra round trips.
+  // Best-effort: these are two extra round trips on top of the core report
+  // fetch, so a transient failure here (rate limit, timeout) shouldn't take
+  // down the whole preview - it just means the fallout report falls back to
+  // "no death/interrupt data" instead of the core rankings failing too.
+  let deathsData = null, interruptsData = null;
+  try {
+    deathsData = await wclQuery(env, `
+      query($code: String!, $ids: [Int]!) {
+        reportData { report(code: $code) { table(fightIDs: $ids, dataType: Deaths) } }
+      }
+    `, { code, ids: allFightIds });
+  } catch (err) {
+    console.warn('Deaths table fetch failed:', err.message);
+  }
+  try {
+    interruptsData = await wclQuery(env, `
+      query($code: String!, $ids: [Int]!) {
+        reportData { report(code: $code) { table(fightIDs: $ids, dataType: Interrupts) } }
+      }
+    `, { code, ids: allFightIds });
+  } catch (err) {
+    console.warn('Interrupts table fetch failed:', err.message);
+  }
 
   return {
     // Full report info (title/dates), for callers that only have a code and
@@ -451,8 +480,8 @@ async function getReportFightsAndStats(env, code) {
     killFights,
     rankingsRaw: statsData?.reportData?.report?.rankings ?? null,
     playerDetailsRaw: statsData?.reportData?.report?.playerDetails ?? null,
-    deathsRaw: statsData?.reportData?.report?.deathsTable ?? null,
-    interruptsRaw: statsData?.reportData?.report?.interruptsTable ?? null,
+    deathsRaw: deathsData?.reportData?.report?.table ?? null,
+    interruptsRaw: interruptsData?.reportData?.report?.table ?? null,
   };
 }
 
@@ -504,7 +533,9 @@ function extractRoleParses(rankingsRaw, roleKey) {
         if (!byPlayer.has(c.name)) {
           byPlayer.set(c.name, { name: c.name, class: c.class, spec: c.spec, results: [] });
         }
-        byPlayer.get(c.name).results.push({ rankPercent: c.rankPercent, encounter });
+        // fightID travels with each result so best/worst can be cross-
+        // referenced against the deaths table later (same fight = same pull).
+        byPlayer.get(c.name).results.push({ rankPercent: c.rankPercent, encounter, fightID: fight?.fightID });
       }
     }
     return [...byPlayer.values()].map(p => ({
@@ -618,25 +649,34 @@ function formatParseLines(list, which) {
       const r = p[which];
       const icon = getWCLSpecEmoji(p.class, p.spec);
       const pct = Math.round(r.rankPercent);
-      // A literal 0 in the "worst" list almost always means an early death
-      // (near-zero uptime), not a genuinely bad rotation - flag it so it
-      // doesn't read as a performance callout.
-      const deathNote = which === 'worst' && pct === 0 ? ' _(likely died early)_' : '';
-      return `**${i + 1}.** ${icon ? icon + ' ' : ''}${p.name} — ${parseColorEmoji(r.rankPercent)} **${pct}** _(${r.encounter})_${deathNote}`;
+      return `**${i + 1}.** ${icon ? icon + ' ' : ''}${p.name} — ${parseColorEmoji(r.rankPercent)} **${pct}** _(${r.encounter})_`;
     })
     .join('\n');
 }
 
 // Top N (by best pull) and bottom N (by worst pull) in one field, since
 // embeds have limited field slots - "who's crushing it" and "who needs
-// help" are both useful in one glance.
-function formatTopAndBottom(list, n = 5) {
+// help" are both useful in one glance. deathSet (built from the deaths
+// table, "name|fightID" keys) pulls anyone whose worst pull was actually a
+// death out of "Needs work" and into its own short grouped line instead -
+// mixing "died" in with genuine low-parse performance was just noise, and
+// "don't die" isn't the same kind of feedback as "your rotation needs work".
+function formatTopAndBottom(list, deathSet, n = 5) {
   if (!list.length) return 'No parse data available.';
   const top = topByBest(list, n);
-  const bottom = bottomByWorst(list, n);
   let out = formatParseLines(top, 'best');
-  if (bottom.length && !(top.length === list.length && bottom[0].name === top[top.length - 1]?.name)) {
+
+  const worstSorted = [...list].sort((a, b) => a.worst.rankPercent - b.worst.rankPercent);
+  const died = worstSorted.filter(p => deathSet.has(`${p.name}|${p.worst.fightID}`));
+  const alive = worstSorted.filter(p => !deathSet.has(`${p.name}|${p.worst.fightID}`));
+  const bottom = alive.slice(0, n);
+
+  if (bottom.length) {
     out += `\n\n*Needs work:*\n` + formatParseLines(bottom, 'worst');
+  }
+  if (died.length) {
+    const shown = died.slice(0, 8).map(p => `${p.name} _(${p.worst.encounter})_`).join(', ');
+    out += `\n\n☠️ *Died:* ${shown}${died.length > 8 ? ` +${died.length - 8} more` : ''}`;
   }
   return out;
 }
@@ -646,6 +686,7 @@ function buildLogSummaryEmbed(report, details, roster) {
   const attendance = matchAttendanceToRoster(participants, roster);
   const dps = extractRoleParses(details.rankingsRaw, 'dps');
   const healers = extractRoleParses(details.rankingsRaw, 'healers');
+  const deathSet = new Set(extractDeaths(details.deathsRaw).map(d => `${d.name}|${d.fightID}`));
 
   return {
     title: `📊 ${report.title || 'Raid Log Summary'}`,
@@ -655,8 +696,8 @@ function buildLogSummaryEmbed(report, details, roster) {
       // Stacked full-width instead of side-by-side inline - two inline
       // columns squeeze each into ~half the embed's (fixed, Discord-
       // controlled) width, forcing mid-entry wraps that look cramped.
-      { name: '⚔️ DPS', value: formatTopAndBottom(dps), inline: false },
-      { name: '✚ Healers', value: formatTopAndBottom(healers), inline: false },
+      { name: '⚔️ DPS', value: formatTopAndBottom(dps, deathSet), inline: false },
+      { name: '✚ Healers', value: formatTopAndBottom(healers, deathSet), inline: false },
       { name: '👥 Attendance', value: attendance.length ? attendance.join(', ') : '—', inline: false },
     ],
     color: 0xC9A227,
@@ -783,6 +824,10 @@ async function handleLatestLogsData(request, env) {
           encounter: fightNameById.get(d.fightID) || 'Unknown',
           killingBlow: d.killingBlow,
         })),
+        // Full name+fightID pairs (not just the capped "notable" display
+        // list) so the frontend can build the same died-vs-survived split
+        // for its own parse-list preview that the Discord embed uses.
+        pairs: deaths.map(d => ({ name: d.name, fightID: d.fightID })),
       },
       interrupts,
       ...(debug ? { rankingsRaw: details.rankingsRaw, playerDetailsRaw: details.playerDetailsRaw, deathsRaw: details.deathsRaw, interruptsRaw: details.interruptsRaw } : {}),
