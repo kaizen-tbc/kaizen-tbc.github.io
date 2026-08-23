@@ -1950,37 +1950,34 @@ a[href] > div > div[style*="line-height:1.6"] {
       <div class="section-title">Guild Logs</div>
       <div class="section-subtitle">Pick a report — top/bottom parses, attendance, post to Discord</div>
     </div>
-    <div style="display:flex;gap:8px;align-items:center;">
+    <div style="display:flex;gap:8px;align-items:stretch;">
       <select class="form-select" id="logs-report-select" style="min-width:240px;">
         <option value="">Latest (most complete)</option>
       </select>
-      <button class="btn btn-gold" onclick="fetchSelectedLog()">⬇ Fetch</button>
+      <button class="btn btn-gold" style="white-space:nowrap;flex-shrink:0;padding:9px 16px;display:flex;align-items:center;gap:6px;" onclick="fetchSelectedLog()">⬇ Fetch</button>
     </div>
   </div>
 
   <div class="card" style="padding:16px 20px;margin-bottom:16px;">
-    <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;">
-      <div style="display:flex;gap:16px;flex-wrap:wrap;">
-        <div class="form-group" style="max-width:280px;margin-bottom:0;">
-          <label class="form-label">Discord channel to post to</label>
-          <input type="text" class="form-input" id="logs-channel-input" placeholder="Discord channel ID"
-            onchange="updateLogsChannelId(this.value)">
-          <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">Point this at a test channel first if you just want to check the output.</div>
-        </div>
-        <div class="form-group" style="max-width:280px;margin-bottom:0;">
-          <label class="form-label">Archive channel (optional)</label>
-          <input type="text" class="form-input" id="archive-channel-input" placeholder="Discord channel ID"
-            onchange="updateArchiveChannelId(this.value)">
-          <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">"Clear Channel" reposts the bot's own reports here before deleting them.</div>
-        </div>
+    <div style="display:flex;gap:16px;flex-wrap:wrap;">
+      <div class="form-group" style="max-width:280px;margin-bottom:0;">
+        <label class="form-label">Post-to channel</label>
+        <input type="text" class="form-input" id="logs-channel-input" placeholder="Discord channel ID"
+          onchange="updateLogsChannelId(this.value)">
+        <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">Set once — test channel for now, swap to the real one when this goes live.</div>
       </div>
-      <button class="btn btn-small btn-danger" onclick="confirmClearLogsChannel()">🗑 Clear Channel</button>
+      <div class="form-group" style="max-width:280px;margin-bottom:0;">
+        <label class="form-label">Archive channel (optional)</label>
+        <input type="text" class="form-input" id="archive-channel-input" placeholder="Discord channel ID"
+          onchange="updateArchiveChannelId(this.value)">
+        <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">Posting automatically archives last week's reports here first, then clears them from the post-to channel.</div>
+      </div>
     </div>
   </div>
 
   <div id="guild-logs-content">
     <div class="empty-note" style="padding:32px;text-align:center;color:var(--text-dim);">
-      Pick a report above (or leave it on "Latest") and click "⬇ Fetch".
+      Pick a report above (or leave it on "Latest") and click "⬇ Fetch" — the fallout report generates automatically.
     </div>
   </div>
 </div>
@@ -2736,46 +2733,6 @@ function updateArchiveChannelId(value) {
   archiveChannelId = value.trim();
 }
 
-// Deletes every message in the configured channel — meant to run at the
-// start of each week's update, before posting the new rankings + fallout
-// report, so the channel only ever shows the current week's pair. If an
-// archive channel is set, the bot's own report posts get reposted there
-// first (see handleClearChannel — identified by their footer text, not
-// author id). Irreversible, so this always confirms first no matter what.
-function confirmClearLogsChannel() {
-  if (!logsChannelId) { showToast('Enter a Discord channel ID first.', true); return; }
-
-  const archiveNote = archiveChannelId
-    ? ` Reports will be archived to ${archiveChannelId} first.`
-    : ' No archive channel set — everything will just be deleted.';
-  document.getElementById('confirm-text').textContent =
-    `Permanently delete ALL messages in channel ${logsChannelId}?${archiveNote} This cannot be undone.`;
-  const existingCheck = document.getElementById('confirm-notify-wrap');
-  if (existingCheck) existingCheck.remove();
-  document.getElementById('confirm-ok').onclick = () => {
-    closeConfirm();
-    clearLogsChannel();
-  };
-  document.getElementById('confirm-overlay').classList.add('open');
-}
-
-async function clearLogsChannel() {
-  showToast('🗑 Clearing channel...');
-  try {
-    const res = await fetch(`${RH_WORKER}/clear-channel`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ channelId: logsChannelId, archiveChannelId: archiveChannelId || null }),
-    });
-    const data = await res.json();
-    if (!res.ok || data.error) throw new Error(data.error || `Worker returned ${res.status}`);
-    const archivedNote = archiveChannelId ? `, archived ${data.archived}` : '';
-    showToast(`✓ Cleared ${data.deleted} message${data.deleted === 1 ? '' : 's'}${archivedNote}.`);
-  } catch (err) {
-    showToast(`✗ Failed to clear channel: ${err.message}`, true);
-  }
-}
-
 function fetchSelectedLog() {
   const select = document.getElementById('logs-report-select');
   fetchLatestLog(select?.value || null);
@@ -2791,6 +2748,7 @@ async function fetchLatestLog(reportCode) {
     if (data.error) throw new Error(data.error);
     _lastLogFetch = data;
     renderLogPreview(data);
+    generateFalloutReport(); // fire-and-forget — no separate click needed
   } catch (err) {
     container.innerHTML = `<div class="notice notice-info" style="color:var(--red-bright);border-color:var(--red);">Couldn't fetch: ${err.message}</div>`;
   }
@@ -2885,24 +2843,22 @@ function renderLogPreview(data) {
       <div>${attendanceHtml}</div>
     </div>
 
-    <div style="display:flex;gap:8px;margin-bottom:16px;">
-      <button class="btn btn-gold" onclick="confirmPostLogSummary()">↑ Post Rankings to Discord</button>
-      <button class="btn" onclick="generateFalloutReport()">✨ Generate Fallout Report</button>
-    </div>
-
     <div id="fallout-report-area"></div>
+
+    <button class="btn btn-gold" onclick="confirmPostFullReport()">🚀 Post Report to Discord</button>
   `;
 }
 
+// Auto-generates as soon as a log is fetched — no separate button/click.
+// Only the bottom (worst-encounter) data goes to the AI — top performers
+// are already covered plainly in the rankings post, this one is
+// specifically the lesson + call-out, matching renderParseList's own
+// "Needs Work" list exactly (never a different selection).
 async function generateFalloutReport() {
-  if (!_lastLogFetch) { showToast('Fetch a log first.', true); return; }
+  if (!_lastLogFetch) return;
   const area = document.getElementById('fallout-report-area');
-  area.innerHTML = `<div style="padding:16px;text-align:center;color:var(--text-dim);">Generating report...</div>`;
+  area.innerHTML = `<div style="padding:16px;text-align:center;color:var(--text-dim);">✨ Generating fallout report...</div>`;
   try {
-    // Only the bottom (worst-encounter) data goes to the AI — top performers
-    // are already covered plainly in the rankings post, this one is
-    // specifically the lesson + call-out, matching renderParseList's own
-    // "Needs Work" list exactly (never a different selection).
     const res = await fetch(`${RH_WORKER}/logs/fallout-report`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -2916,86 +2872,82 @@ async function generateFalloutReport() {
     if (!res.ok || data.error) throw new Error(data.error || `Worker returned ${res.status}`);
     renderFalloutReportPreview(data.text);
   } catch (err) {
-    area.innerHTML = `<div class="notice notice-info" style="color:var(--red-bright);border-color:var(--red);">Couldn't generate: ${err.message}</div>`;
+    area.innerHTML = `<div class="notice notice-info" style="color:var(--red-bright);border-color:var(--red);">Couldn't generate fallout report: ${err.message} <span style="opacity:0.7;">(you can still post just the rankings below)</span></div>`;
   }
 }
 
 function renderFalloutReportPreview(text) {
   const area = document.getElementById('fallout-report-area');
   area.innerHTML = `
-    <div class="card" style="padding:16px 18px;">
-      <div class="section-title" style="font-size:14px;margin-bottom:8px;">✨ Fallout Report <span style="font-weight:400;font-size:11px;color:var(--text-dim);">— review/edit before posting, this is AI-generated</span></div>
+    <div class="card" style="padding:16px 18px;margin-bottom:16px;">
+      <div class="section-title" style="font-size:14px;margin-bottom:8px;">✨ Fallout Report <span style="font-weight:400;font-size:11px;color:var(--text-dim);">— review/edit before posting, this is AI-generated. Posts together with the rankings below.</span></div>
       <textarea id="fallout-report-text" rows="10" style="width:100%;box-sizing:border-box;background:var(--bg-deep);border:1px solid var(--border);color:var(--text-mid);border-radius:4px;padding:10px;font-size:13px;font-family:inherit;">${text}</textarea>
-      <div style="margin-top:10px;">
-        <button class="btn btn-gold" onclick="confirmPostFalloutReport()">↑ Post Fallout Report to Discord</button>
-      </div>
     </div>
   `;
 }
 
-function confirmPostFalloutReport() {
-  const text = document.getElementById('fallout-report-text')?.value.trim();
-  if (!text) { showToast('Nothing to post.', true); return; }
-  if (!logsChannelId) { showToast('Enter a Discord channel ID first.', true); return; }
-
-  document.getElementById('confirm-text').textContent = `Post this fallout report to channel ${logsChannelId}?`;
-  const existingCheck = document.getElementById('confirm-notify-wrap');
-  if (existingCheck) existingCheck.remove();
-  document.getElementById('confirm-ok').onclick = () => {
-    closeConfirm();
-    postFalloutReportToDiscord(text);
-  };
-  document.getElementById('confirm-overlay').classList.add('open');
-}
-
-async function postFalloutReportToDiscord(text) {
-  showToast('↑ Posting fallout report to Discord...');
-  try {
-    const res = await fetch(`${RH_WORKER}/post-text-message`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        channelId: logsChannelId,
-        title: `✨ Fallout Report — ${_lastLogFetch?.report?.title || ''}`,
-        text,
-      }),
-    });
-    const data = await res.json();
-    if (!res.ok || data.error) throw new Error(data.error || `Worker returned ${res.status}`);
-    showToast('✓ Fallout report posted!');
-  } catch (err) {
-    showToast(`✗ Failed to post: ${err.message}`, true);
-  }
-}
-
-function confirmPostLogSummary() {
+// The one button: archives+clears whatever the bot posted last time (if an
+// archive channel is set), then posts the fresh rankings and — if the AI
+// report generated successfully — the fallout report right after, all in
+// one go. Still confirms once first, since it deletes old messages and
+// publishes to the whole guild.
+function confirmPostFullReport() {
   if (!_lastLogFetch) { showToast('Fetch a log first.', true); return; }
   if (!logsChannelId) { showToast('Enter a Discord channel ID first.', true); return; }
 
+  const archiveNote = archiveChannelId
+    ? `Last week's reports will be archived to ${archiveChannelId} first, then cleared from ${logsChannelId}.`
+    : `Old messages in ${logsChannelId} will be cleared first (no archive channel set).`;
   document.getElementById('confirm-text').textContent =
-    `Post this log summary ("${_lastLogFetch.report?.title || 'latest report'}") to channel ${logsChannelId}?`;
+    `Publish this week's report to ${logsChannelId}? ${archiveNote}`;
   const existingCheck = document.getElementById('confirm-notify-wrap');
   if (existingCheck) existingCheck.remove();
   document.getElementById('confirm-ok').onclick = () => {
     closeConfirm();
-    postLogSummaryToDiscord();
+    postFullReportToDiscord();
   };
   document.getElementById('confirm-overlay').classList.add('open');
 }
 
-async function postLogSummaryToDiscord() {
-  showToast('↑ Posting log summary to Discord...');
+async function postFullReportToDiscord() {
   try {
-    const res = await fetch(`${RH_WORKER}/post-log-summary`, {
+    showToast('🗑 Archiving & clearing old posts...');
+    const clearRes = await fetch(`${RH_WORKER}/clear-channel`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ channelId: logsChannelId, archiveChannelId: archiveChannelId || null }),
+    });
+    const clearData = await clearRes.json();
+    if (!clearRes.ok || clearData.error) throw new Error(clearData.error || `Clearing failed: ${clearRes.status}`);
+
+    showToast('↑ Posting rankings...');
+    const rankRes = await fetch(`${RH_WORKER}/post-log-summary`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ channelId: logsChannelId, reportCode: _lastLogFetch?.report?.code || null }),
     });
-    const data = await res.json();
-    if (!res.ok || data.error) throw new Error(data.error || `Worker returned ${res.status}`);
-    showToast(`✓ Log summary posted!`);
+    const rankData = await rankRes.json();
+    if (!rankRes.ok || rankData.error) throw new Error(rankData.error || `Rankings post failed: ${rankRes.status}`);
+
+    const falloutText = document.getElementById('fallout-report-text')?.value.trim();
+    if (falloutText) {
+      showToast('✨ Posting fallout report...');
+      const foRes = await fetch(`${RH_WORKER}/post-text-message`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          channelId: logsChannelId,
+          title: `✨ Fallout Report — ${_lastLogFetch?.report?.title || ''}`,
+          text: falloutText,
+        }),
+      });
+      const foData = await foRes.json();
+      if (!foRes.ok || foData.error) throw new Error(foData.error || `Fallout report post failed: ${foRes.status}`);
+    }
+
+    showToast(`✓ Report published to ${logsChannelId}!`);
   } catch (err) {
-    showToast(`✗ Failed to post: ${err.message}`, true);
+    showToast(`✗ Failed: ${err.message}`, true);
   }
 }
 
