@@ -2751,19 +2751,27 @@ function parseColorHex(pct) {
   return '#666666';
 }
 
+// Each entry carries best/worst {rankPercent, encounter} rather than one
+// blended percentile — a "top" list shows their best pull, a "bottom" list
+// shows their worst, each tagged with which boss it actually happened on.
+function topFive(list) { return [...list].sort((a, b) => b.best.rankPercent - a.best.rankPercent).slice(0, 5); }
+function bottomFive(list) { return [...list].sort((a, b) => a.worst.rankPercent - b.worst.rankPercent).slice(0, 5); }
+
 function renderParseList(list) {
   if (!list.length) return `<div style="color:var(--text-dim);font-size:12px;font-style:italic;">No parse data available.</div>`;
-  const row = (p, i) => `<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:13px;">
-      <span><strong style="color:var(--gold);">${i + 1}.</strong> ${p.name} <span style="color:var(--text-dim);font-size:11px;">${p.spec || p.class || ''}</span></span>
-      <span style="font-family:'IBM Plex Mono',monospace;font-weight:700;color:${parseColorHex(p.rankPercent)};">${Math.round(p.rankPercent)}</span>
+  const row = (p, which) => (i) => {
+    const r = p[which];
+    return `<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:13px;">
+      <span><strong style="color:var(--gold);">${i + 1}.</strong> ${p.name} <span style="color:var(--text-dim);font-size:11px;">${p.spec || p.class || ''} · ${r.encounter}</span></span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-weight:700;color:${parseColorHex(r.rankPercent)};">${Math.round(r.rankPercent)}</span>
     </div>`;
-  const top = list.slice(0, 5);
-  const bottomPool = list.slice(5);
-  const bottom = (bottomPool.length ? bottomPool : list).slice(-5).reverse();
-  const showBottom = bottom.length && bottom[0].name !== top[top.length - 1]?.name;
+  };
+  const top = topFive(list);
+  const bottom = bottomFive(list);
+  const showBottom = bottom.length && !(top.length === list.length && bottom[0].name === top[top.length - 1]?.name);
   return `
-    ${top.map(row).join('')}
-    ${showBottom ? `<div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-dim);margin:10px 0 4px;">Needs Work</div>${bottom.map(row).join('')}` : ''}
+    ${top.map((p, i) => row(p, 'best')(i)).join('')}
+    ${showBottom ? `<div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-dim);margin:10px 0 4px;">Needs Work</div>${bottom.map((p, i) => row(p, 'worst')(i)).join('')}` : ''}
   `;
 }
 
@@ -2825,27 +2833,22 @@ function renderLogPreview(data) {
   `;
 }
 
-// Bottom-5-per-role, matching exactly what renderParseList already shows
-// as "Needs Work" in the tab.
-function bottomFive(list) {
-  const bottomPool = list.slice(5);
-  return (bottomPool.length ? bottomPool : list).slice(-5).reverse();
-}
-
 async function generateFalloutReport() {
   if (!_lastLogFetch) { showToast('Fetch a log first.', true); return; }
   const area = document.getElementById('fallout-report-area');
   area.innerHTML = `<div style="padding:16px;text-align:center;color:var(--text-dim);">Generating report...</div>`;
   try {
-    const dpsAll = _lastLogFetch.dps || [];
-    const healersAll = _lastLogFetch.healers || [];
+    // Only the bottom (worst-encounter) data goes to the AI — top performers
+    // are already covered plainly in the rankings post, this one is
+    // specifically the lesson + call-out, matching renderParseList's own
+    // "Needs Work" list exactly (never a different selection).
     const res = await fetch(`${RH_WORKER}/logs/fallout-report`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         report: _lastLogFetch.report,
-        dpsTop: dpsAll.slice(0, 5), dpsBottom: bottomFive(dpsAll),
-        healersTop: healersAll.slice(0, 5), healersBottom: bottomFive(healersAll),
+        dpsBottom: bottomFive(_lastLogFetch.dps || []),
+        healersBottom: bottomFive(_lastLogFetch.healers || []),
       }),
     });
     const data = await res.json();

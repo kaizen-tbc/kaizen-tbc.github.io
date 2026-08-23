@@ -440,41 +440,51 @@ function matchAttendanceToRoster(participantNames, roster) {
 
 // Confirmed live shape: rankings is one entry PER KILLED FIGHT, each with
 // roles.{tanks,healers,dps}.characters[], each character carrying amount +
-// rankPercent (the actual WCL percentile) for that specific pull. To get
-// "top DPS/healers this raid" rather than "this one pull", aggregate each
-// player's rankPercent across every fight they appear in for that role and
-// average it — a single lucky/unlucky pull doesn't swing the whole night.
+// rankPercent (the actual WCL percentile) for that specific pull. Rather
+// than blending a person's percentile across every kill into one vague
+// number, track their best AND worst single-encounter result separately,
+// each tagged with which boss it was — "on the encounter" instead of "on
+// the raid night in general", which is what actually makes a tip specific
+// and useful (that fight's mechanics are the reason for the low percentile,
+// not some abstract raid-wide average).
 function extractRoleParses(rankingsRaw, roleKey) {
   try {
     const fights = rankingsRaw?.data || [];
     const byPlayer = new Map();
     for (const fight of fights) {
       const chars = fight?.roles?.[roleKey]?.characters || [];
+      const encounter = fight?.encounter?.name || 'Unknown';
       for (const c of chars) {
         if (!c?.name || typeof c.rankPercent !== 'number') continue;
         if (!byPlayer.has(c.name)) {
-          byPlayer.set(c.name, { name: c.name, class: c.class, spec: c.spec, percents: [] });
+          byPlayer.set(c.name, { name: c.name, class: c.class, spec: c.spec, results: [] });
         }
-        byPlayer.get(c.name).percents.push(c.rankPercent);
+        byPlayer.get(c.name).results.push({ rankPercent: c.rankPercent, encounter });
       }
     }
-    const list = [...byPlayer.values()].map(p => ({
+    return [...byPlayer.values()].map(p => ({
       name: p.name,
       class: p.class,
       spec: p.spec,
-      rankPercent: p.percents.reduce((a, b) => a + b, 0) / p.percents.length,
+      best: p.results.reduce((a, b) => (b.rankPercent > a.rankPercent ? b : a)),
+      worst: p.results.reduce((a, b) => (b.rankPercent < a.rankPercent ? b : a)),
     }));
-    list.sort((a, b) => b.rankPercent - a.rankPercent);
-    return list;
   } catch {
     return [];
   }
 }
 
+function topByBest(list, n = 5) {
+  return [...list].sort((a, b) => b.best.rankPercent - a.best.rankPercent).slice(0, n);
+}
+function bottomByWorst(list, n = 5) {
+  return [...list].sort((a, b) => a.worst.rankPercent - b.worst.rankPercent).slice(0, n);
+}
+
 // Standard WCL parse-color tiers, boundaries matching their own site
 // (0-24 grey, 25-49 green, 50-74 blue, 75-94 purple, 95-98 orange, 99 pink,
 // 100 gold). Discord embeds can't color arbitrary inline text, so a colored
-// circle emoji is the closest practical stand-in for "parse color" there.
+// circle emoji is the closest practical stand-in for "parse color" here.
 function parseColorEmoji(pct) {
   const p = Math.round(pct);
   if (p >= 100) return '🟡';
@@ -486,26 +496,30 @@ function parseColorEmoji(pct) {
   return '⚪';
 }
 
-function formatParseLines(list) {
+// which: 'best' or 'worst' — picks the matching {rankPercent, encounter} off
+// each entry, so a "top" list shows their best pull and a "bottom" list
+// shows their worst, each correctly tagged with which boss it happened on.
+function formatParseLines(list, which) {
   if (!list.length) return '—';
   return list
     .map((p, i) => {
+      const r = p[which];
       const icon = getWCLSpecEmoji(p.class, p.spec);
-      return `**${i + 1}.** ${icon ? icon + ' ' : ''}${p.name} — ${parseColorEmoji(p.rankPercent)} **${Math.round(p.rankPercent)}**`;
+      return `**${i + 1}.** ${icon ? icon + ' ' : ''}${p.name} — ${parseColorEmoji(r.rankPercent)} **${Math.round(r.rankPercent)}** _(${r.encounter})_`;
     })
     .join('\n');
 }
 
-// Top N and bottom N in one field, since embeds have limited field slots -
-// "who's crushing it" and "who needs help" are both useful in one glance.
+// Top N (by best pull) and bottom N (by worst pull) in one field, since
+// embeds have limited field slots - "who's crushing it" and "who needs
+// help" are both useful in one glance.
 function formatTopAndBottom(list, n = 5) {
   if (!list.length) return 'No parse data available.';
-  const top = list.slice(0, n);
-  const bottomPool = list.slice(n);
-  const bottom = (bottomPool.length ? bottomPool : list).slice(-n).reverse();
-  let out = formatParseLines(top);
-  if (bottom.length && bottom[0].name !== top[top.length - 1]?.name) {
-    out += `\n\n*Needs work:*\n` + formatParseLines(bottom);
+  const top = topByBest(list, n);
+  const bottom = bottomByWorst(list, n);
+  let out = formatParseLines(top, 'best');
+  if (bottom.length && !(top.length === list.length && bottom[0].name === top[top.length - 1]?.name)) {
+    out += `\n\n*Needs work:*\n` + formatParseLines(bottom, 'worst');
   }
   return out;
 }
@@ -684,29 +698,26 @@ async function handleDirectLogPost(request, env) {
 // bumping up to gpt-5-mini.
 const OPENAI_MODEL = 'gpt-5-nano';
 
-function buildFalloutPrompt(report, dpsTop, dpsBottom, healersTop, healersBottom) {
-  const fmt = list => (list || []).map(p => `${p.name} (${p.class || '?'} ${p.spec || ''}) — ${Math.round(p.rankPercent)} percentile`).join('\n') || '(none)';
-  return `You are writing a short Discord message for a World of Warcraft: TBC Classic raid guild, summarizing performance from last night's raid ("${report?.title || 'Raid'}"). Tone: constructive and factual, never confrontational or shaming - the goal is to spark conversation, not call anyone out harshly.
+function buildFalloutPrompt(report, dpsBottom, healersBottom) {
+  // Each entry's worst pull, tagged with which encounter it happened on -
+  // this is what lets a tip say "on Magtheridon" instead of a vague blended
+  // raid-night average. Top performers are deliberately excluded - that's
+  // already covered plainly in the separate rankings post; this one is
+  // specifically the lesson + call-out.
+  const fmt = list => (list || []).map(p => `${p.name} (${p.class || '?'} ${p.spec || ''}) — ${Math.round(p.worst.rankPercent)} percentile on ${p.worst.encounter}`).join('\n') || '(none)';
+  return `You are writing a short Discord message ("fallout report") for a World of Warcraft: TBC Classic raid guild, following up on last night's raid ("${report?.title || 'Raid'}"). This message's whole purpose is teaching a lesson and calling out what needs work - it runs separately from a plain rankings post that already covered the numbers matter-of-factly, so don't repeat those, don't mention top performers here. Tone: constructive and factual, never confrontational or shaming - the goal is to spark conversation, not chastise anyone.
 
-These are the EXACT people to cover - the same top/bottom 5 already shown in the raid tool's UI, so don't substitute anyone else in or out:
-
-Top 5 DPS:
-${fmt(dpsTop)}
-
-Bottom 5 DPS:
+Lowest DPS parses this raid (with the specific encounter each happened on):
 ${fmt(dpsBottom)}
 
-Top 5 Healers:
-${fmt(healersTop)}
-
-Bottom 5 Healers:
+Lowest Healer parses this raid (with the specific encounter each happened on):
 ${fmt(healersBottom)}
 
-Write a SHORT report (under 150 words total, two sections):
-1. "**Top Performers**" - one short line each recognizing the top DPS and top healers listed above (pick the strongest 2-4 across both lists if all 10 would be too long).
-2. "**Room to Grow**" - one short line each for 2-4 of the bottom DPS/healers listed above, with ONE concrete, class/spec-appropriate tip based on general TBC Classic gameplay knowledge (rotation, positioning, gear, consumables, etc.) - a helpful pointer, not personal criticism.
+Write a SHORT report (under 130 words total, two sections):
+1. "**General Notes**" - 1-2 sentences on any pattern worth flagging across the raid as a whole (e.g. if several people struggled on the same encounter, that's likely a mechanic/positioning issue worth calling out raid-wide, not an individual one).
+2. "**Needs Work**" - one short line each for 2-4 of the people listed above, referencing the specific encounter they struggled on, with ONE concrete, class/spec-appropriate tip based on general TBC Classic gameplay knowledge (rotation, positioning, gear, consumables, that encounter's mechanics, etc.).
 
-Use Discord markdown. Be concise - no long paragraphs, no fluffy intro or conclusion. Just the two sections.`;
+Use Discord markdown. Be tight and succinct - no long paragraphs, no fluffy intro or conclusion, people won't read a wall of text. Just the two sections.`;
 }
 
 // The Responses API's output_text is an SDK convenience property, not
@@ -731,7 +742,7 @@ function extractOpenAIText(data) {
 async function handleFalloutReport(request, env) {
   try {
     if (!env.OPENAI_API_KEY) throw new Error('OpenAI API key not configured.');
-    const { report, dpsTop, dpsBottom, healersTop, healersBottom } = await request.json();
+    const { report, dpsBottom, healersBottom } = await request.json();
 
     const res = await fetch('https://api.openai.com/v1/responses', {
       method: 'POST',
@@ -741,7 +752,7 @@ async function handleFalloutReport(request, env) {
       },
       body: JSON.stringify({
         model: OPENAI_MODEL,
-        input: buildFalloutPrompt(report, dpsTop, dpsBottom, healersTop, healersBottom),
+        input: buildFalloutPrompt(report, dpsBottom, healersBottom),
       }),
     });
 
