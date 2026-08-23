@@ -335,6 +335,29 @@ async function wclQuery(env, query, variables = {}) {
   return json.data;
 }
 
+// WCL's client_credentials tier is capped (3,600 points/hour as of this
+// writing). Going over budget doesn't always surface as a GraphQL error —
+// sometimes fields just resolve to null/empty with no `errors` array, which
+// looks identical to "this report genuinely doesn't exist." Call this
+// whenever a lookup unexpectedly comes back empty, so the real cause shows
+// up in the error message instead of a misleading "not found".
+async function getWCLRateLimit(env) {
+  try {
+    const data = await wclQuery(env, `{ rateLimitData { limitPerHour pointsSpentThisHour pointsResetIn } }`);
+    return data?.rateLimitData || null;
+  } catch {
+    return null;
+  }
+}
+
+function rateLimitSuffix(rl) {
+  if (!rl) return '';
+  const remaining = rl.limitPerHour - rl.pointsSpentThisHour;
+  if (remaining > rl.limitPerHour * 0.1) return '';
+  const mins = Math.ceil((rl.pointsResetIn || 0) / 60);
+  return ` (Warcraft Logs rate limit: ${rl.pointsSpentThisHour}/${rl.limitPerHour} points used this hour, resets in ~${mins}m — this is likely the real cause.)`;
+}
+
 // reports lives on the top-level reportData container, filtered by guildID
 // - NOT nested under guildData.guild (confirmed live: querying it that way
 // errors with "Cannot query field 'reports' on type 'Guild'").
@@ -601,6 +624,11 @@ async function handleRecentLogsData(request, env) {
       throw new Error('Warcraft Logs API credentials not configured.');
     }
     const reports = await listRecentGuildReports(env, 10);
+    if (reports.length === 0) {
+      const rl = await getWCLRateLimit(env);
+      const suffix = rateLimitSuffix(rl);
+      if (suffix) throw new Error(`No reports returned for this guild.${suffix}`);
+    }
     return corsResponse(JSON.stringify({ reports }), 200);
   } catch (err) {
     return corsResponse(JSON.stringify({ error: err.message }), 500);
@@ -625,7 +653,10 @@ async function handleLatestLogsData(request, env) {
     if (requestedCode) {
       details = await getReportFightsAndStats(env, requestedCode);
       report = details.report;
-      if (!report?.title) throw new Error(`Report ${requestedCode} not found.`);
+      if (!report?.title) {
+        const suffix = rateLimitSuffix(await getWCLRateLimit(env));
+        throw new Error(`Report ${requestedCode} not found.${suffix}`);
+      }
     } else {
       report = await findLatestGuildReport(env);
       if (!report) throw new Error('No recent reports found for the guild.');
@@ -668,7 +699,10 @@ async function handleDirectLogPost(request, env) {
     if (reportCode) {
       details = await getReportFightsAndStats(env, reportCode);
       report = details.report;
-      if (!report?.title) throw new Error(`Report ${reportCode} not found.`);
+      if (!report?.title) {
+        const suffix = rateLimitSuffix(await getWCLRateLimit(env));
+        throw new Error(`Report ${reportCode} not found.${suffix}`);
+      }
     } else {
       report = await findLatestGuildReport(env);
       if (!report) throw new Error('No recent reports found for the guild on Warcraft Logs.');
