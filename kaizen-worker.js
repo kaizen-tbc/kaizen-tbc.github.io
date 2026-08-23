@@ -574,11 +574,17 @@ function extractDeaths(deathsRaw) {
 function extractInterruptCounts(interruptsRaw) {
   try {
     const counts = new Map();
-    for (const entry of interruptsRaw?.data?.entries || []) {
-      for (const detail of entry?.details || []) {
-        for (const actor of detail?.actors || []) {
-          if (!actor?.name) continue;
-          counts.set(actor.name, (counts.get(actor.name) || 0) + (actor.total || 0));
+    // One extra nesting level vs. what the shape looks like at a glance:
+    // data.entries[] wraps ANOTHER entries[] array (confirmed live 2026-08-22)
+    // - the per-ability objects with .details are at data.entries[*].entries[],
+    // not data.entries[] directly.
+    for (const wrapper of interruptsRaw?.data?.entries || []) {
+      for (const entry of wrapper?.entries || []) {
+        for (const detail of entry?.details || []) {
+          for (const actor of detail?.actors || []) {
+            if (!actor?.name) continue;
+            counts.set(actor.name, (counts.get(actor.name) || 0) + (actor.total || 0));
+          }
         }
       }
     }
