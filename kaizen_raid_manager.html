@@ -1947,7 +1947,12 @@ a[href] > div > div[style*="line-height:1.6"] {
 <div class="tab-panel" id="tab-guild-logs">
   <div class="section-header">
     <div>
-      <div class="section-title">Guild Logs</div>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <div class="section-title" style="margin-bottom:0;">Guild Logs</div>
+        <button onclick="openGuildLogsSettings()" title="Guild Logs Settings"
+          style="background:var(--bg-hover);border:none;color:var(--text-dim);cursor:pointer;font-size:13px;padding:4px 6px;line-height:1;transition:all 0.15s;border-radius:3px;"
+          onmouseover="this.style.color='var(--gold)';this.style.background='var(--bg-card)'" onmouseout="this.style.color='var(--text-dim)';this.style.background='var(--bg-hover)'">⚙</button>
+      </div>
       <div class="section-subtitle">Pick a report — top/bottom parses, attendance, post to Discord</div>
     </div>
     <div style="display:flex;gap:8px;align-items:stretch;">
@@ -1955,29 +1960,40 @@ a[href] > div > div[style*="line-height:1.6"] {
         <option value="">Latest (most complete)</option>
       </select>
       <button class="btn btn-gold" style="white-space:nowrap;flex-shrink:0;padding:9px 16px;display:flex;align-items:center;gap:6px;" onclick="fetchSelectedLog()">⬇ Fetch</button>
-    </div>
-  </div>
-
-  <div class="card" style="padding:16px 20px;margin-bottom:16px;">
-    <div style="display:flex;gap:16px;flex-wrap:wrap;">
-      <div class="form-group" style="max-width:280px;margin-bottom:0;">
-        <label class="form-label">Post-to channel</label>
-        <input type="text" class="form-input" id="logs-channel-input" placeholder="Discord channel ID"
-          onchange="updateLogsChannelId(this.value)">
-        <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">Set once — test channel for now, swap to the real one when this goes live.</div>
-      </div>
-      <div class="form-group" style="max-width:280px;margin-bottom:0;">
-        <label class="form-label">Archive channel (optional)</label>
-        <input type="text" class="form-input" id="archive-channel-input" placeholder="Discord channel ID"
-          onchange="updateArchiveChannelId(this.value)">
-        <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">Posting automatically archives last week's reports here first, then clears them from the post-to channel.</div>
-      </div>
+      <button class="btn" style="white-space:nowrap;flex-shrink:0;padding:9px 16px;background:#5865F2;border-color:#4752c4;color:#fff;font-weight:700;" onclick="confirmPostFullReport()">🚀 Post Report to Discord</button>
     </div>
   </div>
 
   <div id="guild-logs-content">
     <div class="empty-note" style="padding:32px;text-align:center;color:var(--text-dim);">
       Pick a report above (or leave it on "Latest") and click "⬇ Fetch" — the fallout report generates automatically.
+    </div>
+  </div>
+</div>
+
+<!-- Guild Logs Settings Modal -->
+<div class="modal-overlay" id="guild-logs-settings-overlay" onclick="if(event.target===this)closeGuildLogsSettings()">
+  <div class="modal" style="width:440px;">
+    <div class="modal-header">
+      <div class="modal-title">Guild Logs Settings</div>
+      <button class="modal-close" onclick="closeGuildLogsSettings()">&#x2715;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group" style="margin-bottom:14px;">
+        <label class="form-label">Post-to channel</label>
+        <input type="text" class="form-input" id="logs-channel-input" placeholder="Discord channel ID"
+          onchange="updateLogsChannelId(this.value)">
+        <div style="font-size:11px;color:var(--text-dim);margin-top:5px;">Set once — test channel for now, swap to the real one when this goes live.</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Archive channel (optional)</label>
+        <input type="text" class="form-input" id="archive-channel-input" placeholder="Discord channel ID"
+          onchange="updateArchiveChannelId(this.value)">
+        <div style="font-size:11px;color:var(--text-dim);margin-top:5px;">Posting automatically archives last week's reports here first, then clears them from the post-to channel.</div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-gold" onclick="closeGuildLogsSettings()">Done</button>
     </div>
   </div>
 </div>
@@ -2706,6 +2722,18 @@ function renderGuildLogsTab() {
   populateLogsReportPicker();
 }
 
+// Post-to/archive channel IDs are set-once config, not something worth
+// keeping visible every time - tucked behind a gear icon like Raid Settings.
+function openGuildLogsSettings() {
+  document.getElementById('logs-channel-input').value = logsChannelId || '';
+  document.getElementById('archive-channel-input').value = archiveChannelId || '';
+  document.getElementById('guild-logs-settings-overlay').classList.add('open');
+}
+
+function closeGuildLogsSettings() {
+  document.getElementById('guild-logs-settings-overlay').classList.remove('open');
+}
+
 async function populateLogsReportPicker() {
   const select = document.getElementById('logs-report-select');
   if (!select) return;
@@ -2844,8 +2872,6 @@ function renderLogPreview(data) {
     </div>
 
     <div id="fallout-report-area"></div>
-
-    <button class="btn btn-gold" onclick="confirmPostFullReport()">🚀 Post Report to Discord</button>
   `;
 }
 
