@@ -817,14 +817,22 @@ async function handlePostTextMessage(request, env) {
 // in that channel. Discord's bulk-delete endpoint only works on messages
 // under 14 days old and needs 2+ ids at a time; anything older, or a lone
 // straggler, falls back to deleting one at a time.
+//
+// If archiveChannelId is given, our own bot's report posts get reposted
+// there first, before anything is deleted - identified by the footer text
+// we always set on them (buildLogSummaryEmbed / handlePostTextMessage),
+// not by author id, so no extra lookup of the bot's own user id is needed.
+// Only our own posts get archived; anything else in the channel (human
+// chatter) is just deleted, per explicit choice.
 async function handleClearChannel(request, env) {
   try {
-    const { channelId } = await request.json();
+    const { channelId, archiveChannelId } = await request.json();
     if (!channelId) throw new Error('No channel ID provided.');
 
     const headers = { 'Authorization': `Bot ${env.DISCORD_BOT_TOKEN}` };
     const fourteenDaysAgo = Date.now() - 14 * 24 * 60 * 60 * 1000;
     let deleted = 0;
+    let archived = 0;
     let before;
 
     while (true) {
@@ -837,6 +845,18 @@ async function handleClearChannel(request, env) {
       const messages = await listRes.json();
       if (!messages.length) break;
       before = messages[messages.length - 1].id;
+
+      if (archiveChannelId) {
+        const ours = messages.filter(m => m.embeds?.some(e => e.footer?.text?.includes('Kaizen Raid Manager')));
+        for (const m of ours) {
+          const repostRes = await fetch(`${DISCORD_API}/channels/${archiveChannelId}/messages`, {
+            method: 'POST',
+            headers: { ...headers, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ embeds: m.embeds }),
+          });
+          if (repostRes.ok) archived++;
+        }
+      }
 
       const recent = messages.filter(m => new Date(m.timestamp).getTime() > fourteenDaysAgo);
       const stale = messages.filter(m => new Date(m.timestamp).getTime() <= fourteenDaysAgo);
@@ -871,7 +891,7 @@ async function handleClearChannel(request, env) {
       if (messages.length < 100) break;
     }
 
-    return corsResponse(JSON.stringify({ ok: true, deleted }), 200);
+    return corsResponse(JSON.stringify({ ok: true, deleted, archived }), 200);
   } catch (err) {
     return corsResponse(JSON.stringify({ error: err.message }), 500);
   }

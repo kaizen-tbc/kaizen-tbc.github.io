@@ -1960,11 +1960,19 @@ a[href] > div > div[style*="line-height:1.6"] {
 
   <div class="card" style="padding:16px 20px;margin-bottom:16px;">
     <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;">
-      <div class="form-group" style="max-width:360px;margin-bottom:0;">
-        <label class="form-label">Discord channel to post to</label>
-        <input type="text" class="form-input" id="logs-channel-input" placeholder="Discord channel ID"
-          onchange="updateLogsChannelId(this.value)">
-        <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">Point this at a test channel first if you just want to check the output.</div>
+      <div style="display:flex;gap:16px;flex-wrap:wrap;">
+        <div class="form-group" style="max-width:280px;margin-bottom:0;">
+          <label class="form-label">Discord channel to post to</label>
+          <input type="text" class="form-input" id="logs-channel-input" placeholder="Discord channel ID"
+            onchange="updateLogsChannelId(this.value)">
+          <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">Point this at a test channel first if you just want to check the output.</div>
+        </div>
+        <div class="form-group" style="max-width:280px;margin-bottom:0;">
+          <label class="form-label">Archive channel (optional)</label>
+          <input type="text" class="form-input" id="archive-channel-input" placeholder="Discord channel ID"
+            onchange="updateArchiveChannelId(this.value)">
+          <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">"Clear Channel" reposts the bot's own reports here before deleting them.</div>
+        </div>
       </div>
       <button class="btn btn-small btn-danger" onclick="confirmClearLogsChannel()">🗑 Clear Channel</button>
     </div>
@@ -2562,6 +2570,10 @@ let nameAliases = {};
 // own discordChannelId so you can point it at a test channel first.
 let logsChannelId = '';
 
+// Where "Clear Channel" reposts the bot's own report posts before deleting
+// them from logsChannelId — a locked-down, bot-post-only archive channel.
+let archiveChannelId = '';
+
 // ======================================================
 // ATTENDANCE IMPORT (Warcraft Logs — replaces manual CSV upload)
 // ======================================================
@@ -2692,6 +2704,8 @@ let _lastLogFetch = null; // cached /logs/latest response — posting reuses
 function renderGuildLogsTab() {
   const input = document.getElementById('logs-channel-input');
   if (input) input.value = logsChannelId || '';
+  const archiveInput = document.getElementById('archive-channel-input');
+  if (archiveInput) archiveInput.value = archiveChannelId || '';
   populateLogsReportPicker();
 }
 
@@ -2718,15 +2732,24 @@ function updateLogsChannelId(value) {
   logsChannelId = value.trim();
 }
 
+function updateArchiveChannelId(value) {
+  archiveChannelId = value.trim();
+}
+
 // Deletes every message in the configured channel — meant to run at the
 // start of each week's update, before posting the new rankings + fallout
-// report, so the channel only ever shows the current week's pair.
-// Irreversible, so this always confirms first no matter what.
+// report, so the channel only ever shows the current week's pair. If an
+// archive channel is set, the bot's own report posts get reposted there
+// first (see handleClearChannel — identified by their footer text, not
+// author id). Irreversible, so this always confirms first no matter what.
 function confirmClearLogsChannel() {
   if (!logsChannelId) { showToast('Enter a Discord channel ID first.', true); return; }
 
+  const archiveNote = archiveChannelId
+    ? ` Reports will be archived to ${archiveChannelId} first.`
+    : ' No archive channel set — everything will just be deleted.';
   document.getElementById('confirm-text').textContent =
-    `Permanently delete ALL messages in channel ${logsChannelId}? This cannot be undone.`;
+    `Permanently delete ALL messages in channel ${logsChannelId}?${archiveNote} This cannot be undone.`;
   const existingCheck = document.getElementById('confirm-notify-wrap');
   if (existingCheck) existingCheck.remove();
   document.getElementById('confirm-ok').onclick = () => {
@@ -2742,11 +2765,12 @@ async function clearLogsChannel() {
     const res = await fetch(`${RH_WORKER}/clear-channel`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ channelId: logsChannelId }),
+      body: JSON.stringify({ channelId: logsChannelId, archiveChannelId: archiveChannelId || null }),
     });
     const data = await res.json();
     if (!res.ok || data.error) throw new Error(data.error || `Worker returned ${res.status}`);
-    showToast(`✓ Cleared ${data.deleted} message${data.deleted === 1 ? '' : 's'}.`);
+    const archivedNote = archiveChannelId ? `, archived ${data.archived}` : '';
+    showToast(`✓ Cleared ${data.deleted} message${data.deleted === 1 ? '' : 's'}${archivedNote}.`);
   } catch (err) {
     showToast(`✗ Failed to clear channel: ${err.message}`, true);
   }
@@ -5687,6 +5711,7 @@ function saveData() {
     nextLedgerId,
     nameAliases,
     logsChannelId,
+    archiveChannelId,
   };
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
@@ -5731,6 +5756,7 @@ function loadData(event) {
       if (data.nextLedgerId) nextLedgerId = data.nextLedgerId;
       if (data.nameAliases) nameAliases = data.nameAliases;
       if (data.logsChannelId) logsChannelId = data.logsChannelId;
+      if (data.archiveChannelId) archiveChannelId = data.archiveChannelId;
       renderRoster();
       renderOverview();
       renderAttendance();
@@ -6491,6 +6517,7 @@ async function saveToGitHub() {
     attendanceLedger, nextLedgerId,
     nameAliases,
     logsChannelId,
+    archiveChannelId,
   };
 
   const jsonContent = JSON.stringify(payload, null, 2);
@@ -7029,6 +7056,7 @@ async function initFromJson() {
     if (data.nextLedgerId) nextLedgerId = data.nextLedgerId;
     if (data.nameAliases) nameAliases = data.nameAliases;
     if (data.logsChannelId) logsChannelId = data.logsChannelId;
+    if (data.archiveChannelId) archiveChannelId = data.archiveChannelId;
     showToast('📂 Loaded kaizen_data.json automatically.');
     updateVersionFooter(data.savedAt);
     console.log('Auto-loaded kaizen_data.json');
