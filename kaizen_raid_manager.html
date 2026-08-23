@@ -1960,13 +1960,35 @@ a[href] > div > div[style*="line-height:1.6"] {
         <option value="">Latest (most complete)</option>
       </select>
       <button class="btn btn-gold" style="white-space:nowrap;flex-shrink:0;padding:9px 16px;display:flex;align-items:center;gap:6px;" onclick="fetchSelectedLog()">⬇ Fetch</button>
-      <button class="btn" style="white-space:nowrap;flex-shrink:0;padding:9px 16px;background:#5865F2;border-color:#4752c4;color:#fff;font-weight:700;" onclick="confirmPostFullReport()">🚀 Post Report to Discord</button>
+      <button class="btn" style="white-space:nowrap;flex-shrink:0;padding:9px 12px;" onclick="openOtherReportModal()" title="Fetch a report by link or code — not from this guild's own logs">🔗</button>
+      <button class="btn" id="post-report-btn" style="white-space:nowrap;flex-shrink:0;padding:9px 16px;background:#5865F2;border-color:#4752c4;color:#fff;font-weight:700;" onclick="confirmPostFullReport()">🚀 Post Report to Discord</button>
     </div>
   </div>
 
   <div id="guild-logs-content">
     <div class="empty-note" style="padding:32px;text-align:center;color:var(--text-dim);">
       Pick a report above (or leave it on "Latest") and click "⬇ Fetch" — the fallout report generates automatically.
+    </div>
+  </div>
+</div>
+
+<!-- Fetch Another Report Modal (any WCL report by link/code, not just this guild's own) -->
+<div class="modal-overlay" id="other-report-overlay" onclick="if(event.target===this)closeOtherReportModal()">
+  <div class="modal" style="width:440px;">
+    <div class="modal-header">
+      <div class="modal-title">Fetch Another Report</div>
+      <button class="modal-close" onclick="closeOtherReportModal()">&#x2715;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">WCL report link or code</label>
+        <input type="text" class="form-input" id="other-report-input" placeholder="https://www.warcraftlogs.com/reports/XXXXXXXXXXXXXXXX">
+        <div style="font-size:11px;color:var(--text-dim);margin-top:5px;">Paste a full report link or just the code — works for any public report, not only this guild's own. Preview/analysis only: posting to Discord is disabled for these so it can't be confused with this raid's own rankings.</div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeOtherReportModal()">Cancel</button>
+      <button class="btn btn-gold" onclick="confirmFetchOtherReport()">⬇ Fetch</button>
     </div>
   </div>
 </div>
@@ -2738,6 +2760,43 @@ let _lastLogFetch = null; // cached /logs/latest response — posting reuses
                           // exactly what gets posted, not a re-fetched
                           // "latest" that could've changed in between.
 
+// True when the currently-loaded report came from "Fetch Another Report"
+// (any public WCL code) rather than this guild's own logs — posting to
+// Discord is disabled in that case so a comparison/other log can't get
+// mistaken for this raid's own rankings.
+let _lastLogIsForeign = false;
+
+function updatePostButtonState() {
+  const btn = document.getElementById('post-report-btn');
+  if (!btn) return;
+  btn.disabled = _lastLogIsForeign;
+  btn.title = _lastLogIsForeign
+    ? "This isn't one of the guild's own reports — posting is disabled to avoid confusing it with this raid's rankings."
+    : '';
+  btn.style.opacity = _lastLogIsForeign ? '0.5' : '';
+  btn.style.cursor = _lastLogIsForeign ? 'not-allowed' : '';
+}
+
+function openOtherReportModal() {
+  document.getElementById('other-report-input').value = '';
+  document.getElementById('other-report-overlay').classList.add('open');
+}
+
+function closeOtherReportModal() {
+  document.getElementById('other-report-overlay').classList.remove('open');
+}
+
+function confirmFetchOtherReport() {
+  const raw = document.getElementById('other-report-input').value.trim();
+  if (!raw) { showToast('Paste a WCL report link or code first.', true); return; }
+  // Accept either a full report URL or a bare code.
+  const urlMatch = raw.match(/reports\/([a-zA-Z0-9]+)/);
+  const code = urlMatch ? urlMatch[1] : raw.replace(/[^a-zA-Z0-9]/g, '');
+  if (!code) { showToast("Couldn't find a report code in that.", true); return; }
+  closeOtherReportModal();
+  fetchLatestLog(code, true);
+}
+
 function renderGuildLogsTab() {
   const input = document.getElementById('logs-channel-input');
   if (input) input.value = logsChannelId || '';
@@ -2803,9 +2862,11 @@ async function fetchSelectedLog() {
   if (selectedCode && select) select.value = selectedCode;
 }
 
-async function fetchLatestLog(reportCode) {
+async function fetchLatestLog(reportCode, isForeign = false) {
   const container = document.getElementById('guild-logs-content');
   container.innerHTML = `<div style="padding:32px;text-align:center;color:var(--text-dim);">Fetching report...</div>`;
+  _lastLogIsForeign = isForeign;
+  updatePostButtonState();
   try {
     const url = reportCode ? `${RH_WORKER}/logs/latest?code=${encodeURIComponent(reportCode)}` : `${RH_WORKER}/logs/latest`;
     const res = await fetch(url);
@@ -2891,7 +2952,10 @@ function renderLogPreview(data) {
     <div class="card" style="padding:18px 20px;margin-bottom:16px;">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;gap:12px;">
         <div>
-          <div style="font-weight:700;font-size:15px;color:var(--text-bright);">${report.title || 'Raid Log Summary'}</div>
+          <div style="font-weight:700;font-size:15px;color:var(--text-bright);display:flex;align-items:center;gap:8px;">
+            ${report.title || 'Raid Log Summary'}
+            ${_lastLogIsForeign ? `<span style="font-size:10px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:var(--text-dim);background:var(--bg-hover);border:1px solid var(--border);border-radius:3px;padding:2px 6px;">🔗 External — not this guild's own log</span>` : ''}
+          </div>
           <div style="font-size:11px;color:var(--text-dim);margin-top:2px;">
             ${data.killFights?.length || 0}/${data.fights?.length || 0} encounters killed · ${matched.length} guildie${matched.length === 1 ? '' : 's'} detected${unmatchedNames.length ? ` · ${unmatchedNames.length} unmatched (${unmatchedNames.join(', ')})` : ''}
           </div>
@@ -2969,6 +3033,10 @@ function renderFalloutReportPreview(text) {
 // publishes to the whole guild.
 async function confirmPostFullReport() {
   if (!_lastLogFetch) { showToast('Fetch a log first.', true); return; }
+  // Belt-and-suspenders alongside the disabled button state - this isn't
+  // one of the guild's own reports, so it shouldn't get posted as if it
+  // were this raid's rankings.
+  if (_lastLogIsForeign) { showToast("This isn't one of the guild's own reports — posting is disabled.", true); return; }
   if (!logsChannelId) { showToast('Enter a Discord channel ID first.', true); return; }
 
   // Re-resolve right before showing the dialog rather than trusting
