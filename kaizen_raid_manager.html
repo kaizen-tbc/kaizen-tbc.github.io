@@ -1983,7 +1983,7 @@ a[href] > div > div[style*="line-height:1.6"] {
       <div class="form-group">
         <label class="form-label">WCL report link or code</label>
         <input type="text" class="form-input" id="other-report-input" placeholder="https://www.warcraftlogs.com/reports/XXXXXXXXXXXXXXXX">
-        <div style="font-size:11px;color:var(--text-dim);margin-top:5px;">Paste a full report link or just the code — works for any public report, not only this guild's own. Preview/analysis only: posting to Discord is disabled for these so it can't be confused with this raid's own rankings.</div>
+        <div style="font-size:11px;color:var(--text-dim);margin-top:5px;">Paste a full report link or just the code — works for any public report, not only this guild's own. It's flagged as external in the preview and the post confirmation, but posting works the same as any report.</div>
       </div>
     </div>
     <div class="modal-footer">
@@ -2766,15 +2766,17 @@ let _lastLogFetch = null; // cached /logs/latest response — posting reuses
 // mistaken for this raid's own rankings.
 let _lastLogIsForeign = false;
 
+// Posting an external/foreign report is allowed - if you hit the button,
+// that's intentional. _lastLogIsForeign still just drives the "🔗 External"
+// badge in the preview and a heads-up line in the confirm dialog, not a
+// block.
 function updatePostButtonState() {
   const btn = document.getElementById('post-report-btn');
   if (!btn) return;
-  btn.disabled = _lastLogIsForeign;
-  btn.title = _lastLogIsForeign
-    ? "This isn't one of the guild's own reports — posting is disabled to avoid confusing it with this raid's rankings."
-    : '';
-  btn.style.opacity = _lastLogIsForeign ? '0.5' : '';
-  btn.style.cursor = _lastLogIsForeign ? 'not-allowed' : '';
+  btn.disabled = false;
+  btn.title = '';
+  btn.style.opacity = '';
+  btn.style.cursor = '';
 }
 
 function openOtherReportModal() {
@@ -3033,10 +3035,6 @@ function renderFalloutReportPreview(text) {
 // publishes to the whole guild.
 async function confirmPostFullReport() {
   if (!_lastLogFetch) { showToast('Fetch a log first.', true); return; }
-  // Belt-and-suspenders alongside the disabled button state - this isn't
-  // one of the guild's own reports, so it shouldn't get posted as if it
-  // were this raid's rankings.
-  if (_lastLogIsForeign) { showToast("This isn't one of the guild's own reports — posting is disabled.", true); return; }
   if (!logsChannelId) { showToast('Enter a Discord channel ID first.', true); return; }
 
   // Re-resolve right before showing the dialog rather than trusting
@@ -3049,8 +3047,11 @@ async function confirmPostFullReport() {
   const archiveNote = archiveChannelId
     ? `Last week's reports will be archived to ${archiveLabel} first, then cleared from ${logsLabel}.`
     : `Old messages in ${logsLabel} will be cleared first (no archive channel set).`;
+  // Non-blocking heads-up for external reports - posting is allowed, just
+  // flagged so it's clear this isn't this raid's own log before confirming.
+  const foreignNote = _lastLogIsForeign ? ' (⚠ this is an external report, not one of the guild\'s own logs)' : '';
   document.getElementById('confirm-text').textContent =
-    `Publish this week's report to ${logsLabel}? ${archiveNote}`;
+    `Publish this week's report${foreignNote} to ${logsLabel}? ${archiveNote}`;
   const existingCheck = document.getElementById('confirm-notify-wrap');
   if (existingCheck) existingCheck.remove();
   document.getElementById('confirm-ok').onclick = () => {
