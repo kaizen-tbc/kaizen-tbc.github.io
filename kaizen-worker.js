@@ -55,6 +55,12 @@ export default {
       return handlePostTextMessage(request, env);
     }
 
+    // ── Clear every message in a channel, so the Guild Logs channel only
+    // ever shows the current week's posts ── /clear-channel
+    if (url.pathname === '/clear-channel' && request.method === 'POST') {
+      return handleClearChannel(request, env);
+    }
+
     // ── Discord interactions ── /discord
     if (url.pathname === '/discord' && request.method === 'POST') {
       return handleDiscord(request, env, ctx);
@@ -801,6 +807,71 @@ async function handlePostTextMessage(request, env) {
     }
 
     return corsResponse(JSON.stringify({ ok: true }), 200);
+  } catch (err) {
+    return corsResponse(JSON.stringify({ error: err.message }), 500);
+  }
+}
+
+// Deletes every message in a channel, so the Guild Logs channel only ever
+// shows the current week's posts. Requires the bot to have Manage Messages
+// in that channel. Discord's bulk-delete endpoint only works on messages
+// under 14 days old and needs 2+ ids at a time; anything older, or a lone
+// straggler, falls back to deleting one at a time.
+async function handleClearChannel(request, env) {
+  try {
+    const { channelId } = await request.json();
+    if (!channelId) throw new Error('No channel ID provided.');
+
+    const headers = { 'Authorization': `Bot ${env.DISCORD_BOT_TOKEN}` };
+    const fourteenDaysAgo = Date.now() - 14 * 24 * 60 * 60 * 1000;
+    let deleted = 0;
+    let before;
+
+    while (true) {
+      const listUrl = `${DISCORD_API}/channels/${channelId}/messages?limit=100${before ? `&before=${before}` : ''}`;
+      const listRes = await fetch(listUrl, { headers });
+      if (!listRes.ok) {
+        const err = await listRes.json().catch(() => ({}));
+        throw new Error(err.message || `Failed to list messages: ${listRes.status}`);
+      }
+      const messages = await listRes.json();
+      if (!messages.length) break;
+      before = messages[messages.length - 1].id;
+
+      const recent = messages.filter(m => new Date(m.timestamp).getTime() > fourteenDaysAgo);
+      const stale = messages.filter(m => new Date(m.timestamp).getTime() <= fourteenDaysAgo);
+      const bulkable = recent.length >= 2 ? recent : [];
+      const individual = recent.length >= 2 ? stale : [...recent, ...stale];
+
+      for (let i = 0; i < bulkable.length; i += 100) {
+        const chunk = bulkable.slice(i, i + 100);
+        const bulkRes = await fetch(`${DISCORD_API}/channels/${channelId}/messages/bulk-delete`, {
+          method: 'POST',
+          headers: { ...headers, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ messages: chunk.map(m => m.id) }),
+        });
+        if (!bulkRes.ok) {
+          const err = await bulkRes.json().catch(() => ({}));
+          throw new Error(err.message || `Bulk delete failed: ${bulkRes.status}`);
+        }
+        deleted += chunk.length;
+      }
+
+      for (const m of individual) {
+        const delRes = await fetch(`${DISCORD_API}/channels/${channelId}/messages/${m.id}`, {
+          method: 'DELETE',
+          headers,
+        });
+        if (delRes.ok) deleted++;
+        // Individual message deletion has a stricter per-route rate limit
+        // than bulk-delete — a small gap avoids tripping it on a long backlog.
+        await new Promise(r => setTimeout(r, 350));
+      }
+
+      if (messages.length < 100) break;
+    }
+
+    return corsResponse(JSON.stringify({ ok: true, deleted }), 200);
   } catch (err) {
     return corsResponse(JSON.stringify({ error: err.message }), 500);
   }

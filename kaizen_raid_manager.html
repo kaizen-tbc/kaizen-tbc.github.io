@@ -1959,11 +1959,14 @@ a[href] > div > div[style*="line-height:1.6"] {
   </div>
 
   <div class="card" style="padding:16px 20px;margin-bottom:16px;">
-    <div class="form-group" style="max-width:360px;margin-bottom:0;">
-      <label class="form-label">Discord channel to post to</label>
-      <input type="text" class="form-input" id="logs-channel-input" placeholder="Discord channel ID"
-        onchange="updateLogsChannelId(this.value)">
-      <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">Point this at a test channel first if you just want to check the output.</div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;">
+      <div class="form-group" style="max-width:360px;margin-bottom:0;">
+        <label class="form-label">Discord channel to post to</label>
+        <input type="text" class="form-input" id="logs-channel-input" placeholder="Discord channel ID"
+          onchange="updateLogsChannelId(this.value)">
+        <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">Point this at a test channel first if you just want to check the output.</div>
+      </div>
+      <button class="btn btn-small btn-danger" onclick="confirmClearLogsChannel()">🗑 Clear Channel</button>
     </div>
   </div>
 
@@ -2713,6 +2716,40 @@ async function populateLogsReportPicker() {
 
 function updateLogsChannelId(value) {
   logsChannelId = value.trim();
+}
+
+// Deletes every message in the configured channel — meant to run at the
+// start of each week's update, before posting the new rankings + fallout
+// report, so the channel only ever shows the current week's pair.
+// Irreversible, so this always confirms first no matter what.
+function confirmClearLogsChannel() {
+  if (!logsChannelId) { showToast('Enter a Discord channel ID first.', true); return; }
+
+  document.getElementById('confirm-text').textContent =
+    `Permanently delete ALL messages in channel ${logsChannelId}? This cannot be undone.`;
+  const existingCheck = document.getElementById('confirm-notify-wrap');
+  if (existingCheck) existingCheck.remove();
+  document.getElementById('confirm-ok').onclick = () => {
+    closeConfirm();
+    clearLogsChannel();
+  };
+  document.getElementById('confirm-overlay').classList.add('open');
+}
+
+async function clearLogsChannel() {
+  showToast('🗑 Clearing channel...');
+  try {
+    const res = await fetch(`${RH_WORKER}/clear-channel`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ channelId: logsChannelId }),
+    });
+    const data = await res.json();
+    if (!res.ok || data.error) throw new Error(data.error || `Worker returned ${res.status}`);
+    showToast(`✓ Cleared ${data.deleted} message${data.deleted === 1 ? '' : 's'}.`);
+  } catch (err) {
+    showToast(`✗ Failed to clear channel: ${err.message}`, true);
+  }
 }
 
 function fetchSelectedLog() {
