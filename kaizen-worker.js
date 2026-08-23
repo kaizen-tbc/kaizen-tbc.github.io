@@ -68,6 +68,7 @@ export default {
       return handleChannelName(request, env);
     }
 
+
     // ── Discord interactions ── /discord
     if (url.pathname === '/discord' && request.method === 'POST') {
       return handleDiscord(request, env, ctx);
@@ -434,24 +435,39 @@ async function getReportFightsAndStats(env, code) {
   const allFightIds = fights.map(f => f.id);
   const killFightIds = killFights.map(f => f.id);
 
-  // compare: Parses (vs everyone's single logged attempt) rather than the
-  // default Rankings mode (vs only each character's personal-best parse
-  // ever) - confirmed live: the default gave a healer a 5th percentile on
-  // a pull her own WCL page shows as a mid-blue/purple parse, because
-  // Rankings mode compares her against the field of "everyone's best ever"
-  // (a much harsher bar) instead of "every logged attempt" like the
-  // website's own per-fight rankings view uses. Without this, our numbers
-  // don't match what people see when they click through to WCL themselves.
-  const statsData = await wclQuery(env, `
-    query($code: String!, $allIds: [Int]!, $killIds: [Int]!) {
-      reportData {
-        report(code: $code) {
-          rankings(fightIDs: $killIds, compare: Parses)
-          playerDetails(fightIDs: $allIds)
+  // playerMetric must be explicit and role-matched - confirmed live against
+  // a WCL CSV export (Fathom-Lord Karathress healing table, exact numbers):
+  // omitting it entirely returns percentiles for a different, undocumented
+  // default metric - a healer showing 90th/97th percentile in our old
+  // output whose real HPS percentile, straight from her own exported log,
+  // was 60. (An earlier attempt at this fix added `compare: Parses`,
+  // reasoning the comparison pool was too narrow - that was a wrong turn;
+  // the default "vs personal-best" compare mode is actually correct once
+  // paired with the right metric, confirmed by matching 5 of 6 players
+  // exactly against the CSV.) WCL ranks the WHOLE request by one metric,
+  // not per-character, so DPS and healers can't both be scored correctly
+  // in a single call - this runs twice, once per role.
+  const [dpsStatsData, healerStatsData] = await Promise.all([
+    wclQuery(env, `
+      query($code: String!, $allIds: [Int]!, $killIds: [Int]!) {
+        reportData {
+          report(code: $code) {
+            rankings(fightIDs: $killIds, playerMetric: dps)
+            playerDetails(fightIDs: $allIds)
+          }
         }
       }
-    }
-  `, { code, allIds: allFightIds, killIds: killFightIds });
+    `, { code, allIds: allFightIds, killIds: killFightIds }),
+    wclQuery(env, `
+      query($code: String!, $killIds: [Int]!) {
+        reportData {
+          report(code: $code) {
+            rankings(fightIDs: $killIds, playerMetric: hps)
+          }
+        }
+      }
+    `, { code, killIds: killFightIds }),
+  ]);
 
   // Deaths/Interrupts tables pulled across ALL fights (not just kills) -
   // wipes matter just as much as kills for "what are we dying to", and
@@ -493,8 +509,11 @@ async function getReportFightsAndStats(env, code) {
     report: reportInfo ? { code, title: reportInfo.title, startTime: reportInfo.startTime, endTime: reportInfo.endTime } : null,
     fights,
     killFights,
-    rankingsRaw: statsData?.reportData?.report?.rankings ?? null,
-    playerDetailsRaw: statsData?.reportData?.report?.playerDetails ?? null,
+    // Two separate rankings blobs (see comment above) - dps role data only
+    // trustworthy from rankingsRawDps, healers only from rankingsRawHealers.
+    rankingsRawDps: dpsStatsData?.reportData?.report?.rankings ?? null,
+    rankingsRawHealers: healerStatsData?.reportData?.report?.rankings ?? null,
+    playerDetailsRaw: dpsStatsData?.reportData?.report?.playerDetails ?? null,
     deathsRaw: deathsData?.reportData?.report?.table ?? null,
     interruptsRaw: interruptsData?.reportData?.report?.table ?? null,
   };
@@ -841,8 +860,8 @@ function buildLogSummaryEmbed(report, details, roster) {
   const participants = extractParticipantNames(details.playerDetailsRaw);
   const attendance = matchAttendanceToRoster(participants, roster);
   const deaths = extractDeaths(details.deathsRaw);
-  const dps = extractRoleParses(details.rankingsRaw, 'dps', deaths);
-  const healers = extractRoleParses(details.rankingsRaw, 'healers', deaths);
+  const dps = extractRoleParses(details.rankingsRawDps, 'dps', deaths);
+  const healers = extractRoleParses(details.rankingsRawHealers, 'healers', deaths);
   const fightNameById = new Map(details.fights.map(f => [f.id, f.name]));
 
   return {
@@ -954,13 +973,13 @@ async function handleLatestLogsData(request, env) {
 
     const participants = extractParticipantNames(details.playerDetailsRaw);
     const deaths = extractDeaths(details.deathsRaw);
-    const dps = extractRoleParses(details.rankingsRaw, 'dps', deaths);
-    const healers = extractRoleParses(details.rankingsRaw, 'healers', deaths);
+    const dps = extractRoleParses(details.rankingsRawDps, 'dps', deaths);
+    const healers = extractRoleParses(details.rankingsRawHealers, 'healers', deaths);
 
     const fightNameById = new Map(details.fights.map(f => [f.id, f.name]));
     const fightDurationById = new Map(details.fights.map(f => [f.id, f.endTime - f.startTime]));
-    let dpsSurvivedBad = classifyLowParses(details.rankingsRaw, 'dps', deaths);
-    let healersSurvivedBad = classifyLowParses(details.rankingsRaw, 'healers', deaths);
+    let dpsSurvivedBad = classifyLowParses(details.rankingsRawDps, 'dps', deaths);
+    let healersSurvivedBad = classifyLowParses(details.rankingsRawHealers, 'healers', deaths);
     // Best-effort enrichment (uptime %, top damage/healing sources per
     // pull) - failures here just mean plainer entries, not a broken fetch.
     try {
@@ -1001,7 +1020,7 @@ async function handleLatestLogsData(request, env) {
         pairs: deaths.map(d => ({ name: d.name, fightID: d.fightID })),
       },
       interrupts,
-      ...(debug ? { rankingsRaw: details.rankingsRaw, playerDetailsRaw: details.playerDetailsRaw, deathsRaw: details.deathsRaw, interruptsRaw: details.interruptsRaw } : {}),
+      ...(debug ? { rankingsRawDps: details.rankingsRawDps, rankingsRawHealers: details.rankingsRawHealers, playerDetailsRaw: details.playerDetailsRaw, deathsRaw: details.deathsRaw, interruptsRaw: details.interruptsRaw } : {}),
     }), 200);
   } catch (err) {
     return corsResponse(JSON.stringify({ error: err.message }), 500);
