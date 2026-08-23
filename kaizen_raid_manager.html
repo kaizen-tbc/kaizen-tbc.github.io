@@ -1948,9 +1948,14 @@ a[href] > div > div[style*="line-height:1.6"] {
   <div class="section-header">
     <div>
       <div class="section-title">Guild Logs</div>
-      <div class="section-subtitle">Pull the latest Warcraft Logs report — top parses, attendance, post to Discord</div>
+      <div class="section-subtitle">Pick a report — top/bottom parses, attendance, post to Discord</div>
     </div>
-    <button class="btn btn-gold" onclick="fetchLatestLog()">⬇ Fetch Latest Log</button>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <select class="form-select" id="logs-report-select" style="min-width:240px;">
+        <option value="">Latest (most complete)</option>
+      </select>
+      <button class="btn btn-gold" onclick="fetchSelectedLog()">⬇ Fetch</button>
+    </div>
   </div>
 
   <div class="card" style="padding:16px 20px;margin-bottom:16px;">
@@ -1964,7 +1969,7 @@ a[href] > div > div[style*="line-height:1.6"] {
 
   <div id="guild-logs-content">
     <div class="empty-note" style="padding:32px;text-align:center;color:var(--text-dim);">
-      Click "⬇ Fetch Latest Log" to pull the most recent report.
+      Pick a report above (or leave it on "Latest") and click "⬇ Fetch".
     </div>
   </div>
 </div>
@@ -2684,17 +2689,43 @@ let _lastLogFetch = null; // cached /logs/latest response — posting reuses
 function renderGuildLogsTab() {
   const input = document.getElementById('logs-channel-input');
   if (input) input.value = logsChannelId || '';
+  populateLogsReportPicker();
+}
+
+async function populateLogsReportPicker() {
+  const select = document.getElementById('logs-report-select');
+  if (!select) return;
+  try {
+    const res = await fetch(`${RH_WORKER}/logs/recent`);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    const reports = data.reports || [];
+    select.innerHTML = `<option value="">Latest (most complete)</option>` +
+      reports.map(r => {
+        const date = r.startTime ? new Date(r.startTime).toLocaleDateString() : '';
+        return `<option value="${r.code}">${(r.title || 'Untitled').replace(/"/g, '&quot;')} — ${date}</option>`;
+      }).join('');
+  } catch (err) {
+    // Non-fatal — "Latest" still works even if the picker list fails to load
+    console.warn('Could not load recent reports list:', err.message);
+  }
 }
 
 function updateLogsChannelId(value) {
   logsChannelId = value.trim();
 }
 
-async function fetchLatestLog() {
+function fetchSelectedLog() {
+  const select = document.getElementById('logs-report-select');
+  fetchLatestLog(select?.value || null);
+}
+
+async function fetchLatestLog(reportCode) {
   const container = document.getElementById('guild-logs-content');
-  container.innerHTML = `<div style="padding:32px;text-align:center;color:var(--text-dim);">Fetching latest report...</div>`;
+  container.innerHTML = `<div style="padding:32px;text-align:center;color:var(--text-dim);">Fetching report...</div>`;
   try {
-    const res = await fetch(`${RH_WORKER}/logs/latest`);
+    const url = reportCode ? `${RH_WORKER}/logs/latest?code=${encodeURIComponent(reportCode)}` : `${RH_WORKER}/logs/latest`;
+    const res = await fetch(url);
     const data = await res.json();
     if (data.error) throw new Error(data.error);
     _lastLogFetch = data;
@@ -2702,6 +2733,25 @@ async function fetchLatestLog() {
   } catch (err) {
     container.innerHTML = `<div class="notice notice-info" style="color:var(--red-bright);border-color:var(--red);">Couldn't fetch: ${err.message}</div>`;
   }
+}
+
+// Renders one role's parses as a ranked list with a "needs work" cutoff —
+// top 5 and bottom 5 in the same block, since both are useful for a
+// Discord discussion post and embed/space is limited either way.
+function renderParseList(list) {
+  if (!list.length) return `<div style="color:var(--text-dim);font-size:12px;font-style:italic;">No parse data available.</div>`;
+  const row = (p, i) => `<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:13px;">
+      <span><strong style="color:var(--gold);">${i + 1}.</strong> ${p.name} <span style="color:var(--text-dim);font-size:11px;">${p.spec || p.class || ''}</span></span>
+      <span style="font-family:'IBM Plex Mono',monospace;color:var(--text-dim);">${Math.round(p.rankPercent)}%</span>
+    </div>`;
+  const top = list.slice(0, 5);
+  const bottomPool = list.slice(5);
+  const bottom = (bottomPool.length ? bottomPool : list).slice(-5).reverse();
+  const showBottom = bottom.length && bottom[0].name !== top[top.length - 1]?.name;
+  return `
+    ${top.map(row).join('')}
+    ${showBottom ? `<div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-dim);margin:10px 0 4px;">Needs Work</div>${bottom.map(row).join('')}` : ''}
+  `;
 }
 
 function renderLogPreview(data) {
@@ -2716,15 +2766,6 @@ function renderLogPreview(data) {
     if (p) matched.push(p);
     else unmatchedNames.push(n);
   });
-
-  const topParses = (data.topParses || []).slice(0, 5);
-  const parseRows = topParses.map((p, i) => {
-    const rp = p.rankPercent != null ? ` <span style="color:var(--text-dim);">(${Math.round(p.rankPercent)}%)</span>` : '';
-    return `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:13px;">
-      <span><strong style="color:var(--gold);">${i + 1}.</strong> ${p.name}${rp}</span>
-      <span style="font-family:'IBM Plex Mono',monospace;color:var(--text-dim);">${Math.round(p.amount).toLocaleString()}</span>
-    </div>`;
-  }).join('') || `<div style="color:var(--text-dim);font-size:12px;font-style:italic;">No parse data available.</div>`;
 
   const attendanceHtml = matched.length
     ? matched.map(p => {
@@ -2748,13 +2789,18 @@ function renderLogPreview(data) {
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
       <div class="card" style="padding:16px 18px;">
-        <div class="section-title" style="font-size:14px;margin-bottom:8px;">⚔️ Top Parses</div>
-        ${parseRows}
+        <div class="section-title" style="font-size:14px;margin-bottom:8px;">⚔️ DPS</div>
+        ${renderParseList(data.dps || [])}
       </div>
       <div class="card" style="padding:16px 18px;">
-        <div class="section-title" style="font-size:14px;margin-bottom:8px;">👥 Attendance (${matched.length})</div>
-        <div>${attendanceHtml}</div>
+        <div class="section-title" style="font-size:14px;margin-bottom:8px;">✚ Healers</div>
+        ${renderParseList(data.healers || [])}
       </div>
+    </div>
+
+    <div class="card" style="padding:16px 18px;margin-bottom:16px;">
+      <div class="section-title" style="font-size:14px;margin-bottom:8px;">👥 Attendance (${matched.length})</div>
+      <div>${attendanceHtml}</div>
     </div>
 
     <button class="btn btn-gold" onclick="confirmPostLogSummary()">↑ Post to Discord</button>

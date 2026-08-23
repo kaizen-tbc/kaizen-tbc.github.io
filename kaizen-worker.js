@@ -32,6 +32,11 @@ export default {
       return handleLatestLogsData(request, env);
     }
 
+    // ── Recent reports list, for the Guild Logs tab's report picker ──
+    if (url.pathname === '/logs/recent' && request.method === 'GET') {
+      return handleRecentLogsData(request, env);
+    }
+
     // ── Direct log-summary post from the Guild Logs tab (bypasses the
     // Discord slash command entirely) ── /post-log-summary
     if (url.pathname === '/post-log-summary' && request.method === 'POST') {
@@ -275,12 +280,10 @@ async function handlePostRosterCommand(interaction, guildId, options, env) {
 //     server slug entirely.
 //
 // NOTE: rankings/playerDetails are JSON-scalar fields in WCL's v2 schema
-// (not fully-typed GraphQL), so their exact key names are the part of this
-// integration most likely to need a quick follow-up tweak once tested
-// against a real report — extractParticipantNames/extractTopParses are
-// written defensively (try/catch, several key-name fallbacks) so a shape
-// mismatch degrades to an empty list + a visible error in the Discord
-// reply rather than a crash.
+// (not fully-typed GraphQL). Confirmed live shape: rankings is one entry per
+// killed fight, each with roles.{tanks,healers,dps}.characters[] carrying
+// amount + rankPercent (see extractRoleParses). extractParticipantNames/
+// extractRoleParses still wrapped in try/catch in case that shape drifts.
 const WCL_TOKEN_URL = 'https://www.warcraftlogs.com/oauth/token';
 const WCL_API       = 'https://www.warcraftlogs.com/api/v2/client';
 
@@ -314,28 +317,33 @@ async function wclQuery(env, query, variables = {}) {
   return json.data;
 }
 
-// Picks the most complete report from the last ~36h. Handles two people
-// both auto-uploading the same raid night — takes whichever log covers
-// more of the raid rather than whichever finished uploading last.
-async function findLatestGuildReport(env) {
+// reports lives on the top-level reportData container, filtered by guildID
+// - NOT nested under guildData.guild (confirmed live: querying it that way
+// errors with "Cannot query field 'reports' on type 'Guild'").
+async function listRecentGuildReports(env, limit = 10) {
   if (!env.WCL_GUILD_ID) throw new Error('WCL_GUILD_ID is not configured.');
 
-  // reports lives on the top-level reportData container, filtered by
-  // guildID - NOT nested under guildData.guild (confirmed live: querying it
-  // that way errors with "Cannot query field 'reports' on type 'Guild'").
   const data = await wclQuery(env, `
-    query($id: Int!) {
+    query($id: Int!, $limit: Int!) {
       reportData {
-        reports(guildID: $id, limit: 5) {
+        reports(guildID: $id, limit: $limit) {
           data { code title startTime endTime zone { name } }
         }
       }
     }
   `, {
     id: Number(env.WCL_GUILD_ID),
+    limit,
   });
 
-  const reports = data?.reportData?.reports?.data || [];
+  return data?.reportData?.reports?.data || [];
+}
+
+// Picks the most complete report from the last ~36h. Handles two people
+// both auto-uploading the same raid night — takes whichever log covers
+// more of the raid rather than whichever finished uploading last.
+async function findLatestGuildReport(env) {
+  const reports = await listRecentGuildReports(env, 5);
   if (reports.length === 0) return null;
 
   const cutoff = Date.now() - 36 * 60 * 60 * 1000;
@@ -418,31 +426,34 @@ function matchAttendanceToRoster(participantNames, roster) {
   )];
 }
 
-// rankings is a JSON blob — best-effort shape:
-// { data: [ { name, class, spec, amount, rankPercent }, ... ] }.
-// Percentile parses are conventionally computed per kill, so this only
-// gets fightIDs for killed encounters (see killFightIds above).
-function extractTopParses(rankingsRaw) {
+// Confirmed live shape: rankings is one entry PER KILLED FIGHT, each with
+// roles.{tanks,healers,dps}.characters[], each character carrying amount +
+// rankPercent (the actual WCL percentile) for that specific pull. To get
+// "top DPS/healers this raid" rather than "this one pull", aggregate each
+// player's rankPercent across every fight they appear in for that role and
+// average it — a single lucky/unlucky pull doesn't swing the whole night.
+function extractRoleParses(rankingsRaw, roleKey) {
   try {
-    const entries = rankingsRaw?.data?.rankings
-      || rankingsRaw?.rankings
-      || rankingsRaw?.data
-      || [];
-    if (!Array.isArray(entries)) return [];
-    // Keep each player's single best pull if they show up more than once
-    // (multiple kills of the same boss, or entries per-fight).
-    const best = new Map();
-    for (const e of entries) {
-      const name = e.name || e.player;
-      if (!name) continue;
-      const amount = e.amount ?? e.total ?? 0;
-      const rankPercent = e.rankPercent ?? e.percentile ?? null;
-      const existing = best.get(name);
-      if (!existing || amount > existing.amount) {
-        best.set(name, { name, amount, rankPercent });
+    const fights = rankingsRaw?.data || [];
+    const byPlayer = new Map();
+    for (const fight of fights) {
+      const chars = fight?.roles?.[roleKey]?.characters || [];
+      for (const c of chars) {
+        if (!c?.name || typeof c.rankPercent !== 'number') continue;
+        if (!byPlayer.has(c.name)) {
+          byPlayer.set(c.name, { name: c.name, class: c.class, spec: c.spec, percents: [] });
+        }
+        byPlayer.get(c.name).percents.push(c.rankPercent);
       }
     }
-    return [...best.values()].sort((a, b) => b.amount - a.amount);
+    const list = [...byPlayer.values()].map(p => ({
+      name: p.name,
+      class: p.class,
+      spec: p.spec,
+      rankPercent: p.percents.reduce((a, b) => a + b, 0) / p.percents.length,
+    }));
+    list.sort((a, b) => b.rankPercent - a.rankPercent);
+    return list;
   } catch {
     return [];
   }
@@ -451,21 +462,37 @@ function extractTopParses(rankingsRaw) {
 function formatParseLines(list) {
   if (!list.length) return '—';
   return list
-    .map((p, i) => `**${i + 1}.** ${p.name} — ${Math.round(p.amount).toLocaleString()}${p.rankPercent != null ? ` (${Math.round(p.rankPercent)}%)` : ''}`)
+    .map((p, i) => `**${i + 1}.** ${p.name} (${p.spec || p.class || '?'}) — ${Math.round(p.rankPercent)}%`)
     .join('\n');
+}
+
+// Top N and bottom N in one field, since embeds have limited field slots -
+// "who's crushing it" and "who needs help" are both useful in one glance.
+function formatTopAndBottom(list, n = 5) {
+  if (!list.length) return 'No parse data available.';
+  const top = list.slice(0, n);
+  const bottomPool = list.slice(n);
+  const bottom = (bottomPool.length ? bottomPool : list).slice(-n).reverse();
+  let out = formatParseLines(top);
+  if (bottom.length && bottom[0].name !== top[top.length - 1]?.name) {
+    out += `\n\n*Needs work:*\n` + formatParseLines(bottom);
+  }
+  return out;
 }
 
 function buildLogSummaryEmbed(report, details, roster) {
   const participants = extractParticipantNames(details.playerDetailsRaw);
   const attendance = matchAttendanceToRoster(participants, roster);
-  const topParses = extractTopParses(details.rankingsRaw);
+  const dps = extractRoleParses(details.rankingsRaw, 'dps');
+  const healers = extractRoleParses(details.rankingsRaw, 'healers');
 
   return {
     title: `📊 ${report.title || 'Raid Log Summary'}`,
     url: `https://www.warcraftlogs.com/reports/${report.code}`,
     description: `${details.killFights.length}/${details.fights.length} encounters killed · ${attendance.length} guildies logged`,
     fields: [
-      { name: '⚔️ Top 5 Parses', value: formatParseLines(topParses.slice(0, 5)), inline: true },
+      { name: '⚔️ DPS', value: formatTopAndBottom(dps), inline: true },
+      { name: '✚ Healers', value: formatTopAndBottom(healers), inline: true },
       { name: '👥 Attendance', value: attendance.length ? attendance.join(', ') : '—', inline: false },
     ],
     color: 0xC9A227,
@@ -515,28 +542,57 @@ async function runPostLogs(interaction, env) {
   }
 }
 
+// GET /logs/recent — list of recent reports for the Guild Logs tab's report
+// picker (so an officer can pick SSC vs TK etc. instead of always getting
+// whichever the "most complete" heuristic picks).
+async function handleRecentLogsData(request, env) {
+  try {
+    if (!env.WCL_CLIENT_ID || !env.WCL_CLIENT_SECRET) {
+      throw new Error('Warcraft Logs API credentials not configured.');
+    }
+    const reports = await listRecentGuildReports(env, 10);
+    return corsResponse(JSON.stringify({ reports }), 200);
+  } catch (err) {
+    return corsResponse(JSON.stringify({ error: err.message }), 500);
+  }
+}
+
 // GET /logs/latest — raw-ish log data for the raid manager's Guild Logs tab.
+// ?code=REPORTCODE fetches that specific report instead of auto-detecting.
 async function handleLatestLogsData(request, env) {
   try {
     if (!env.WCL_CLIENT_ID || !env.WCL_CLIENT_SECRET) {
       throw new Error('Warcraft Logs API credentials not configured.');
     }
+    const url = new URL(request.url);
     // ?debug=1 includes the raw JSON blobs verbatim - temporary, for
     // inspecting the real shape of rankings/playerDetails against a live
     // report rather than guessing at their schema again.
-    const debug = new URL(request.url).searchParams.get('debug');
-    const report = await findLatestGuildReport(env);
-    if (!report) throw new Error('No recent reports found for the guild.');
-    const details = await getReportFightsAndStats(env, report.code);
+    const debug = url.searchParams.get('debug');
+    const requestedCode = url.searchParams.get('code');
+
+    let report, details;
+    if (requestedCode) {
+      details = await getReportFightsAndStats(env, requestedCode);
+      report = details.report;
+      if (!report?.title) throw new Error(`Report ${requestedCode} not found.`);
+    } else {
+      report = await findLatestGuildReport(env);
+      if (!report) throw new Error('No recent reports found for the guild.');
+      details = await getReportFightsAndStats(env, report.code);
+    }
+
     const participants = extractParticipantNames(details.playerDetailsRaw);
-    const topParses = extractTopParses(details.rankingsRaw);
+    const dps = extractRoleParses(details.rankingsRaw, 'dps');
+    const healers = extractRoleParses(details.rankingsRaw, 'healers');
 
     return corsResponse(JSON.stringify({
       report,
       fights: details.fights,
       killFights: details.killFights,
       participants,
-      topParses,
+      dps,
+      healers,
       ...(debug ? { rankingsRaw: details.rankingsRaw, playerDetailsRaw: details.playerDetailsRaw } : {}),
     }), 200);
   } catch (err) {
