@@ -1896,11 +1896,18 @@ a[href] > div > div[style*="line-height:1.6"] {
 <div class="tab-panel" id="tab-strats">
   <div class="section-header">
     <div>
-      <div class="section-title">Strat Manager</div>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <div class="section-title" style="margin-bottom:0;">Strat Manager</div>
+        <button onclick="openStratsSettings()" title="Strats Settings"
+          style="background:var(--bg-hover);border:none;color:var(--text-dim);cursor:pointer;font-size:13px;padding:4px 6px;line-height:1;transition:all 0.15s;border-radius:3px;"
+          onmouseover="this.style.color='var(--gold)';this.style.background='var(--bg-card)'" onmouseout="this.style.color='var(--text-dim)';this.style.background='var(--bg-hover)'">⚙</button>
+      </div>
       <div class="section-subtitle">Upload encounter diagrams — they show on the public site automatically</div>
     </div>
     <div style="display:flex;gap:8px;align-items:center;">
+      <button class="btn btn-small" onclick="openPugModal()">+ Pug</button>
       <button class="btn btn-gold" onclick="openStratUpload()">+ Add Strat</button>
+      <button class="btn" style="white-space:nowrap;background:#5865F2;border-color:#4752c4;color:#fff;font-weight:700;" onclick="confirmPostStrat()">🚀 Post Strat to Discord</button>
     </div>
   </div>
 
@@ -1941,6 +1948,27 @@ a[href] > div > div[style*="line-height:1.6"] {
   <div id="strat-list"></div>
 
   <!-- AD ZONE: Strats below content — 300x250 rectangle -->
+</div>
+
+<!-- Strats Settings Modal -->
+<div class="modal-overlay" id="strats-settings-overlay" onclick="if(event.target===this)closeStratsSettings()">
+  <div class="modal" style="width:440px;">
+    <div class="modal-header">
+      <div class="modal-title">Strats Settings</div>
+      <button class="modal-close" onclick="closeStratsSettings()">&#x2715;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Strats channel</label>
+        <input type="text" class="form-input" id="strats-channel-input" placeholder="Discord channel ID"
+          onchange="updateStratsChannelId(this.value)">
+        <div style="font-size:11px;color:var(--text-dim);margin-top:5px;">One dedicated channel — posting a strat clears whatever's there first, then posts the current strat's image and assignments.</div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-gold" onclick="closeStratsSettings()">Done</button>
+    </div>
+  </div>
 </div>
 
 <!-- ==================== GUILD LOGS TAB ==================== -->
@@ -2609,6 +2637,11 @@ let logsChannelId = '';
 // them from logsChannelId — a locked-down, bot-post-only archive channel.
 let archiveChannelId = '';
 
+// One dedicated channel for strat posts - posting always clears whatever
+// was there before (no archive, these are a living reference not a
+// history worth keeping) then posts the current strat's image + assigns.
+let stratsChannelId = '';
+
 // Resolved display names for the above (e.g. "logs-archive") — purely
 // cosmetic, so the confirm dialog can say "#logs-archive" instead of a
 // raw numeric ID. Falls back to the ID itself if resolution hasn't
@@ -2947,8 +2980,15 @@ function renderParseList(list, died) {
     const smallSample = typeof r.totalParses === 'number' && r.totalParses < WCL_SMALL_SAMPLE_THRESHOLD
       ? `<span style="color:var(--text-dim);" title="Only ${r.totalParses} logged parses for this spec/role — small comparison pool, percentile may not be meaningful">⚠</span> `
       : '';
+    // Only on the "best"/top list - a world-wide percentile can look
+    // great off a thin comparison pool while contributing almost none of
+    // this raid's actual output; share of the role's total output that
+    // fight is a much harder number to game.
+    const shareNote = which === 'best' && typeof r.raidSharePct === 'number'
+      ? ` <span style="color:var(--text-dim);font-size:11px;">(${r.raidSharePct}% of raid total)</span>`
+      : '';
     return `<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:13px;">
-      <span><strong style="color:var(--gold);">${i + 1}.</strong> ${smallSample}${p.name} <span style="color:var(--text-dim);font-size:11px;">${p.spec || p.class || ''} · ${r.encounter}</span></span>
+      <span><strong style="color:var(--gold);">${i + 1}.</strong> ${smallSample}${p.name} <span style="color:var(--text-dim);font-size:11px;">${p.spec || p.class || ''} · ${r.encounter}</span>${shareNote}</span>
       <span style="font-family:'IBM Plex Mono',monospace;font-weight:700;color:${parseColorHex(r.rankPercent)};">${Math.round(r.rankPercent)}</span>
     </div>`;
   };
@@ -5892,6 +5932,7 @@ function saveData() {
     nameAliases,
     logsChannelId,
     archiveChannelId,
+    stratsChannelId,
   };
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
@@ -5937,6 +5978,7 @@ function loadData(event) {
       if (data.nameAliases) nameAliases = data.nameAliases;
       if (data.logsChannelId) logsChannelId = data.logsChannelId;
       if (data.archiveChannelId) archiveChannelId = data.archiveChannelId;
+      if (data.stratsChannelId) stratsChannelId = data.stratsChannelId;
       renderRoster();
       renderOverview();
       renderAttendance();
@@ -6054,6 +6096,54 @@ function renderStats() {
 // ======================================================
 let activeStratId = null;
 let activeRaid = null;
+
+function openStratsSettings() {
+  document.getElementById('strats-channel-input').value = stratsChannelId || '';
+  document.getElementById('strats-settings-overlay').classList.add('open');
+}
+
+function closeStratsSettings() {
+  document.getElementById('strats-settings-overlay').classList.remove('open');
+}
+
+function updateStratsChannelId(value) {
+  stratsChannelId = value.trim();
+}
+
+// Requires the strat to be saved/published first - the bot reads the
+// public kaizen_data.json + the image's public URL, same as the existing
+// roster-post flow, rather than uploading unsaved local state.
+function confirmPostStrat() {
+  const strat = strats.find(s => s.id === activeStratId);
+  if (!strat) { showToast('Pick a strat first.', true); return; }
+  if (!stratsChannelId) { showToast('Set the strats channel first (⚙ Strats Settings).', true); return; }
+
+  document.getElementById('confirm-text').textContent =
+    `Publish "${strat.name}" to the strats channel? This clears whatever's currently posted there first and cannot be undone. Make sure you've hit "Save to GitHub" first — the bot posts from what's published, not what's on screen right now.`;
+  const existingCheck = document.getElementById('confirm-notify-wrap');
+  if (existingCheck) existingCheck.remove();
+  document.getElementById('confirm-ok').onclick = () => {
+    closeConfirm();
+    postStratToDiscord(strat.id);
+  };
+  document.getElementById('confirm-overlay').classList.add('open');
+}
+
+async function postStratToDiscord(stratId) {
+  showToast('🚀 Publishing strat to Discord...');
+  try {
+    const res = await fetch(`${RH_WORKER}/post-strat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ stratId, channelId: stratsChannelId }),
+    });
+    const data = await res.json();
+    if (!res.ok || data.error) throw new Error(data.error || `Worker returned ${res.status}`);
+    showToast('✓ Strat published to Discord!');
+  } catch (err) {
+    showToast(`✗ Failed: ${err.message}`, true);
+  }
+}
 
 function renderStrats() {
   const list = document.getElementById('strat-list');
@@ -6698,6 +6788,7 @@ async function saveToGitHub() {
     nameAliases,
     logsChannelId,
     archiveChannelId,
+    stratsChannelId,
   };
 
   const jsonContent = JSON.stringify(payload, null, 2);
@@ -7237,6 +7328,7 @@ async function initFromJson() {
     if (data.nameAliases) nameAliases = data.nameAliases;
     if (data.logsChannelId) logsChannelId = data.logsChannelId;
     if (data.archiveChannelId) archiveChannelId = data.archiveChannelId;
+    if (data.stratsChannelId) stratsChannelId = data.stratsChannelId;
     showToast('📂 Loaded kaizen_data.json automatically.');
     updateVersionFooter(data.savedAt);
     console.log('Auto-loaded kaizen_data.json');

@@ -26,6 +26,12 @@ export default {
       return handleDirectRosterPost(request, env);
     }
 
+    // ── Post a strat's image + assignments to Discord, clearing the
+    // channel first ── /post-strat
+    if (url.pathname === '/post-strat' && request.method === 'POST') {
+      return handlePostStrat(request, env);
+    }
+
     // ── Latest Warcraft Logs report, for the raid manager's attendance
     // review UI ── /logs/latest
     if (url.pathname === '/logs/latest' && request.method === 'GET') {
@@ -68,6 +74,31 @@ export default {
       return handleChannelName(request, env);
     }
 
+    // ── Temporary diagnostic: introspect table()'s args (looking for an
+    // ability-scoped filter) and Buffs/Casts shape for Power Infusion +
+    // Innervate on a known report. Remove once resolved.
+    if (url.pathname === '/logs/debug-utility' && request.method === 'GET') {
+      try {
+        const code = url.searchParams.get('code');
+        const fightsData = await wclQuery(env, `query($code: String!) { reportData { report(code: $code) { fights { id kill } } } }`, { code });
+        const fights = fightsData?.reportData?.report?.fights || [];
+        const ids = fights.filter(f => f.kill).map(f => f.id);
+
+        const data = await wclQuery(env, `
+          query($code: String!, $ids: [Int]!) {
+            reportData {
+              report(code: $code) {
+                pi: table(fightIDs: $ids, dataType: Casts, filterExpression: "ability.name=\\"Power Infusion\\"")
+                innervate: table(fightIDs: $ids, dataType: Casts, filterExpression: "ability.name=\\"Innervate\\"")
+              }
+            }
+          }
+        `, { code, ids });
+        return corsResponse(JSON.stringify(data?.reportData?.report ?? {}), 200);
+      } catch (err) {
+        return corsResponse(JSON.stringify({ error: err.message }), 500);
+      }
+    }
 
     // ── Discord interactions ── /discord
     if (url.pathname === '/discord' && request.method === 'POST') {
@@ -112,6 +143,116 @@ async function handleDirectRosterPost(request, env) {
 
     return corsResponse(JSON.stringify({ ok: true }), 200);
   } catch(err) {
+    return corsResponse(JSON.stringify({ error: err.message }), 500);
+  }
+}
+
+const SITE_ORIGIN = 'https://kaizen-tbc.github.io';
+
+// Player IDs are positive for real roster members, negative for guildies
+// (temp adds) and pugs (name+class/spec entered ad hoc) - same lookup the
+// frontend's getPlayerById does, just re-implemented here since the Worker
+// only has the raw published JSON, not the live in-page state.
+function resolveStratPlayer(id, roster, guildies, pugs) {
+  if (id == null) return null;
+  if (id >= 0) return roster.find(p => p.id === id) || null;
+  return guildies.find(p => p.id === id) || pugs.find(p => p.id === id) || null;
+}
+
+function formatStratRowSide(type, value, roster, guildies, pugs) {
+  if (type === 'player') {
+    const p = resolveStratPlayer(value, roster, guildies, pugs);
+    return p ? p.name : '_unassigned_';
+  }
+  if (type === 'notes') return value || '_(no notes)_';
+  return value || '';
+}
+
+// Generic across whatever sections/rows a given strat has (Tanks, Healer
+// Assigns, Misdirection, Lust/Drums, Strategy Notes, or any custom ones)
+// since the section/row model itself is freeform, not encounter-specific.
+function formatStratSection(section, roster, guildies, pugs) {
+  const lines = (section.rows || []).map(row => {
+    const a = formatStratRowSide(row.typeA, row.valueA, roster, guildies, pugs);
+    if (!row.typeB) return a; // notes-only row
+    const b = formatStratRowSide(row.typeB, row.valueB, roster, guildies, pugs);
+    if (row.arrow) return `${a} → ${b}`;
+    return row.typeA === 'text' ? `**${a}:** ${b}` : `${a} — ${b}`;
+  });
+  return lines.join('\n') || '—';
+}
+
+function buildStratAssignsEmbed(strat, roster, guildies, pugs) {
+  const fields = (strat.sections || []).map(sec => ({
+    name: sec.label || 'Section',
+    // Discord hard-caps a field value at 1024 chars.
+    value: formatStratSection(sec, roster, guildies, pugs).slice(0, 1024),
+  }));
+  return {
+    title: `📋 ${strat.name} — Assignments`,
+    color: 0xC9A227,
+    fields: fields.length ? fields : [{ name: 'No assignments yet', value: '—' }],
+    footer: { text: 'Kaizen Raid Manager' },
+    timestamp: new Date().toISOString(),
+  };
+}
+
+function buildStratImageEmbed(strat, imageUrl) {
+  return {
+    title: `🗺️ ${strat.name}`,
+    color: 0xC9A227,
+    image: { url: imageUrl },
+    footer: { text: 'Kaizen Raid Manager' },
+    timestamp: new Date().toISOString(),
+  };
+}
+
+// Clears the strats channel (no archive - these are a living reference,
+// not a history worth keeping), then posts the strat image and its
+// assignments as two separate messages. Requires the strat to already be
+// saved/published: the image needs a real public URL, and the assignments
+// need to be readable from the same published JSON the roster-post flow
+// already relies on - no new file-upload path through the bot needed.
+async function handlePostStrat(request, env) {
+  try {
+    const { stratId, channelId } = await request.json();
+    if (!channelId) throw new Error('No channel ID provided.');
+    if (stratId == null) throw new Error('No strat selected.');
+
+    const dataRes = await fetch(`${SITE_ORIGIN}/kaizen_data.json?v=${Date.now()}`);
+    if (!dataRes.ok) throw new Error('Could not load raid data.');
+    const data = await dataRes.json();
+
+    const strat = (data.strats || []).find(s => s.id === stratId);
+    if (!strat) throw new Error("Strat not found — make sure it's been saved to GitHub first.");
+    if (!strat.image || strat.image.startsWith('data:')) {
+      throw new Error("This strat's image isn't saved yet (still a local upload) — Save to GitHub first so it has a public URL.");
+    }
+    const imageUrl = strat.image.startsWith('http') ? strat.image : `${SITE_ORIGIN}/${strat.image}`;
+
+    await clearChannelMessages(env, channelId, null);
+
+    const headers = { 'Authorization': `Bot ${env.DISCORD_BOT_TOKEN}`, 'Content-Type': 'application/json' };
+
+    const imgRes = await fetch(`${DISCORD_API}/channels/${channelId}/messages`, {
+      method: 'POST', headers, body: JSON.stringify({ embeds: [buildStratImageEmbed(strat, imageUrl)] }),
+    });
+    if (!imgRes.ok) {
+      const err = await imgRes.json().catch(() => ({}));
+      throw new Error(err.message || `Image post failed: ${imgRes.status}`);
+    }
+
+    const assignsEmbed = buildStratAssignsEmbed(strat, data.roster || [], data.guildies || [], data.pugs || []);
+    const assignsRes = await fetch(`${DISCORD_API}/channels/${channelId}/messages`, {
+      method: 'POST', headers, body: JSON.stringify({ embeds: [assignsEmbed] }),
+    });
+    if (!assignsRes.ok) {
+      const err = await assignsRes.json().catch(() => ({}));
+      throw new Error(err.message || `Assignments post failed: ${assignsRes.status}`);
+    }
+
+    return corsResponse(JSON.stringify({ ok: true }), 200);
+  } catch (err) {
     return corsResponse(JSON.stringify({ error: err.message }), 500);
   }
 }
@@ -567,21 +708,39 @@ function extractRoleParses(rankingsRaw, roleKey, deaths = []) {
     const deathSet = new Set(deaths.map(d => `${d.name}|${d.fightID}`));
     const fights = rankingsRaw?.data || [];
     const byPlayer = new Map();
+    // A world-wide percentile can look great off a thin comparison pool
+    // (a rarely-played spec/role combo) while the person is doing almost
+    // none of the raid's actual work that fight. raidSharePct - this
+    // person's share of the WHOLE role's total output that fight - is a
+    // much harder number to game: if everyone parses well, a healthy
+    // spread of shares is normal; one inflated percentile next to a tiny
+    // share means someone else is carrying the real workload.
+    const fightTotals = new Map(); // fightID -> summed amount across the role
+    for (const fight of fights) {
+      const chars = fight?.roles?.[roleKey]?.characters || [];
+      let total = 0;
+      for (const c of chars) total += (typeof c.amount === 'number' ? c.amount : 0);
+      fightTotals.set(fight?.fightID, total);
+    }
     for (const fight of fights) {
       const chars = fight?.roles?.[roleKey]?.characters || [];
       const encounter = fight?.encounter?.name || 'Unknown';
       const fightID = fight?.fightID;
+      const fightTotal = fightTotals.get(fightID) || 0;
       for (const c of chars) {
         if (!c?.name || typeof c.rankPercent !== 'number') continue;
         if (!byPlayer.has(c.name)) {
           byPlayer.set(c.name, { name: c.name, class: c.class, spec: c.spec, results: [] });
         }
+        const raidSharePct = fightTotal > 0 && typeof c.amount === 'number'
+          ? Math.round((c.amount / fightTotal) * 1000) / 10
+          : null;
         // totalParses is the size of the comparison pool WCL ranked this
         // percentile against - carried through so a rarely-logged spec/role
         // combo (a handful of parses) can be flagged as statistically
         // unreliable instead of presented at face value (see WCL_SMALL_SAMPLE).
         byPlayer.get(c.name).results.push({
-          rankPercent: c.rankPercent, encounter, fightID, totalParses: c.totalParses,
+          rankPercent: c.rankPercent, encounter, fightID, totalParses: c.totalParses, raidSharePct,
           survived: !deathSet.has(`${c.name}|${fightID}`),
         });
       }
@@ -682,6 +841,55 @@ function classifyLowParses(rankingsRaw, roleKey, deaths) {
     }
   }
   return [...byPlayer.values()].sort((a, b) => a.rankPercent - b.rankPercent);
+}
+
+// Below this share of the role's total output that fight, a percentile
+// stops being trustworthy evidence of real contribution - a thin/off-meta
+// comparison pool can make someone look like a world-beater while they're
+// doing almost none of the raid's actual work. 5% is deliberately
+// conservative: even accounting for uneven healing assignments, a healthy
+// contributor rarely falls this far below an equal share (100/headcount%).
+const HOLLOW_SHARE_THRESHOLD = 5;
+
+// The mirror image of classifyLowParses: instead of catching a real
+// performance problem hiding behind a death, this catches a percentile
+// that LOOKS great but isn't backed by real output - purple-tier-or-better
+// (75+) on a pull where the person's actual share of the role's combined
+// output was tiny. This is what "parsing 99 as a healer while doing ~1%
+// of the raid's healing" looks like in the data, and it's a much harder
+// number to argue with than a percentile from a rarely-played spec/role.
+function classifyHollowTopPerformers(rankingsRaw, roleKey, deaths) {
+  const deathSet = new Set(deaths.map(d => `${d.name}|${d.fightID}`));
+  const fights = rankingsRaw?.data || [];
+  const fightTotals = new Map();
+  for (const fight of fights) {
+    const chars = fight?.roles?.[roleKey]?.characters || [];
+    let total = 0;
+    for (const c of chars) total += (typeof c.amount === 'number' ? c.amount : 0);
+    fightTotals.set(fight?.fightID, total);
+  }
+  const byPlayer = new Map();
+  for (const fight of fights) {
+    const chars = fight?.roles?.[roleKey]?.characters || [];
+    const encounter = fight?.encounter?.name || 'Unknown';
+    const fightID = fight?.fightID;
+    const fightTotal = fightTotals.get(fightID) || 0;
+    for (const c of chars) {
+      if (!c?.name || typeof c.rankPercent !== 'number') continue;
+      if (c.rankPercent < 75) continue; // only the "looks great" tier qualifies
+      if (deathSet.has(`${c.name}|${fightID}`)) continue; // dying isn't this pattern
+      if (fightTotal <= 0 || typeof c.amount !== 'number') continue;
+      const sharePct = Math.round((c.amount / fightTotal) * 1000) / 10;
+      if (sharePct >= HOLLOW_SHARE_THRESHOLD) continue; // healthy share - not hollow
+      const cur = byPlayer.get(c.name);
+      // Keep whichever pull is most striking - highest percentile paired
+      // with a hollow share, since that's the biggest "looks great, isn't" gap.
+      if (!cur || c.rankPercent > cur.rankPercent) {
+        byPlayer.set(c.name, { name: c.name, class: c.class, spec: c.spec, rankPercent: c.rankPercent, sharePct, encounter, fightID, totalParses: c.totalParses });
+      }
+    }
+  }
+  return [...byPlayer.values()].sort((a, b) => b.rankPercent - a.rankPercent);
 }
 
 // Per-fight actor breakdown (uptime %, top damage/healing sources) for one
@@ -809,7 +1017,14 @@ function formatParseLines(list, which) {
       const smallSample = typeof r.totalParses === 'number' && r.totalParses < WCL_SMALL_SAMPLE_THRESHOLD
         ? ` ⚠_(rare in this role — only ${r.totalParses} logged, take with a grain of salt)_`
         : '';
-      return `**${i + 1}.** ${icon ? icon + ' ' : ''}${parseColorEmoji(r.rankPercent)} **${pct}** — ${p.name} _(${r.encounter})_${smallSample}`;
+      // Only on the "best"/top list - a world-wide percentile can look
+      // great off a thin comparison pool while contributing almost none of
+      // this raid's actual output; share of the role's total output that
+      // fight is a much harder number to game.
+      const shareNote = which === 'best' && typeof r.raidSharePct === 'number'
+        ? ` _(${r.raidSharePct}% of raid total)_`
+        : '';
+      return `**${i + 1}.** ${icon ? icon + ' ' : ''}${parseColorEmoji(r.rankPercent)} **${pct}** — ${p.name} _(${r.encounter})_${shareNote}${smallSample}`;
     })
     .join('\n');
 }
@@ -988,6 +1203,8 @@ async function handleLatestLogsData(request, env) {
     } catch (err) {
       console.warn('Fight breakdown enrichment failed:', err.message);
     }
+    const dpsHollowTop = classifyHollowTopPerformers(details.rankingsRawDps, 'dps', deaths);
+    const healersHollowTop = classifyHollowTopPerformers(details.rankingsRawHealers, 'healers', deaths);
     const interrupts = extractInterruptCounts(details.interruptsRaw).slice(0, 8);
 
     return corsResponse(JSON.stringify({
@@ -1002,6 +1219,10 @@ async function handleLatestLogsData(request, env) {
       // which isn't useful feedback on its own.
       dpsSurvivedBad,
       healersSurvivedBad,
+      // The mirror case: a great-looking percentile backed by almost none
+      // of the raid's actual output that fight (see HOLLOW_SHARE_THRESHOLD).
+      dpsHollowTop,
+      healersHollowTop,
       deaths: {
         count: deaths.length,
         notable: deaths.slice(0, 8).map(d => ({
@@ -1344,12 +1565,12 @@ async function handlePostTextMessage(request, env) {
 // not by author id, so no extra lookup of the bot's own user id is needed.
 // Only our own posts get archived; anything else in the channel (human
 // chatter) is just deleted, per explicit choice.
-async function handleClearChannel(request, env) {
-  try {
-    const { channelId, archiveChannelId } = await request.json();
-    if (!channelId) throw new Error('No channel ID provided.');
+// Extracted so other flows (e.g. strat posting) can clear-then-post
+// in-process, without a wasteful self-fetch through the HTTP route.
+async function clearChannelMessages(env, channelId, archiveChannelId) {
+  if (!channelId) throw new Error('No channel ID provided.');
 
-    const headers = { 'Authorization': `Bot ${env.DISCORD_BOT_TOKEN}` };
+  const headers = { 'Authorization': `Bot ${env.DISCORD_BOT_TOKEN}` };
     const fourteenDaysAgo = Date.now() - 14 * 24 * 60 * 60 * 1000;
     let deleted = 0;
     let archived = 0;
@@ -1411,6 +1632,13 @@ async function handleClearChannel(request, env) {
       if (messages.length < 100) break;
     }
 
+    return { deleted, archived };
+}
+
+async function handleClearChannel(request, env) {
+  try {
+    const { channelId, archiveChannelId } = await request.json();
+    const { deleted, archived } = await clearChannelMessages(env, channelId, archiveChannelId);
     return corsResponse(JSON.stringify({ ok: true, deleted, archived }), 200);
   } catch (err) {
     return corsResponse(JSON.stringify({ error: err.message }), 500);
