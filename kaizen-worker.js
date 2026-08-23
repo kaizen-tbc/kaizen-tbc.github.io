@@ -630,11 +630,82 @@ function classifyLowParses(rankingsRaw, roleKey, deaths) {
       if (deathSet.has(`${c.name}|${fightID}`)) continue; // died - not a rotation issue
       const cur = byPlayer.get(c.name);
       if (!cur || c.rankPercent < cur.rankPercent) {
-        byPlayer.set(c.name, { name: c.name, class: c.class, spec: c.spec, rankPercent: c.rankPercent, encounter });
+        // fightID carried through so a per-fight uptime/ability breakdown
+        // can be pulled for exactly this pull, not just the raw percentile.
+        byPlayer.set(c.name, { name: c.name, class: c.class, spec: c.spec, rankPercent: c.rankPercent, encounter, fightID });
       }
     }
   }
   return [...byPlayer.values()].sort((a, b) => a.rankPercent - b.rankPercent);
+}
+
+// Per-fight actor breakdown (uptime %, top damage/healing sources) for one
+// specific pull - this is what turns "keep your rotation tight" into
+// "you had 58% active time on this pull, and Melee was 70% of your damage
+// with almost none from your core spender" - a real, log-derived reason
+// instead of boilerplate. dataType is 'DamageDone' for DPS, 'Healing' for
+// healers. Best-effort: wrapped so a shape mismatch or a failed fetch just
+// means that person's entry loses the extra detail, not that the whole
+// report fails - this table's exact shape hasn't been separately confirmed
+// live the way Deaths/Interrupts were (WCL rate limit made that untestable
+// today), so treat it as reasoned-but-unverified until the first real run.
+async function getFightActorTable(env, code, fightId, dataType) {
+  try {
+    const data = await wclQuery(env, `
+      query($code: String!, $ids: [Int]!, $dataType: TableDataType!) {
+        reportData { report(code: $code) { table(fightIDs: $ids, dataType: $dataType) } }
+      }
+    `, { code, ids: [fightId], dataType });
+    return data?.reportData?.report?.table ?? null;
+  } catch (err) {
+    console.warn(`Fight ${fightId} ${dataType} table fetch failed:`, err.message);
+    return null;
+  }
+}
+
+// Actor-summary shape seen so far (nested inside a Deaths entry's `.damage`)
+// carries activeTime/activeTimeReduced and an abilities[] breakdown with
+// per-ability totals. Standalone DamageDone/Healing table entries are
+// expected to carry that same shape at the top level rather than nested -
+// checked defensively for both in case that assumption is wrong.
+function extractActorBreakdown(tableRaw, playerName) {
+  try {
+    const entries = tableRaw?.data?.entries || [];
+    const entry = entries.find(e => e?.name === playerName);
+    if (!entry) return null;
+    const src = entry.damage || entry.healing || entry;
+    const abilities = [...(src.abilities || [])].sort((a, b) => (b.total || 0) - (a.total || 0));
+    const total = abilities.reduce((sum, a) => sum + (a.total || 0), 0) || src.total || 0;
+    return {
+      activeTime: typeof src.activeTime === 'number' ? src.activeTime : null,
+      abilities: abilities.slice(0, 4).map(a => ({
+        name: a.name,
+        pct: total ? Math.round(((a.total || 0) / total) * 100) : null,
+      })),
+    };
+  } catch {
+    return null;
+  }
+}
+
+// Attaches uptimePct/topAbilities to each grey-tier-survived entry, fetching
+// each unique fight's table only once and sharing it across everyone who
+// struggled on that same pull (several people often share an encounter).
+async function enrichWithFightBreakdown(env, code, list, dataType, fightDurationById) {
+  const uniqueFightIds = [...new Set(list.map(p => p.fightID).filter(id => id != null))];
+  const tables = new Map();
+  for (const fid of uniqueFightIds) {
+    tables.set(fid, await getFightActorTable(env, code, fid, dataType));
+  }
+  return list.map(p => {
+    const table = tables.get(p.fightID);
+    const breakdown = table ? extractActorBreakdown(table, p.name) : null;
+    const duration = fightDurationById.get(p.fightID);
+    const uptimePct = breakdown?.activeTime != null && duration
+      ? Math.round((breakdown.activeTime / duration) * 100)
+      : null;
+    return { ...p, uptimePct, topAbilities: breakdown?.abilities || [] };
+  });
 }
 
 function topByBest(list, n = 5) {
@@ -821,8 +892,17 @@ async function handleLatestLogsData(request, env) {
 
     const deaths = extractDeaths(details.deathsRaw);
     const fightNameById = new Map(details.fights.map(f => [f.id, f.name]));
-    const dpsSurvivedBad = classifyLowParses(details.rankingsRaw, 'dps', deaths);
-    const healersSurvivedBad = classifyLowParses(details.rankingsRaw, 'healers', deaths);
+    const fightDurationById = new Map(details.fights.map(f => [f.id, f.endTime - f.startTime]));
+    let dpsSurvivedBad = classifyLowParses(details.rankingsRaw, 'dps', deaths);
+    let healersSurvivedBad = classifyLowParses(details.rankingsRaw, 'healers', deaths);
+    // Best-effort enrichment (uptime %, top damage/healing sources per
+    // pull) - failures here just mean plainer entries, not a broken fetch.
+    try {
+      dpsSurvivedBad = await enrichWithFightBreakdown(env, report.code, dpsSurvivedBad, 'DamageDone', fightDurationById);
+      healersSurvivedBad = await enrichWithFightBreakdown(env, report.code, healersSurvivedBad, 'Healing', fightDurationById);
+    } catch (err) {
+      console.warn('Fight breakdown enrichment failed:', err.message);
+    }
     const interrupts = extractInterruptCounts(details.interruptsRaw).slice(0, 8);
 
     return corsResponse(JSON.stringify({
@@ -925,9 +1005,13 @@ const OPENAI_MODEL = 'gpt-5-mini';
 // Deaths themselves are still reported, just as brief raid-wide context
 // rather than individual coaching targets.
 function buildFalloutPrompt(report, dpsSurvivedBad, healersSurvivedBad, deaths, interrupts) {
-  const fmtBad = list => (list || []).map(p =>
-    `${p.name} (${p.class || '?'} ${p.spec || ''}) — ${Math.round(p.rankPercent)} percentile on ${p.encounter} (survived the full fight - this is a real performance issue, not a death)`
-  ).join('\n') || '(none — no non-death grey-tier parses this raid, nice)';
+  const fmtBad = list => (list || []).map(p => {
+    const uptimeNote = p.uptimePct != null ? `, ${p.uptimePct}% active time` : '';
+    const abilityNote = p.topAbilities?.length
+      ? ` | top sources: ${p.topAbilities.map(a => `${a.name} (${a.pct}%)`).join(', ')}`
+      : '';
+    return `${p.name} (${p.class || '?'} ${p.spec || ''}) — ${Math.round(p.rankPercent)} percentile on ${p.encounter}${uptimeNote} (survived the full fight - this is a real performance issue, not a death)${abilityNote}`;
+  }).join('\n') || '(none — no non-death grey-tier parses this raid, nice)';
 
   const deathsSummary = deaths?.count
     ? `${deaths.count} death${deaths.count === 1 ? '' : 's'} logged this raid` +
@@ -956,7 +1040,11 @@ ${interruptsSummary}
 
 Return three things:
 1. generalNotes - 2-3 sentences on any pattern worth flagging raid-wide (e.g. several people struggling on the same encounter suggests a mechanic/positioning issue, not an individual one). Mention deaths only briefly and factually if there's a real pattern (repeated deaths to the same ability = worth flagging); otherwise skip them or note the count in passing - do not lecture about "don't die."
-2. needsWork - up to 6-8 entries, one per person from the grey-tier-survived lists above. Each entry's "name" must be copied EXACTLY as given above (used elsewhere to attach their class icon and the encounter - don't restate their name, class, spec, or encounter inside "tip", just the coaching itself). "tip" is 1-2 sentences: a concrete class/spec-appropriate tip (rotation, positioning, gear, consumables, that encounter's mechanics) based on TBC Classic knowledge specifically (level 70, patch 2.4.3 - see the version constraint above), and briefly why their output was that low despite surviving the whole fight. If both lists above are empty, return an empty array - don't invent entries that aren't there.
+2. needsWork - up to 6-8 entries, one per person from the grey-tier-survived lists above. Each entry's "name" must be copied EXACTLY as given above (used elsewhere to attach their class icon and the encounter - don't restate their name, class, spec, or encounter inside "tip", just the coaching itself). "tip" is 1-2 sentences of TBC Classic-accurate (level 70, patch 2.4.3 - see the version constraint above) coaching, grounded in whatever hard numbers are given for that person, not generic advice:
+   - If "active time" is given, use it as your primary evidence: low active time (well under what's typical, ~85%+ for most specs when nothing's gone wrong) means real downtime - reference the actual number and reason about why (repositioning, movement off the boss, dying partway and this being their only surviving pull data, etc.) rather than just saying "stay in melee range."
+   - If "top sources" is given, look at what's actually dominating their damage/healing and reason from it: a spec's supposed-to-be-primary tool barely showing up in the top sources (or something like a filler ability accounting for a huge share of the total) points at a specific rotation gap - name it. If the top sources look normal for that spec/role and active time is fine too, say the numbers look reasonable and the shortfall was probably gear/consumables/execution rather than a rotation mistake - don't force a rotation complaint that the data doesn't support.
+   - Only fall back to generic advice (no specific ability/number cited) for someone with no active-time or ability data available - and say something different for each person, don't reuse the same boilerplate line across multiple entries.
+   If both lists above are empty, return an empty array - don't invent entries that aren't there.
 3. interruptsNote - 1-2 sentences: note who's carrying the interrupt load this raid. Only flag a specific class/spec as under-contributing if you're genuinely confident that spec has an interrupt and this encounter needed it - don't guess at specs you're unsure of.
 
 Be direct, no fluffy intro or conclusion - just the substance for each of the three fields.`;
