@@ -528,34 +528,47 @@ function matchAttendanceToRoster(participantNames, roster) {
 // the raid night in general", which is what actually makes a tip specific
 // and useful (that fight's mechanics are the reason for the low percentile,
 // not some abstract raid-wide average).
-function extractRoleParses(rankingsRaw, roleKey) {
+// deaths (from extractDeaths) let "worst" mean "worst SURVIVED pull"
+// specifically, not just the single lowest value ever - a death blotting
+// out someone's real worst-but-alive performance on a different encounter
+// was why this list and classifyLowParses (which correctly walks every
+// pull) could end up naming completely different people as needing work.
+// Falls back to the raw overall worst only if they never survived a
+// single logged pull this raid (rare).
+function extractRoleParses(rankingsRaw, roleKey, deaths = []) {
   try {
+    const deathSet = new Set(deaths.map(d => `${d.name}|${d.fightID}`));
     const fights = rankingsRaw?.data || [];
     const byPlayer = new Map();
     for (const fight of fights) {
       const chars = fight?.roles?.[roleKey]?.characters || [];
       const encounter = fight?.encounter?.name || 'Unknown';
+      const fightID = fight?.fightID;
       for (const c of chars) {
         if (!c?.name || typeof c.rankPercent !== 'number') continue;
         if (!byPlayer.has(c.name)) {
           byPlayer.set(c.name, { name: c.name, class: c.class, spec: c.spec, results: [] });
         }
-        // fightID travels with each result so best/worst can be cross-
-        // referenced against the deaths table later (same fight = same pull).
         // totalParses is the size of the comparison pool WCL ranked this
         // percentile against - carried through so a rarely-logged spec/role
         // combo (a handful of parses) can be flagged as statistically
         // unreliable instead of presented at face value (see WCL_SMALL_SAMPLE).
-        byPlayer.get(c.name).results.push({ rankPercent: c.rankPercent, encounter, fightID: fight?.fightID, totalParses: c.totalParses });
+        byPlayer.get(c.name).results.push({
+          rankPercent: c.rankPercent, encounter, fightID, totalParses: c.totalParses,
+          survived: !deathSet.has(`${c.name}|${fightID}`),
+        });
       }
     }
-    return [...byPlayer.values()].map(p => ({
-      name: p.name,
-      class: p.class,
-      spec: p.spec,
-      best: p.results.reduce((a, b) => (b.rankPercent > a.rankPercent ? b : a)),
-      worst: p.results.reduce((a, b) => (b.rankPercent < a.rankPercent ? b : a)),
-    }));
+    return [...byPlayer.values()].map(p => {
+      const survived = p.results.filter(r => r.survived);
+      return {
+        name: p.name,
+        class: p.class,
+        spec: p.spec,
+        best: p.results.reduce((a, b) => (b.rankPercent > a.rankPercent ? b : a)),
+        worst: (survived.length ? survived : p.results).reduce((a, b) => (b.rankPercent < a.rankPercent ? b : a)),
+      };
+    });
   } catch {
     return [];
   }
@@ -774,28 +787,34 @@ function formatParseLines(list, which) {
     .join('\n');
 }
 
-// Top N (by best pull) and bottom N (by worst pull) in one field, since
-// embeds have limited field slots - "who's crushing it" and "who needs
-// help" are both useful in one glance. deathSet (built from the deaths
-// table, "name|fightID" keys) pulls anyone whose worst pull was actually a
-// death out of "Needs work" and into its own short grouped line instead -
-// mixing "died" in with genuine low-parse performance was just noise, and
-// "don't die" isn't the same kind of feedback as "your rotation needs work".
-function formatTopAndBottom(list, deathSet, n = 5) {
+// All deaths (not just whatever the single tracked "worst" pull happens to
+// be) for anyone who appears in this role at all - so someone who died on
+// one fight but also had a separate bad-but-survived pull elsewhere shows
+// correctly in BOTH the Died line and Needs Work, instead of the death
+// silently eating their one "worst" slot.
+function deathsForRole(deaths, roleList, fightNameById) {
+  const names = new Set(roleList.map(p => p.name));
+  return deaths
+    .filter(d => names.has(d.name))
+    .map(d => ({ name: d.name, encounter: fightNameById.get(d.fightID) || 'Unknown' }));
+}
+
+// Top N (by best pull) and bottom N (by worst-SURVIVED pull, purple/75+
+// never counts) in one field, since embeds have limited field slots -
+// "who's crushing it" and "who needs help" are both useful in one glance.
+// Fewer top slots than needs-work slots on purpose: the coaching content
+// (fallout report) is the main event, the rankings are just the receipts.
+function formatTopAndBottom(list, died, topN = 3, bottomN = 7) {
   if (!list.length) return 'No parse data available.';
-  const top = topByBest(list, n);
+  const top = topByBest(list, topN);
   let out = formatParseLines(top, 'best');
 
-  const worstSorted = [...list].sort((a, b) => a.worst.rankPercent - b.worst.rankPercent);
-  const died = worstSorted.filter(p => deathSet.has(`${p.name}|${p.worst.fightID}`));
-  const alive = worstSorted.filter(p => !deathSet.has(`${p.name}|${p.worst.fightID}`));
-  const bottom = alive.slice(0, n);
-
+  const bottom = bottomByWorst(list, bottomN);
   if (bottom.length) {
     out += `\n\n*Needs work:*\n` + formatParseLines(bottom, 'worst');
   }
   if (died.length) {
-    const shown = died.slice(0, 8).map(p => `${p.name} _(${p.worst.encounter})_`).join(', ');
+    const shown = died.slice(0, 8).map(d => `${d.name} _(${d.encounter})_`).join(', ');
     out += `\n\n☠️ *Died:* ${shown}${died.length > 8 ? ` +${died.length - 8} more` : ''}`;
   }
   return out;
@@ -804,9 +823,10 @@ function formatTopAndBottom(list, deathSet, n = 5) {
 function buildLogSummaryEmbed(report, details, roster) {
   const participants = extractParticipantNames(details.playerDetailsRaw);
   const attendance = matchAttendanceToRoster(participants, roster);
-  const dps = extractRoleParses(details.rankingsRaw, 'dps');
-  const healers = extractRoleParses(details.rankingsRaw, 'healers');
-  const deathSet = new Set(extractDeaths(details.deathsRaw).map(d => `${d.name}|${d.fightID}`));
+  const deaths = extractDeaths(details.deathsRaw);
+  const dps = extractRoleParses(details.rankingsRaw, 'dps', deaths);
+  const healers = extractRoleParses(details.rankingsRaw, 'healers', deaths);
+  const fightNameById = new Map(details.fights.map(f => [f.id, f.name]));
 
   return {
     title: `📊 ${report.title || 'Raid Log Summary'}`,
@@ -816,8 +836,8 @@ function buildLogSummaryEmbed(report, details, roster) {
       // Stacked full-width instead of side-by-side inline - two inline
       // columns squeeze each into ~half the embed's (fixed, Discord-
       // controlled) width, forcing mid-entry wraps that look cramped.
-      { name: '⚔️ DPS', value: formatTopAndBottom(dps, deathSet), inline: false },
-      { name: '✚ Healers', value: formatTopAndBottom(healers, deathSet), inline: false },
+      { name: '⚔️ DPS', value: formatTopAndBottom(dps, deathsForRole(deaths, dps, fightNameById)), inline: false },
+      { name: '✚ Healers', value: formatTopAndBottom(healers, deathsForRole(deaths, healers, fightNameById)), inline: false },
       { name: '👥 Attendance', value: attendance.length ? attendance.join(', ') : '—', inline: false },
     ],
     color: 0xC9A227,
@@ -916,10 +936,10 @@ async function handleLatestLogsData(request, env) {
     }
 
     const participants = extractParticipantNames(details.playerDetailsRaw);
-    const dps = extractRoleParses(details.rankingsRaw, 'dps');
-    const healers = extractRoleParses(details.rankingsRaw, 'healers');
-
     const deaths = extractDeaths(details.deathsRaw);
+    const dps = extractRoleParses(details.rankingsRaw, 'dps', deaths);
+    const healers = extractRoleParses(details.rankingsRaw, 'healers', deaths);
+
     const fightNameById = new Map(details.fights.map(f => [f.id, f.name]));
     const fightDurationById = new Map(details.fights.map(f => [f.id, f.endTime - f.startTime]));
     let dpsSurvivedBad = classifyLowParses(details.rankingsRaw, 'dps', deaths);
@@ -1116,23 +1136,39 @@ const FALLOUT_REPORT_SCHEMA = {
 // fields - icon + name + encounter for each "Needs Work" entry come from
 // our own dps/healersSurvivedBad data (ground truth), not the AI restating
 // them, and a blank line between entries keeps it from reading as one wall
-// of text.
-function buildFalloutMarkdown(parsed, dpsSurvivedBad, healersSurvivedBad) {
+// of text. Split into two separate posts (DPS, then Healers + interrupts)
+// per explicit request - keeps each message shorter (helps stay under
+// Discord's per-embed character limit too) and easier to actually read.
+function buildFalloutMarkdowns(parsed, dpsSurvivedBad, healersSurvivedBad) {
   const known = new Map();
   for (const p of [...(dpsSurvivedBad || []), ...(healersSurvivedBad || [])]) {
     known.set(p.name, p);
   }
+  const dpsNames = new Set((dpsSurvivedBad || []).map(p => p.name));
+  const healerNames = new Set((healersSurvivedBad || []).map(p => p.name));
 
-  const needsWorkText = (parsed.needsWork || []).length
-    ? parsed.needsWork.map(item => {
-        const p = known.get(item.name);
-        const icon = p ? getWCLSpecEmoji(p.class, p.spec) : '';
-        const encounter = p ? ` — _${p.encounter}_` : '';
-        return `${icon ? icon + ' ' : ''}**${item.name}**${encounter}\n${item.tip}`;
-      }).join('\n\n')
-    : '_Nobody survived-and-grey this raid — nice._';
+  const renderEntry = item => {
+    const p = known.get(item.name);
+    const icon = p ? getWCLSpecEmoji(p.class, p.spec) : '';
+    const encounter = p ? ` — _${p.encounter}_` : '';
+    return `${icon ? icon + ' ' : ''}**${item.name}**${encounter}\n${item.tip}`;
+  };
 
-  return `**General Notes**\n${parsed.generalNotes}\n\n**Needs Work**\n${needsWorkText}\n\n**Interrupts**\n${parsed.interruptsNote}`;
+  const needsWork = parsed.needsWork || [];
+  // A name could in principle not match either list if the model didn't
+  // copy it exactly - dropped silently rather than guessed at, same as
+  // the icon-lookup fallback below.
+  const dpsEntries = needsWork.filter(item => dpsNames.has(item.name));
+  const healerEntries = needsWork.filter(item => healerNames.has(item.name));
+
+  const dpsText = `**General Notes**\n${parsed.generalNotes}\n\n**DPS Needs Work**\n${
+    dpsEntries.length ? dpsEntries.map(renderEntry).join('\n\n') : '_Nobody survived-and-grey on DPS this raid — nice._'
+  }`;
+  const healersText = `**Healers Needs Work**\n${
+    healerEntries.length ? healerEntries.map(renderEntry).join('\n\n') : '_Nobody survived-and-grey on healing this raid — nice._'
+  }\n\n**Interrupts**\n${parsed.interruptsNote}`;
+
+  return { dpsText, healersText };
 }
 
 // The Responses API's output_text is an SDK convenience property, not
@@ -1188,9 +1224,9 @@ async function handleFalloutReport(request, env) {
     const raw = extractOpenAIText(data);
     if (!raw) throw new Error('OpenAI returned no text output.');
     const parsed = JSON.parse(raw); // structured output - guaranteed valid JSON matching FALLOUT_REPORT_SCHEMA
-    const text = buildFalloutMarkdown(parsed, dpsSurvivedBad, healersSurvivedBad);
+    const { dpsText, healersText } = buildFalloutMarkdowns(parsed, dpsSurvivedBad, healersSurvivedBad);
 
-    return corsResponse(JSON.stringify({ text }), 200);
+    return corsResponse(JSON.stringify({ dpsText, healersText }), 200);
   } catch (err) {
     return corsResponse(JSON.stringify({ error: err.message }), 500);
   }

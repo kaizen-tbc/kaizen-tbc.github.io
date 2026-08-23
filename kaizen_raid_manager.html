@@ -2909,8 +2909,15 @@ function parseColorHex(pct) {
 
 // Each entry carries best/worst {rankPercent, encounter} rather than one
 // blended percentile — a "top" list shows their best pull, a "bottom" list
-// shows their worst, each tagged with which boss it actually happened on.
-function topFive(list) { return [...list].sort((a, b) => b.best.rankPercent - a.best.rankPercent).slice(0, 5); }
+// shows their worst-SURVIVED pull (the server already excludes deaths when
+// picking "worst" - see extractRoleParses), each tagged with which boss it
+// actually happened on. Fewer top slots than needs-work slots on purpose:
+// the coaching content is the main event, this is just the receipts.
+function topThree(list) { return [...list].sort((a, b) => b.best.rankPercent - a.best.rankPercent).slice(0, 3); }
+// Purple tier (75+) is never "needs work" regardless of relative rank -
+// without that floor, a small roster can push someone's perfectly fine
+// worst pull (even a 99) into this list just for being relatively last.
+function bottomSeven(list) { return [...list].filter(p => p.worst.rankPercent < 75).sort((a, b) => a.worst.rankPercent - b.worst.rankPercent).slice(0, 7); }
 
 // Below this many logged parses, WCL's percentile is compared against a
 // tiny/weird sample - usually a spec rarely logged in that role (an
@@ -2918,12 +2925,13 @@ function topFive(list) { return [...list].sort((a, b) => b.best.rankPercent - a.
 // Flagged in the UI rather than trusted at face value.
 const WCL_SMALL_SAMPLE_THRESHOLD = 20;
 
-// deathSet: Set of "name|fightID" strings (built from data.deaths.pairs) -
-// anyone whose worst pull was actually a death gets pulled out of "Needs
-// Work" into its own short "Died" line instead. Mixing "died" in with
-// genuine low-parse performance was just noise, and "don't die" isn't
-// useful coaching the way a real rotation/gear callout is.
-function renderParseList(list, deathSet) {
+// died: pre-built [{name, encounter}] for every death by someone in this
+// role this raid (not just whoever's single tracked "worst" happens to
+// match a death - that missed people who died on one fight but ALSO had a
+// separate bad-but-survived pull elsewhere). Mixing "died" in with genuine
+// low-parse performance was just noise, and "don't die" isn't the same
+// kind of feedback as "your rotation needs work".
+function renderParseList(list, died) {
   if (!list.length) return `<div style="color:var(--text-dim);font-size:12px;font-style:italic;">No parse data available.</div>`;
   const row = (p, which) => (i) => {
     const r = p[which];
@@ -2935,19 +2943,12 @@ function renderParseList(list, deathSet) {
       <span style="font-family:'IBM Plex Mono',monospace;font-weight:700;color:${parseColorHex(r.rankPercent)};">${Math.round(r.rankPercent)}</span>
     </div>`;
   };
-  const top = topFive(list);
-  // Needs Work must have an actual floor - without one, on a small roster
-  // the "bottom" by relative rank can include someone whose worst pull was
-  // still a 99 (e.g. a healer who only logged once). Purple tier (75+) is
-  // never "needs work" regardless of how it ranks relative to the group.
-  const worstSorted = [...list].filter(p => p.worst.rankPercent < 75).sort((a, b) => a.worst.rankPercent - b.worst.rankPercent);
-  const died = worstSorted.filter(p => deathSet.has(`${p.name}|${p.worst.fightID}`));
-  const alive = worstSorted.filter(p => !deathSet.has(`${p.name}|${p.worst.fightID}`));
-  const bottom = alive.slice(0, 5);
+  const top = topThree(list);
+  const bottom = bottomSeven(list);
   return `
     ${top.map((p, i) => row(p, 'best')(i)).join('')}
     ${bottom.length ? `<div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-dim);margin:10px 0 4px;">Needs Work</div>${bottom.map((p, i) => row(p, 'worst')(i)).join('')}` : ''}
-    ${died.length ? `<div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-dim);margin:10px 0 4px;">☠ Died (${died.length})</div><div style="font-size:12px;color:var(--text-dim);">${died.map(p => `${p.name} <span style="opacity:0.7;">(${p.worst.encounter})</span>`).join(', ')}</div>` : ''}
+    ${died.length ? `<div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-dim);margin:10px 0 4px;">☠ Died (${died.length})</div><div style="font-size:12px;color:var(--text-dim);">${died.map(d => `${d.name} <span style="opacity:0.7;">(${d.encounter})</span>`).join(', ')}</div>` : ''}
   `;
 }
 
@@ -2955,7 +2956,16 @@ function renderLogPreview(data) {
   const container = document.getElementById('guild-logs-content');
   const report = data.report || {};
   const rosterByName = new Map(roster.map(p => [p.name.toLowerCase(), p]));
-  const deathSet = new Set((data.deaths?.pairs || []).map(d => `${d.name}|${d.fightID}`));
+  // All deaths (not just whoever's single tracked "worst" pull happens to
+  // coincide with) for people in a given role - resolved to encounter
+  // names via data.fights, then filtered to that role's names.
+  const fightNameById = new Map((data.fights || []).map(f => [f.id, f.name]));
+  const diedForRole = list => {
+    const names = new Set(list.map(p => p.name));
+    return (data.deaths?.pairs || [])
+      .filter(d => names.has(d.name))
+      .map(d => ({ name: d.name, encounter: fightNameById.get(d.fightID) || 'Unknown' }));
+  };
 
   const matched = [];
   const unmatchedNames = [];
@@ -2991,11 +3001,11 @@ function renderLogPreview(data) {
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
       <div class="card" style="padding:16px 18px;">
         <div class="section-title" style="font-size:14px;margin-bottom:8px;">⚔️ DPS</div>
-        ${renderParseList(data.dps || [], deathSet)}
+        ${renderParseList(data.dps || [], diedForRole(data.dps || []))}
       </div>
       <div class="card" style="padding:16px 18px;">
         <div class="section-title" style="font-size:14px;margin-bottom:8px;">✚ Healers</div>
-        ${renderParseList(data.healers || [], deathSet)}
+        ${renderParseList(data.healers || [], diedForRole(data.healers || []))}
       </div>
     </div>
 
@@ -3034,18 +3044,24 @@ async function generateFalloutReport() {
     });
     const data = await res.json();
     if (!res.ok || data.error) throw new Error(data.error || `Worker returned ${res.status}`);
-    renderFalloutReportPreview(data.text);
+    renderFalloutReportPreview(data.dpsText, data.healersText);
   } catch (err) {
     area.innerHTML = `<div class="notice notice-info" style="color:var(--red-bright);border-color:var(--red);">Couldn't generate fallout report: ${err.message} <span style="opacity:0.7;">(you can still post just the rankings below)</span></div>`;
   }
 }
 
-function renderFalloutReportPreview(text) {
+// Two separate boxes/posts (DPS, then Healers + interrupts) - keeps each
+// message shorter and easier to actually read than one combined wall.
+function renderFalloutReportPreview(dpsText, healersText) {
   const area = document.getElementById('fallout-report-area');
   area.innerHTML = `
     <div class="card" style="padding:16px 18px;margin-bottom:16px;">
-      <div class="section-title" style="font-size:14px;margin-bottom:8px;">✨ Fallout Report <span style="font-weight:400;font-size:11px;color:var(--text-dim);">— review/edit before posting, this is AI-generated. Posts together with the rankings below.</span></div>
-      <textarea id="fallout-report-text" rows="10" style="width:100%;box-sizing:border-box;background:var(--bg-deep);border:1px solid var(--border);color:var(--text-mid);border-radius:4px;padding:10px;font-size:13px;font-family:inherit;">${text}</textarea>
+      <div class="section-title" style="font-size:14px;margin-bottom:8px;">✨ Fallout Report — DPS <span style="font-weight:400;font-size:11px;color:var(--text-dim);">— review/edit before posting, this is AI-generated. Posts as its own message.</span></div>
+      <textarea id="fallout-report-dps-text" rows="9" style="width:100%;box-sizing:border-box;background:var(--bg-deep);border:1px solid var(--border);color:var(--text-mid);border-radius:4px;padding:10px;font-size:13px;font-family:inherit;">${dpsText}</textarea>
+    </div>
+    <div class="card" style="padding:16px 18px;margin-bottom:16px;">
+      <div class="section-title" style="font-size:14px;margin-bottom:8px;">✨ Fallout Report — Healers <span style="font-weight:400;font-size:11px;color:var(--text-dim);">— posts right after the DPS message above.</span></div>
+      <textarea id="fallout-report-healers-text" rows="9" style="width:100%;box-sizing:border-box;background:var(--bg-deep);border:1px solid var(--border);color:var(--text-mid);border-radius:4px;padding:10px;font-size:13px;font-family:inherit;">${healersText}</textarea>
     </div>
   `;
 }
@@ -3104,28 +3120,46 @@ async function postFullReportToDiscord() {
     if (!rankRes.ok || rankData.error) throw new Error(rankData.error || `Rankings post failed: ${rankRes.status}`);
 
     // Wait for generation to actually settle (success or failure) before
-    // checking the textarea - otherwise clicking Post while it's still
-    // in flight reads an empty box and silently skips the fallout report
+    // checking the textareas - otherwise clicking Post while it's still
+    // in flight reads empty boxes and silently skips the fallout report
     // with no warning at all.
     if (_falloutReportPromise) {
       showToast('✨ Waiting for fallout report to finish generating...');
       await _falloutReportPromise.catch(() => {});
     }
-    const falloutText = document.getElementById('fallout-report-text')?.value.trim();
-    if (falloutText) {
-      showToast('✨ Posting fallout report...');
-      const foRes = await fetch(`${RH_WORKER}/post-text-message`, {
+    const dpsText = document.getElementById('fallout-report-dps-text')?.value.trim();
+    const healersText = document.getElementById('fallout-report-healers-text')?.value.trim();
+    const raidTitle = _lastLogFetch?.report?.title || '';
+
+    // Two separate posts (DPS, then Healers + interrupts) - each stays
+    // well clear of Discord's per-embed character limit and reads easier
+    // than one long combined message.
+    const postFallout = async (title, text) => {
+      const res = await fetch(`${RH_WORKER}/post-text-message`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          channelId: logsChannelId,
-          title: `✨ Fallout Report — ${_lastLogFetch?.report?.title || ''}`,
-          text: falloutText,
-        }),
+        body: JSON.stringify({ channelId: logsChannelId, title, text }),
       });
-      const foData = await foRes.json();
-      if (!foRes.ok || foData.error) throw new Error(foData.error || `Fallout report post failed: ${foRes.status}`);
+      const data = await res.json();
+      if (!res.ok || data.error) throw new Error(data.error || `Post failed: ${res.status}`);
+    };
+
+    let posted = 0;
+    if (dpsText) {
+      showToast('✨ Posting DPS fallout report...');
+      await postFallout(`✨ Fallout Report — DPS — ${raidTitle}`, dpsText);
+      posted++;
+    }
+    if (healersText) {
+      showToast('✨ Posting Healers fallout report...');
+      await postFallout(`✨ Fallout Report — Healers — ${raidTitle}`, healersText);
+      posted++;
+    }
+
+    if (posted === 2) {
       showToast(`✓ Report published to ${logsChannelId}!`);
+    } else if (posted === 1) {
+      showToast(`⚠ Rankings posted, but only one fallout report post went out (the other box was empty).`, true);
     } else {
       // Explicit warning instead of a silent skip - rankings still posted
       // fine, but this needs to be visible, not just absent.
