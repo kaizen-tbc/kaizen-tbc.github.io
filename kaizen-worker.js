@@ -733,6 +733,13 @@ function parseColorEmoji(pct) {
 // which: 'best' or 'worst' — picks the matching {rankPercent, encounter} off
 // each entry, so a "top" list shows their best pull and a "bottom" list
 // shows their worst, each correctly tagged with which boss it happened on.
+// Discord's plain markdown has no inline text-color, so the parse-tier
+// "dot" emoji is the only color signal available - but Discord's font
+// isn't monospace, so nothing here lines up into real columns no matter
+// what order it's in. Icon/dot/number go right after the rank number
+// (fixed content, roughly constant width) and the variable-length name
+// goes last, so at least the dot doesn't visibly jump left/right based on
+// how long each person's name happens to be.
 function formatParseLines(list, which) {
   if (!list.length) return '—';
   return list
@@ -740,7 +747,7 @@ function formatParseLines(list, which) {
       const r = p[which];
       const icon = getWCLSpecEmoji(p.class, p.spec);
       const pct = Math.round(r.rankPercent);
-      return `**${i + 1}.** ${icon ? icon + ' ' : ''}${p.name} — ${parseColorEmoji(r.rankPercent)} **${pct}** _(${r.encounter})_`;
+      return `**${i + 1}.** ${icon ? icon + ' ' : ''}${parseColorEmoji(r.rankPercent)} **${pct}** — ${p.name} _(${r.encounter})_`;
     })
     .join('\n');
 }
