@@ -903,9 +903,12 @@ async function handleDirectLogPost(request, env) {
 }
 
 // ── AI fallout report (OpenAI, not Anthropic — per explicit choice) ─────
-// Cheapest current model as of this writing; swap here if quality needs
-// bumping up to gpt-5-mini.
-const OPENAI_MODEL = 'gpt-5-nano';
+// Bumped from gpt-5-nano ($0.05/$0.40 per 1M) to gpt-5-mini ($0.25/$2.00) -
+// nano was blending in mechanics from other expansions (Lava Burst,
+// Insanity) despite an explicit TBC Classic version-lock in the prompt.
+// For a report this short (a few hundred tokens in/out), the price step up
+// is cents, not dollars - worth it for coaching content people act on.
+const OPENAI_MODEL = 'gpt-5-mini';
 
 // A 0% parse from dying tells you nothing you don't already know ("don't
 // die"). The real red flag is a grey-tier parse (WCL's own 0-24 tier) from
