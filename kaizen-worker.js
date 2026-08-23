@@ -1217,35 +1217,47 @@ function extractOpenAIText(data) {
   }
 }
 
-async function handleFalloutReport(request, env) {
-  try {
-    if (!env.OPENAI_API_KEY) throw new Error('OpenAI API key not configured.');
-    const { report, dpsSurvivedBad, healersSurvivedBad, deaths, interrupts } = await request.json();
-
+// OpenAI's API occasionally 5xx's transiently (server overload) - not
+// something wrong with the request, and retrying once or twice with a
+// short backoff resolves it far more often than not. 4xx (bad request,
+// auth, etc.) is never retried since trying again won't fix it.
+async function callOpenAIWithRetry(body, env, maxAttempts = 3) {
+  let lastErr;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     const res = await fetch('https://api.openai.com/v1/responses', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${env.OPENAI_API_KEY}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        model: OPENAI_MODEL,
-        input: buildFalloutPrompt(report, dpsSurvivedBad, healersSurvivedBad, deaths, interrupts),
-        text: {
-          format: {
-            type: 'json_schema',
-            name: 'fallout_report',
-            strict: true,
-            schema: FALLOUT_REPORT_SCHEMA,
-          },
-        },
-      }),
+      body: JSON.stringify(body),
     });
+    if (res.ok) return res;
+    const err = await res.json().catch(() => ({}));
+    lastErr = new Error(err.error?.message || `OpenAI API error ${res.status}`);
+    if (res.status < 500 || attempt === maxAttempts) throw lastErr;
+    await new Promise(r => setTimeout(r, 500 * attempt)); // 500ms, then 1000ms
+  }
+  throw lastErr;
+}
 
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error?.message || `OpenAI API error ${res.status}`);
-    }
+async function handleFalloutReport(request, env) {
+  try {
+    if (!env.OPENAI_API_KEY) throw new Error('OpenAI API key not configured.');
+    const { report, dpsSurvivedBad, healersSurvivedBad, deaths, interrupts } = await request.json();
+
+    const res = await callOpenAIWithRetry({
+      model: OPENAI_MODEL,
+      input: buildFalloutPrompt(report, dpsSurvivedBad, healersSurvivedBad, deaths, interrupts),
+      text: {
+        format: {
+          type: 'json_schema',
+          name: 'fallout_report',
+          strict: true,
+          schema: FALLOUT_REPORT_SCHEMA,
+        },
+      },
+    }, env);
 
     const data = await res.json();
     const raw = extractOpenAIText(data);
