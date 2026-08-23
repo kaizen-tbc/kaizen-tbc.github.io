@@ -2816,8 +2816,92 @@ function renderLogPreview(data) {
       <div>${attendanceHtml}</div>
     </div>
 
-    <button class="btn btn-gold" onclick="confirmPostLogSummary()">↑ Post to Discord</button>
+    <div style="display:flex;gap:8px;margin-bottom:16px;">
+      <button class="btn btn-gold" onclick="confirmPostLogSummary()">↑ Post Rankings to Discord</button>
+      <button class="btn" onclick="generateFalloutReport()">✨ Generate Fallout Report</button>
+    </div>
+
+    <div id="fallout-report-area"></div>
   `;
+}
+
+// Bottom-5-per-role, matching exactly what renderParseList already shows
+// as "Needs Work" in the tab.
+function bottomFive(list) {
+  const bottomPool = list.slice(5);
+  return (bottomPool.length ? bottomPool : list).slice(-5).reverse();
+}
+
+async function generateFalloutReport() {
+  if (!_lastLogFetch) { showToast('Fetch a log first.', true); return; }
+  const area = document.getElementById('fallout-report-area');
+  area.innerHTML = `<div style="padding:16px;text-align:center;color:var(--text-dim);">Generating report...</div>`;
+  try {
+    const dpsAll = _lastLogFetch.dps || [];
+    const healersAll = _lastLogFetch.healers || [];
+    const res = await fetch(`${RH_WORKER}/logs/fallout-report`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        report: _lastLogFetch.report,
+        dpsTop: dpsAll.slice(0, 5), dpsBottom: bottomFive(dpsAll),
+        healersTop: healersAll.slice(0, 5), healersBottom: bottomFive(healersAll),
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok || data.error) throw new Error(data.error || `Worker returned ${res.status}`);
+    renderFalloutReportPreview(data.text);
+  } catch (err) {
+    area.innerHTML = `<div class="notice notice-info" style="color:var(--red-bright);border-color:var(--red);">Couldn't generate: ${err.message}</div>`;
+  }
+}
+
+function renderFalloutReportPreview(text) {
+  const area = document.getElementById('fallout-report-area');
+  area.innerHTML = `
+    <div class="card" style="padding:16px 18px;">
+      <div class="section-title" style="font-size:14px;margin-bottom:8px;">✨ Fallout Report <span style="font-weight:400;font-size:11px;color:var(--text-dim);">— review/edit before posting, this is AI-generated</span></div>
+      <textarea id="fallout-report-text" rows="10" style="width:100%;box-sizing:border-box;background:var(--bg-deep);border:1px solid var(--border);color:var(--text-mid);border-radius:4px;padding:10px;font-size:13px;font-family:inherit;">${text}</textarea>
+      <div style="margin-top:10px;">
+        <button class="btn btn-gold" onclick="confirmPostFalloutReport()">↑ Post Fallout Report to Discord</button>
+      </div>
+    </div>
+  `;
+}
+
+function confirmPostFalloutReport() {
+  const text = document.getElementById('fallout-report-text')?.value.trim();
+  if (!text) { showToast('Nothing to post.', true); return; }
+  if (!logsChannelId) { showToast('Enter a Discord channel ID first.', true); return; }
+
+  document.getElementById('confirm-text').textContent = `Post this fallout report to channel ${logsChannelId}?`;
+  const existingCheck = document.getElementById('confirm-notify-wrap');
+  if (existingCheck) existingCheck.remove();
+  document.getElementById('confirm-ok').onclick = () => {
+    closeConfirm();
+    postFalloutReportToDiscord(text);
+  };
+  document.getElementById('confirm-overlay').classList.add('open');
+}
+
+async function postFalloutReportToDiscord(text) {
+  showToast('↑ Posting fallout report to Discord...');
+  try {
+    const res = await fetch(`${RH_WORKER}/post-text-message`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        channelId: logsChannelId,
+        title: `✨ Fallout Report — ${_lastLogFetch?.report?.title || ''}`,
+        text,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok || data.error) throw new Error(data.error || `Worker returned ${res.status}`);
+    showToast('✓ Fallout report posted!');
+  } catch (err) {
+    showToast(`✗ Failed to post: ${err.message}`, true);
+  }
 }
 
 function confirmPostLogSummary() {

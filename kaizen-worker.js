@@ -43,6 +43,18 @@ export default {
       return handleDirectLogPost(request, env);
     }
 
+    // ── AI-generated "fallout report" (top + bottom parses, coaching tone)
+    // ── /logs/fallout-report
+    if (url.pathname === '/logs/fallout-report' && request.method === 'POST') {
+      return handleFalloutReport(request, env);
+    }
+
+    // ── Post arbitrary pre-generated text (the fallout report) as its own
+    // message, separate from the rankings post ── /post-text-message
+    if (url.pathname === '/post-text-message' && request.method === 'POST') {
+      return handlePostTextMessage(request, env);
+    }
+
     // ── Discord interactions ── /discord
     if (url.pathname === '/discord' && request.method === 'POST') {
       return handleDiscord(request, env, ctx);
@@ -662,6 +674,122 @@ async function handleDirectLogPost(request, env) {
     }
 
     return corsResponse(JSON.stringify({ ok: true, report: { title: report.title, code: report.code } }), 200);
+  } catch (err) {
+    return corsResponse(JSON.stringify({ error: err.message }), 500);
+  }
+}
+
+// ── AI fallout report (OpenAI, not Anthropic — per explicit choice) ─────
+// Cheapest current model as of this writing; swap here if quality needs
+// bumping up to gpt-5-mini.
+const OPENAI_MODEL = 'gpt-5-nano';
+
+function buildFalloutPrompt(report, dpsTop, dpsBottom, healersTop, healersBottom) {
+  const fmt = list => (list || []).map(p => `${p.name} (${p.class || '?'} ${p.spec || ''}) — ${Math.round(p.rankPercent)} percentile`).join('\n') || '(none)';
+  return `You are writing a short Discord message for a World of Warcraft: TBC Classic raid guild, summarizing performance from last night's raid ("${report?.title || 'Raid'}"). Tone: constructive and factual, never confrontational or shaming - the goal is to spark conversation, not call anyone out harshly.
+
+These are the EXACT people to cover - the same top/bottom 5 already shown in the raid tool's UI, so don't substitute anyone else in or out:
+
+Top 5 DPS:
+${fmt(dpsTop)}
+
+Bottom 5 DPS:
+${fmt(dpsBottom)}
+
+Top 5 Healers:
+${fmt(healersTop)}
+
+Bottom 5 Healers:
+${fmt(healersBottom)}
+
+Write a SHORT report (under 150 words total, two sections):
+1. "**Top Performers**" - one short line each recognizing the top DPS and top healers listed above (pick the strongest 2-4 across both lists if all 10 would be too long).
+2. "**Room to Grow**" - one short line each for 2-4 of the bottom DPS/healers listed above, with ONE concrete, class/spec-appropriate tip based on general TBC Classic gameplay knowledge (rotation, positioning, gear, consumables, etc.) - a helpful pointer, not personal criticism.
+
+Use Discord markdown. Be concise - no long paragraphs, no fluffy intro or conclusion. Just the two sections.`;
+}
+
+// The Responses API's output_text is an SDK convenience property, not
+// guaranteed present in a raw HTTP JSON response - the real text lives in
+// output[].content[].text, and output[] can contain non-text items
+// (reasoning, tool calls) that don't have that shape at all.
+function extractOpenAIText(data) {
+  if (typeof data?.output_text === 'string' && data.output_text) return data.output_text;
+  try {
+    const parts = [];
+    for (const item of data?.output || []) {
+      for (const c of item?.content || []) {
+        if (typeof c?.text === 'string') parts.push(c.text);
+      }
+    }
+    return parts.join('\n').trim();
+  } catch {
+    return '';
+  }
+}
+
+async function handleFalloutReport(request, env) {
+  try {
+    if (!env.OPENAI_API_KEY) throw new Error('OpenAI API key not configured.');
+    const { report, dpsTop, dpsBottom, healersTop, healersBottom } = await request.json();
+
+    const res = await fetch('https://api.openai.com/v1/responses', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${env.OPENAI_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: OPENAI_MODEL,
+        input: buildFalloutPrompt(report, dpsTop, dpsBottom, healersTop, healersBottom),
+      }),
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error?.message || `OpenAI API error ${res.status}`);
+    }
+
+    const data = await res.json();
+    const text = extractOpenAIText(data);
+    if (!text) throw new Error('OpenAI returned no text output.');
+
+    return corsResponse(JSON.stringify({ text }), 200);
+  } catch (err) {
+    return corsResponse(JSON.stringify({ error: err.message }), 500);
+  }
+}
+
+// Posts arbitrary pre-generated text (the fallout report) as its own
+// message - separate from the rankings post, same bot-token pattern.
+async function handlePostTextMessage(request, env) {
+  try {
+    const { channelId, title, text } = await request.json();
+    if (!channelId) throw new Error('No channel ID provided.');
+    if (!text) throw new Error('No text to post.');
+
+    const embed = {
+      title: title || undefined,
+      description: text,
+      color: 0xC9A227,
+      footer: { text: 'Kaizen Raid Manager' },
+      timestamp: new Date().toISOString(),
+    };
+
+    const postRes = await fetch(`${DISCORD_API}/channels/${channelId}/messages`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bot ${env.DISCORD_BOT_TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ embeds: [embed] }),
+    });
+    if (!postRes.ok) {
+      const err = await postRes.json();
+      throw new Error(err.message || `Discord API error ${postRes.status}`);
+    }
+
+    return corsResponse(JSON.stringify({ ok: true }), 200);
   } catch (err) {
     return corsResponse(JSON.stringify({ error: err.message }), 500);
   }
