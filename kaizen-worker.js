@@ -427,12 +427,17 @@ async function getReportFightsAndStats(env, code) {
   const allFightIds = fights.map(f => f.id);
   const killFightIds = killFights.map(f => f.id);
 
+  // deathsTable/interruptsTable pulled across ALL fights (not just kills) -
+  // wipes matter just as much as kills for "what are we dying to", and
+  // interrupt performance is relevant on trash/wipes too.
   const statsData = await wclQuery(env, `
     query($code: String!, $allIds: [Int]!, $killIds: [Int]!) {
       reportData {
         report(code: $code) {
           rankings(fightIDs: $killIds)
           playerDetails(fightIDs: $allIds)
+          deathsTable: table(fightIDs: $allIds, dataType: Deaths)
+          interruptsTable: table(fightIDs: $allIds, dataType: Interrupts)
         }
       }
     }
@@ -446,6 +451,8 @@ async function getReportFightsAndStats(env, code) {
     killFights,
     rankingsRaw: statsData?.reportData?.report?.rankings ?? null,
     playerDetailsRaw: statsData?.reportData?.report?.playerDetails ?? null,
+    deathsRaw: statsData?.reportData?.report?.deathsTable ?? null,
+    interruptsRaw: statsData?.reportData?.report?.interruptsTable ?? null,
   };
 }
 
@@ -510,6 +517,73 @@ function extractRoleParses(rankingsRaw, roleKey) {
   } catch {
     return [];
   }
+}
+
+// Deaths table shape (confirmed live 2026-08-22): table.data.entries[] is
+// one entry PER DEATH (not per player) - {name, fight (fightID), killingBlow:
+// {name}, ...}. This is what actually killed them, straight from the log.
+function extractDeaths(deathsRaw) {
+  try {
+    return (deathsRaw?.data?.entries || []).map(e => ({
+      name: e.name,
+      fightID: e.fight,
+      killingBlow: e.killingBlow?.name || 'Unknown',
+    }));
+  } catch {
+    return [];
+  }
+}
+
+// Interrupts table shape (confirmed live 2026-08-22): table.data.entries[]
+// is one entry per ability that got interrupted, each carrying a details[]
+// array naming who got interrupted and a nested actors[] naming who landed
+// the interrupt. We only care about raid-wide "who's landing interrupts",
+// so every actors[] hit gets flattened into a simple name -> count tally
+// regardless of what got interrupted or who cast it.
+function extractInterruptCounts(interruptsRaw) {
+  try {
+    const counts = new Map();
+    for (const entry of interruptsRaw?.data?.entries || []) {
+      for (const detail of entry?.details || []) {
+        for (const actor of detail?.actors || []) {
+          if (!actor?.name) continue;
+          counts.set(actor.name, (counts.get(actor.name) || 0) + (actor.total || 0));
+        }
+      }
+    }
+    return [...counts.entries()]
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count);
+  } catch {
+    return [];
+  }
+}
+
+// The real "red flag" per the officers: a 0% parse from dying tells you
+// nothing you don't already know ("don't die"). A grey-tier parse (WCL's
+// own 0-24 tier) from someone who SURVIVED the whole fight is the actual
+// rotation/gear/positioning problem worth coaching. This walks rankingsRaw
+// directly (not the best/worst-only shape extractRoleParses returns) since
+// it needs every individual pull, cross-referenced against deaths by
+// fightID, to tell "grey because they died" apart from "grey while alive".
+function classifyLowParses(rankingsRaw, roleKey, deaths) {
+  const deathSet = new Set(deaths.map(d => `${d.name}|${d.fightID}`));
+  const byPlayer = new Map();
+  for (const fight of rankingsRaw?.data || []) {
+    const chars = fight?.roles?.[roleKey]?.characters || [];
+    const encounter = fight?.encounter?.name || 'Unknown';
+    const fightID = fight?.fightID;
+    for (const c of chars) {
+      if (!c?.name || typeof c.rankPercent !== 'number') continue;
+      if (c.rankPercent >= 25) continue; // only WCL's grey tier is in scope
+      if (deathSet.has(`${c.name}|${fightID}`)) continue; // died - not a rotation issue
+      const cur = byPlayer.get(c.name);
+      if (!cur || c.rankPercent < cur.rankPercent) {
+        byPlayer.set(c.name, { name: c.name, class: c.class, spec: c.spec, rankPercent: c.rankPercent, encounter });
+      }
+    }
+  }
+  return [...byPlayer.values()].sort((a, b) => a.rankPercent - b.rankPercent);
 }
 
 function topByBest(list, n = 5) {
@@ -684,6 +758,12 @@ async function handleLatestLogsData(request, env) {
     const dps = extractRoleParses(details.rankingsRaw, 'dps');
     const healers = extractRoleParses(details.rankingsRaw, 'healers');
 
+    const deaths = extractDeaths(details.deathsRaw);
+    const fightNameById = new Map(details.fights.map(f => [f.id, f.name]));
+    const dpsSurvivedBad = classifyLowParses(details.rankingsRaw, 'dps', deaths);
+    const healersSurvivedBad = classifyLowParses(details.rankingsRaw, 'healers', deaths);
+    const interrupts = extractInterruptCounts(details.interruptsRaw).slice(0, 8);
+
     return corsResponse(JSON.stringify({
       report,
       fights: details.fights,
@@ -691,7 +771,21 @@ async function handleLatestLogsData(request, env) {
       participants,
       dps,
       healers,
-      ...(debug ? { rankingsRaw: details.rankingsRaw, playerDetailsRaw: details.playerDetailsRaw } : {}),
+      // Death-adjusted grey-tier (0-24 percentile) lists - the real
+      // coaching target, since a 0% from dying just means "don't die"
+      // which isn't useful feedback on its own.
+      dpsSurvivedBad,
+      healersSurvivedBad,
+      deaths: {
+        count: deaths.length,
+        notable: deaths.slice(0, 8).map(d => ({
+          name: d.name,
+          encounter: fightNameById.get(d.fightID) || 'Unknown',
+          killingBlow: d.killingBlow,
+        })),
+      },
+      interrupts,
+      ...(debug ? { rankingsRaw: details.rankingsRaw, playerDetailsRaw: details.playerDetailsRaw, deathsRaw: details.deathsRaw, interruptsRaw: details.interruptsRaw } : {}),
     }), 200);
   } catch (err) {
     return corsResponse(JSON.stringify({ error: err.message }), 500);
@@ -755,34 +849,47 @@ async function handleDirectLogPost(request, env) {
 // bumping up to gpt-5-mini.
 const OPENAI_MODEL = 'gpt-5-nano';
 
-function buildFalloutPrompt(report, dpsBottom, healersBottom) {
-  // Each entry's worst pull, tagged with which encounter it happened on -
-  // this is what lets a tip say "on Magtheridon" instead of a vague blended
-  // raid-night average. Top performers are deliberately excluded - that's
-  // already covered plainly in the separate rankings post; this one is
-  // specifically the lesson + call-out.
-  // A literal 0 percentile is almost always an early death (near-zero
-  // uptime), not a bad rotation - flagged here so the model calls it out
-  // for what it likely is instead of guessing at a rotation/gear tip for
-  // someone who barely got to play the fight.
-  const fmt = list => (list || []).map(p => {
-    const pct = Math.round(p.worst.rankPercent);
-    const deathNote = pct === 0 ? ' [likely an early death, not a rotation issue - little to actually analyze here]' : '';
-    return `${p.name} (${p.class || '?'} ${p.spec || ''}) — ${pct} percentile on ${p.worst.encounter}${deathNote}`;
-  }).join('\n') || '(none)';
-  return `You are writing a Discord message ("fallout report") for a World of Warcraft: TBC Classic raid guild, following up on last night's raid ("${report?.title || 'Raid'}"). This message's whole purpose is teaching a lesson and calling out what needs work - it runs separately from a plain rankings post that already covered the numbers matter-of-factly, so don't repeat those, don't mention top performers here. Tone: constructive and factual, never confrontational or shaming - the goal is to spark conversation, not chastise anyone. This is its own standalone post (not squeezed into the rankings embed), so you have room to actually explain the "why," not just a one-liner.
+// A 0% parse from dying tells you nothing you don't already know ("don't
+// die"). The real red flag is a grey-tier parse (WCL's own 0-24 tier) from
+// someone who SURVIVED the whole fight - that's an actual rotation/gear/
+// positioning problem worth coaching, and it's what classifyLowParses (see
+// kaizen-worker.js) isolates by cross-referencing against the deaths table.
+// Deaths themselves are still reported, just as brief raid-wide context
+// rather than individual coaching targets.
+function buildFalloutPrompt(report, dpsSurvivedBad, healersSurvivedBad, deaths, interrupts) {
+  const fmtBad = list => (list || []).map(p =>
+    `${p.name} (${p.class || '?'} ${p.spec || ''}) — ${Math.round(p.rankPercent)} percentile on ${p.encounter} (survived the full fight - this is a real performance issue, not a death)`
+  ).join('\n') || '(none — no non-death grey-tier parses this raid, nice)';
 
-Lowest DPS parses this raid (with the specific encounter each happened on):
-${fmt(dpsBottom)}
+  const deathsSummary = deaths?.count
+    ? `${deaths.count} death${deaths.count === 1 ? '' : 's'} logged this raid` +
+      (deaths.notable?.length ? ', including: ' + deaths.notable.slice(0, 6).map(d => `${d.name} to ${d.killingBlow} on ${d.encounter}`).join('; ') : '')
+    : 'No deaths logged this raid.';
 
-Lowest Healer parses this raid (with the specific encounter each happened on):
-${fmt(healersBottom)}
+  const interruptsSummary = (interrupts || []).length
+    ? interrupts.slice(0, 8).map(i => `${i.name} (${i.count})`).join(', ')
+    : '(no interrupt data for this report)';
 
-Write a report (under 220 words total, two sections):
-1. "**General Notes**" - 2-3 sentences on any pattern worth flagging across the raid as a whole (e.g. if several people struggled on the same encounter, that's likely a mechanic/positioning issue worth calling out raid-wide, not an individual one).
-2. "**Needs Work**" - one to two sentences each for 3-5 of the people listed above, referencing the specific encounter they struggled on. For a normal low parse, give ONE concrete, class/spec-appropriate tip based on general TBC Classic gameplay knowledge (rotation, positioning, gear, consumables, that encounter's mechanics, etc.) and briefly say why it matters. For anyone flagged as a likely early death, don't invent a rotation/gear tip - just note it plainly (e.g. dying early cost the raid their DPS/healing for that pull) and, only if the encounter's mechanics make it obvious, a short survivability-angle guess (positioning, a specific mechanic to watch for) - otherwise just flag it as a death worth reviewing in the log, not a rotation problem.
+  return `You are writing a Discord message ("fallout report") for a World of Warcraft: TBC Classic raid guild, following up on last night's raid ("${report?.title || 'Raid'}"). This message's whole purpose is teaching a lesson and calling out what needs work - it runs separately from a plain rankings post that already covered the numbers matter-of-factly, so don't repeat those, don't mention top performers here. Tone: constructive and factual, never confrontational or shaming - the goal is to spark conversation, not chastise anyone. This is its own standalone post with the rankings post being the only other content in this channel, so you have real room to explain the "why," not just a one-liner - go deep on the actual analysis below.
 
-Use Discord markdown. Be direct and readable, not a wall of text - short sentences, no fluffy intro or conclusion, just the two sections.`;
+DEATHS this raid (context only - "don't die" isn't useful coaching by itself, don't dwell here):
+${deathsSummary}
+
+GREY-TIER PARSES (0-24th percentile) where the player SURVIVED the entire fight - this is the main event, an actual performance problem, not a death:
+DPS:
+${fmtBad(dpsSurvivedBad)}
+Healers:
+${fmtBad(healersSurvivedBad)}
+
+INTERRUPTS landed this raid, raid-wide total per player (all fights, kills and wipes):
+${interruptsSummary}
+
+Write a report (under 350 words total, three sections):
+1. "**General Notes**" - 2-3 sentences on any pattern worth flagging raid-wide (e.g. several people struggling on the same encounter suggests a mechanic/positioning issue, not an individual one). Mention deaths only briefly and factually if there's a real pattern (repeated deaths to the same ability = worth flagging); otherwise skip them or note the count in passing - do not lecture about "don't die."
+2. "**Needs Work**" - the main section. One to two sentences each for up to 6-8 people from the grey-tier-survived lists above, referencing the specific encounter, with a concrete class/spec-appropriate tip (rotation, positioning, gear, consumables, that encounter's mechanics) based on general TBC Classic knowledge, and briefly why their output was that low despite surviving the whole fight. If both lists are empty, say so in one line and move on - don't invent analysis that isn't there.
+3. "**Interrupts**" - 1-2 sentences: note who's carrying the interrupt load this raid. Only flag a specific class/spec as under-contributing if you're genuinely confident that spec has an interrupt and this encounter needed it - don't guess at specs you're unsure of.
+
+Use Discord markdown. Be direct and readable, not a wall of text - short sentences, no fluffy intro or conclusion, just the three sections.`;
 }
 
 // The Responses API's output_text is an SDK convenience property, not
@@ -807,7 +914,7 @@ function extractOpenAIText(data) {
 async function handleFalloutReport(request, env) {
   try {
     if (!env.OPENAI_API_KEY) throw new Error('OpenAI API key not configured.');
-    const { report, dpsBottom, healersBottom } = await request.json();
+    const { report, dpsSurvivedBad, healersSurvivedBad, deaths, interrupts } = await request.json();
 
     const res = await fetch('https://api.openai.com/v1/responses', {
       method: 'POST',
@@ -817,7 +924,7 @@ async function handleFalloutReport(request, env) {
       },
       body: JSON.stringify({
         model: OPENAI_MODEL,
-        input: buildFalloutPrompt(report, dpsBottom, healersBottom),
+        input: buildFalloutPrompt(report, dpsSurvivedBad, healersSurvivedBad, deaths, interrupts),
       }),
     });
 

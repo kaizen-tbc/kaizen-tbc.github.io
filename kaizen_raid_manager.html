@@ -2761,9 +2761,17 @@ function updateArchiveChannelId(value) {
   archiveChannelId = value.trim();
 }
 
-function fetchSelectedLog() {
+async function fetchSelectedLog() {
   const select = document.getElementById('logs-report-select');
-  fetchLatestLog(select?.value || null);
+  const selectedCode = select?.value || null;
+  fetchLatestLog(selectedCode); // fire immediately - unaffected by the list refresh below
+
+  // The picker only otherwise refreshes when you switch onto this tab, so a
+  // report uploaded mid-session wouldn't show up as an option until you left
+  // and came back. Refresh it here too, and restore whatever was selected
+  // so the dropdown doesn't visibly jump back to "Latest" mid-fetch.
+  await populateLogsReportPicker();
+  if (selectedCode && select) select.value = selectedCode;
 }
 
 async function fetchLatestLog(reportCode) {
@@ -2890,8 +2898,13 @@ async function generateFalloutReport() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         report: _lastLogFetch.report,
-        dpsBottom: bottomFive(_lastLogFetch.dps || []),
-        healersBottom: bottomFive(_lastLogFetch.healers || []),
+        // Death-adjusted grey-tier lists, not raw bottomFive - a 0% from
+        // dying isn't useful coaching ("don't die"), the real red flag is
+        // someone who survived the whole fight and still parsed grey.
+        dpsSurvivedBad: _lastLogFetch.dpsSurvivedBad || [],
+        healersSurvivedBad: _lastLogFetch.healersSurvivedBad || [],
+        deaths: _lastLogFetch.deaths || { count: 0, notable: [] },
+        interrupts: _lastLogFetch.interrupts || [],
       }),
     });
     const data = await res.json();
