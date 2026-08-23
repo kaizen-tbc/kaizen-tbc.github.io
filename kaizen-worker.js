@@ -571,6 +571,13 @@ function extractDeaths(deathsRaw) {
 // the interrupt. We only care about raid-wide "who's landing interrupts",
 // so every actors[] hit gets flattened into a simple name -> count tally
 // regardless of what got interrupted or who cast it.
+// actors[].type is the actual WoW class for real players ("Shaman",
+// "Hunter", ...) and "NPC"/"Boss" for everything else (confirmed live: a
+// raw interrupts pull for one report mixed in "Kael'thas Sunstrider" (Boss,
+// count 40) and "Staff of Disintegration" (an item proc, type NPC) right
+// alongside real raiders). Only the 9 classic WoW classes count as a player.
+const PLAYER_CLASSES = new Set(['Warrior', 'Paladin', 'Hunter', 'Rogue', 'Priest', 'Shaman', 'Mage', 'Warlock', 'Druid']);
+
 function extractInterruptCounts(interruptsRaw) {
   try {
     const counts = new Map();
@@ -582,7 +589,7 @@ function extractInterruptCounts(interruptsRaw) {
       for (const entry of wrapper?.entries || []) {
         for (const detail of entry?.details || []) {
           for (const actor of detail?.actors || []) {
-            if (!actor?.name) continue;
+            if (!actor?.name || !PLAYER_CLASSES.has(actor.type)) continue;
             counts.set(actor.name, (counts.get(actor.name) || 0) + (actor.total || 0));
           }
         }
