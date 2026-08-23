@@ -1956,11 +1956,11 @@ a[href] > div > div[style*="line-height:1.6"] {
       <div class="section-subtitle">Pick a report — top/bottom parses, attendance, post to Discord</div>
     </div>
     <div style="display:flex;gap:8px;align-items:stretch;">
+      <button class="btn" style="white-space:nowrap;flex-shrink:0;padding:9px 12px;" onclick="openOtherReportModal()" title="Fetch a report by link or code — not from this guild's own logs">🔗</button>
       <select class="form-select" id="logs-report-select" style="min-width:240px;">
         <option value="">Latest (most complete)</option>
       </select>
       <button class="btn btn-gold" style="white-space:nowrap;flex-shrink:0;padding:9px 16px;display:flex;align-items:center;gap:6px;" onclick="fetchSelectedLog()">⬇ Fetch</button>
-      <button class="btn" style="white-space:nowrap;flex-shrink:0;padding:9px 12px;" onclick="openOtherReportModal()" title="Fetch a report by link or code — not from this guild's own logs">🔗</button>
       <button class="btn" id="post-report-btn" style="white-space:nowrap;flex-shrink:0;padding:9px 16px;background:#5865F2;border-color:#4752c4;color:#fff;font-weight:700;" onclick="confirmPostFullReport()">🚀 Post Report to Discord</button>
     </div>
   </div>
