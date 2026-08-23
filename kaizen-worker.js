@@ -330,9 +330,18 @@ async function wclQuery(env, query, variables = {}) {
     },
     body: JSON.stringify({ query, variables }),
   });
-  const json = await res.json();
-  if (json.errors?.length) throw new Error(json.errors.map(e => e.message).join('; '));
-  return json.data;
+  const json = await res.json().catch(() => null);
+  // WCL's API gateway can reject a request before it ever reaches GraphQL
+  // (e.g. HTTP 429 "Too many requests from this IP address" - an IP-level
+  // throttle, distinct from the per-hour points budget checked below). That
+  // comes back as {status, error} with no `errors[]` array, so without this
+  // check it silently looks like an empty/missing result instead of the
+  // real cause.
+  if (!res.ok) {
+    throw new Error(`Warcraft Logs API error (${res.status}): ${json?.error || json?.message || 'request failed'}`);
+  }
+  if (json?.errors?.length) throw new Error(json.errors.map(e => e.message).join('; '));
+  return json?.data;
 }
 
 // WCL's client_credentials tier is capped (3,600 points/hour as of this
