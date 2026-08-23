@@ -543,7 +543,12 @@ function formatParseLines(list, which) {
     .map((p, i) => {
       const r = p[which];
       const icon = getWCLSpecEmoji(p.class, p.spec);
-      return `**${i + 1}.** ${icon ? icon + ' ' : ''}${p.name} — ${parseColorEmoji(r.rankPercent)} **${Math.round(r.rankPercent)}** _(${r.encounter})_`;
+      const pct = Math.round(r.rankPercent);
+      // A literal 0 in the "worst" list almost always means an early death
+      // (near-zero uptime), not a genuinely bad rotation - flag it so it
+      // doesn't read as a performance callout.
+      const deathNote = which === 'worst' && pct === 0 ? ' _(likely died early)_' : '';
+      return `**${i + 1}.** ${icon ? icon + ' ' : ''}${p.name} — ${parseColorEmoji(r.rankPercent)} **${pct}** _(${r.encounter})_${deathNote}`;
     })
     .join('\n');
 }
@@ -573,8 +578,11 @@ function buildLogSummaryEmbed(report, details, roster) {
     url: `https://www.warcraftlogs.com/reports/${report.code}`,
     description: `${details.killFights.length}/${details.fights.length} encounters killed · ${attendance.length} guildies logged`,
     fields: [
-      { name: '⚔️ DPS', value: formatTopAndBottom(dps), inline: true },
-      { name: '✚ Healers', value: formatTopAndBottom(healers), inline: true },
+      // Stacked full-width instead of side-by-side inline - two inline
+      // columns squeeze each into ~half the embed's (fixed, Discord-
+      // controlled) width, forcing mid-entry wraps that look cramped.
+      { name: '⚔️ DPS', value: formatTopAndBottom(dps), inline: false },
+      { name: '✚ Healers', value: formatTopAndBottom(healers), inline: false },
       { name: '👥 Attendance', value: attendance.length ? attendance.join(', ') : '—', inline: false },
     ],
     color: 0xC9A227,
@@ -753,8 +761,16 @@ function buildFalloutPrompt(report, dpsBottom, healersBottom) {
   // raid-night average. Top performers are deliberately excluded - that's
   // already covered plainly in the separate rankings post; this one is
   // specifically the lesson + call-out.
-  const fmt = list => (list || []).map(p => `${p.name} (${p.class || '?'} ${p.spec || ''}) — ${Math.round(p.worst.rankPercent)} percentile on ${p.worst.encounter}`).join('\n') || '(none)';
-  return `You are writing a short Discord message ("fallout report") for a World of Warcraft: TBC Classic raid guild, following up on last night's raid ("${report?.title || 'Raid'}"). This message's whole purpose is teaching a lesson and calling out what needs work - it runs separately from a plain rankings post that already covered the numbers matter-of-factly, so don't repeat those, don't mention top performers here. Tone: constructive and factual, never confrontational or shaming - the goal is to spark conversation, not chastise anyone.
+  // A literal 0 percentile is almost always an early death (near-zero
+  // uptime), not a bad rotation - flagged here so the model calls it out
+  // for what it likely is instead of guessing at a rotation/gear tip for
+  // someone who barely got to play the fight.
+  const fmt = list => (list || []).map(p => {
+    const pct = Math.round(p.worst.rankPercent);
+    const deathNote = pct === 0 ? ' [likely an early death, not a rotation issue - little to actually analyze here]' : '';
+    return `${p.name} (${p.class || '?'} ${p.spec || ''}) — ${pct} percentile on ${p.worst.encounter}${deathNote}`;
+  }).join('\n') || '(none)';
+  return `You are writing a Discord message ("fallout report") for a World of Warcraft: TBC Classic raid guild, following up on last night's raid ("${report?.title || 'Raid'}"). This message's whole purpose is teaching a lesson and calling out what needs work - it runs separately from a plain rankings post that already covered the numbers matter-of-factly, so don't repeat those, don't mention top performers here. Tone: constructive and factual, never confrontational or shaming - the goal is to spark conversation, not chastise anyone. This is its own standalone post (not squeezed into the rankings embed), so you have room to actually explain the "why," not just a one-liner.
 
 Lowest DPS parses this raid (with the specific encounter each happened on):
 ${fmt(dpsBottom)}
@@ -762,11 +778,11 @@ ${fmt(dpsBottom)}
 Lowest Healer parses this raid (with the specific encounter each happened on):
 ${fmt(healersBottom)}
 
-Write a SHORT report (under 130 words total, two sections):
-1. "**General Notes**" - 1-2 sentences on any pattern worth flagging across the raid as a whole (e.g. if several people struggled on the same encounter, that's likely a mechanic/positioning issue worth calling out raid-wide, not an individual one).
-2. "**Needs Work**" - one short line each for 2-4 of the people listed above, referencing the specific encounter they struggled on, with ONE concrete, class/spec-appropriate tip based on general TBC Classic gameplay knowledge (rotation, positioning, gear, consumables, that encounter's mechanics, etc.).
+Write a report (under 220 words total, two sections):
+1. "**General Notes**" - 2-3 sentences on any pattern worth flagging across the raid as a whole (e.g. if several people struggled on the same encounter, that's likely a mechanic/positioning issue worth calling out raid-wide, not an individual one).
+2. "**Needs Work**" - one to two sentences each for 3-5 of the people listed above, referencing the specific encounter they struggled on. For a normal low parse, give ONE concrete, class/spec-appropriate tip based on general TBC Classic gameplay knowledge (rotation, positioning, gear, consumables, that encounter's mechanics, etc.) and briefly say why it matters. For anyone flagged as a likely early death, don't invent a rotation/gear tip - just note it plainly (e.g. dying early cost the raid their DPS/healing for that pull) and, only if the encounter's mechanics make it obvious, a short survivability-angle guess (positioning, a specific mechanic to watch for) - otherwise just flag it as a death worth reviewing in the log, not a rotation problem.
 
-Use Discord markdown. Be tight and succinct - no long paragraphs, no fluffy intro or conclusion, people won't read a wall of text. Just the two sections.`;
+Use Discord markdown. Be direct and readable, not a wall of text - short sentences, no fluffy intro or conclusion, just the two sections.`;
 }
 
 // The Responses API's output_text is an SDK convenience property, not
