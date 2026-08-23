@@ -2912,6 +2912,12 @@ function parseColorHex(pct) {
 // shows their worst, each tagged with which boss it actually happened on.
 function topFive(list) { return [...list].sort((a, b) => b.best.rankPercent - a.best.rankPercent).slice(0, 5); }
 
+// Below this many logged parses, WCL's percentile is compared against a
+// tiny/weird sample - usually a spec rarely logged in that role (an
+// off-meta/hybrid build) - and can be misleadingly flattering or harsh.
+// Flagged in the UI rather than trusted at face value.
+const WCL_SMALL_SAMPLE_THRESHOLD = 20;
+
 // deathSet: Set of "name|fightID" strings (built from data.deaths.pairs) -
 // anyone whose worst pull was actually a death gets pulled out of "Needs
 // Work" into its own short "Died" line instead. Mixing "died" in with
@@ -2921,13 +2927,20 @@ function renderParseList(list, deathSet) {
   if (!list.length) return `<div style="color:var(--text-dim);font-size:12px;font-style:italic;">No parse data available.</div>`;
   const row = (p, which) => (i) => {
     const r = p[which];
+    const smallSample = typeof r.totalParses === 'number' && r.totalParses < WCL_SMALL_SAMPLE_THRESHOLD
+      ? `<span style="color:var(--text-dim);" title="Only ${r.totalParses} logged parses for this spec/role — small comparison pool, percentile may not be meaningful">⚠</span> `
+      : '';
     return `<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:13px;">
-      <span><strong style="color:var(--gold);">${i + 1}.</strong> ${p.name} <span style="color:var(--text-dim);font-size:11px;">${p.spec || p.class || ''} · ${r.encounter}</span></span>
+      <span><strong style="color:var(--gold);">${i + 1}.</strong> ${smallSample}${p.name} <span style="color:var(--text-dim);font-size:11px;">${p.spec || p.class || ''} · ${r.encounter}</span></span>
       <span style="font-family:'IBM Plex Mono',monospace;font-weight:700;color:${parseColorHex(r.rankPercent)};">${Math.round(r.rankPercent)}</span>
     </div>`;
   };
   const top = topFive(list);
-  const worstSorted = [...list].sort((a, b) => a.worst.rankPercent - b.worst.rankPercent);
+  // Needs Work must have an actual floor - without one, on a small roster
+  // the "bottom" by relative rank can include someone whose worst pull was
+  // still a 99 (e.g. a healer who only logged once). Purple tier (75+) is
+  // never "needs work" regardless of how it ranks relative to the group.
+  const worstSorted = [...list].filter(p => p.worst.rankPercent < 75).sort((a, b) => a.worst.rankPercent - b.worst.rankPercent);
   const died = worstSorted.filter(p => deathSet.has(`${p.name}|${p.worst.fightID}`));
   const alive = worstSorted.filter(p => !deathSet.has(`${p.name}|${p.worst.fightID}`));
   const bottom = alive.slice(0, 5);

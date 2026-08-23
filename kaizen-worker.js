@@ -542,7 +542,11 @@ function extractRoleParses(rankingsRaw, roleKey) {
         }
         // fightID travels with each result so best/worst can be cross-
         // referenced against the deaths table later (same fight = same pull).
-        byPlayer.get(c.name).results.push({ rankPercent: c.rankPercent, encounter, fightID: fight?.fightID });
+        // totalParses is the size of the comparison pool WCL ranked this
+        // percentile against - carried through so a rarely-logged spec/role
+        // combo (a handful of parses) can be flagged as statistically
+        // unreliable instead of presented at face value (see WCL_SMALL_SAMPLE).
+        byPlayer.get(c.name).results.push({ rankPercent: c.rankPercent, encounter, fightID: fight?.fightID, totalParses: c.totalParses });
       }
     }
     return [...byPlayer.values()].map(p => ({
@@ -632,7 +636,8 @@ function classifyLowParses(rankingsRaw, roleKey, deaths) {
       if (!cur || c.rankPercent < cur.rankPercent) {
         // fightID carried through so a per-fight uptime/ability breakdown
         // can be pulled for exactly this pull, not just the raw percentile.
-        byPlayer.set(c.name, { name: c.name, class: c.class, spec: c.spec, rankPercent: c.rankPercent, encounter, fightID });
+        // totalParses carried through too - see WCL_SMALL_SAMPLE_THRESHOLD.
+        byPlayer.set(c.name, { name: c.name, class: c.class, spec: c.spec, rankPercent: c.rankPercent, encounter, fightID, totalParses: c.totalParses });
       }
     }
   }
@@ -708,11 +713,25 @@ async function enrichWithFightBreakdown(env, code, list, dataType, fightDuration
   });
 }
 
+// Below this many logged parses, WCL's percentile is being compared
+// against a tiny/weird sample pool - most often a spec that's rarely
+// logged in that role (an off-meta or hybrid build), which can produce a
+// misleadingly flattering (or unflattering) percentile that doesn't
+// really reflect performance. Flagged rather than trusted at face value.
+const WCL_SMALL_SAMPLE_THRESHOLD = 20;
+
 function topByBest(list, n = 5) {
   return [...list].sort((a, b) => b.best.rankPercent - a.best.rankPercent).slice(0, n);
 }
+// "Needs work" must have an actual floor - without one, on a small roster
+// the bottom N by relative rank can include someone whose "worst" pull was
+// still a 99 (e.g. a healer who only logged once), which reads as a bug,
+// not a coaching signal. Purple tier (75+) and up is never "needs work".
 function bottomByWorst(list, n = 5) {
-  return [...list].sort((a, b) => a.worst.rankPercent - b.worst.rankPercent).slice(0, n);
+  return [...list]
+    .filter(p => p.worst.rankPercent < 75)
+    .sort((a, b) => a.worst.rankPercent - b.worst.rankPercent)
+    .slice(0, n);
 }
 
 // Standard WCL parse-color tiers, boundaries matching their own site
@@ -747,7 +766,10 @@ function formatParseLines(list, which) {
       const r = p[which];
       const icon = getWCLSpecEmoji(p.class, p.spec);
       const pct = Math.round(r.rankPercent);
-      return `**${i + 1}.** ${icon ? icon + ' ' : ''}${parseColorEmoji(r.rankPercent)} **${pct}** — ${p.name} _(${r.encounter})_`;
+      const smallSample = typeof r.totalParses === 'number' && r.totalParses < WCL_SMALL_SAMPLE_THRESHOLD
+        ? ` ⚠_(rare in this role — only ${r.totalParses} logged, take with a grain of salt)_`
+        : '';
+      return `**${i + 1}.** ${icon ? icon + ' ' : ''}${parseColorEmoji(r.rankPercent)} **${pct}** — ${p.name} _(${r.encounter})_${smallSample}`;
     })
     .join('\n');
 }
@@ -1017,7 +1039,10 @@ function buildFalloutPrompt(report, dpsSurvivedBad, healersSurvivedBad, deaths, 
     const abilityNote = p.topAbilities?.length
       ? ` | top sources: ${p.topAbilities.map(a => `${a.name} (${a.pct}%)`).join(', ')}`
       : '';
-    return `${p.name} (${p.class || '?'} ${p.spec || ''}) — ${Math.round(p.rankPercent)} percentile on ${p.encounter}${uptimeNote} (survived the full fight - this is a real performance issue, not a death)${abilityNote}`;
+    const smallSampleNote = typeof p.totalParses === 'number' && p.totalParses < WCL_SMALL_SAMPLE_THRESHOLD
+      ? ` [rare spec/role combo - only ${p.totalParses} logged parses to compare against, percentile may not be meaningful]`
+      : '';
+    return `${p.name} (${p.class || '?'} ${p.spec || ''}) — ${Math.round(p.rankPercent)} percentile on ${p.encounter}${uptimeNote} (survived the full fight - this is a real performance issue, not a death)${abilityNote}${smallSampleNote}`;
   }).join('\n') || '(none — no non-death grey-tier parses this raid, nice)';
 
   const deathsSummary = deaths?.count
@@ -1051,6 +1076,7 @@ Return three things:
    - If "active time" is given, use it as your primary evidence: low active time (well under what's typical, ~85%+ for most specs when nothing's gone wrong) means real downtime - reference the actual number and reason about why (repositioning, movement off the boss, dying partway and this being their only surviving pull data, etc.) rather than just saying "stay in melee range."
    - "top sources" is much easier to misread than active time - an ability dominating the damage/healing breakdown is NOT reliably a sign of bad play. Concrete trap to avoid: an Arms Warrior with a slow two-handed weapon getting a large share of damage from Slam is CORRECT, high-skill play (timing Slam around the weapon's swing timer, "Slam weaving") - not a rotation problem, even though it looks like one ability is "dominating." Ability-mix patterns like this vary by spec/weapon/talents in ways you may not be fully certain of. So: only call out an ability-mix pattern as a problem when you are genuinely confident that specific mix is wrong for that spec/weapon at level 70 TBC - otherwise just note the top sources as a factual, neutral observation ("most of the damage came from X, Y") without diagnosing it as good or bad, and lean on active time (or gear/consumables/execution in general) as the actual explanation instead.
    - Only fall back to generic advice (no specific ability/number cited) for someone with no active-time or ability data available - and say something different for each person, don't reuse the same boilerplate line across multiple entries.
+   - If an entry is flagged as a rare spec/role combo with few logged parses, say so plainly (e.g. "not many logged parses for this spec/role to compare against, so take this percentile with a grain of salt") instead of coaching the number as if it were a reliable signal.
    If both lists above are empty, return an empty array - don't invent entries that aren't there.
 3. interruptsNote - 1-2 sentences: note who's carrying the interrupt load this raid. Only flag a specific class/spec as under-contributing if you're genuinely confident that spec has an interrupt and this encounter needed it - don't guess at specs you're unsure of.
 
