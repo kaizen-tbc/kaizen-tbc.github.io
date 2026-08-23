@@ -2738,11 +2738,24 @@ async function fetchLatestLog(reportCode) {
 // Renders one role's parses as a ranked list with a "needs work" cutoff —
 // top 5 and bottom 5 in the same block, since both are useful for a
 // Discord discussion post and embed/space is limited either way.
+// Standard WCL parse-color tiers (their own site's boundaries): 0-24 grey,
+// 25-49 green, 50-74 blue, 75-94 purple, 95-98 orange, 99 pink, 100 gold.
+function parseColorHex(pct) {
+  const p = Math.round(pct);
+  if (p >= 100) return '#e5cc80';
+  if (p >= 99) return '#e268a8';
+  if (p >= 95) return '#ff8000';
+  if (p >= 75) return '#a335ee';
+  if (p >= 50) return '#0070ff';
+  if (p >= 25) return '#1eff00';
+  return '#666666';
+}
+
 function renderParseList(list) {
   if (!list.length) return `<div style="color:var(--text-dim);font-size:12px;font-style:italic;">No parse data available.</div>`;
   const row = (p, i) => `<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:13px;">
       <span><strong style="color:var(--gold);">${i + 1}.</strong> ${p.name} <span style="color:var(--text-dim);font-size:11px;">${p.spec || p.class || ''}</span></span>
-      <span style="font-family:'IBM Plex Mono',monospace;color:var(--text-dim);">${Math.round(p.rankPercent)}%</span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-weight:700;color:${parseColorHex(p.rankPercent)};">${Math.round(p.rankPercent)}</span>
     </div>`;
   const top = list.slice(0, 5);
   const bottomPool = list.slice(5);

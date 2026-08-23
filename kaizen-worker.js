@@ -459,10 +459,28 @@ function extractRoleParses(rankingsRaw, roleKey) {
   }
 }
 
+// Standard WCL parse-color tiers, boundaries matching their own site
+// (0-24 grey, 25-49 green, 50-74 blue, 75-94 purple, 95-98 orange, 99 pink,
+// 100 gold). Discord embeds can't color arbitrary inline text, so a colored
+// circle emoji is the closest practical stand-in for "parse color" there.
+function parseColorEmoji(pct) {
+  const p = Math.round(pct);
+  if (p >= 100) return '🟡';
+  if (p >= 99) return '🩷';
+  if (p >= 95) return '🟠';
+  if (p >= 75) return '🟣';
+  if (p >= 50) return '🔵';
+  if (p >= 25) return '🟢';
+  return '⚪';
+}
+
 function formatParseLines(list) {
   if (!list.length) return '—';
   return list
-    .map((p, i) => `**${i + 1}.** ${p.name} (${p.spec || p.class || '?'}) — ${Math.round(p.rankPercent)}%`)
+    .map((p, i) => {
+      const icon = getWCLSpecEmoji(p.class, p.spec);
+      return `**${i + 1}.** ${icon ? icon + ' ' : ''}${p.name} — ${parseColorEmoji(p.rankPercent)} **${Math.round(p.rankPercent)}**`;
+    })
     .join('\n');
 }
 
@@ -707,6 +725,16 @@ function getSpecEmoji(cls, spec) {
   if (CLASS_SPEC_EMOJI[combo]) return CLASS_SPEC_EMOJI[combo];
   // Fall back to spec name alone
   return SPEC_EMOJI[spec] || '';
+}
+
+// Warcraft Logs' own auto-detected "spec" string doesn't always match our
+// naming (confirmed live: "BeastMastery", no space, vs our "Beastmastery").
+// Only normalizing cases we're actually confident about here - an
+// unrecognized/off-meta spec label (e.g. "Justicar") just shows no icon
+// rather than risk guessing wrong.
+const WCL_SPEC_NORMALIZE = { 'BeastMastery': 'Beastmastery' };
+function getWCLSpecEmoji(cls, spec) {
+  return getSpecEmoji(cls, WCL_SPEC_NORMALIZE[spec] || spec);
 }
 
 function buildRosterEmbed(raid, roster, pugs, notify = true) {
