@@ -931,7 +931,7 @@ function buildFalloutPrompt(report, dpsSurvivedBad, healersSurvivedBad, deaths, 
     ? interrupts.slice(0, 8).map(i => `${i.name} (${i.count})`).join(', ')
     : '(no interrupt data for this report)';
 
-  return `You are writing a Discord message ("fallout report") for a World of Warcraft: TBC Classic raid guild, following up on last night's raid ("${report?.title || 'Raid'}"). This message's whole purpose is teaching a lesson and calling out what needs work - it runs separately from a plain rankings post that already covered the numbers matter-of-factly, so don't repeat those, don't mention top performers here. Tone: constructive and factual, never confrontational or shaming - the goal is to spark conversation, not chastise anyone. This is its own standalone post with the rankings post being the only other content in this channel, so you have real room to explain the "why," not just a one-liner - go deep on the actual analysis below.
+  return `You are writing content for a Discord message ("fallout report") for a World of Warcraft: TBC Classic raid guild, following up on last night's raid ("${report?.title || 'Raid'}"). This message's whole purpose is teaching a lesson and calling out what needs work - it runs separately from a plain rankings post that already covered the numbers matter-of-factly, so don't repeat those, don't mention top performers here. Tone: constructive and factual, never confrontational or shaming - the goal is to spark conversation, not chastise anyone. This is its own standalone post with the rankings post being the only other content in this channel, so you have real room to explain the "why," not just a one-liner - go deep on the actual analysis below.
 
 CRITICAL - this is specifically The Burning Crusade Classic (patch 2.4.3 era, character level 70), NOT retail WoW and NOT any other expansion. Do not reference abilities, talents, resources, or mechanics from Wrath of the Lich King, Cataclysm, Mists of Pandaria, Warlords of Draenor, Legion, Battle for Azeroth, Shadowlands, Dragonflight, or current retail - even if they're iconic for that class today. Concretely, as commonly-made mistakes to avoid: Elemental Shaman has NO Lava Burst (added in Wrath); Shadow Priest has NO Insanity resource bar (added in Legion) - TBC Shadow Priest is just Mind Flay/SW:P/VT/Mind Blast on a global cooldown, no special resource; Enhancement Shaman has NO Maelstrom Weapon proc (added in Wrath); Feral Druid has NO Energy-and-Combo-Point-only kit changes from later redesigns. If you are not fully confident an ability or mechanic existed at level 70 in TBC, do NOT name it specifically - give generic advice instead (e.g. "keep your damage-over-time spells refreshed" rather than naming a spell you're unsure of, "use your cooldowns during burn windows" rather than naming a specific one). Generic-but-correct beats specific-but-wrong.
 
@@ -947,12 +947,64 @@ ${fmtBad(healersSurvivedBad)}
 INTERRUPTS landed this raid, raid-wide total per player (all fights, kills and wipes):
 ${interruptsSummary}
 
-Write a report (under 350 words total, three sections):
-1. "**General Notes**" - 2-3 sentences on any pattern worth flagging raid-wide (e.g. several people struggling on the same encounter suggests a mechanic/positioning issue, not an individual one). Mention deaths only briefly and factually if there's a real pattern (repeated deaths to the same ability = worth flagging); otherwise skip them or note the count in passing - do not lecture about "don't die."
-2. "**Needs Work**" - the main section. One to two sentences each for up to 6-8 people from the grey-tier-survived lists above, referencing the specific encounter, with a concrete class/spec-appropriate tip (rotation, positioning, gear, consumables, that encounter's mechanics) based on TBC Classic knowledge specifically (level 70, patch 2.4.3 - see the version constraint above), and briefly why their output was that low despite surviving the whole fight. If both lists are empty, say so in one line and move on - don't invent analysis that isn't there.
-3. "**Interrupts**" - 1-2 sentences: note who's carrying the interrupt load this raid. Only flag a specific class/spec as under-contributing if you're genuinely confident that spec has an interrupt and this encounter needed it - don't guess at specs you're unsure of.
+Return three things:
+1. generalNotes - 2-3 sentences on any pattern worth flagging raid-wide (e.g. several people struggling on the same encounter suggests a mechanic/positioning issue, not an individual one). Mention deaths only briefly and factually if there's a real pattern (repeated deaths to the same ability = worth flagging); otherwise skip them or note the count in passing - do not lecture about "don't die."
+2. needsWork - up to 6-8 entries, one per person from the grey-tier-survived lists above. Each entry's "name" must be copied EXACTLY as given above (used elsewhere to attach their class icon and the encounter - don't restate their name, class, spec, or encounter inside "tip", just the coaching itself). "tip" is 1-2 sentences: a concrete class/spec-appropriate tip (rotation, positioning, gear, consumables, that encounter's mechanics) based on TBC Classic knowledge specifically (level 70, patch 2.4.3 - see the version constraint above), and briefly why their output was that low despite surviving the whole fight. If both lists above are empty, return an empty array - don't invent entries that aren't there.
+3. interruptsNote - 1-2 sentences: note who's carrying the interrupt load this raid. Only flag a specific class/spec as under-contributing if you're genuinely confident that spec has an interrupt and this encounter needed it - don't guess at specs you're unsure of.
 
-Use Discord markdown. Be direct and readable, not a wall of text - short sentences, no fluffy intro or conclusion, just the three sections.`;
+Be direct, no fluffy intro or conclusion - just the substance for each of the three fields.`;
+}
+
+// Strict-mode JSON schema (OpenAI Structured Outputs, /v1/responses) - every
+// property must appear in "required" and additionalProperties must be
+// false. Getting the AI's output back as structured fields, rather than
+// freeform markdown prose, means we can attach each person's real class/
+// spec icon and their exact encounter ourselves (from our own known data,
+// not the AI restating it) and control spacing between entries directly -
+// both were unreliable when the AI formatted the whole message itself.
+const FALLOUT_REPORT_SCHEMA = {
+  type: 'object',
+  properties: {
+    generalNotes: { type: 'string' },
+    needsWork: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          name: { type: 'string' },
+          tip: { type: 'string' },
+        },
+        required: ['name', 'tip'],
+        additionalProperties: false,
+      },
+    },
+    interruptsNote: { type: 'string' },
+  },
+  required: ['generalNotes', 'needsWork', 'interruptsNote'],
+  additionalProperties: false,
+};
+
+// Builds the final Discord markdown ourselves from the AI's structured
+// fields - icon + name + encounter for each "Needs Work" entry come from
+// our own dps/healersSurvivedBad data (ground truth), not the AI restating
+// them, and a blank line between entries keeps it from reading as one wall
+// of text.
+function buildFalloutMarkdown(parsed, dpsSurvivedBad, healersSurvivedBad) {
+  const known = new Map();
+  for (const p of [...(dpsSurvivedBad || []), ...(healersSurvivedBad || [])]) {
+    known.set(p.name, p);
+  }
+
+  const needsWorkText = (parsed.needsWork || []).length
+    ? parsed.needsWork.map(item => {
+        const p = known.get(item.name);
+        const icon = p ? getWCLSpecEmoji(p.class, p.spec) : '';
+        const encounter = p ? ` — _${p.encounter}_` : '';
+        return `${icon ? icon + ' ' : ''}**${item.name}**${encounter}\n${item.tip}`;
+      }).join('\n\n')
+    : '_Nobody survived-and-grey this raid — nice._';
+
+  return `**General Notes**\n${parsed.generalNotes}\n\n**Needs Work**\n${needsWorkText}\n\n**Interrupts**\n${parsed.interruptsNote}`;
 }
 
 // The Responses API's output_text is an SDK convenience property, not
@@ -988,6 +1040,14 @@ async function handleFalloutReport(request, env) {
       body: JSON.stringify({
         model: OPENAI_MODEL,
         input: buildFalloutPrompt(report, dpsSurvivedBad, healersSurvivedBad, deaths, interrupts),
+        text: {
+          format: {
+            type: 'json_schema',
+            name: 'fallout_report',
+            strict: true,
+            schema: FALLOUT_REPORT_SCHEMA,
+          },
+        },
       }),
     });
 
@@ -997,8 +1057,10 @@ async function handleFalloutReport(request, env) {
     }
 
     const data = await res.json();
-    const text = extractOpenAIText(data);
-    if (!text) throw new Error('OpenAI returned no text output.');
+    const raw = extractOpenAIText(data);
+    if (!raw) throw new Error('OpenAI returned no text output.');
+    const parsed = JSON.parse(raw); // structured output - guaranteed valid JSON matching FALLOUT_REPORT_SCHEMA
+    const text = buildFalloutMarkdown(parsed, dpsSurvivedBad, healersSurvivedBad);
 
     return corsResponse(JSON.stringify({ text }), 200);
   } catch (err) {
