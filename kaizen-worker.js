@@ -434,11 +434,19 @@ async function getReportFightsAndStats(env, code) {
   const allFightIds = fights.map(f => f.id);
   const killFightIds = killFights.map(f => f.id);
 
+  // compare: Parses (vs everyone's single logged attempt) rather than the
+  // default Rankings mode (vs only each character's personal-best parse
+  // ever) - confirmed live: the default gave a healer a 5th percentile on
+  // a pull her own WCL page shows as a mid-blue/purple parse, because
+  // Rankings mode compares her against the field of "everyone's best ever"
+  // (a much harsher bar) instead of "every logged attempt" like the
+  // website's own per-fight rankings view uses. Without this, our numbers
+  // don't match what people see when they click through to WCL themselves.
   const statsData = await wclQuery(env, `
     query($code: String!, $allIds: [Int]!, $killIds: [Int]!) {
       reportData {
         report(code: $code) {
-          rankings(fightIDs: $killIds)
+          rankings(fightIDs: $killIds, compare: Parses)
           playerDetails(fightIDs: $allIds)
         }
       }
@@ -799,6 +807,15 @@ function deathsForRole(deaths, roleList, fightNameById) {
     .map(d => ({ name: d.name, encounter: fightNameById.get(d.fightID) || 'Unknown' }));
 }
 
+// A per-name laundry list of every death is noise, not a coaching signal -
+// what's actually useful is "how many, and which encounters are the real
+// problem" (a positioning/mechanics pattern worth flagging), not who.
+function tallyDeathsByEncounter(died) {
+  const counts = new Map();
+  for (const d of died) counts.set(d.encounter, (counts.get(d.encounter) || 0) + 1);
+  return [...counts.entries()].map(([encounter, count]) => ({ encounter, count })).sort((a, b) => b.count - a.count);
+}
+
 // Top N (by best pull) and bottom N (by worst-SURVIVED pull, purple/75+
 // never counts) in one field, since embeds have limited field slots -
 // "who's crushing it" and "who needs help" are both useful in one glance.
@@ -814,8 +831,8 @@ function formatTopAndBottom(list, died, topN = 3, bottomN = 7) {
     out += `\n\n*Needs work:*\n` + formatParseLines(bottom, 'worst');
   }
   if (died.length) {
-    const shown = died.slice(0, 8).map(d => `${d.name} _(${d.encounter})_`).join(', ');
-    out += `\n\n☠️ *Died:* ${shown}${died.length > 8 ? ` +${died.length - 8} more` : ''}`;
+    const topCauses = tallyDeathsByEncounter(died).slice(0, 5).map(t => `${t.encounter} (${t.count})`).join(', ');
+    out += `\n\n☠️ *Died ${died.length}x* — top causes: ${topCauses}`;
   }
   return out;
 }
@@ -973,6 +990,11 @@ async function handleLatestLogsData(request, env) {
           encounter: fightNameById.get(d.fightID) || 'Unknown',
           killingBlow: d.killingBlow,
         })),
+        // Real aggregate counts (not just 8 anecdotal examples) - which
+        // encounters are actually the biggest death sinks this raid, for
+        // the fallout report to reason about mechanics/positioning
+        // patterns accurately instead of picking essentially at random.
+        byEncounter: tallyDeathsByEncounter(deaths.map(d => ({ encounter: fightNameById.get(d.fightID) || 'Unknown' }))).slice(0, 8),
         // Full name+fightID pairs (not just the capped "notable" display
         // list) so the frontend can build the same died-vs-survived split
         // for its own parse-list preview that the Discord embed uses.
@@ -1065,9 +1087,14 @@ function buildFalloutPrompt(report, dpsSurvivedBad, healersSurvivedBad, deaths, 
     return `${p.name} (${p.class || '?'} ${p.spec || ''}) — ${Math.round(p.rankPercent)} percentile on ${p.encounter}${uptimeNote} (survived the full fight - this is a real performance issue, not a death)${abilityNote}${smallSampleNote}`;
   }).join('\n') || '(none — no non-death grey-tier parses this raid, nice)';
 
+  // byEncounter is REAL aggregate counts (every death, not a handful of
+  // anecdotal examples) - this is what actually supports a raid-wide
+  // "we're dying to the same mechanic repeatedly" observation instead of
+  // picking a few death instances close to at random.
   const deathsSummary = deaths?.count
-    ? `${deaths.count} death${deaths.count === 1 ? '' : 's'} logged this raid` +
-      (deaths.notable?.length ? ', including: ' + deaths.notable.slice(0, 6).map(d => `${d.name} to ${d.killingBlow} on ${d.encounter}`).join('; ') : '')
+    ? `${deaths.count} death${deaths.count === 1 ? '' : 's'} logged this raid. Top causes by encounter (all deaths counted, not a sample): ` +
+      (deaths.byEncounter?.length ? deaths.byEncounter.map(d => `${d.encounter} (${d.count})`).join(', ') : 'no breakdown available') +
+      (deaths.notable?.length ? '. A few specific examples: ' + deaths.notable.slice(0, 4).map(d => `${d.name} to ${d.killingBlow} on ${d.encounter}`).join('; ') : '')
     : 'No deaths logged this raid.';
 
   const interruptsSummary = (interrupts || []).length
@@ -1091,7 +1118,7 @@ INTERRUPTS landed this raid, raid-wide total per player (all fights, kills and w
 ${interruptsSummary}
 
 Return three things:
-1. generalNotes - 2-3 sentences on any pattern worth flagging raid-wide (e.g. several people struggling on the same encounter suggests a mechanic/positioning issue, not an individual one). Mention deaths only briefly and factually if there's a real pattern (repeated deaths to the same ability = worth flagging); otherwise skip them or note the count in passing - do not lecture about "don't die."
+1. generalNotes - 2-3 sentences on any pattern worth flagging raid-wide (e.g. several people struggling on the same encounter suggests a mechanic/positioning issue, not an individual one). Use the death breakdown's real per-encounter counts as evidence: if deaths cluster heavily on one or two encounters, name them and take a concrete guess at what's going wrong mechanically (positioning, a specific ability/phase, an add that needs to be handled) based on TBC Classic knowledge of that encounter - "we're getting sloppy on X's mechanic" is far more useful than "there were some deaths." Don't just restate the raw counts back - explain what they mean. If deaths are spread thin with no real cluster, say so briefly and move on - don't force a pattern that isn't there.
 2. needsWork - up to 6-8 entries, one per person from the grey-tier-survived lists above. Each entry's "name" must be copied EXACTLY as given above (used elsewhere to attach their class icon and the encounter - don't restate their name, class, spec, or encounter inside "tip", just the coaching itself). "tip" is 1-2 sentences of TBC Classic-accurate (level 70, patch 2.4.3 - see the version constraint above) coaching, grounded in whatever hard numbers are given for that person, not generic advice:
    - If "active time" is given, use it as your primary evidence: low active time (well under what's typical, ~85%+ for most specs when nothing's gone wrong) means real downtime - reference the actual number and reason about why (repositioning, movement off the boss, dying partway and this being their only surviving pull data, etc.) rather than just saying "stay in melee range."
    - "top sources" is much easier to misread than active time - an ability dominating the damage/healing breakdown is NOT reliably a sign of bad play. Concrete trap to avoid: an Arms Warrior with a slow two-handed weapon getting a large share of damage from Slam is CORRECT, high-skill play (timing Slam around the weapon's swing timer, "Slam weaving") - not a rotation problem, even though it looks like one ability is "dominating." Ability-mix patterns like this vary by spec/weapon/talents in ways you may not be fully certain of. So: only call out an ability-mix pattern as a problem when you are genuinely confident that specific mix is wrong for that spec/weapon at level 70 TBC - otherwise just note the top sources as a factual, neutral observation ("most of the damage came from X, Y") without diagnosing it as good or bad, and lean on active time (or gear/consumables/execution in general) as the actual explanation instead.

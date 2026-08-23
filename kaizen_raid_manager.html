@@ -2919,6 +2919,15 @@ function topThree(list) { return [...list].sort((a, b) => b.best.rankPercent - a
 // worst pull (even a 99) into this list just for being relatively last.
 function bottomSeven(list) { return [...list].filter(p => p.worst.rankPercent < 75).sort((a, b) => a.worst.rankPercent - b.worst.rankPercent).slice(0, 7); }
 
+// A per-name laundry list of every death is noise, not a coaching signal -
+// what's useful is "how many, and which encounters are the real problem"
+// (a positioning/mechanics pattern), not who specifically.
+function tallyDeathsByEncounter(died) {
+  const counts = new Map();
+  for (const d of died) counts.set(d.encounter, (counts.get(d.encounter) || 0) + 1);
+  return [...counts.entries()].map(([encounter, count]) => ({ encounter, count })).sort((a, b) => b.count - a.count);
+}
+
 // Below this many logged parses, WCL's percentile is compared against a
 // tiny/weird sample - usually a spec rarely logged in that role (an
 // off-meta/hybrid build) - and can be misleadingly flattering or harsh.
@@ -2948,7 +2957,7 @@ function renderParseList(list, died) {
   return `
     ${top.map((p, i) => row(p, 'best')(i)).join('')}
     ${bottom.length ? `<div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-dim);margin:10px 0 4px;">Needs Work</div>${bottom.map((p, i) => row(p, 'worst')(i)).join('')}` : ''}
-    ${died.length ? `<div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-dim);margin:10px 0 4px;">☠ Died (${died.length})</div><div style="font-size:12px;color:var(--text-dim);">${died.map(d => `${d.name} <span style="opacity:0.7;">(${d.encounter})</span>`).join(', ')}</div>` : ''}
+    ${died.length ? `<div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-dim);margin:10px 0 4px;">☠ Died (${died.length})</div><div style="font-size:12px;color:var(--text-dim);">Top causes: ${tallyDeathsByEncounter(died).slice(0, 5).map(t => `${t.encounter} <span style="opacity:0.7;">(${t.count})</span>`).join(', ')}</div>` : ''}
   `;
 }
 
