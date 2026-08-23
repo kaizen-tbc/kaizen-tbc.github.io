@@ -2587,6 +2587,30 @@ let logsChannelId = '';
 // them from logsChannelId — a locked-down, bot-post-only archive channel.
 let archiveChannelId = '';
 
+// Resolved display names for the above (e.g. "logs-archive") — purely
+// cosmetic, so the confirm dialog can say "#logs-archive" instead of a
+// raw numeric ID. Falls back to the ID itself if resolution hasn't
+// happened yet or fails (e.g. bot lacks access to that channel).
+let logsChannelName = '';
+let archiveChannelName = '';
+
+async function resolveChannelName(id) {
+  if (!id) return null;
+  try {
+    const res = await fetch(`${RH_WORKER}/discord/channel-name?id=${encodeURIComponent(id)}`);
+    const data = await res.json();
+    return data.name || null;
+  } catch {
+    return null;
+  }
+}
+
+async function refreshGuildLogsChannelNames() {
+  const [ln, an] = await Promise.all([resolveChannelName(logsChannelId), resolveChannelName(archiveChannelId)]);
+  logsChannelName = ln || '';
+  archiveChannelName = an || '';
+}
+
 // ======================================================
 // ATTENDANCE IMPORT (Warcraft Logs — replaces manual CSV upload)
 // ======================================================
@@ -2720,6 +2744,7 @@ function renderGuildLogsTab() {
   const archiveInput = document.getElementById('archive-channel-input');
   if (archiveInput) archiveInput.value = archiveChannelId || '';
   populateLogsReportPicker();
+  refreshGuildLogsChannelNames();
 }
 
 // Post-to/archive channel IDs are set-once config, not something worth
@@ -2755,10 +2780,14 @@ async function populateLogsReportPicker() {
 
 function updateLogsChannelId(value) {
   logsChannelId = value.trim();
+  logsChannelName = '';
+  resolveChannelName(logsChannelId).then(n => { logsChannelName = n || ''; });
 }
 
 function updateArchiveChannelId(value) {
   archiveChannelId = value.trim();
+  archiveChannelName = '';
+  resolveChannelName(archiveChannelId).then(n => { archiveChannelName = n || ''; });
 }
 
 async function fetchSelectedLog() {
@@ -2938,15 +2967,22 @@ function renderFalloutReportPreview(text) {
 // report generated successfully — the fallout report right after, all in
 // one go. Still confirms once first, since it deletes old messages and
 // publishes to the whole guild.
-function confirmPostFullReport() {
+async function confirmPostFullReport() {
   if (!_lastLogFetch) { showToast('Fetch a log first.', true); return; }
   if (!logsChannelId) { showToast('Enter a Discord channel ID first.', true); return; }
 
+  // Re-resolve right before showing the dialog rather than trusting
+  // whatever finished resolving earlier - cheap, and guarantees the names
+  // shown match whatever's actually configured right now.
+  await refreshGuildLogsChannelNames();
+  const logsLabel = logsChannelName ? `#${logsChannelName}` : logsChannelId;
+  const archiveLabel = archiveChannelName ? `#${archiveChannelName}` : archiveChannelId;
+
   const archiveNote = archiveChannelId
-    ? `Last week's reports will be archived to ${archiveChannelId} first, then cleared from ${logsChannelId}.`
-    : `Old messages in ${logsChannelId} will be cleared first (no archive channel set).`;
+    ? `Last week's reports will be archived to ${archiveLabel} first, then cleared from ${logsLabel}.`
+    : `Old messages in ${logsLabel} will be cleared first (no archive channel set).`;
   document.getElementById('confirm-text').textContent =
-    `Publish this week's report to ${logsChannelId}? ${archiveNote}`;
+    `Publish this week's report to ${logsLabel}? ${archiveNote}`;
   const existingCheck = document.getElementById('confirm-notify-wrap');
   if (existingCheck) existingCheck.remove();
   document.getElementById('confirm-ok').onclick = () => {

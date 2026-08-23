@@ -61,6 +61,13 @@ export default {
       return handleClearChannel(request, env);
     }
 
+    // ── Resolve a channel ID to its display name, purely so confirm
+    // dialogs can show "#logs-archive" instead of a raw numeric ID ──
+    // /discord/channel-name?id=X
+    if (url.pathname === '/discord/channel-name' && request.method === 'GET') {
+      return handleChannelName(request, env);
+    }
+
     // ── Discord interactions ── /discord
     if (url.pathname === '/discord' && request.method === 'POST') {
       return handleDiscord(request, env, ctx);
@@ -1183,6 +1190,26 @@ async function handleClearChannel(request, env) {
     }
 
     return corsResponse(JSON.stringify({ ok: true, deleted, archived }), 200);
+  } catch (err) {
+    return corsResponse(JSON.stringify({ error: err.message }), 500);
+  }
+}
+
+// GET /discord/channel-name?id=X — just for display purposes (confirm
+// dialogs showing "#channel-name" instead of a raw numeric ID).
+async function handleChannelName(request, env) {
+  try {
+    const id = new URL(request.url).searchParams.get('id');
+    if (!id) throw new Error('No channel ID provided.');
+    const res = await fetch(`${DISCORD_API}/channels/${id}`, {
+      headers: { 'Authorization': `Bot ${env.DISCORD_BOT_TOKEN}` },
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || `Discord API error ${res.status}`);
+    }
+    const data = await res.json();
+    return corsResponse(JSON.stringify({ name: data.name || null }), 200);
   } catch (err) {
     return corsResponse(JSON.stringify({ error: err.message }), 500);
   }
