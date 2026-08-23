@@ -1178,9 +1178,16 @@ async function handlePostTextMessage(request, env) {
     if (!channelId) throw new Error('No channel ID provided.');
     if (!text) throw new Error('No text to post.');
 
+    // Discord hard-caps an embed description at 4096 chars (and a title at
+    // 256) - post silently failed with a 400 in the past when the AI ran
+    // long. Truncate defensively rather than trust the prompt's soft word
+    // target to always hold.
+    const safeTitle = (title || '').slice(0, 256);
+    const safeText = text.length > 4000 ? text.slice(0, 3985) + '\n\n_(truncated)_' : text;
+
     const embed = {
-      title: title || undefined,
-      description: text,
+      title: safeTitle || undefined,
+      description: safeText,
       color: 0xC9A227,
       footer: { text: 'Kaizen Raid Manager' },
       timestamp: new Date().toISOString(),

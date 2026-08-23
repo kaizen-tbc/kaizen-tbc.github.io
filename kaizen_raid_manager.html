@@ -2761,10 +2761,15 @@ let _lastLogFetch = null; // cached /logs/latest response — posting reuses
                           // "latest" that could've changed in between.
 
 // True when the currently-loaded report came from "Fetch Another Report"
-// (any public WCL code) rather than this guild's own logs — posting to
-// Discord is disabled in that case so a comparison/other log can't get
-// mistaken for this raid's own rankings.
+// (any public WCL code) rather than this guild's own logs — drives the
+// "🔗 External" badge and a heads-up note in the post confirmation.
 let _lastLogIsForeign = false;
+
+// The in-flight (or settled) generateFalloutReport() promise, so
+// postFullReportToDiscord can await it before checking the textarea -
+// otherwise clicking Post before generation finishes silently skips the
+// fallout report entirely (the textarea just doesn't exist yet, no error).
+let _falloutReportPromise = null;
 
 // Posting an external/foreign report is allowed - if you hit the button,
 // that's intentional. _lastLogIsForeign still just drives the "🔗 External"
@@ -2876,7 +2881,11 @@ async function fetchLatestLog(reportCode, isForeign = false) {
     if (data.error) throw new Error(data.error);
     _lastLogFetch = data;
     renderLogPreview(data);
-    generateFalloutReport(); // fire-and-forget — no separate click needed
+    // Fire-and-forget so the fetch itself doesn't block on it, but the
+    // promise is kept so postFullReportToDiscord can await it - otherwise
+    // clicking Post before generation finishes silently skips the fallout
+    // report with no warning (the textarea just isn't there yet).
+    _falloutReportPromise = generateFalloutReport();
   } catch (err) {
     container.innerHTML = `<div class="notice notice-info" style="color:var(--red-bright);border-color:var(--red);">Couldn't fetch: ${err.message}</div>`;
   }
@@ -3081,6 +3090,14 @@ async function postFullReportToDiscord() {
     const rankData = await rankRes.json();
     if (!rankRes.ok || rankData.error) throw new Error(rankData.error || `Rankings post failed: ${rankRes.status}`);
 
+    // Wait for generation to actually settle (success or failure) before
+    // checking the textarea - otherwise clicking Post while it's still
+    // in flight reads an empty box and silently skips the fallout report
+    // with no warning at all.
+    if (_falloutReportPromise) {
+      showToast('✨ Waiting for fallout report to finish generating...');
+      await _falloutReportPromise.catch(() => {});
+    }
     const falloutText = document.getElementById('fallout-report-text')?.value.trim();
     if (falloutText) {
       showToast('✨ Posting fallout report...');
@@ -3095,9 +3112,12 @@ async function postFullReportToDiscord() {
       });
       const foData = await foRes.json();
       if (!foRes.ok || foData.error) throw new Error(foData.error || `Fallout report post failed: ${foRes.status}`);
+      showToast(`✓ Report published to ${logsChannelId}!`);
+    } else {
+      // Explicit warning instead of a silent skip - rankings still posted
+      // fine, but this needs to be visible, not just absent.
+      showToast(`⚠ Rankings posted, but no fallout report text was found — it wasn't posted.`, true);
     }
-
-    showToast(`✓ Report published to ${logsChannelId}!`);
   } catch (err) {
     showToast(`✗ Failed: ${err.message}`, true);
   }
