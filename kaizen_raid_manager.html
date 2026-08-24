@@ -5629,23 +5629,23 @@ function onDropPoolBucket(e, target) {
   movePlayerToPoolBucket(pid, target);
 }
 
-// Raid Helper's own Bench RSVP is the ONLY signal that counts here - it's
-// a deliberate, explicit mark that someone showed up and the comp call not
-// to roster them wasn't theirs to make. Being signed up "attending" but
-// never dragged into a group deliberately does NOT count on its own -
-// that's indistinguishable from a plain no-show (signed up, then never
-// actually showed), so it gets no free attendance credit. The expectation
-// going forward: officers actually flip someone to Bench in Raid Helper
-// when a comp decision leaves them out, rather than just leaving them
-// unassigned here - that flag is what makes this fair rather than a
-// loophole. Someone benched who later DOES get rostered anyway still
-// counts (their WCL log match handles that on its own regardless of this
-// list). Scoped to real roster matches only (p.id >= 0) - pugs and
-// manually-added guildies were never an RH sign-up, so "benched" doesn't
-// apply to them.
+// A deliberate, explicit "this person showed up and the comp call not to
+// roster them wasn't theirs to make" - either Raid Helper's own Bench RSVP
+// (captured into the bench array at import time) OR an officer manually
+// dragging them into the Bench pool here after the fact (e.g. a last-
+// minute sign-up who needs benching but was never going to have their RH
+// RSVP touched for it) - both are equally deliberate actions, just two
+// different ways to reach the same state, so both should count. Being
+// signed up "attending" and simply never dragged into a group does NOT
+// count on its own - that's indistinguishable from a plain no-show, so it
+// still gets no free attendance credit; only actual bench-array membership
+// counts, matching the same authoritative source renderPool/autoFillGroups/
+// the Discord post already use. Scoped to real roster matches only
+// (p.id >= 0) - pugs and manually-added guildies were never an RH sign-up,
+// so "benched" doesn't apply to them.
 function computeBenchedNames() {
   return signUpPool
-    .filter(p => p.id >= 0 && p._rhStatus === 'bench')
+    .filter(p => p.id >= 0 && bench.includes(Number(p.id)))
     .map(p => p.name);
 }
 
