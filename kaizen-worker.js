@@ -507,7 +507,19 @@ async function handlePostRosterCommand(interaction, guildId, options, env) {
 const WCL_TOKEN_URL = 'https://www.warcraftlogs.com/oauth/token';
 const WCL_API       = 'https://www.warcraftlogs.com/api/v2/client';
 
+// Every wclQuery call used to fetch a brand new OAuth token first - meaning
+// each "one" WCL API call was actually two physical requests hitting
+// warcraftlogs.com. Caching the token (it's normally valid ~1hr) roughly
+// halves real request volume against WCL for free, on top of whatever the
+// report/table caching below saves. env.WCL_CACHE is optional here on
+// purpose - a KV outage degrades to "re-authenticate every time" (today's
+// behavior), never a hard failure.
 async function getWCLToken(env) {
+  const cacheKey = 'wcl_token';
+  if (env.WCL_CACHE) {
+    const cached = await env.WCL_CACHE.get(cacheKey).catch(() => null);
+    if (cached) return cached;
+  }
   const creds = btoa(`${env.WCL_CLIENT_ID}:${env.WCL_CLIENT_SECRET}`);
   const res = await fetch(WCL_TOKEN_URL, {
     method: 'POST',
@@ -519,10 +531,16 @@ async function getWCLToken(env) {
   });
   if (!res.ok) throw new Error(`Warcraft Logs auth failed: ${res.status}`);
   const data = await res.json();
+  if (env.WCL_CACHE && data.access_token) {
+    // Refresh a bit early (60s margin) rather than risk using a token that
+    // expires mid-request. expires_in is seconds; KV's minimum TTL is 60s.
+    const ttl = Math.max(60, (data.expires_in || 3600) - 60);
+    await env.WCL_CACHE.put(cacheKey, data.access_token, { expirationTtl: ttl }).catch(() => {});
+  }
   return data.access_token;
 }
 
-async function wclQuery(env, query, variables = {}) {
+async function wclQuery(env, query, variables = {}, _retrying = false) {
   const token = await getWCLToken(env);
   const res = await fetch(WCL_API, {
     method: 'POST',
@@ -532,6 +550,13 @@ async function wclQuery(env, query, variables = {}) {
     },
     body: JSON.stringify({ query, variables }),
   });
+  // A cached token that's expired early or been revoked looks like a 401 -
+  // clear it and retry once with a freshly-authenticated token rather than
+  // surfacing a confusing auth error for what's really a stale cache entry.
+  if (res.status === 401 && !_retrying) {
+    if (env.WCL_CACHE) await env.WCL_CACHE.delete('wcl_token').catch(() => {});
+    return wclQuery(env, query, variables, true);
+  }
   const json = await res.json().catch(() => null);
   // WCL's API gateway can reject a request before it ever reaches GraphQL
   // (e.g. HTTP 429 "Too many requests from this IP address" - an IP-level
@@ -606,10 +631,31 @@ async function findLatestGuildReport(env) {
   , pool[0]);
 }
 
+// A WCL report is immutable once it's up - parses are locked, the fights
+// that happened happened. So once we've paid for this 5-request round trip
+// once, there's no reason to ever pay it again for the same code: preview,
+// re-preview while tweaking the fallout-report prompt, and Post-to-Discord
+// (which used to silently refetch this exact same data a second time) all
+// now share one cache entry. No TTL - "immutable" means never expires.
+// Only a genuinely successful fetch is cached; a not-found/error result
+// isn't, so a typo'd code or a report still uploading doesn't get stuck.
+async function getReportFightsAndStats(env, code) {
+  const cacheKey = `report:${code}`;
+  if (env.WCL_CACHE) {
+    const cached = await env.WCL_CACHE.get(cacheKey, 'json').catch(() => null);
+    if (cached) return cached;
+  }
+  const result = await fetchReportFightsAndStats(env, code);
+  if (env.WCL_CACHE && result.report?.title) {
+    await env.WCL_CACHE.put(cacheKey, JSON.stringify(result)).catch(() => {});
+  }
+  return result;
+}
+
 // Fight list, rankings, and participant data for one report. Two queries:
 // rankings/playerDetails need fight ID arrays as arguments, which we only
 // have after the first query returns the fight list.
-async function getReportFightsAndStats(env, code) {
+async function fetchReportFightsAndStats(env, code) {
   const fightsData = await wclQuery(env, `
     query($code: String!) {
       reportData {
@@ -955,17 +1001,32 @@ function classifyHollowTopPerformers(rankingsRaw, roleKey, deaths) {
 // report fails - this table's exact shape hasn't been separately confirmed
 // live the way Deaths/Interrupts were (WCL rate limit made that untestable
 // today), so treat it as reasoned-but-unverified until the first real run.
-async function getFightActorTable(env, code, fightId, dataType) {
+// One HTTP request for ALL of these fights instead of one-per-fight, via
+// GraphQL aliases (fightIDs varies per alias, so it can't be a shared query
+// variable - embedded as a literal instead, safe since these are always our
+// own numeric fight IDs off the report's own fight list, never user input).
+// This is what used to turn a raid with several problem fights into a burst
+// of 10-20+ sequential WCL calls from a single "Fetch" click.
+async function getFightActorTablesBatch(env, code, fightIds, dataType) {
+  if (!fightIds.length) return new Map();
+  const aliases = fightIds.map((fid, i) => `f${i}: table(fightIDs: [${fid}], dataType: $dataType)`).join('\n');
   try {
     const data = await wclQuery(env, `
-      query($code: String!, $ids: [Int]!, $dataType: TableDataType!) {
-        reportData { report(code: $code) { table(fightIDs: $ids, dataType: $dataType) } }
+      query($code: String!, $dataType: TableDataType!) {
+        reportData {
+          report(code: $code) {
+            ${aliases}
+          }
+        }
       }
-    `, { code, ids: [fightId], dataType });
-    return data?.reportData?.report?.table ?? null;
+    `, { code, dataType });
+    const report = data?.reportData?.report || {};
+    const result = new Map();
+    fightIds.forEach((fid, i) => result.set(fid, report[`f${i}`] ?? null));
+    return result;
   } catch (err) {
-    console.warn(`Fight ${fightId} ${dataType} table fetch failed:`, err.message);
-    return null;
+    console.warn(`Batched ${dataType} table fetch failed:`, err.message);
+    return new Map();
   }
 }
 
@@ -997,12 +1058,32 @@ function extractActorBreakdown(tableRaw, playerName) {
 // Attaches uptimePct/topAbilities to each grey-tier-survived entry, fetching
 // each unique fight's table only once and sharing it across everyone who
 // struggled on that same pull (several people often share an encounter).
+// Same immutable-once-logged reasoning as getReportFightsAndStats - a given
+// (report, fight, dataType) table never changes, so it's cached indefinitely
+// and only ever fetched from WCL the first time any report needs it.
 async function enrichWithFightBreakdown(env, code, list, dataType, fightDurationById) {
   const uniqueFightIds = [...new Set(list.map(p => p.fightID).filter(id => id != null))];
   const tables = new Map();
+
+  const misses = [];
   for (const fid of uniqueFightIds) {
-    tables.set(fid, await getFightActorTable(env, code, fid, dataType));
+    const cacheKey = `fighttable:${code}:${fid}:${dataType}`;
+    const cached = env.WCL_CACHE ? await env.WCL_CACHE.get(cacheKey, 'json').catch(() => null) : null;
+    if (cached !== null) tables.set(fid, cached);
+    else misses.push(fid);
   }
+
+  if (misses.length) {
+    const fetched = await getFightActorTablesBatch(env, code, misses, dataType);
+    for (const fid of misses) {
+      const table = fetched.get(fid) ?? null;
+      tables.set(fid, table);
+      if (env.WCL_CACHE && table !== null) {
+        await env.WCL_CACHE.put(`fighttable:${code}:${fid}:${dataType}`, JSON.stringify(table)).catch(() => {});
+      }
+    }
+  }
+
   return list.map(p => {
     const table = tables.get(p.fightID);
     const breakdown = table ? extractActorBreakdown(table, p.name) : null;

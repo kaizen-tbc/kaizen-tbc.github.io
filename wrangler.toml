@@ -15,3 +15,12 @@ account_id = "3b9ca148c94560c58ab6cfcc6984406c"
 # WCL_GUILD_SERVER_REGION) already live on the Worker stay untouched by
 # `wrangler deploy` - they're managed separately via `wrangler secret put`
 # or the dashboard, never committed here.
+
+# WCL report data is immutable once logged (parses are locked) - cached here
+# indefinitely (no TTL) so re-viewing/re-posting an already-fetched report,
+# or tweaking the fallout-report prompt against the same log, costs zero
+# further Warcraft Logs API calls. Also holds the short-lived WCL OAuth
+# token so every query doesn't re-authenticate from scratch.
+[[kv_namespaces]]
+binding = "WCL_CACHE"
+id = "d8aaec5fbe0942189426e25cb9ab6a81"
