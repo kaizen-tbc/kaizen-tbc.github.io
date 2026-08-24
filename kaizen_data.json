@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-08-24T19:46:24.345Z",
+  "savedAt": "2026-08-24T19:52:55.717Z",
   "roster": [
     {
       "id": 1,
@@ -957,7 +957,7 @@
       "name": "TUESDAY 25",
       "size": 25,
       "rhChannelId": "1498198665045737492",
-      "discordChannelId": "1539366128898285629",
+      "discordChannelId": "1498198665045737492",
       "groups": [
         [
           40,
@@ -10689,6 +10689,37 @@
     },
     {
       "date": "2026-08-24",
+      "names": [],
+      "rostered": [
+        "Charcoochy",
+        "Healkinz",
+        "Kiricolo",
+        "Zabanya",
+        "Zuulman",
+        "Clutchløck",
+        "Sobadai",
+        "Akohre",
+        "Caelø",
+        "Daisojenn",
+        "Darthorg",
+        "Eddiemage",
+        "Keishatini",
+        "Krunkette",
+        "Mikeanese",
+        "Popeshe",
+        "Priestous",
+        "Rodentp",
+        "Sylics",
+        "Tishee",
+        "Totemy",
+        "Chewïe",
+        "Hasu",
+        "Shamanitis",
+        "Shrewmy"
+      ]
+    },
+    {
+      "date": "2026-08-26",
       "names": [],
       "rostered": [
         "Charcoochy",
