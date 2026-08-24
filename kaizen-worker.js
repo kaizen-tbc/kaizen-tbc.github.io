@@ -131,7 +131,10 @@ async function handleDirectRosterPost(request, env) {
 
     if (!raid) throw new Error('Raid not found');
 
-    const embed = buildRosterEmbed(raid, roster, data.pugs || [], data.guildies || [], notify);
+    // pugs are per-raid now (not a shared top-level list) - importing one
+    // raid's roster used to silently wipe every other raid's pugs, since
+    // they all pointed at the same array. raid.pugs is that raid's own.
+    const embed = buildRosterEmbed(raid, roster, raid.pugs || [], data.guildies || [], notify);
 
     const postRes = await fetch(`${DISCORD_API}/channels/${channelId}/messages`, {
       method: 'POST',
@@ -302,7 +305,18 @@ async function handlePostStrat(request, env) {
     // out as a grid within this single embed instead (see
     // buildStratSectionFields): paired side by side where that makes
     // sense, full-width for prose sections.
-    await postEmbed(buildStratAssignsEmbed(strat, data.roster || [], data.guildies || [], data.pugs || []));
+    // pugs are per-raid now, not a shared top-level list (see
+    // handleDirectRosterPost) - a strat assign slot isn't tied to any one
+    // raid tab though, so a pug assigned to a strat could come from any of
+    // them. Union across all raids (deduped by id) preserves that lookup.
+    const allPugs = [];
+    const seenPugIds = new Set();
+    for (const r of (data.raids || [])) {
+      for (const p of (r.pugs || [])) {
+        if (!seenPugIds.has(p.id)) { seenPugIds.add(p.id); allPugs.push(p); }
+      }
+    }
+    await postEmbed(buildStratAssignsEmbed(strat, data.roster || [], data.guildies || [], allPugs));
 
     return corsResponse(JSON.stringify({ ok: true }), 200);
   } catch (err) {
@@ -454,7 +468,7 @@ async function handlePostRosterCommand(interaction, guildId, options, env) {
       });
     }
 
-    const embed = buildRosterEmbed(raid, roster, data.pugs || [], data.guildies || []);
+    const embed = buildRosterEmbed(raid, roster, raid.pugs || [], data.guildies || []);
 
     // Post via bot token to the configured channel
     const postChannelId = raid.discordChannelId || channelId;

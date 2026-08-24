@@ -2633,6 +2633,20 @@ function defaultRaid(name = 'Tuesday 25', size = 25) {
     bench: [],
     absent: [],
     tentative: [],
+    // Per-raid, NOT shared - importing Thursday's roster must not touch
+    // Tuesday's. pugs/nextPugId used to be one global counter/array shared
+    // across every tab, so a fresh import on ANY tab (applyRHImport resets
+    // pugs=[] unconditionally) silently deleted every OTHER tab's pugs too
+    // - reported live as "Tuesday's import got replaced by Thursday's".
+    // signUpPool had the exact same problem for the same reason (it's what
+    // drives the Unassigned/Bench/Absent/Tentative pool boxes and this-
+    // week class/spec resolution - see resolvePoolPlayer). guildies is
+    // deliberately left global still - it's never reset on import, so it
+    // doesn't lose data the way these did, just a smaller cross-tab
+    // visibility quirk not worth the same treatment right now.
+    pugs: [],
+    nextPugId: -1,
+    signUpPool: [],
   };
 }
 
@@ -2654,6 +2668,9 @@ let roleOverrides = {};
 let bench = [];
 let absent = [];
 let tentative = [];
+let pugs = [];
+let nextPugId = -1;
+let signUpPool = [];
 
 function syncActiveRaid() {
   const r = getActiveRaid();
@@ -2667,6 +2684,9 @@ function syncActiveRaid() {
   bench     = r.bench     || (r.bench = []);
   absent    = r.absent    || (r.absent = []);
   tentative = r.tentative || (r.tentative = []);
+  pugs        = r.pugs        || (r.pugs = []);
+  nextPugId   = r.nextPugId ?? (r.nextPugId = -1);
+  signUpPool  = r.signUpPool  || (r.signUpPool = []);
 }
 
 // The shim above (groups = r.groups) is a REFERENCE - but plenty of
@@ -2698,12 +2718,18 @@ function syncGroupsToActiveRaid() {
   r.bench = bench;
   r.absent = absent;
   r.tentative = tentative;
+  r.pugs = pugs;
+  r.nextPugId = nextPugId;
+  r.signUpPool = signUpPool;
 }
 
-let pugs = []; // global — shared across all raid tabs
-let nextPugId = -1;
-let guildies = []; // alts/casuals temporarily added to group builder pool
-let signUpPool = []; // full sign-up list from last RH import — drives the pool display
+// guildies deliberately stays global (not per-raid, unlike everything
+// above) - +Guildie never gets reset on import, so it was never the source
+// of the reported cross-tab data loss. Per-raid-izing it too is a
+// reasonable future improvement (right now an Alt added for Tuesday shows
+// as "already added" if you open +Guildie on Thursday) but it's a smaller
+// visibility quirk, not data loss, so left alone for now.
+let guildies = [];
 
 // Attendance: weeks array, each week = { label, data: {name: state} }
 let attendance = [];
@@ -5366,14 +5392,23 @@ function renderBuilder() {
     const members = groups[g] || [];
     const slots = Array.from({ length: 5 }, (_, i) => {
       const pid = members[i];
-      const p = pid ? getPlayerById(pid) : null;
+      // resolvePoolPlayer, not getPlayerById directly - a group slot needs
+      // the SAME this-week-real-class resolution the pool cards already
+      // get, or dragging someone in reverts their display to their static
+      // roster class/spec. Confirmed live: Darthorg (Warrior on roster,
+      // signed up as his Warlock this week) showed correctly as Warlock in
+      // the pool, then flipped back to Warrior - and its spec list - the
+      // moment he landed in a group slot, because this specific lookup was
+      // never updated when the pool cards got their own fix earlier.
+      const p = pid ? resolvePoolPlayer(pid) : null;
       if (p) {
-        const cc = classColor(p.class);
+        const displayClass = p._rhClass || p.class;
+        const cc = classColor(displayClass);
         const currentSpec = specOverrides[p.id] || p.ms;
         const isSpecOverridden = !!specOverrides[p.id];
         const currentRole = roleOverrides[p.id] || p.role;
         const isRoleOverridden = !!roleOverrides[p.id];
-        const specs = CLASS_SPECS[p.class] || [];
+        const specs = CLASS_SPECS[displayClass] || [];
         const specOptions = specs.map(s =>
           `<div class="spec-option${s === currentSpec ? ' active' : ''}" onmousedown="event.preventDefault();pickSpecOverride(${p.id},${g},${i},'${s}')">${s}</div>`
         ).join('');
@@ -7242,7 +7277,12 @@ async function saveToGitHub() {
   const payload = {
     version: 3,
     savedAt: new Date().toISOString(),
-    roster, raids, nextRaidId, attendance, nextId, guildInfo, pugs, nextPugId, guildies, strats, nextStratId,
+    // pugs/nextPugId are per-raid now (see raids[].pugs) - not duplicated
+    // here anymore, since a stale top-level copy is exactly what caused
+    // one raid's import to silently erase another's. The Worker computes
+    // whatever cross-raid pug lookup it needs (e.g. strat assigns) from
+    // raids[] directly.
+    roster, raids, nextRaidId, attendance, nextId, guildInfo, guildies, strats, nextStratId,
     attendanceLedger, nextLedgerId, benchLog,
     nameAliases,
     logsChannelId,
@@ -7784,17 +7824,23 @@ async function initFromJson() {
     }
     syncActiveRaid();
 
+    // One-time migration: an OLD save (before pugs/signUpPool became
+    // per-raid) has a top-level data.pugs reflecting whichever raid was
+    // active at the last save, but the raid objects themselves don't have
+    // their own .pugs yet. Recover it onto the active raid rather than
+    // silently losing it - only when that raid doesn't already have its
+    // own (a re-save under the new format would already have real
+    // per-raid data and shouldn't be clobbered by a stale top-level copy).
+    if (data.pugs?.length && !pugs.length) {
+      pugs = data.pugs;
+      nextPugId = data.nextPugId ?? (Math.min(...pugs.map(p => p.id)) - 1);
+      const r = getActiveRaid();
+      if (r) { r.pugs = pugs; r.nextPugId = nextPugId; }
+    }
+
     if (data.attendance) attendance = data.attendance;
     if (data.nextId) nextId = data.nextId;
     if (data.guildInfo) guildInfo = { ...guildInfo, ...data.guildInfo };
-    if (data.pugs) {
-      pugs = data.pugs;
-      if (data.nextPugId) {
-        nextPugId = data.nextPugId;
-      } else if (pugs.length > 0) {
-        nextPugId = Math.min(...pugs.map(p => p.id)) - 1;
-      }
-    }
     if (data.strats) strats = data.strats;
     if (data.nextStratId) nextStratId = data.nextStratId;
     if (data.guildies) guildies = data.guildies;
