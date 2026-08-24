@@ -1562,24 +1562,37 @@ async function handleFalloutReport(request, env) {
 // and rankings gets the same treatment for consistency).
 async function handlePostTextMessage(request, env) {
   try {
-    const { channelId, title, text } = await request.json();
+    const { channelId, title, text, plain } = await request.json();
     if (!channelId) throw new Error('No channel ID provided.');
     if (!text) throw new Error('No text to post.');
 
-    // Discord hard-caps an embed description at 4096 chars (and a title at
-    // 256) - post silently failed with a 400 in the past when the AI ran
-    // long. Truncate defensively rather than trust the prompt's soft word
-    // target to always hold.
-    const safeTitle = (title || '').slice(0, 256);
-    const safeText = text.length > 4000 ? text.slice(0, 3985) + '\n\n_(truncated)_' : text;
-
-    const embed = {
-      title: safeTitle || undefined,
-      description: safeText,
-      color: 0xC9A227,
-      footer: { text: 'Kaizen Raid Manager' },
-      timestamp: new Date().toISOString(),
-    };
+    let body;
+    if (plain) {
+      // Discord does NOT ping @mentions placed inside an embed - they just
+      // render as inert text, no notification fires. Anything that needs a
+      // real role/user mention to actually notify people has to go out as
+      // plain message `content`, not an embed. Discord hard-caps plain
+      // content at 2000 chars.
+      const combined = title ? `# ${title}\n\n${text}` : text;
+      const content = combined.length > 2000 ? combined.slice(0, 1985) + '\n\n_(truncated)_' : combined;
+      body = { content };
+    } else {
+      // Discord hard-caps an embed description at 4096 chars (and a title
+      // at 256) - post silently failed with a 400 in the past when the AI
+      // ran long. Truncate defensively rather than trust the prompt's soft
+      // word target to always hold.
+      const safeTitle = (title || '').slice(0, 256);
+      const safeText = text.length > 4000 ? text.slice(0, 3985) + '\n\n_(truncated)_' : text;
+      body = {
+        embeds: [{
+          title: safeTitle || undefined,
+          description: safeText,
+          color: 0xC9A227,
+          footer: { text: 'Kaizen Raid Manager' },
+          timestamp: new Date().toISOString(),
+        }],
+      };
+    }
 
     const postRes = await fetch(`${DISCORD_API}/channels/${channelId}/messages`, {
       method: 'POST',
@@ -1587,7 +1600,7 @@ async function handlePostTextMessage(request, env) {
         'Authorization': `Bot ${env.DISCORD_BOT_TOKEN}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ embeds: [embed] }),
+      body: JSON.stringify(body),
     });
     if (!postRes.ok) {
       const err = await postRes.json();
