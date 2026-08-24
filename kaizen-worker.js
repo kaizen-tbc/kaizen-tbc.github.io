@@ -1693,7 +1693,7 @@ function buildFalloutMarkdowns(parsed, dpsSurvivedBad, healersSurvivedBad) {
   // to know (a guild-specific tactic, a fight it's less sure about, etc,
   // exactly what prompted this in the first place). Short on purpose -
   // this repeats on every single report, every week.
-  const disclaimer = `_AI-generated from this raid's real WCL parses & metrics — a starting point for the conversation, not a final verdict. The numbers are real; the read on them might not be the whole story._`;
+  const disclaimer = `_Automatically generated from this raid's WCL data. The analysis is generalized and may not account for every factor behind your parse._`;
 
   const dpsText = `${disclaimer}\n\n**General Notes**\n${parsed.generalNotes}\n\n**DPS Needs Work**\n${
     dpsEntries.length ? dpsEntries.map(renderEntry).join('\n\n') : '_Nobody survived-and-grey on DPS this raid — nice._'
