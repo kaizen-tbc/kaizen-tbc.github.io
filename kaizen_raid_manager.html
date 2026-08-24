@@ -558,6 +558,13 @@ tr:last-child td { border-bottom: none; }
 .player-pool {
   display: flex;
   flex-wrap: wrap;
+  align-content: flex-start; /* pool-row's align-items:stretch makes this
+    box match its row's tallest sibling - without this, flexbox's own
+    default (align-content:stretch) then stretches a SPARSE box's one
+    line of cards to fill that whole leftover height, making a lone card
+    huge. This keeps cards hugging the top at their natural size instead,
+    leaving any extra height as plain empty space below them. */
+  align-items: flex-start; /* same fix for a line with mixed-height cards */
   gap: 6px;
   padding: 12px;
   background: var(--bg-panel);
