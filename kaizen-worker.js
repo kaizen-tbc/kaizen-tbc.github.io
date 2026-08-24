@@ -61,6 +61,12 @@ export default {
       return handlePostTextMessage(request, env);
     }
 
+    // ── Fix a typo/mistake in an already-posted text message, in place -
+    // ── /edit-text-message
+    if (url.pathname === '/edit-text-message' && request.method === 'POST') {
+      return handleEditMessage(request, env);
+    }
+
     // ── Clear every message in a channel, so the Guild Logs channel only
     // ever shows the current week's posts ── /clear-channel
     if (url.pathname === '/clear-channel' && request.method === 'POST') {
@@ -1606,8 +1612,77 @@ async function handlePostTextMessage(request, env) {
       const err = await postRes.json();
       throw new Error(err.message || `Discord API error ${postRes.status}`);
     }
+    // messageId returned so a caller can fix a typo via /edit-message
+    // afterward without needing to delete-and-repost.
+    const posted = await postRes.json();
 
-    return corsResponse(JSON.stringify({ ok: true }), 200);
+    return corsResponse(JSON.stringify({ ok: true, messageId: posted.id }), 200);
+  } catch (err) {
+    return corsResponse(JSON.stringify({ error: err.message }), 500);
+  }
+}
+
+// Fixes a typo/mistake in an already-posted message without deleting and
+// reposting (which would lose its position/timestamp and re-ping anyone
+// mentioned in it a second time). If messageId isn't given, finds the most
+// recent message the bot itself posted in that channel and edits that one -
+// covers the common case of "I just posted this, fix it" where the caller
+// didn't capture the ID from the original post response.
+async function handleEditMessage(request, env) {
+  try {
+    const { channelId, messageId: givenId, title, text, plain } = await request.json();
+    if (!channelId) throw new Error('No channel ID provided.');
+    if (!text) throw new Error('No text to post.');
+
+    const headers = { 'Authorization': `Bot ${env.DISCORD_BOT_TOKEN}` };
+
+    let messageId = givenId;
+    if (!messageId) {
+      const meRes = await fetch(`${DISCORD_API}/users/@me`, { headers });
+      if (!meRes.ok) throw new Error('Could not identify the bot itself to find its last message.');
+      const me = await meRes.json();
+
+      const listRes = await fetch(`${DISCORD_API}/channels/${channelId}/messages?limit=10`, { headers });
+      if (!listRes.ok) {
+        const err = await listRes.json().catch(() => ({}));
+        throw new Error(err.message || `Failed to list messages: ${listRes.status}`);
+      }
+      const messages = await listRes.json();
+      const mine = messages.find(m => m.author?.id === me.id);
+      if (!mine) throw new Error("Couldn't find a recent message from the bot in that channel to edit.");
+      messageId = mine.id;
+    }
+
+    let body;
+    if (plain) {
+      const combined = title ? `# ${title}\n\n${text}` : text;
+      const content = combined.length > 2000 ? combined.slice(0, 1985) + '\n\n_(truncated)_' : combined;
+      body = { content };
+    } else {
+      const safeTitle = (title || '').slice(0, 256);
+      const safeText = text.length > 4000 ? text.slice(0, 3985) + '\n\n_(truncated)_' : text;
+      body = {
+        embeds: [{
+          title: safeTitle || undefined,
+          description: safeText,
+          color: 0xC9A227,
+          footer: { text: 'Kaizen Raid Manager' },
+          timestamp: new Date().toISOString(),
+        }],
+      };
+    }
+
+    const editRes = await fetch(`${DISCORD_API}/channels/${channelId}/messages/${messageId}`, {
+      method: 'PATCH',
+      headers: { ...headers, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (!editRes.ok) {
+      const err = await editRes.json().catch(() => ({}));
+      throw new Error(err.message || `Edit failed: ${editRes.status}`);
+    }
+
+    return corsResponse(JSON.stringify({ ok: true, messageId }), 200);
   } catch (err) {
     return corsResponse(JSON.stringify({ error: err.message }), 500);
   }
