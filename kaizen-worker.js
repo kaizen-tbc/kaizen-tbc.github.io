@@ -160,7 +160,7 @@ async function handleDirectRosterPost(request, env) {
     const dateForMsg = raid.rhEventDate
       ? new Date(raid.rhEventDate + 'T00:00:00Z').toLocaleDateString('en-US', { timeZone: 'UTC', month: 'long', day: 'numeric', year: 'numeric' })
       : new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-    const followUp = `Here are the comps for **${titleForMsg}** (${dateForMsg}). If you're on the bench, please stay available in case someone drops — invites go out **30 minutes** before raid start!`;
+    const followUp = `Here are the comps for **${titleForMsg}** (${dateForMsg}). If you're on the bench, please stay available in case someone drops. Invites go out **30 minutes** before raid start!`;
     await fetch(`${DISCORD_API}/channels/${channelId}/messages`, {
       method: 'POST',
       headers: {
