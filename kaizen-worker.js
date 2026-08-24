@@ -182,37 +182,26 @@ function formatStratSection(section, roster, guildies, pugs) {
   return lines.join('\n') || '—';
 }
 
-function buildStratAssignsEmbed(strat, roster, guildies, pugs) {
-  const fields = (strat.sections || []).map(sec => ({
-    name: sec.label || 'Section',
-    // Discord hard-caps a field value at 1024 chars.
-    value: formatStratSection(sec, roster, guildies, pugs).slice(0, 1024),
-  }));
-  return {
-    title: `📋 ${strat.name} — Assignments`,
-    color: 0xC9A227,
-    fields: fields.length ? fields : [{ name: 'No assignments yet', value: '—' }],
-    footer: { text: 'Kaizen Raid Manager' },
-    timestamp: new Date().toISOString(),
-  };
-}
-
-function buildStratImageEmbed(strat, imageUrl) {
-  return {
-    title: `🗺️ ${strat.name}`,
-    color: 0xC9A227,
-    image: { url: imageUrl },
-    footer: { text: 'Kaizen Raid Manager' },
-    timestamp: new Date().toISOString(),
-  };
+// Plain `content` messages (no `embeds`) render exactly like a normal
+// person typing - no colored side-bar, no card container - per explicit
+// request. One message per section (not one combined post) so it mirrors
+// the app's own visually-separated section blocks, and since the channel
+// gets fully cleared before every post anyway, there's no cost to more
+// messages instead of one dense one.
+function buildStratSectionMessage(strat, section, roster, guildies, pugs) {
+  const label = section.label || 'Section';
+  const body = formatStratSection(section, roster, guildies, pugs);
+  // Discord's plain-message content cap is 2000 chars - generous headroom
+  // for a single section, unlike the combined-embed approach this replaces.
+  return `**${label}**\n${body}`.slice(0, 2000);
 }
 
 // Clears the strats channel (no archive - these are a living reference,
-// not a history worth keeping), then posts the strat image and its
-// assignments as two separate messages. Requires the strat to already be
-// saved/published: the image needs a real public URL, and the assignments
-// need to be readable from the same published JSON the roster-post flow
-// already relies on - no new file-upload path through the bot needed.
+// not a history worth keeping), then posts the strat image and one message
+// per assignment section. Requires the strat to already be saved/
+// published: the image needs a real public URL, and the assignments need
+// to be readable from the same published JSON the roster-post flow already
+// relies on - no new file-upload path through the bot needed.
 async function handlePostStrat(request, env) {
   try {
     const { stratId, channelId } = await request.json();
@@ -233,22 +222,26 @@ async function handlePostStrat(request, env) {
     await clearChannelMessages(env, channelId, null);
 
     const headers = { 'Authorization': `Bot ${env.DISCORD_BOT_TOKEN}`, 'Content-Type': 'application/json' };
+    const post = async (content) => {
+      const res = await fetch(`${DISCORD_API}/channels/${channelId}/messages`, {
+        method: 'POST', headers, body: JSON.stringify({ content }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || `Post failed: ${res.status}`);
+      }
+      // A small gap between sequential posts respects Discord's per-channel
+      // rate limit on a raid-sized batch of section messages.
+      await new Promise(r => setTimeout(r, 350));
+    };
 
-    const imgRes = await fetch(`${DISCORD_API}/channels/${channelId}/messages`, {
-      method: 'POST', headers, body: JSON.stringify({ embeds: [buildStratImageEmbed(strat, imageUrl)] }),
-    });
-    if (!imgRes.ok) {
-      const err = await imgRes.json().catch(() => ({}));
-      throw new Error(err.message || `Image post failed: ${imgRes.status}`);
-    }
+    // Bare image URL as the whole message content - Discord auto-unfurls
+    // it into an inline image preview, no embed card wrapper needed.
+    await post(`**🗺️ ${strat.name}**\n${imageUrl}`);
 
-    const assignsEmbed = buildStratAssignsEmbed(strat, data.roster || [], data.guildies || [], data.pugs || []);
-    const assignsRes = await fetch(`${DISCORD_API}/channels/${channelId}/messages`, {
-      method: 'POST', headers, body: JSON.stringify({ embeds: [assignsEmbed] }),
-    });
-    if (!assignsRes.ok) {
-      const err = await assignsRes.json().catch(() => ({}));
-      throw new Error(err.message || `Assignments post failed: ${assignsRes.status}`);
+    const sections = strat.sections?.length ? strat.sections : [{ label: 'No assignments yet', rows: [] }];
+    for (const sec of sections) {
+      await post(buildStratSectionMessage(strat, sec, data.roster || [], data.guildies || [], data.pugs || []));
     }
 
     return corsResponse(JSON.stringify({ ok: true }), 200);
