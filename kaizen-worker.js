@@ -1686,10 +1686,19 @@ function buildFalloutMarkdowns(parsed, dpsSurvivedBad, healersSurvivedBad) {
   const dpsEntries = needsWork.filter(item => dpsNames.has(item.name));
   const healerEntries = needsWork.filter(item => healerNames.has(item.name));
 
-  const dpsText = `**General Notes**\n${parsed.generalNotes}\n\n**DPS Needs Work**\n${
+  // Explicit framing on both posts (not just the first one) since they go
+  // out as separate messages and someone might only ever see the healers
+  // half. The parses are real - not waving that away - but the AI's read
+  // on WHY a number looks the way it does can miss context it has no way
+  // to know (a guild-specific tactic, a fight it's less sure about, etc,
+  // exactly what prompted this in the first place). Short on purpose -
+  // this repeats on every single report, every week.
+  const disclaimer = `_AI-generated from this raid's real WCL parses & metrics — a starting point for the conversation, not a final verdict. The numbers are real; the read on them might not be the whole story._`;
+
+  const dpsText = `${disclaimer}\n\n**General Notes**\n${parsed.generalNotes}\n\n**DPS Needs Work**\n${
     dpsEntries.length ? dpsEntries.map(renderEntry).join('\n\n') : '_Nobody survived-and-grey on DPS this raid — nice._'
   }`;
-  const healersText = `**Healers Needs Work**\n${
+  const healersText = `${disclaimer}\n\n**Healers Needs Work**\n${
     healerEntries.length ? healerEntries.map(renderEntry).join('\n\n') : '_Nobody survived-and-grey on healing this raid — nice._'
   }\n\n**Interrupts**\n${parsed.interruptsNote}`;
 
