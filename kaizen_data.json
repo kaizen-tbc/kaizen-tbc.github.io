@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-08-24T14:41:34.295Z",
+  "savedAt": "2026-08-24T17:59:59.052Z",
   "roster": [
     {
       "id": 1,
@@ -1095,18 +1095,18 @@
           31,
           22,
           35,
-          null
+          79
         ],
         [
           40,
           29,
-          14,
-          -1
+          11,
+          14
         ],
         [
           67,
           4,
-          -2,
+          2,
           12,
           39
         ],
@@ -1121,7 +1121,6 @@
           55,
           37,
           27,
-          10,
           5
         ]
       ],
@@ -1133,9 +1132,10 @@
         ""
       ],
       "specOverrides": {
+        "2": "Destruction",
         "4": "Balance",
         "5": "Retribution",
-        "10": "Restoration",
+        "11": "Beastmastery",
         "12": "Destruction",
         "14": "Feral",
         "19": "Holy",
@@ -1152,12 +1152,13 @@
         "46": "Enhancement",
         "55": "Protection",
         "67": "Elemental",
-        "-1010": "Restoration"
+        "79": "Feral"
       },
       "roleOverrides": {
+        "2": "Ranged",
         "4": "Ranged",
         "5": "Melee",
-        "10": "Healer",
+        "11": "Ranged",
         "12": "Ranged",
         "14": "Tank",
         "19": "Ranged",
@@ -1174,11 +1175,13 @@
         "46": "Melee",
         "55": "Tank",
         "67": "Ranged",
-        "-1010": "Healer"
+        "79": "Melee"
       },
       "userIdMap": {
+        "2": "510158141388750849",
         "4": "890614705901670490",
         "5": "227110510972108810",
+        "11": "473718939679981581",
         "12": "595869887952322561",
         "14": "458021620251099147",
         "19": "106863642942709760",
@@ -1197,9 +1200,7 @@
         "46": "185217579055448064",
         "55": "397962649154879489",
         "67": "604808748854149142",
-        "-1": "112831980101443584",
-        "-2": "510158141388750849",
-        "-3": "473718939679981581"
+        "79": "112831980101443584"
       }
     },
     {
@@ -1466,39 +1467,8 @@
       }
     ]
   },
-  "pugs": [
-    {
-      "id": -1,
-      "name": "Charcoochy/KingDingaling",
-      "class": "Warlock",
-      "ms": "Destruction",
-      "os": "",
-      "role": "Ranged",
-      "status": "Pug",
-      "altOf": "",
-      "notes": "Via Raid Helper",
-      "_rhStatus": "attending",
-      "_rhSpec": "Destruction",
-      "_rhClass": "Warlock",
-      "_userId": "510158141388750849"
-    },
-    {
-      "id": -2,
-      "name": "Ytknight/Zuulman",
-      "class": "Hunter",
-      "ms": "Beastmastery",
-      "os": "",
-      "role": "Ranged",
-      "status": "Pug",
-      "altOf": "",
-      "notes": "Via Raid Helper",
-      "_rhStatus": "attending",
-      "_rhSpec": "Beastmastery",
-      "_rhClass": "Hunter",
-      "_userId": "473718939679981581"
-    }
-  ],
-  "nextPugId": -3,
+  "pugs": [],
+  "nextPugId": -1,
   "guildies": [
     {
       "id": -1052,
@@ -9852,6 +9822,7 @@
     }
   ],
   "nextLedgerId": 16,
+  "benchLog": [],
   "nameAliases": {
     "Depew/Kiricolo": [
       5
@@ -9867,6 +9838,15 @@
     ],
     "Tilatia": [
       4
+    ],
+    "Oshika/Lakito": [
+      79
+    ],
+    "Charcoochy/KingDingaling": [
+      2
+    ],
+    "Ytknight/Zuulman": [
+      11
     ]
   },
   "logsChannelId": "1539366128898285629",
