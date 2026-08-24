@@ -3990,7 +3990,7 @@
             {
               "id": 2212,
               "typeA": "notes",
-              "valueA": "Tank against a wall. Ranged/melee grab impaling spines off the ground and use them to interrupt Tidal Shield or burst him down - don't let spines sit unused.",
+              "valueA": "Spread 6 yards with a buddy system to pull Impaling Spines. Lust on pull. Before popping Tidal Shield with a spine, make sure everyone is above ~8,500 HP - he only regens 1% per second, so there's no need to rush it.",
               "arrow": false,
               "typeB": null,
               "valueB": null
@@ -4124,7 +4124,7 @@
             {
               "id": 2312,
               "typeA": "notes",
-              "valueA": "Alternates melee (on tank) and ranged (chases a random ranged player, leaves a fire trail) phases. Spread and kite during the ranged phase without crossing trails; get him back to the tank quickly once he returns to melee.",
+              "valueA": "60-second phases. Phase 1: OT stays in melee range and topped off so DPS don't soak Hateful Strike; everyone spreads (melee included) right before the Phase 2 transition. Phase 2: stay 5-40 yards, run if targeted (the ramp works for kiting), dodge fire/volcanoes, and hold DPS just before he flips back to Phase 1.",
               "arrow": false,
               "typeB": null,
               "valueB": null
@@ -4258,7 +4258,7 @@
             {
               "id": 2412,
               "typeA": "notes",
-              "valueA": "Kill the channelers on both sides first, feeding trash/adds into the caster group as Seed of Corruption soak targets. Left/Right Add Tanks hold the adds at the side doors (Frost Traps/Earthbind Totems help), healers keep them topped. Burn Akama fast with lust once the channelers die and he engages.",
+              "valueA": "Phase 1: kill the 6 channelers - tanks cover the spawn doorways, feed a spare add into the middle as a Seed of Corruption target. Phase 2: tanks hold adds, healers keep them up, lust and burn Akama - you have 60 seconds before he loses to the boss instead.",
               "arrow": false,
               "typeB": null,
               "valueB": null
@@ -4392,7 +4392,7 @@
             {
               "id": 2512,
               "typeA": "notes",
-              "valueA": "Tank swap on stacking Shadow of Death. Kill Spirits of the Dead the instant they spawn - one reaching a player enrages the raid. Watch Incinerate targets and any Shadowy Constructs.",
+              "valueA": "Tank and spank, lust on pull. When Shadow of Death triggers, that player becomes a Spirit and solos 4 Shadowy Constructs using the 5-4-3-3-3-3 ability rotation (tab between the 3s) - help other Spirits once yours are down. Dispel Crushing Shadow immediately.",
               "arrow": false,
               "typeB": null,
               "valueB": null
@@ -4526,7 +4526,7 @@
             {
               "id": 2612,
               "typeA": "notes",
-              "valueA": "60-second melee phase. Run 3 rotating groups of 5 to spread Blood Boil stacks, rotate every ~10s. Keep melee stacked tight behind the boss for Fel-Acid Breath.",
+              "valueA": "First tank holds him facing away from the raid; melee stacks on his feet. Raid splits into 3 groups of 5 (exclude healers if possible), rotating through the soak zone every ~10s. Keep all DPS below all tanks on threat - Bewildering Strike will force a swap.",
               "arrow": false,
               "typeB": null,
               "valueB": null
@@ -4660,7 +4660,7 @@
             {
               "id": 2712,
               "typeA": "notes",
-              "valueA": "30-second Fel Rage phase. The Fel Rage target gets a massive damage/health/healing buff - pour all heals and defensive cooldowns into them. Everyone else spreads for Fel Geyser knockback, then resets to Phase 1 spots once it ends.",
+              "valueA": "Starts once the 5th Blood Boil stack goes out - spread immediately for Fel Rage. Pour heals and defensive cooldowns into the Fel Rage target (paladins can run a BoP rotation on them). Not a threat wipe - with ~5s left, get back to your Phase 1 spot, since he returns to whoever tanked him at the end of P1.",
               "arrow": false,
               "typeB": null,
               "valueB": null
@@ -4794,7 +4794,7 @@
             {
               "id": 2812,
               "typeA": "notes",
-              "valueA": "Essence of Suffering - fear-heavy phase. Have Tremor Totem/fear wards ready and kill her promptly.",
+              "valueA": "Essence of Suffering - no threat table, she attacks whoever's closest, so run a tank rotation (rogues can evasion-tank, warriors can shield up) with a BoP rotation to survive. No healing works this phase - healers DPS instead, priests keep shields on whoever's tanking. Dispel the drain immediately.",
               "arrow": false,
               "typeB": null,
               "valueB": null
@@ -4928,7 +4928,7 @@
             {
               "id": 2912,
               "typeA": "notes",
-              "valueA": "Essence of Anger - enrage/knockback mechanics. Watch for stacking debuffs that force a tank swap.",
+              "valueA": "Essence of Desire - your own damage gets reflected back, don't overnuke yourself. Mages spellsteal Rune Shield on sight. Run an interrupt rotation on Spirit Shock (it cannot land) and have the warrior tank Spell Reflect Deaden. Play it slow and clean.",
               "arrow": false,
               "typeB": null,
               "valueB": null
@@ -5062,7 +5062,7 @@
             {
               "id": 3012,
               "typeA": "notes",
-              "valueA": "Essence of Desire - mind control phase. Be ready to CC or peel anyone who gets controlled.",
+              "valueA": "Essence of Anger - OT initiates and taunts immediately once MT has aggro (using the 200% threat buff) before DPS pile on. Healers focus whoever's hit by Spite. Warrior MT should stance-dance right before Soul Scream to dump rage and reduce the damage taken.",
               "arrow": false,
               "typeB": null,
               "valueB": null
@@ -5196,7 +5196,7 @@
             {
               "id": 3112,
               "typeA": "notes",
-              "valueA": "Tank swap on the stacking Shivan debuff. Spread out to avoid Fatal Attraction chain-pulls and stacking beam damage; watch tank positioning/line-of-sight on the beams.",
+              "valueA": "Shadow resistance matters a lot (~174+ unbuffed recommended for most of the raid) - tanks don't need it, gear them for HP/mitigation instead, and stack all 3 in front of her. The instant Fatal Attraction teleports you, run away from the other linked players immediately. Stack tight through the beam phases and heal through it.",
               "arrow": false,
               "typeB": null,
               "valueB": null
@@ -5330,7 +5330,7 @@
             {
               "id": 3212,
               "typeA": "notes",
-              "valueA": "Four casters, each with a distinct kit (fear, arcane burst, silence/root, healing debuff) - pick a kill order and stick to it, interrupt heals, and spread for their AoE.",
+              "valueA": "Four casters, each needs a plan: Gathios (DPS focus - dispel his stun fast, move out of Consecration), Zerevor (mage-tank only - spellsteal Dampen Magic, interrupt Arcane Bolt), Malande (needs a melee+ranged interrupt rotation on Circle of Healing), Veras (vanishes/reappears - OT re-picks him up fast, then bring him to Gathios to get cleaved). Keep Curse of Tongues up throughout.",
               "arrow": false,
               "typeB": null,
               "valueB": null
@@ -5464,7 +5464,7 @@
             {
               "id": 3312,
               "typeA": "notes",
-              "valueA": "Standard tank-and-spank with Agonizing Flames (fire patches to avoid) and Parasitic Shadowfiend spawns - kill the fiend quickly before it explodes.",
+              "valueA": "Ranged/healers stack; the Parasitic Shadowfiend target runs away from the raid, and the adds get focused down fast once they spawn (slow traps help). MT saves Shield Block/Holy Shield for Shear and repositions Illidan after every Flame Crash.",
               "arrow": false,
               "typeB": null,
               "valueB": null
@@ -5598,7 +5598,7 @@
             {
               "id": 3412,
               "typeA": "notes",
-              "valueA": "Flames of Azzinoth - two adds spawn with a beam attack to dodge; burn them down before their enrage timer. Keep Illidan tanked away from the adds.",
+              "valueA": "Flames of Azzinoth - two fire-resist tanks kite the Flame adds along a set path so their breath never crosses the raid; melee focus one Flame down before swapping to the other. Ranged/healers split into 3 groups to spread Fireball damage and dodge the Eye Blast trail as it lands.",
               "arrow": false,
               "typeB": null,
               "valueB": null
@@ -5732,7 +5732,7 @@
             {
               "id": 3512,
               "typeA": "notes",
-              "valueA": "Phase 1 abilities return plus new ones (cage mechanic) - handle cage swaps promptly while executing Phase 1 fundamentals cleanly.",
+              "valueA": "Repeats Phase 1's mechanics, but everyone now spreads 5 yards for Agonizing Flames. Designate a spot to drop/slow/kill Parasitic Shadowfiends.",
               "arrow": false,
               "typeB": null,
               "valueB": null
@@ -5866,7 +5866,7 @@
             {
               "id": 3612,
               "typeA": "notes",
-              "valueA": "Demon Phase - Illidan takes flight; raid handles ground effects and adds coming from the air while staying spread.",
+              "valueA": "Demon Phase - a warlock in shadow resistance gear solo-tanks Illidan, 20 yards from everyone else. Raid spreads for Flame Burst/Shadow Demons and kills the demons the instant they spawn. Most guilds push hard here (lust included) since he drops to Phase 5 at 30%.",
               "arrow": false,
               "typeB": null,
               "valueB": null
@@ -6000,7 +6000,7 @@
             {
               "id": 3712,
               "typeA": "notes",
-              "valueA": "Combines Phase 1 and Phase 3 mechanics plus new abilities as the enrage timer closes in - this is usually the real DPS/execution check.",
+              "valueA": "Repeats Phase 3, but watch his enrage timer (+30% attack speed/+50% damage after 40s) - save cooldowns for it. Maiev drops traps around the platform; kite Illidan into one to strip the enrage and boost his damage taken. If you reach this phase, you can finish the kill.",
               "arrow": false,
               "typeB": null,
               "valueB": null
@@ -6134,7 +6134,7 @@
             {
               "id": 3812,
               "typeA": "notes",
-              "valueA": "Watch for friendly-fire deaths from Ice Block interactions. Tank keeps him still for melee; ranged/healers stay spread for Death and Decay.",
+              "valueA": "Stack in a circle around him. Use stun-breaks (or PvP trinkets) to get out of Icebolt fast, with healers focused on whoever gets stunned. Move out of Death and Decay - a big red circle that can be easy to miss, so watch your feet.",
               "arrow": false,
               "typeB": null,
               "valueB": null
@@ -6268,7 +6268,7 @@
             {
               "id": 3912,
               "typeA": "notes",
-              "valueA": "Kill Vines immediately when they spawn, before they root/silence the raid. Watch Sleep so it doesn't take a key player out at a bad moment.",
+              "valueA": "Spread in a circle, keeping healers apart so Carrion Swarm doesn't hit more than one at a time. The Infernal target moves away from the raid before it lands, then MDs it to the OT - most groups burn the Infernal down fast rather than leave it up.",
               "arrow": false,
               "typeB": null,
               "valueB": null
@@ -6402,7 +6402,7 @@
             {
               "id": 4012,
               "typeA": "notes",
-              "valueA": "Watch personal mana - Mana Burn can one-shot a low-mana caster, so pre-drink/pot beforehand. Melee stays mobile to dodge ranged Cleave/void effects.",
+              "valueA": "Spread out - mana users watch their mana and move away from others as it drops, since hitting 0 mana causes an AoE explosion. Ret/Prot Paladins are most at risk (low mana pools); Warlocks can stack freely since Mana Tap keeps them safe. MT faces him away from melee; OTs can help soak Cleave.",
               "arrow": false,
               "typeB": null,
               "valueB": null
@@ -6536,7 +6536,7 @@
             {
               "id": 4112,
               "typeA": "notes",
-              "valueA": "Rain of Fire zones move with him, so melee needs to stay mobile. Watch for his fear and cleave; otherwise a standard tank-and-spank.",
+              "valueA": "Spread out. Whoever gets the Doom debuff runs to the designated NPC group (Tauren/Thrall) so they help kill the Doomguard that spawns on death - OT picks it up and holds it, DPS ignores it and stays on the boss. Move out of fire.",
               "arrow": false,
               "typeB": null,
               "valueB": null
@@ -6670,7 +6670,7 @@
             {
               "id": 4212,
               "typeA": "notes",
-              "valueA": "Pull from range on mounts with rolling HoTs on the MT. Don't turn your back to the water - landing in it from Air Blast silences you.",
+              "valueA": "One tank only (can't be crushed - Druid works well). Every group needs a shaman in Tremor Totem range for the fear. Avoid the moving fire patches (fear can push you into one), decurse Grip of the Legion immediately, and keep everyone alive - a death triggers a nasty Soul Charge effect. He has less HP than Gruul; this fight is about clean positioning, not a DPS race.",
               "arrow": false,
               "typeB": null,
               "valueB": null
