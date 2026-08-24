@@ -1432,6 +1432,56 @@ async function handleDirectLogPost(request, env) {
 // is cents, not dollars - worth it for coaching content people act on.
 const OPENAI_MODEL = 'gpt-5-mini';
 
+// Strips a "- P1"/"- P2" phase suffix and non-alphanumerics so a strat
+// entry like "Kael'thas - P2" and a WCL fight name like "Kael'thas
+// Sunstrider" can be fuzzy-matched against each other.
+function normalizeEncounterName(name) {
+  return (name || '').replace(/\s*-\s*P\d+.*/i, '').replace(/[^a-z0-9]/gi, '').toLowerCase();
+}
+
+// The AI has no idea this guild self-casts Earth Shield on Void Reaver
+// instead of the tank - that's exactly the kind of guild-specific tactical
+// exception a generalist model will get wrong by falling back on textbook
+// convention (real example: it told a resto shaman to put Earth Shield on
+// the MT here, an officer immediately caught it as backwards for this
+// fight). The guild's own Strategy Notes (+ the assigns notes, which often
+// carry the same shorthand) are ground truth for exactly that gap - pull
+// whatever's on file for encounters this report is actually coaching on,
+// so the model corrects itself against real tactics instead of guessing.
+function findStratNotesForEncounter(encounterName, strats) {
+  const target = normalizeEncounterName(encounterName);
+  if (!target) return null;
+  const matches = (strats || []).filter(s => {
+    const n = normalizeEncounterName(s.name);
+    return n && (target.includes(n) || n.includes(target));
+  });
+  if (!matches.length) return null;
+  const notes = new Set();
+  for (const s of matches) {
+    const section = (s.sections || []).find(sec => /strategy notes/i.test(sec.label || ''));
+    for (const row of section?.rows || []) {
+      if (row.typeA === 'notes' && row.valueA?.trim()) notes.add(row.valueA.trim());
+    }
+    if (s.assigns?.notes?.trim()) notes.add(s.assigns.notes.trim());
+  }
+  return notes.size ? [...notes].join('\n---\n') : null;
+}
+
+// Only pulls notes for encounters this report is actually coaching on
+// (death clusters + needs-work people), not the whole strat book - keeps
+// the prompt tight and avoids diluting it with irrelevant fights.
+function gatherRelevantStratNotes(strats, dpsSurvivedBad, healersSurvivedBad, deaths) {
+  const encounters = new Set();
+  for (const d of deaths?.byEncounter || []) if (d.encounter) encounters.add(d.encounter);
+  for (const p of [...(dpsSurvivedBad || []), ...(healersSurvivedBad || [])]) if (p.encounter) encounters.add(p.encounter);
+  const lines = [];
+  for (const enc of encounters) {
+    const notes = findStratNotesForEncounter(enc, strats);
+    if (notes) lines.push(`${enc}: ${notes}`);
+  }
+  return lines.join('\n\n');
+}
+
 // A 0% parse from dying tells you nothing you don't already know ("don't
 // die"). The real red flag is a grey-tier parse (WCL's own 0-24 tier) from
 // someone who SURVIVED the whole fight - that's an actual rotation/gear/
@@ -1439,7 +1489,7 @@ const OPENAI_MODEL = 'gpt-5-mini';
 // kaizen-worker.js) isolates by cross-referencing against the deaths table.
 // Deaths themselves are still reported, just as brief raid-wide context
 // rather than individual coaching targets.
-function buildFalloutPrompt(report, dpsSurvivedBad, healersSurvivedBad, deaths, interrupts) {
+function buildFalloutPrompt(report, dpsSurvivedBad, healersSurvivedBad, deaths, interrupts, stratNotes) {
   const fmtBad = list => (list || []).map(p => {
     const uptimeNote = p.uptimePct != null ? `, ${p.uptimePct}% active time` : '';
     const abilityNote = p.topAbilities?.length
@@ -1480,6 +1530,9 @@ ${fmtBad(healersSurvivedBad)}
 
 INTERRUPTS landed this raid, raid-wide total per player (all fights, kills and wipes):
 ${interruptsSummary}
+
+KNOWN GUILD TACTICS for the encounters above (this guild's own strategy notes, not generic textbook knowledge) - treat these as ground truth for THIS guild's actual play, and let them override your own generic-convention assumptions when they conflict. Concrete example of why this matters: generic advice says "keep Earth Shield on the tank," but this guild has confirmed self-casting it on Void Reaver instead, since raid damage there causes cast pushback - a coaching tip that assumed the textbook default would have been backwards. If a note below is directly relevant to someone's tip, use it; if nothing here applies to a given person, just don't reference it:
+${stratNotes || '(no strategy notes on file for these encounters)'}
 
 Return three things:
 1. generalNotes - 2-3 sentences on any pattern worth flagging raid-wide (e.g. several people struggling on the same encounter suggests a mechanic/positioning issue, not an individual one). Use the death breakdown's real per-encounter counts as evidence: if deaths cluster heavily on one or two encounters, name them and take a concrete guess at what's going wrong mechanically (positioning, a specific ability/phase, an add that needs to be handled) based on TBC Classic knowledge of that encounter - "we're getting sloppy on X's mechanic" is far more useful than "there were some deaths." Don't just restate the raw counts back - explain what they mean. If deaths are spread thin with no real cluster, say so briefly and move on - don't force a pattern that isn't there.
@@ -1610,9 +1663,20 @@ async function handleFalloutReport(request, env) {
     if (!env.OPENAI_API_KEY) throw new Error('OpenAI API key not configured.');
     const { report, dpsSurvivedBad, healersSurvivedBad, deaths, interrupts } = await request.json();
 
+    // Best-effort - a strat-notes fetch failure shouldn't block the report,
+    // it just falls back to generic coaching (today's prior behavior).
+    let stratNotes = '';
+    try {
+      const dataRes = await fetch(`https://kaizen-tbc.github.io/kaizen_data.json?v=${Date.now()}`);
+      const guildData = dataRes.ok ? await dataRes.json() : null;
+      if (guildData?.strats) {
+        stratNotes = gatherRelevantStratNotes(guildData.strats, dpsSurvivedBad, healersSurvivedBad, deaths);
+      }
+    } catch { /* fine, prompt just runs without guild-specific tactics */ }
+
     const res = await callOpenAIWithRetry({
       model: OPENAI_MODEL,
-      input: buildFalloutPrompt(report, dpsSurvivedBad, healersSurvivedBad, deaths, interrupts),
+      input: buildFalloutPrompt(report, dpsSurvivedBad, healersSurvivedBad, deaths, interrupts, stratNotes),
       text: {
         format: {
           type: 'json_schema',

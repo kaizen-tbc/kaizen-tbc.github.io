@@ -2864,7 +2864,7 @@
             {
               "id": 24,
               "typeA": "notes",
-              "valueA": "Tanks aggressively chase threat on main tank. You will take hatefuls. Hunters dodge orbs.",
+              "valueA": "Tanks aggressively chase threat on main tank. You will take hatefuls. Hunters dodge orbs. Resto Shamans: keep Earth Shield on yourself instead of the tank for this fight - Ground Pound's raid damage causes cast pushback, and self-casting it keeps your healing output up through it. Confirmed by officer review of low healing parses here.",
               "arrow": false,
               "typeB": null,
               "valueB": null
@@ -3814,7 +3814,7 @@
             {
               "id": 47,
               "typeA": "notes",
-              "valueA": "Astromancer - Kill first, does AOE blast wave. Purge Molten Armor.\n\nStar Scryer - Keep/spam sheep, can MC and does AOE arcane damage.\n\nBloodwarder Legionnaire - Tank separate from group. Does Whirlwind.\n\nBloodwarder Marshal - Patrol pat, comes with squires. Does Whirlwind.",
+              "valueA": "Astromancer - Kill first, does AOE blast wave. Purge Molten Armor.\n\nStar Scryer - Keep/spam sheep, can MC and does AOE arcane damage.\n\nBloodwarder Legionnaire - Tank separate from group. Does Whirlwind.\n\nBloodwarder Marshal - Patrol pat, comes with squires. Does Whirlwind.\n\nBloodwarder Vindicator - Uncleansable Flash of Light heal, Hammer of Justice stun, and Cleanse (dispels our CC on nearby mobs) - keep sheeped targets away from Vindicators so Cleanse can't break the polymorph. (Difficulty/pacing notes from the source guide are pre-nerf and may not hold on this server's current tuning - verify live, this line is just the ability kit.)",
               "arrow": false,
               "typeB": null,
               "valueB": null
