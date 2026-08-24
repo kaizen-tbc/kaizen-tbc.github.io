@@ -2613,9 +2613,25 @@ const ATT_ICON = { present: '✓', absent: '✗', excused: '⊘' };
 // ======================================================
 // ATTENDANCE LEDGER (CSV-driven, replaces manual attendance long-term)
 // ======================================================
-// attendanceLedger: [{ id, date, label, names: [string] }]
+// attendanceLedger: [{ id, date, label, names: [string], benchedNames?: [string] }]
 let attendanceLedger = [];
 let nextLedgerId = 1;
+
+// benchLog: [{ date, names: [string] }] — people Raid Helper's own RSVP
+// marks as Bench: they showed up and made themselves available, a comp
+// decision just didn't roster them, so they shouldn't be docked for a
+// no-show that never happened. Deliberately NOT "signed up attending but
+// never got a group slot" on its own - that's indistinguishable from a
+// plain no-show, so it earns no free credit; see computeBenchedNames.
+// Cross-referenced by date when importing WCL attendance. Persisted (see
+// saveData/loadData/saveToGitHub) since roster-finalize and WCL-attendance-
+// import routinely happen in separate sessions, sometimes days apart.
+let benchLog = [];
+// Scheduled date of the most recently imported Raid Helper event (its own
+// startTime, not "whenever we happened to click Post") - captured at
+// import time in processRHSignUps, read later when the roster gets
+// finalized so the bench record lands on the actual raid date.
+let _lastRHImportDate = null;
 
 // ======================================================
 // RAID HELPER NAME ALIASES (persistent, guild-wide)
@@ -2690,12 +2706,22 @@ async function openWCLAttendanceImport() {
       else unmatchedNames.push(n);
     });
     const uniqueMatched = [...new Set(matched)];
+    const reportDate = data.report?.startTime ? new Date(data.report.startTime).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10);
+
+    // Anyone Raid Helper marked Bench for this date showed up and made
+    // themselves available - a comp call just didn't roster them, so they
+    // shouldn't read as a no-show just because they're missing from the
+    // combat log. Pre-checked like a real match, but tracked separately so
+    // the modal can label WHY they're here with no log data behind them.
+    const benchEntry = benchLog.find(b => b.date === reportDate);
+    const benchedNames = (benchEntry?.names || []).filter(n => !uniqueMatched.includes(n));
 
     _pendingWCLAttendance = {
       reportTitle: data.report?.title || 'Raid Log',
-      reportDate: data.report?.startTime ? new Date(data.report.startTime).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10),
+      reportDate,
       matched: uniqueMatched,
-      checked: new Set(uniqueMatched),
+      benched: benchedNames,
+      checked: new Set([...uniqueMatched, ...benchedNames]),
       unmatchedNames,
     };
     renderWCLAttendanceModal();
@@ -2730,6 +2756,15 @@ function renderWCLAttendanceModal() {
               ${name}
             </label>
           `).join('') || '<div style="color:var(--text-dim);font-size:12px;font-style:italic;">No roster matches found in this report.</div>'}
+          ${p.benched.length ? `
+            <div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--gold);margin:8px 2px 4px;">Benched (Raid Helper) — counted, not docked</div>
+            ${p.benched.map(name => `
+              <label style="display:flex;align-items:center;gap:8px;padding:5px 4px;font-size:13px;cursor:pointer;">
+                <input type="checkbox" checked onchange="toggleWCLAttendanceName('${name.replace(/'/g, "\\'")}', this.checked)">
+                ${name} <span style="font-size:10px;color:var(--gold);">BENCH</span>
+              </label>
+            `).join('')}
+          ` : ''}
         </div>
         ${p.unmatchedNames.length ? `
           <p style="font-size:11px;color:var(--text-dim);margin-top:10px;">
@@ -2761,12 +2796,18 @@ function confirmWCLAttendanceImport() {
   if (!p) return;
   const date = document.getElementById('wcl-attendance-date').value;
   const names = [...p.checked];
+  // Benched names actually kept checked (an officer could've unchecked one
+  // in the modal) - tracked separately purely for the ledger's own "BENCH"
+  // audit tag, doesn't affect who counts (that's just `names`, same as any
+  // other checked name).
+  const benchedNames = p.benched.filter(n => p.checked.has(n));
 
   const existing = attendanceLedger.find(w => w.date === date);
   if (existing) {
     // Merge: union of names, keep existing label, no duplicate entry for the date
     const merged = new Set([...existing.names, ...names]);
     existing.names = [...merged];
+    existing.benchedNames = [...new Set([...(existing.benchedNames || []), ...benchedNames])];
     showToast(`Merged ${names.length} names into existing ${date} raid.`);
   } else {
     attendanceLedger.push({
@@ -2774,6 +2815,7 @@ function confirmWCLAttendanceImport() {
       date,
       label: p.reportTitle,
       names,
+      benchedNames,
     });
     showToast(`Added ${names.length} names for ${date}.`);
   }
@@ -3223,6 +3265,7 @@ function removeNameFromLedgerWeek(weekId, name) {
   const week = attendanceLedger.find(w => w.id === weekId);
   if (!week) return;
   week.names = week.names.filter(n => n !== name);
+  if (week.benchedNames) week.benchedNames = week.benchedNames.filter(n => n !== name);
   renderAttendanceLedger();
 }
 
@@ -3257,13 +3300,16 @@ function renderAttendanceLedger() {
 
   container.innerHTML = sorted.map(week => {
     const unmatched = week.names.filter(n => !rosterNames.has(n));
+    const benched = new Set(week.benchedNames || []);
     const namesHtml = week.names.map(n => {
       const isUnmatched = unmatched.includes(n);
+      const isBenched = benched.has(n);
       return `<div style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:3px;
                 border:1px solid ${isUnmatched ? 'var(--gold-dim)' : 'var(--border-bright)'};
                 background:${isUnmatched ? 'rgba(201,162,39,0.08)' : 'var(--bg-card)'};
                 font-size:11px;font-weight:600;margin:2px;">
         ${n}
+        ${isBenched ? `<span style="font-size:9px;color:var(--gold);font-weight:700;" title="Raid Helper Bench - counted, not docked">BENCH</span>` : ''}
         ${isUnmatched ? `<button onclick="quickAddUnmatchedToRoster('${n.replace(/'/g, "\\'")}')" style="background:none;border:none;color:var(--gold);cursor:pointer;font-size:10px;padding:0;" title="Add to roster">+</button>` : ''}
         <button onclick="removeNameFromLedgerWeek(${week.id}, '${n.replace(/'/g, "\\'")}')" style="background:none;border:none;color:var(--red-bright);cursor:pointer;font-size:10px;padding:0;opacity:0.6;" title="Remove (pug)">✕</button>
       </div>`;
@@ -3462,6 +3508,14 @@ async function fetchRHEventById(eventId) {
 function processRHSignUps(event) {
   const signUps = event.signUps || [];
   const title = event.title || 'Raid Helper Event';
+
+  // The event's own scheduled date (Unix seconds), not "whenever this
+  // happened to get imported" - read later by recordBenchLog so a benched
+  // player's record lands on the actual raid date, matching how the WCL
+  // attendance importer keys off the log's own start time too.
+  _lastRHImportDate = event.startTime
+    ? new Date(event.startTime * 1000).toISOString().slice(0, 10)
+    : new Date().toISOString().slice(0, 10);
 
   // Categorise by status
   const attending  = signUps.filter(s => s.status === 'primary' || s.status === 'late');
@@ -3830,6 +3884,10 @@ async function publishRosterToDiscord(notify = true) {
   showToast('↑ Publishing roster to Discord...');
 
   try {
+    // Posting is the "this roster is now final" moment - snapshot who's
+    // benched (RH RSVP or comp decision made here) before saving, so
+    // attendance import can find it later without docking them.
+    recordBenchLog();
     // Save current state to GitHub first so Worker has latest data
     await saveToGitHub();
 
@@ -5190,6 +5248,40 @@ function renderPool() {
   }
 }
 
+// Raid Helper's own Bench RSVP is the ONLY signal that counts here - it's
+// a deliberate, explicit mark that someone showed up and the comp call not
+// to roster them wasn't theirs to make. Being signed up "attending" but
+// never dragged into a group deliberately does NOT count on its own -
+// that's indistinguishable from a plain no-show (signed up, then never
+// actually showed), so it gets no free attendance credit. The expectation
+// going forward: officers actually flip someone to Bench in Raid Helper
+// when a comp decision leaves them out, rather than just leaving them
+// unassigned here - that flag is what makes this fair rather than a
+// loophole. Someone benched who later DOES get rostered anyway still
+// counts (their WCL log match handles that on its own regardless of this
+// list). Scoped to real roster matches only (p.id >= 0) - pugs and
+// manually-added guildies were never an RH sign-up, so "benched" doesn't
+// apply to them.
+function computeBenchedNames() {
+  return signUpPool
+    .filter(p => p.id >= 0 && p._rhStatus === 'bench')
+    .map(p => p.name);
+}
+
+// Snapshots computeBenchedNames() into benchLog, keyed by the raid's actual
+// scheduled date (captured at import time - see processRHSignUps), so the
+// WCL attendance importer can find it later even in a separate session,
+// which is the common case (roster gets finalized raid night, attendance
+// often gets imported afterward once the log's up).
+function recordBenchLog() {
+  const names = computeBenchedNames();
+  if (!names.length) return;
+  const date = _lastRHImportDate || new Date().toISOString().slice(0, 10);
+  const existing = benchLog.find(b => b.date === date);
+  if (existing) existing.names = [...new Set([...existing.names, ...names])];
+  else benchLog.push({ date, names });
+}
+
 // drag state: track both the player id AND the source group/slot
 // so we can do true swap operations
 let dragState = null; // { pid, fromGroup, fromSlot }
@@ -5948,6 +6040,7 @@ function saveData() {
     nextStratId,
     attendanceLedger,
     nextLedgerId,
+    benchLog,
     nameAliases,
     logsChannelId,
     archiveChannelId,
@@ -5993,6 +6086,7 @@ function loadData(event) {
       if (data.nextStratId) nextStratId = data.nextStratId;
       if (data.guildies) guildies = data.guildies;
       if (data.attendanceLedger) attendanceLedger = data.attendanceLedger;
+      if (data.benchLog) benchLog = data.benchLog;
       if (data.nextLedgerId) nextLedgerId = data.nextLedgerId;
       if (data.nameAliases) nameAliases = data.nameAliases;
       if (data.logsChannelId) logsChannelId = data.logsChannelId;
@@ -6803,7 +6897,7 @@ async function saveToGitHub() {
     version: 3,
     savedAt: new Date().toISOString(),
     roster, raids, nextRaidId, attendance, nextId, guildInfo, pugs, nextPugId, guildies, strats, nextStratId,
-    attendanceLedger, nextLedgerId,
+    attendanceLedger, nextLedgerId, benchLog,
     nameAliases,
     logsChannelId,
     archiveChannelId,
@@ -7360,6 +7454,7 @@ async function initFromJson() {
     if (data.guildies) guildies = data.guildies;
     if (data.attendanceLedger) attendanceLedger = data.attendanceLedger;
     if (data.nextLedgerId) nextLedgerId = data.nextLedgerId;
+    if (data.benchLog) benchLog = data.benchLog;
     if (data.nameAliases) nameAliases = data.nameAliases;
     if (data.logsChannelId) logsChannelId = data.logsChannelId;
     if (data.archiveChannelId) archiveChannelId = data.archiveChannelId;
