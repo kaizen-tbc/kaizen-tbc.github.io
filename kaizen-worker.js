@@ -228,11 +228,6 @@ function buildStratAssignsEmbed(strat, roster, guildies, pugs) {
   const fields = buildStratSectionFields(strat, roster, guildies, pugs);
   return {
     title: `📋 ${strat.name} — Assignments`,
-    // Same fix as the image embed: an embed's card width is driven by its
-    // title/description, not by how many inline fields sit side by side -
-    // with no description this rendered narrower than the image post
-    // right above it, so the two cards didn't line up edge to edge.
-    description: `Who's assigned where for ${strat.name}${strat.raid ? ' (' + strat.raid + ')' : ''}. Update this as raid comp changes.`,
     color: 0xC9A227,
     fields: fields.length ? fields : [{ name: 'No assignments yet', value: '—' }],
     footer: { text: 'Kaizen Raid Manager' },
@@ -240,17 +235,15 @@ function buildStratAssignsEmbed(strat, roster, guildies, pugs) {
   };
 }
 
+// Tried padding this (and the assigns embed) with a description to force
+// both cards toward Discord's max width and line up edge to edge -
+// confirmed live it doesn't actually work once an `image` is involved
+// (an embed's image apparently renders at its own footprint regardless of
+// description length, unlike a pure-text embed). Reverted; not chasing
+// this further; a description here wasn't adding real value on its own.
 function buildStratImageEmbed(strat, imageUrl) {
   return {
     title: `🗺️ ${strat.name}`,
-    // Confirmed live: an embed's card width is driven by its own content
-    // (title/description/fields), not the attached image's resolution -
-    // a short title with nothing else renders a narrow card, and the
-    // image (even a genuinely wide one) gets fit into that narrow card
-    // rather than its own native size. This description is real content
-    // (not filler), but it's also long enough to push the card toward
-    // Discord's max width so the image actually gets room to render wide.
-    description: `${strat.raid ? strat.raid + ' — ' : ''}Assignments (tanks, healers, and everything else) are in the message right below this one.`,
     color: 0xC9A227,
     image: { url: imageUrl },
     footer: { text: 'Kaizen Raid Manager' },
