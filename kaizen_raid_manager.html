@@ -1258,6 +1258,34 @@ a[href] > div > div[style*="line-height:1.6"] {
   border-top: 1px solid var(--border);
 }
 
+/* Unassigned/Bench/Absent/Tentative side by side, left to right - Unassigned
+   gets half the row (flex:3 of a 6-wide total), the other three split the
+   remaining half evenly (flex:1 each = 1/6 apiece). align-items:stretch
+   (flexbox's default, stated explicitly here) is what makes every box match
+   the tallest one's height automatically - no JS needed for that part. */
+.pool-row {
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.pool-box {
+  display: flex;
+  flex-direction: column;
+  min-width: 160px;
+}
+.pool-box-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+}
+.pool-box .player-pool {
+  flex: 1; /* stretch to fill the row's height, set by the tallest box */
+}
+
 /* ===== ANIMATION ===== */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(6px); }
@@ -1749,10 +1777,27 @@ a[href] > div > div[style*="line-height:1.6"] {
 
   <div class="bench-section">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-      <div class="pool-label" style="margin-bottom:0;">Unassigned Raiders</div>
+      <div class="pool-label" style="margin-bottom:0;">Roster Pools</div>
       <div id="pug-strip" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;"></div>
     </div>
-    <div class="player-pool" id="player-pool"></div>
+    <div class="pool-row">
+      <div class="pool-box" style="flex:3 1 0;">
+        <div class="pool-box-label">Unassigned Raiders</div>
+        <div class="player-pool" id="player-pool"></div>
+      </div>
+      <div class="pool-box" style="flex:1 1 0;">
+        <div class="pool-box-label">Bench</div>
+        <div class="player-pool" id="bench-pool"></div>
+      </div>
+      <div class="pool-box" style="flex:1 1 0;">
+        <div class="pool-box-label">Absent</div>
+        <div class="player-pool" id="absent-pool"></div>
+      </div>
+      <div class="pool-box" style="flex:1 1 0;">
+        <div class="pool-box-label">Tentative</div>
+        <div class="player-pool" id="tentative-pool"></div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -3580,11 +3625,29 @@ function processRHSignUps(event) {
     ? new Date(event.startTime * 1000).toISOString().slice(0, 10)
     : new Date().toISOString().slice(0, 10);
 
+  // Raid Helper's API can return more than one sign-up record for the same
+  // person (an old RSVP left behind alongside a corrected one) - seen live
+  // as someone marked Absent still getting auto-filled into the comp,
+  // because a stale "attending" record for them was still in the list too.
+  // Dedupe by Discord user id (falling back to name if that's missing) so
+  // only their single most restrictive status survives - absence, then
+  // tentative, then bench all mean "don't auto-fill this person" for one
+  // reason or another, and any of them should win over a stale attending.
+  const RH_STATUS_PRIORITY = { absence: 4, tentative: 3, bench: 2, primary: 1, late: 1 };
+  const byIdentity = new Map();
+  for (const s of signUps) {
+    const key = s.userId || s.name;
+    const existing = byIdentity.get(key);
+    const rank = RH_STATUS_PRIORITY[s.status] || 0;
+    if (!existing || rank > (RH_STATUS_PRIORITY[existing.status] || 0)) byIdentity.set(key, s);
+  }
+  const dedupedSignUps = [...byIdentity.values()];
+
   // Categorise by status
-  const attending  = signUps.filter(s => s.status === 'primary' || s.status === 'late');
-  const benched    = signUps.filter(s => s.status === 'bench');
-  const absent     = signUps.filter(s => s.status === 'absence');
-  const tentative  = signUps.filter(s => s.status === 'tentative');
+  const attending  = dedupedSignUps.filter(s => s.status === 'primary' || s.status === 'late');
+  const benched    = dedupedSignUps.filter(s => s.status === 'bench');
+  const absent     = dedupedSignUps.filter(s => s.status === 'absence');
+  const tentative  = dedupedSignUps.filter(s => s.status === 'tentative');
 
   // Fuzzy-match each sign-up against roster
   function matchToRoster(name) {
@@ -3643,14 +3706,19 @@ function processRHSignUps(event) {
   const attendingRows  = rows(attending);
   const benchedRows    = rows(benched);
   const absentRows     = rows(absent);
+  const tentativeRows  = rows(tentative);
 
   // Sort each section: unmatched first, then matched
   const sortRows = rows => [...rows.filter(r => !r.match), ...rows.filter(r => r.match)];
   const attendingSorted = sortRows(attendingRows);
   const benchedSorted   = sortRows(benchedRows);
+  const absentSorted    = sortRows(absentRows);
+  const tentativeSorted = sortRows(tentativeRows);
 
   const unmatchedCount = attendingRows.filter(r => !r.match).length
-    + benchedRows.filter(r => !r.match).length;
+    + benchedRows.filter(r => !r.match).length
+    + absentRows.filter(r => !r.match).length
+    + tentativeRows.filter(r => !r.match).length;
 
   function buildSection(title, items, colorClass) {
     if (!items.length) return '';
@@ -3681,19 +3749,22 @@ function processRHSignUps(event) {
     </div>`;
   }
 
+  // rowsToDataset(rows, status) is just the attending/benched pattern above
+  // generalized to all 4 sections, so absent/tentative get the same
+  // treatment (matched, assignable, importable) instead of being dropped.
+  const rowsToDataset = (rowsList, status) => JSON.stringify(rowsList.map(r => ({
+    name: r.su.name, matchId: r.match ? r.match.player.id : null,
+    userId: r.su.userId || null,
+    className: r.cls, specName: r.spec, roleName: r.su.roleName || r.su.cRoleName || null, _status: status
+  })));
+
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay open';
   overlay.id = 'rh-preview-overlay';
-  overlay.dataset.attending = JSON.stringify(attendingRows.map(r => ({
-    name: r.su.name, matchId: r.match ? r.match.player.id : null,
-    userId: r.su.userId || null,
-    className: r.cls, specName: r.spec, roleName: r.su.roleName || r.su.cRoleName || null, _status: 'attending'
-  })));
-  overlay.dataset.benched = JSON.stringify(benchedRows.map(r => ({
-    name: r.su.name, matchId: r.match ? r.match.player.id : null,
-    userId: r.su.userId || null,
-    className: r.cls, specName: r.spec, roleName: r.su.roleName || r.su.cRoleName || null, _status: 'bench'
-  })));
+  overlay.dataset.attending = rowsToDataset(attendingRows, 'attending');
+  overlay.dataset.benched   = rowsToDataset(benchedRows, 'bench');
+  overlay.dataset.absent    = rowsToDataset(absentRows, 'absence');
+  overlay.dataset.tentative = rowsToDataset(tentativeRows, 'tentative');
 
   overlay.innerHTML = `
     <div class="modal" style="max-width:820px;width:820px;max-height:82vh;display:flex;flex-direction:column;">
@@ -3707,8 +3778,8 @@ function processRHSignUps(event) {
         </div>` : ''}
         ${buildSection('Attending', attendingSorted, 'teal')}
         ${benchedSorted.length ? buildSection('Bench', benchedSorted, 'gold') : ''}
-        ${absentRows.length ? `<div style="font-size:11px;color:var(--text-dim);margin-top:8px;">+ ${absentRows.length} absent (not imported)</div>` : ''}
-        ${tentative.length ? `<div style="font-size:11px;color:var(--text-dim);">+ ${tentative.length} tentative (not imported)</div>` : ''}
+        ${absentSorted.length ? buildSection('Absent', absentSorted, 'red-bright') : ''}
+        ${tentativeSorted.length ? buildSection('Tentative', tentativeSorted, 'text-dim') : ''}
       </div>
       <div class="modal-footer">
         <button class="btn" onclick="document.getElementById('rh-preview-overlay').remove()">Cancel</button>
@@ -3819,6 +3890,12 @@ function rhRenderPanelList(filter) {
   }).join('') || '<div style="padding:12px 16px;color:var(--text-dim);font-size:13px;font-style:italic;">No matches</div>';
 }
 
+// Maps a preview section's display title to its overlay.dataset key -
+// shared by rhAssignPlayer/rhClearAlias so all 4 sections (not just
+// Attending/Bench) resolve to the right dataset instead of silently
+// falling back to 'benched' for anything else.
+const RH_SECTION_TO_DATASET_KEY = { Attending: 'attending', Bench: 'benched', Absent: 'absent', Tentative: 'tentative' };
+
 function rhAssignPlayer(rosterId, rosterName, rosterClass) {
   const { suName, section } = window._rhActive || {};
   if (!suName) return;
@@ -3832,7 +3909,7 @@ function rhAssignPlayer(rosterId, rosterName, rosterClass) {
 
   // Update dataset
   const overlay = document.getElementById('rh-preview-overlay');
-  const key = section === 'Attending' ? 'attending' : 'benched';
+  const key = RH_SECTION_TO_DATASET_KEY[section] || 'benched';
   const arr = JSON.parse(overlay.dataset[key] || '[]');
   const entry = arr.find(e => e.name === suName);
   if (entry) {
@@ -3895,7 +3972,7 @@ function rhCloseAssignPanel() {
 function rhClearAlias(suName, section) {
   const overlay = document.getElementById('rh-preview-overlay');
   if (!overlay) return;
-  const key = section === 'Attending' ? 'attending' : 'benched';
+  const key = RH_SECTION_TO_DATASET_KEY[section] || 'benched';
   const arr = JSON.parse(overlay.dataset[key] || '[]');
   const entry = arr.find(e => e.name === suName);
   if (entry) entry.matchId = null;
@@ -3977,6 +4054,8 @@ function applyRHImport() {
   const overlay = document.getElementById('rh-preview-overlay');
   const attendingData = JSON.parse(overlay.dataset.attending || '[]');
   const benchedData   = JSON.parse(overlay.dataset.benched   || '[]');
+  const absentData    = JSON.parse(overlay.dataset.absent    || '[]');
+  const tentativeData = JSON.parse(overlay.dataset.tentative || '[]');
 
   // Clear groups and pool — fresh slate
   clearGroups();
@@ -3986,19 +4065,34 @@ function applyRHImport() {
   specOverrides = {};
   roleOverrides = {};
 
-  const allSignUps = [...attendingData, ...benchedData];
+  // Absent/tentative now get imported too (not dropped) so an officer can
+  // see and, if their status changes, manually pull them in from their own
+  // pool - see the Bench/Absent/Tentative pool boxes in renderPool. They
+  // still carry their real _rhStatus, which is what keeps autoFillGroups
+  // from ever placing them automatically.
+  const allSignUps = [...attendingData, ...benchedData, ...absentData, ...tentativeData];
 
   for (const su of allSignUps) {
     if (su.matchId) {
       const p = roster.find(r => r.id === su.matchId);
       if (p) {
         const poolEntry = { ...p, _rhStatus: su._status || 'attending', _userId: su.userId || null };
-        // Roster is authoritative for class once matched — RH's own
-        // className is NOT reliably the real WoW class: for tank sign-ups
-        // specifically it reports a generic "Tank" bucket instead of
-        // "Paladin"/"Druid"/"Warrior" (confirmed directly against a live
-        // event), which broke Guardian-spec disambiguation and worse.
-        const translated = translateRHSpec(su.specName, p.class);
+        // RH's own className is authoritative UNLESS it's one of RH's
+        // generic role-bucket labels — confirmed live: tank sign-ups report
+        // className "Tank" instead of the real class ("Paladin"/"Druid"/
+        // "Warrior"), which broke Guardian-spec disambiguation. That one
+        // case genuinely needs the roster's class as a fallback. But
+        // blindly forcing roster's class for EVERY matched sign-up (the
+        // previous behavior) broke the opposite, equally real case: someone
+        // signing up with a different character/alt than their roster
+        // entry. Confirmed live: a Warrior-on-roster signing up as their
+        // Warlock alt got a Destruction spec paired with a forced Warrior
+        // class/color - an impossible combination that also fed the wrong
+        // class's spec list into the edit dropdown, since it reads off
+        // whatever class ends up on the pool entry.
+        const RH_GENERIC_CLASS_LABELS = new Set(['Tank', 'Healer', 'DPS', 'Damage']);
+        const effectiveClass = (!su.className || RH_GENERIC_CLASS_LABELS.has(su.className)) ? p.class : su.className;
+        const translated = translateRHSpec(su.specName, effectiveClass);
         if (translated) {
           // RH tracks role separately per sign-up (roleName) and is more
           // reliable than re-deriving it from spec name ourselves — that
@@ -4006,9 +4100,9 @@ function applyRHImport() {
           // Ranged role) and anything else we haven't seen yet.
           const rhRole = normalizeRHRole(su.roleName) || translated.role;
           poolEntry._rhSpec  = translated.spec;
-          poolEntry._rhClass = p.class;
+          poolEntry._rhClass = effectiveClass;
           poolEntry.ms       = translated.spec;
-          poolEntry.class    = p.class;
+          poolEntry.class    = effectiveClass;
           poolEntry.role     = rhRole;
           specOverrides[p.id] = translated.spec;
           roleOverrides[p.id] = rhRole;
@@ -5249,6 +5343,53 @@ function getPlayerById(id) {
   return roster.find(r => r.id === id);
 }
 
+// One player card, shared by all 4 pool boxes below - only the filtering
+// that decides which box a player lands in differs.
+function renderPoolCard(p) {
+  // Use RH class for color if available (handles alias-mapped players, and
+  // someone signed up on a different character/alt than their roster entry
+  // - see applyRHImport's effectiveClass).
+  const displayClass = p._rhClass || p.class;
+  const cc = classColor(displayClass);
+  const numId = Number(p.id);
+  const isPug = numId < 0 && !guildies.find(g => g.id === numId);
+  const isGuildie = numId < 0 && !!guildies.find(g => g.id === numId);
+  const borderStyle = isPug ? 'border-style:dashed;' : isGuildie ? 'border-style:dotted;' : '';
+
+  // Only manually-added pugs/guildies get a remove control here - RH
+  // import entries are managed as a whole via "Clear Import" instead.
+  const removeBtn = isPug
+    ? `<button onclick="event.stopPropagation();removePug(${numId})" style="background:none;border:none;color:var(--red-bright);cursor:pointer;font-size:10px;padding:0 0 0 6px;opacity:0.6;" title="Remove pug">✕</button>`
+    : isGuildie
+    ? `<button onclick="event.stopPropagation();removeGuildie(${numId})" style="background:none;border:none;color:var(--red-bright);cursor:pointer;font-size:10px;padding:0 0 0 6px;opacity:0.6;" title="Remove">✕</button>`
+    : '';
+
+  return `<div class="pool-player class-${cc}"
+    draggable="true"
+    ondragstart="onDragStart(event,${numId},-1,-1)"
+    ondragend="onDragEnd(event)"
+    onclick="quickAddToNextGroup(${numId})"
+    title="${p.ms || ''} ${displayClass}"
+    style="cursor:pointer;${borderStyle}">
+    <span class="class-dot" style="background:var(--${cc})"></span>
+    ${p.name}
+    ${isPug ? `<span style="font-size:10px;color:var(--teal);font-weight:700;margin-left:4px;">PUG</span>` : ''}
+    ${removeBtn}
+  </div>`;
+}
+
+// Manual drag/click always works regardless of which box someone's in -
+// only autoFillGroups() actually cares about _rhStatus (see its own
+// comment). These 4 boxes are purely "where do you currently expect to
+// find someone", not a hard gate on placing them.
+function renderPoolBox(containerId, players, emptyText) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  el.innerHTML = players.length
+    ? players.map(renderPoolCard).join('')
+    : `<div style="padding:12px 4px;font-size:12px;color:var(--text-dim);font-style:italic;">${emptyText}</div>`;
+}
+
 function renderPool() {
   const groupCount = getGroupCount();
 
@@ -5258,60 +5399,32 @@ function renderPool() {
     (groups[g] || []).forEach(id => assignedIds.add(Number(id)));
   }
 
-  const pool = document.getElementById('player-pool');
+  const unassignedFromPool = signUpPool.filter(p => !assignedIds.has(Number(p.id)));
+  // Missing/undefined _rhStatus means a manually-added pug/guildie (never
+  // went through an RH status at all) - treated as confirmed-available,
+  // same convention autoFillGroups uses.
+  const byStatus = status => unassignedFromPool.filter(p => (p._rhStatus || 'attending') === status);
+  const available = byStatus('attending');
+  const bench = byStatus('bench');
+  const absent = byStatus('absence');
+  const tentative = byStatus('tentative');
 
-  // Use signUpPool if we have one (post-RH import), otherwise show nothing
-  const poolSource = signUpPool.length > 0
-    ? signUpPool
-    : [];
-
-  // Only show unassigned players
-  const unassigned = poolSource.filter(p => !assignedIds.has(Number(p.id)));
-
-  if (poolSource.length === 0) {
-    pool.innerHTML = `<div style="padding:16px 4px;font-size:12px;color:var(--text-dim);font-style:italic;">Import a roster to populate the pool.</div>`;
-  } else if (unassigned.length === 0) {
-    pool.innerHTML = `<div style="padding:12px 4px;font-size:12px;color:var(--text-dim);font-style:italic;">All sign-ups are assigned to groups.</div>`;
+  if (signUpPool.length === 0) {
+    renderPoolBox('player-pool', [], 'Import a roster to populate the pool.');
+  } else if (unassignedFromPool.length === 0) {
+    renderPoolBox('player-pool', [], 'All sign-ups are assigned to groups.');
   } else {
-    pool.innerHTML = unassigned.map(p => {
-      // Use RH class for color if available (handles alias-mapped players)
-      const displayClass = p._rhClass || p.class;
-      const cc = classColor(displayClass);
-      const numId = Number(p.id);
-      const isPug = numId < 0 && !guildies.find(g => g.id === numId);
-      const isGuildie = numId < 0 && !!guildies.find(g => g.id === numId);
-      const isBench = p._rhStatus === 'bench';
-      const borderStyle = isBench ? 'border-color:var(--gold-dim);' : isPug ? 'border-style:dashed;' : isGuildie ? 'border-style:dotted;' : '';
-
-      // Only manually-added pugs/guildies get a remove control here - RH
-      // import entries are managed as a whole via "Clear Import" instead.
-      const removeBtn = isPug
-        ? `<button onclick="event.stopPropagation();removePug(${numId})" style="background:none;border:none;color:var(--red-bright);cursor:pointer;font-size:10px;padding:0 0 0 6px;opacity:0.6;" title="Remove pug">✕</button>`
-        : isGuildie
-        ? `<button onclick="event.stopPropagation();removeGuildie(${numId})" style="background:none;border:none;color:var(--red-bright);cursor:pointer;font-size:10px;padding:0 0 0 6px;opacity:0.6;" title="Remove">✕</button>`
-        : '';
-
-      return `<div class="pool-player class-${cc}"
-        draggable="true"
-        ondragstart="onDragStart(event,${numId},-1,-1)"
-        ondragend="onDragEnd(event)"
-        onclick="quickAddToNextGroup(${numId})"
-        title="${p.ms || ''} ${p.class}"
-        style="cursor:pointer;${borderStyle}">
-        <span class="class-dot" style="background:var(--${cc})"></span>
-        ${p.name}
-        ${isBench ? `<span style="font-size:10px;color:var(--gold);font-weight:700;margin-left:4px;">BENCH</span>` : ''}
-        ${isPug ? `<span style="font-size:10px;color:var(--teal);font-weight:700;margin-left:4px;">PUG</span>` : ''}
-        ${removeBtn}
-      </div>`;
-    }).join('');
+    renderPoolBox('player-pool', available, 'Everyone available is assigned to groups.');
   }
+  renderPoolBox('bench-pool', bench, 'Nobody benched.');
+  renderPoolBox('absent-pool', absent, 'Nobody absent.');
+  renderPoolBox('tentative-pool', tentative, 'Nobody tentative.');
 
   // Pug strip
   const pugStrip = document.getElementById('pug-strip');
   if (pugStrip) {
     pugStrip.innerHTML = signUpPool.length > 0
-      ? `<span style="font-size:11px;color:var(--text-dim);">${signUpPool.length} sign-ups · ${unassigned.length} unassigned</span>
+      ? `<span style="font-size:11px;color:var(--text-dim);">${signUpPool.length} sign-ups · ${available.length} unassigned</span>
          <button class="btn btn-small btn-danger" onclick="signUpPool=[];pugs=[];nextPugId=-1;clearGroups();renderBuilder();" style="padding:2px 8px;font-size:11px;">✕ Clear Import</button>`
       : '';
   }
@@ -5599,9 +5712,14 @@ function clearGroupsToPool() {
 function autoFillGroups() {
   clearGroups(false); // reset placement only — keep this week's imported spec/role overrides
 
-  // Get all available players from signUpPool or active raiders
+  // Only ever pull from confirmed attending sign-ups - never bench, absent,
+  // or tentative, regardless of what's currently in signUpPool. This is the
+  // actual fix for a real, reported failure: someone marked Absent in Raid
+  // Helper still got auto-filled into the comp. An officer can always
+  // manually drag someone in from the Bench/Absent/Tentative pools if their
+  // status changes - auto-fill just never does it for them.
   const pool = signUpPool.length > 0
-    ? signUpPool.filter(p => p._rhStatus !== 'absence')
+    ? signUpPool.filter(p => (p._rhStatus || 'attending') === 'attending')
     : getActiveRaiders();
 
   if (pool.length === 0) { showToast('No players in pool to fill.', true); return; }
