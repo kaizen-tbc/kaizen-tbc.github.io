@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-08-24T14:38:43.367Z",
+  "savedAt": "2026-08-24T14:41:34.295Z",
   "roster": [
     {
       "id": 1,
@@ -937,6 +937,18 @@
       "altOf": "",
       "level": 66,
       "notes": ""
+    },
+    {
+      "id": 79,
+      "name": "Lakito",
+      "class": "Druid",
+      "ms": "Feral",
+      "os": "",
+      "role": "Melee",
+      "status": "Main",
+      "altOf": "Oshika",
+      "level": 70,
+      "notes": ""
     }
   ],
   "raids": [
@@ -1109,7 +1121,7 @@
           55,
           37,
           27,
-          -3,
+          10,
           5
         ]
       ],
@@ -1123,6 +1135,7 @@
       "specOverrides": {
         "4": "Balance",
         "5": "Retribution",
+        "10": "Restoration",
         "12": "Destruction",
         "14": "Feral",
         "19": "Holy",
@@ -1144,6 +1157,7 @@
       "roleOverrides": {
         "4": "Ranged",
         "5": "Melee",
+        "10": "Healer",
         "12": "Ranged",
         "14": "Tank",
         "19": "Ranged",
@@ -1367,7 +1381,7 @@
       }
     }
   ],
-  "nextId": 79,
+  "nextId": 80,
   "guildInfo": {
     "guildName": "Kaizen",
     "realm": "Horde · TBC Classic · PvE",
@@ -1721,6 +1735,19 @@
       "level": 70,
       "notes": "",
       "_rosterId": 23
+    },
+    {
+      "id": -1079,
+      "name": "Lakito",
+      "class": "Druid",
+      "ms": "Feral",
+      "os": "",
+      "role": "Melee",
+      "status": "Main",
+      "altOf": "Oshika",
+      "level": 70,
+      "notes": "",
+      "_rosterId": 79
     }
   ],
   "strats": [
