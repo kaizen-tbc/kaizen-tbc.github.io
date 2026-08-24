@@ -1783,19 +1783,19 @@ a[href] > div > div[style*="line-height:1.6"] {
     <div class="pool-row">
       <div class="pool-box" style="flex:3 1 0;">
         <div class="pool-box-label">Unassigned Raiders</div>
-        <div class="player-pool" id="player-pool"></div>
+        <div class="player-pool" id="player-pool" ondragover="event.preventDefault()" ondrop="onDropPoolBucket(event,'available')"></div>
       </div>
       <div class="pool-box" style="flex:1 1 0;">
         <div class="pool-box-label">Bench</div>
-        <div class="player-pool" id="bench-pool"></div>
+        <div class="player-pool" id="bench-pool" ondragover="event.preventDefault()" ondrop="onDropPoolBucket(event,'bench')"></div>
       </div>
       <div class="pool-box" style="flex:1 1 0;">
         <div class="pool-box-label">Absent</div>
-        <div class="player-pool" id="absent-pool"></div>
+        <div class="player-pool" id="absent-pool" ondragover="event.preventDefault()" ondrop="onDropPoolBucket(event,'absent')"></div>
       </div>
       <div class="pool-box" style="flex:1 1 0;">
         <div class="pool-box-label">Tentative</div>
-        <div class="player-pool" id="tentative-pool"></div>
+        <div class="player-pool" id="tentative-pool" ondragover="event.preventDefault()" ondrop="onDropPoolBucket(event,'tentative')"></div>
       </div>
     </div>
   </div>
@@ -2616,6 +2616,16 @@ function defaultRaid(name = 'Tuesday 25', size = 25) {
     groupTitles: ['', '', '', '', ''],
     specOverrides: {},
     roleOverrides: {},
+    // Player ids (same id space as groups - real roster ids, guildie temp
+    // ids, pug ids) manually placed into these buckets, independent of
+    // whatever Raid Helper originally said - an officer can drag anyone
+    // in here regardless of their RH status. Seeded from RH's own
+    // classification at import time (see applyRHImport) but freely
+    // overridable after. Persisted per-raid like groups itself, so this
+    // survives a reload and is what gets posted to Discord.
+    bench: [],
+    absent: [],
+    tentative: [],
   };
 }
 
@@ -2634,6 +2644,9 @@ let groups = [];
 let groupTitles = [];
 let specOverrides = {};
 let roleOverrides = {};
+let bench = [];
+let absent = [];
+let tentative = [];
 
 function syncActiveRaid() {
   const r = getActiveRaid();
@@ -2642,6 +2655,11 @@ function syncActiveRaid() {
   groupTitles  = r.groupTitles;
   specOverrides = r.specOverrides;
   roleOverrides = r.roleOverrides;
+  // Old raids saved before this feature existed won't have these fields -
+  // default them rather than leaving the shim vars undefined.
+  bench     = r.bench     || (r.bench = []);
+  absent    = r.absent    || (r.absent = []);
+  tentative = r.tentative || (r.tentative = []);
 }
 
 // The shim above (groups = r.groups) is a REFERENCE - but plenty of
@@ -2670,6 +2688,9 @@ function syncGroupsToActiveRaid() {
   r.groupTitles = groupTitles;
   r.specOverrides = specOverrides;
   r.roleOverrides = roleOverrides;
+  r.bench = bench;
+  r.absent = absent;
+  r.tentative = tentative;
 }
 
 let pugs = []; // global — shared across all raid tabs
@@ -4110,6 +4131,11 @@ function applyRHImport() {
   signUpPool = [];
   specOverrides = {};
   roleOverrides = {};
+  // A fresh import starts clean - last week's manual bench/absent/tentative
+  // placements shouldn't carry over onto a brand new week's sign-ups.
+  bench = [];
+  absent = [];
+  tentative = [];
 
   // Absent/tentative now get imported too (not dropped) so an officer can
   // see and, if their status changes, manually pull them in from their own
@@ -4175,11 +4201,23 @@ function applyRHImport() {
     }
   }
 
+  // Seed the manual bench/absent/tentative buckets from what Raid Helper
+  // itself reported this import - a starting point, not a lock. An officer
+  // can freely drag anyone between these and Unassigned afterward,
+  // regardless of what RH originally said (see the pool boxes' drop
+  // handlers).
+  bench = signUpPool.filter(p => p._rhStatus === 'bench').map(p => p.id);
+  absent = signUpPool.filter(p => p._rhStatus === 'absence').map(p => p.id);
+  tentative = signUpPool.filter(p => p._rhStatus === 'tentative').map(p => p.id);
+
   // Save to active raid BEFORE syncing so specOverrides/roleOverrides aren't wiped
   const r = getActiveRaid();
   if (r) {
     r.specOverrides = { ...specOverrides };
     r.roleOverrides = { ...roleOverrides };
+    r.bench = bench;
+    r.absent = absent;
+    r.tentative = tentative;
     r.userIdMap = {};
     signUpPool.forEach(p => {
       if (p._userId) r.userIdMap[p.id] = p._userId;
@@ -5436,6 +5474,15 @@ function renderPoolBox(containerId, players, emptyText) {
     : `<div style="padding:12px 4px;font-size:12px;color:var(--text-dim);font-style:italic;">${emptyText}</div>`;
 }
 
+// Full player object for a pool card, preferring this week's live
+// signUpPool entry (real spec/class for this raid) but falling back to the
+// persisted base player (roster/guildie/pug) so bench/absent/tentative -
+// which ARE persisted, unlike signUpPool - still render correctly after a
+// reload even before a fresh import repopulates signUpPool.
+function resolvePoolPlayer(id) {
+  return signUpPool.find(p => Number(p.id) === Number(id)) || getPlayerById(Number(id));
+}
+
 function renderPool() {
   const groupCount = getGroupCount();
 
@@ -5445,35 +5492,67 @@ function renderPool() {
     (groups[g] || []).forEach(id => assignedIds.add(Number(id)));
   }
 
-  const unassignedFromPool = signUpPool.filter(p => !assignedIds.has(Number(p.id)));
-  // Missing/undefined _rhStatus means a manually-added pug/guildie (never
-  // went through an RH status at all) - treated as confirmed-available,
-  // same convention autoFillGroups uses.
-  const byStatus = status => unassignedFromPool.filter(p => (p._rhStatus || 'attending') === status);
-  const available = byStatus('attending');
-  const bench = byStatus('bench');
-  const absent = byStatus('absence');
-  const tentative = byStatus('tentative');
+  // bench/absent/tentative are the authoritative, manually-overridable
+  // buckets (see movePlayerToPoolBucket) - independent of whatever
+  // signUpPool's _rhStatus originally said. Being in a group always wins
+  // over being in one of these (drag someone from Bench into a group and
+  // they're just... in the group - no need to also strip their bench-list
+  // membership, it's just hidden while assigned).
+  const specialIds = new Set([...bench, ...absent, ...tentative].map(Number));
+  const benchPlayers = bench.filter(id => !assignedIds.has(Number(id))).map(resolvePoolPlayer).filter(Boolean);
+  const absentPlayers = absent.filter(id => !assignedIds.has(Number(id))).map(resolvePoolPlayer).filter(Boolean);
+  const tentativePlayers = tentative.filter(id => !assignedIds.has(Number(id))).map(resolvePoolPlayer).filter(Boolean);
+
+  // Unassigned = signed up, not in a group, and not manually moved into
+  // one of the 3 special buckets above.
+  const unassignedFromPool = signUpPool.filter(p => !assignedIds.has(Number(p.id)) && !specialIds.has(Number(p.id)));
 
   if (signUpPool.length === 0) {
     renderPoolBox('player-pool', [], 'Import a roster to populate the pool.');
   } else if (unassignedFromPool.length === 0) {
-    renderPoolBox('player-pool', [], 'All sign-ups are assigned to groups.');
+    renderPoolBox('player-pool', [], 'Everyone available is assigned to groups.');
   } else {
-    renderPoolBox('player-pool', available, 'Everyone available is assigned to groups.');
+    renderPoolBox('player-pool', unassignedFromPool, 'Everyone available is assigned to groups.');
   }
-  renderPoolBox('bench-pool', bench, 'Nobody benched.');
-  renderPoolBox('absent-pool', absent, 'Nobody absent.');
-  renderPoolBox('tentative-pool', tentative, 'Nobody tentative.');
+  renderPoolBox('bench-pool', benchPlayers, 'Nobody benched.');
+  renderPoolBox('absent-pool', absentPlayers, 'Nobody absent.');
+  renderPoolBox('tentative-pool', tentativePlayers, 'Nobody tentative.');
 
   // Pug strip
   const pugStrip = document.getElementById('pug-strip');
   if (pugStrip) {
     pugStrip.innerHTML = signUpPool.length > 0
-      ? `<span style="font-size:11px;color:var(--text-dim);">${signUpPool.length} sign-ups · ${available.length} unassigned</span>
-         <button class="btn btn-small btn-danger" onclick="signUpPool=[];pugs=[];nextPugId=-1;clearGroups();renderBuilder();" style="padding:2px 8px;font-size:11px;">✕ Clear Import</button>`
+      ? `<span style="font-size:11px;color:var(--text-dim);">${signUpPool.length} sign-ups · ${unassignedFromPool.length} unassigned</span>
+         <button class="btn btn-small btn-danger" onclick="signUpPool=[];pugs=[];nextPugId=-1;bench=[];absent=[];tentative=[];clearGroups();renderBuilder();" style="padding:2px 8px;font-size:11px;">✕ Clear Import</button>`
       : '';
   }
+}
+
+// Moves a player id into exactly one of: nothing special (Unassigned),
+// bench, absent, tentative - always removed from the OTHER special
+// buckets first so they only ever live in one at a time. Also pulled out
+// of any group, since dropping onto one of these 4 pool boxes specifically
+// means "this person is NOT in a group slot" - independent of whatever
+// Raid Helper originally said (see the pool boxes' ondrop handlers below).
+function movePlayerToPoolBucket(pid, target) {
+  pid = Number(pid);
+  groups = groups.map(g => g.filter(id => Number(id) !== pid));
+  bench = bench.filter(id => id !== pid);
+  absent = absent.filter(id => id !== pid);
+  tentative = tentative.filter(id => id !== pid);
+  if (target === 'bench') bench.push(pid);
+  else if (target === 'absent') absent.push(pid);
+  else if (target === 'tentative') tentative.push(pid);
+  // target === 'available' -> stays out of all three, i.e. Unassigned
+  renderBuilder();
+}
+
+function onDropPoolBucket(e, target) {
+  e.preventDefault();
+  if (!dragState) return;
+  const { pid } = dragState;
+  dragState = null;
+  movePlayerToPoolBucket(pid, target);
 }
 
 // Raid Helper's own Bench RSVP is the ONLY signal that counts here - it's
@@ -5758,14 +5837,17 @@ function clearGroupsToPool() {
 function autoFillGroups() {
   clearGroups(false); // reset placement only — keep this week's imported spec/role overrides
 
-  // Only ever pull from confirmed attending sign-ups - never bench, absent,
-  // or tentative, regardless of what's currently in signUpPool. This is the
-  // actual fix for a real, reported failure: someone marked Absent in Raid
-  // Helper still got auto-filled into the comp. An officer can always
-  // manually drag someone in from the Bench/Absent/Tentative pools if their
-  // status changes - auto-fill just never does it for them.
+  // Only ever pull from people NOT in the manual bench/absent/tentative
+  // buckets - these are authoritative over whatever signUpPool's original
+  // _rhStatus said, since an officer can freely drag someone into or out
+  // of them regardless of what Raid Helper originally reported. This is
+  // the actual fix for a real, reported failure: someone marked Absent in
+  // Raid Helper still got auto-filled into the comp. An officer can always
+  // manually drag someone in from one of these 3 pools if their status
+  // changes - auto-fill just never does it for them on its own.
+  const specialIds = new Set([...bench, ...absent, ...tentative].map(Number));
   const pool = signUpPool.length > 0
-    ? signUpPool.filter(p => (p._rhStatus || 'attending') === 'attending')
+    ? signUpPool.filter(p => !specialIds.has(Number(p.id)))
     : getActiveRaiders();
 
   if (pool.length === 0) { showToast('No players in pool to fill.', true); return; }

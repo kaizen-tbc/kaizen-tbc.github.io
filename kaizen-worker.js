@@ -131,7 +131,7 @@ async function handleDirectRosterPost(request, env) {
 
     if (!raid) throw new Error('Raid not found');
 
-    const embed = buildRosterEmbed(raid, roster, data.pugs || [], notify);
+    const embed = buildRosterEmbed(raid, roster, data.pugs || [], data.guildies || [], notify);
 
     const postRes = await fetch(`${DISCORD_API}/channels/${channelId}/messages`, {
       method: 'POST',
@@ -454,7 +454,7 @@ async function handlePostRosterCommand(interaction, guildId, options, env) {
       });
     }
 
-    const embed = buildRosterEmbed(raid, roster, data.pugs || []);
+    const embed = buildRosterEmbed(raid, roster, data.pugs || [], data.guildies || []);
 
     // Post via bot token to the configured channel
     const postChannelId = raid.discordChannelId || channelId;
@@ -2097,9 +2097,12 @@ function getWCLSpecEmoji(cls, spec) {
   return getSpecEmoji(cls, WCL_SPEC_NORMALIZE[spec] || spec);
 }
 
-function buildRosterEmbed(raid, roster, pugs, notify = true) {
+function buildRosterEmbed(raid, roster, pugs, guildies = [], notify = true) {
+  // Negative ids cover BOTH manually-added guildies (+Guildie) and pugs -
+  // previously only checked pugs, so a guildie posted in a group silently
+  // vanished from the Discord embed (id just never resolved to anyone).
   function getPlayer(id) {
-    if (id < 0) return pugs.find(p => p.id === id);
+    if (id < 0) return guildies.find(p => p.id === id) || pugs.find(p => p.id === id);
     return roster.find(p => p.id === id);
   }
 
@@ -2166,6 +2169,33 @@ function buildRosterEmbed(raid, roster, pugs, notify = true) {
   if (spacedFields.length % 2 === 1) {
     spacedFields.push({ name: '​', value: '​', inline: true });
   }
+
+  // Bench/Absent/Tentative - manually placed by an officer (see
+  // movePlayerToPoolBucket in the raid manager), independent of whatever
+  // Raid Helper originally said. Being in a group always wins - someone
+  // dragged out of Bench into a group shows there, not here, even though
+  // their id may still technically be in raid.bench (see renderPool's own
+  // comment on the same precedence). Unassigned is deliberately never
+  // shown here - only the 3 "here's why they're not in a group" buckets
+  // are worth posting; leftover unassigned sign-ups aren't a statement
+  // about anyone. Each section is skipped entirely if empty.
+  const assignedIds = new Set(groups.flat().map(Number));
+  const namesFor = ids => (ids || [])
+    .map(Number)
+    .filter(id => !assignedIds.has(id))
+    .map(id => getPlayer(id))
+    .filter(Boolean)
+    .map(p => p.name);
+  const benchNames = namesFor(raid.bench);
+  const absentNames = namesFor(raid.absent);
+  const tentativeNames = namesFor(raid.tentative);
+  // Discord's 1024-char-per-field cap, same guard established earlier for
+  // the rankings embed - unlikely to matter for a bench list, cheap
+  // insurance against a real "Invalid Form Body" on a big roster night.
+  const capField = v => v.length > 1024 ? v.slice(0, 1009) + '\n_(truncated)_' : v;
+  if (benchNames.length) spacedFields.push({ name: '🪑 Bench', value: capField(benchNames.join(', ')), inline: false });
+  if (absentNames.length) spacedFields.push({ name: '❌ Absent', value: capField(absentNames.join(', ')), inline: false });
+  if (tentativeNames.length) spacedFields.push({ name: '❔ Tentative', value: capField(tentativeNames.join(', ')), inline: false });
 
   return {
     title: `${raid.name} — ${total} Raiders`,
