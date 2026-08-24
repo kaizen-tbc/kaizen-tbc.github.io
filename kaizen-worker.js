@@ -182,17 +182,56 @@ function formatStratSection(section, roster, guildies, pugs) {
   return lines.join('\n') || '—';
 }
 
-// Back to embeds after testing plain content live: stacked plain messages
-// read as cramped with nothing visually marking where one post ends and
-// the next begins. One embed per section (not one combined post) still
-// mirrors the app's own visually-separated section blocks - keeps the
-// "which post is this" clarity embeds give, without cramming everything
-// into a single wall.
-function buildStratSectionEmbed(strat, section, roster, guildies, pugs) {
+// A section is "notes-style" (prose) if every row is a bare notes row -
+// that reads badly squeezed into a narrow half-width inline column, so it
+// always takes the full row width on its own rather than being paired.
+function isNotesSection(section) {
+  const rows = section.rows || [];
+  return rows.length > 0 && rows.every(r => r.typeA === 'notes');
+}
+
+// Lays sections out as a loose grid instead of one long stack: two
+// non-notes sections side by side per row (Discord's own inline field
+// packing), any notes-style section full-width on its own row. A
+// zero-width-space spacer field (full width, invisible) is what actually
+// forces Discord to start a new row between groups - without one, Discord
+// just packs as many inline fields as fit the available width, which isn't
+// a reliable "exactly 2 per row" on its own.
+function buildStratSectionFields(strat, roster, guildies, pugs) {
+  const rows = [];
+  let pendingPair = [];
+  for (const sec of (strat.sections || [])) {
+    const field = {
+      name: sec.label || 'Section',
+      value: formatStratSection(sec, roster, guildies, pugs).slice(0, 1024), // Discord field value cap
+      inline: !isNotesSection(sec),
+    };
+    if (!field.inline) {
+      if (pendingPair.length) { rows.push(pendingPair); pendingPair = []; }
+      rows.push([field]);
+    } else {
+      pendingPair.push(field);
+      if (pendingPair.length === 2) { rows.push(pendingPair); pendingPair = []; }
+    }
+  }
+  if (pendingPair.length) rows.push(pendingPair); // lone leftover - fine on its own
+
+  const fields = [];
+  rows.forEach((row, i) => {
+    if (i > 0) fields.push({ name: '​', value: '​', inline: false });
+    fields.push(...row);
+  });
+  return fields;
+}
+
+function buildStratAssignsEmbed(strat, roster, guildies, pugs) {
+  const fields = buildStratSectionFields(strat, roster, guildies, pugs);
   return {
-    title: section.label || 'Section',
-    description: formatStratSection(section, roster, guildies, pugs).slice(0, 4096),
+    title: `📋 ${strat.name} — Assignments`,
     color: 0xC9A227,
+    fields: fields.length ? fields : [{ name: 'No assignments yet', value: '—' }],
+    footer: { text: 'Kaizen Raid Manager' },
+    timestamp: new Date().toISOString(),
   };
 }
 
@@ -246,12 +285,12 @@ async function handlePostStrat(request, env) {
     };
 
     await postEmbed(buildStratImageEmbed(strat, imageUrl));
-
-    // One post per section - however many "cards" this strat has.
-    const sections = strat.sections?.length ? strat.sections : [{ label: 'No assignments yet', rows: [] }];
-    for (const sec of sections) {
-      await postEmbed(buildStratSectionEmbed(strat, sec, data.roster || [], data.guildies || [], data.pugs || []));
-    }
+    // Back to one combined post - separate embeds per section read badly
+    // too (each one a full-width card just for 2-3 lines). Sections lay
+    // out as a grid within this single embed instead (see
+    // buildStratSectionFields): paired side by side where that makes
+    // sense, full-width for prose sections.
+    await postEmbed(buildStratAssignsEmbed(strat, data.roster || [], data.guildies || [], data.pugs || []));
 
     return corsResponse(JSON.stringify({ ok: true }), 200);
   } catch (err) {
