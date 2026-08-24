@@ -150,6 +150,26 @@ async function handleDirectRosterPost(request, env) {
       throw new Error(err.message || `Discord API error ${postRes.status}`);
     }
 
+    // Follow-up plain message (not another embed) right after the roster -
+    // raid.rhEventTitle/rhEventDate come from the Raid Helper event this
+    // roster was imported from (persisted at import time so they're still
+    // right even if posting happens in a later session); falls back to
+    // the raid tab's own name/today's date for a roster built without an
+    // import at all.
+    const titleForMsg = raid.rhEventTitle || raid.name;
+    const dateForMsg = raid.rhEventDate
+      ? new Date(raid.rhEventDate + 'T00:00:00Z').toLocaleDateString('en-US', { timeZone: 'UTC', month: 'long', day: 'numeric', year: 'numeric' })
+      : new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    const followUp = `Here are the comps for **${titleForMsg}** (${dateForMsg}). If you're on the bench, please stay available in case someone drops — invites go out **30 minutes** before raid start!`;
+    await fetch(`${DISCORD_API}/channels/${channelId}/messages`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bot ${env.DISCORD_BOT_TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ content: followUp }),
+    }); // best-effort - the roster embed itself already posted successfully, don't fail the whole request over this follow-up note
+
     return corsResponse(JSON.stringify({ ok: true }), 200);
   } catch(err) {
     return corsResponse(JSON.stringify({ error: err.message }), 500);

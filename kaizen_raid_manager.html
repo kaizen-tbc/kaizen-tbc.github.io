@@ -2759,6 +2759,12 @@ let benchLog = [];
 // import time in processRHSignUps, read later when the roster gets
 // finalized so the bench record lands on the actual raid date.
 let _lastRHImportDate = null;
+// The event's own title (e.g. "SSC LAST RIDE"), captured alongside the
+// date - used for the "here are the comps for X" follow-up message when
+// posting to Discord (see applyRHImport, which persists both onto the
+// raid itself so they're still there at post time even in a later
+// session, not just this one).
+let _lastRHImportTitle = null;
 
 // ======================================================
 // RAID HELPER NAME ALIASES (persistent, guild-wide)
@@ -3696,6 +3702,7 @@ function processRHSignUps(event) {
   _lastRHImportDate = event.startTime
     ? new Date(event.startTime * 1000).toISOString().slice(0, 10)
     : new Date().toISOString().slice(0, 10);
+  _lastRHImportTitle = title;
 
   // Raid Helper's API can return more than one sign-up record for the same
   // person (an old RSVP left behind alongside a corrected one) - seen live
@@ -4270,6 +4277,12 @@ function applyRHImport() {
     r.pugs = pugs;
     r.nextPugId = nextPugId;
     r.signUpPool = signUpPool;
+    // Persisted on the raid itself (not just the page-level _lastRHImport*
+    // vars, which reset on reload) so the "here are the comps for X"
+    // Discord message still has the right title/date even when posting
+    // happens in a later session than the import did.
+    r.rhEventTitle = _lastRHImportTitle;
+    r.rhEventDate = _lastRHImportDate;
     r.userIdMap = {};
     signUpPool.forEach(p => {
       if (p._userId) r.userIdMap[p.id] = p._userId;
