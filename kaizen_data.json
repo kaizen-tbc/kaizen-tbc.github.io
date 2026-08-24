@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-08-24T19:27:23.338Z",
+  "savedAt": "2026-08-24T19:31:21.452Z",
   "roster": [
     {
       "id": 1,
@@ -957,7 +957,7 @@
       "name": "TUESDAY 25",
       "size": 25,
       "rhChannelId": "1498198665045737492",
-      "discordChannelId": "1498198665045737492",
+      "discordChannelId": "1539366128898285629",
       "groups": [
         [
           40,
@@ -10653,7 +10653,39 @@
     }
   ],
   "nextLedgerId": 16,
-  "benchLog": [],
+  "benchLog": [
+    {
+      "date": "2026-08-28",
+      "names": [],
+      "rostered": [
+        "Charcoochy",
+        "Healkinz",
+        "Kiricolo",
+        "Zabanya",
+        "Zuulman",
+        "Clutchløck",
+        "Sobadai",
+        "Akohre",
+        "Caelø",
+        "Daisojenn",
+        "Darthorg",
+        "Eddiemage",
+        "Keishatini",
+        "Krunkette",
+        "Mikeanese",
+        "Popeshe",
+        "Priestous",
+        "Rodentp",
+        "Sylics",
+        "Tishee",
+        "Totemy",
+        "Chewïe",
+        "Hasu",
+        "Shamanitis",
+        "Shrewmy"
+      ]
+    }
+  ],
   "nameAliases": {
     "Depew/Kiricolo": [
       5
