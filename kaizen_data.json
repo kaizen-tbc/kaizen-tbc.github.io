@@ -3864,9 +3864,2823 @@
           ]
         }
       ]
+    },
+    {
+      "id": 21,
+      "name": "Naj'entus",
+      "raid": "Black Temple",
+      "image": "strats/bt-najentus.png",
+      "sections": [
+        {
+          "id": 2101,
+          "label": "🛡 Tanks",
+          "rows": [
+            {
+              "id": 2201,
+              "typeA": "text",
+              "valueA": "MT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 2202,
+              "typeA": "text",
+              "valueA": "OT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 2203,
+              "typeA": "text",
+              "valueA": "OT2",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 2102,
+          "label": "✚ Healer Assigns",
+          "rows": [
+            {
+              "id": 2204,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 2205,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 2206,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 2207,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 2103,
+          "label": "🏹 Misdirection",
+          "rows": [
+            {
+              "id": 2208,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 2209,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 2104,
+          "label": "🔊 Lust / Drums",
+          "rows": [
+            {
+              "id": 2210,
+              "typeA": "text",
+              "valueA": "Timing",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            },
+            {
+              "id": 2211,
+              "typeA": "text",
+              "valueA": "Notes",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            }
+          ]
+        },
+        {
+          "id": 2105,
+          "label": "📋 Strategy Notes",
+          "rows": [
+            {
+              "id": 2212,
+              "typeA": "notes",
+              "valueA": "",
+              "arrow": false,
+              "typeB": null,
+              "valueB": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 22,
+      "name": "Supremus",
+      "raid": "Black Temple",
+      "image": "strats/bt-supremus.png",
+      "sections": [
+        {
+          "id": 2201,
+          "label": "🛡 Tanks",
+          "rows": [
+            {
+              "id": 2301,
+              "typeA": "text",
+              "valueA": "MT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 2302,
+              "typeA": "text",
+              "valueA": "OT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 2303,
+              "typeA": "text",
+              "valueA": "OT2",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 2202,
+          "label": "✚ Healer Assigns",
+          "rows": [
+            {
+              "id": 2304,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 2305,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 2306,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 2307,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 2203,
+          "label": "🏹 Misdirection",
+          "rows": [
+            {
+              "id": 2308,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 2309,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 2204,
+          "label": "🔊 Lust / Drums",
+          "rows": [
+            {
+              "id": 2310,
+              "typeA": "text",
+              "valueA": "Timing",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            },
+            {
+              "id": 2311,
+              "typeA": "text",
+              "valueA": "Notes",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            }
+          ]
+        },
+        {
+          "id": 2205,
+          "label": "📋 Strategy Notes",
+          "rows": [
+            {
+              "id": 2312,
+              "typeA": "notes",
+              "valueA": "",
+              "arrow": false,
+              "typeB": null,
+              "valueB": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 23,
+      "name": "Shade of Akama",
+      "raid": "Black Temple",
+      "image": "strats/bt-akama.png",
+      "sections": [
+        {
+          "id": 2301,
+          "label": "🛡 Tanks",
+          "rows": [
+            {
+              "id": 2401,
+              "typeA": "text",
+              "valueA": "MT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 2402,
+              "typeA": "text",
+              "valueA": "OT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 2403,
+              "typeA": "text",
+              "valueA": "OT2",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 2302,
+          "label": "✚ Healer Assigns",
+          "rows": [
+            {
+              "id": 2404,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 2405,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 2406,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 2407,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 2303,
+          "label": "🏹 Misdirection",
+          "rows": [
+            {
+              "id": 2408,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 2409,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 2304,
+          "label": "🔊 Lust / Drums",
+          "rows": [
+            {
+              "id": 2410,
+              "typeA": "text",
+              "valueA": "Timing",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            },
+            {
+              "id": 2411,
+              "typeA": "text",
+              "valueA": "Notes",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            }
+          ]
+        },
+        {
+          "id": 2305,
+          "label": "📋 Strategy Notes",
+          "rows": [
+            {
+              "id": 2412,
+              "typeA": "notes",
+              "valueA": "",
+              "arrow": false,
+              "typeB": null,
+              "valueB": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 24,
+      "name": "Teron Gorefiend",
+      "raid": "Black Temple",
+      "image": "strats/bt-gorefiend.png",
+      "sections": [
+        {
+          "id": 2401,
+          "label": "🛡 Tanks",
+          "rows": [
+            {
+              "id": 2501,
+              "typeA": "text",
+              "valueA": "MT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 2502,
+              "typeA": "text",
+              "valueA": "OT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 2503,
+              "typeA": "text",
+              "valueA": "OT2",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 2402,
+          "label": "✚ Healer Assigns",
+          "rows": [
+            {
+              "id": 2504,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 2505,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 2506,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 2507,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 2403,
+          "label": "🏹 Misdirection",
+          "rows": [
+            {
+              "id": 2508,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 2509,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 2404,
+          "label": "🔊 Lust / Drums",
+          "rows": [
+            {
+              "id": 2510,
+              "typeA": "text",
+              "valueA": "Timing",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            },
+            {
+              "id": 2511,
+              "typeA": "text",
+              "valueA": "Notes",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            }
+          ]
+        },
+        {
+          "id": 2405,
+          "label": "📋 Strategy Notes",
+          "rows": [
+            {
+              "id": 2512,
+              "typeA": "notes",
+              "valueA": "",
+              "arrow": false,
+              "typeB": null,
+              "valueB": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 25,
+      "name": "Bloodboil - P1",
+      "raid": "Black Temple",
+      "image": "strats/bt-bloodboil-p1.png",
+      "sections": [
+        {
+          "id": 2501,
+          "label": "🛡 Tanks",
+          "rows": [
+            {
+              "id": 2601,
+              "typeA": "text",
+              "valueA": "MT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 2602,
+              "typeA": "text",
+              "valueA": "OT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 2603,
+              "typeA": "text",
+              "valueA": "OT2",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 2502,
+          "label": "✚ Healer Assigns",
+          "rows": [
+            {
+              "id": 2604,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 2605,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 2606,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 2607,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 2503,
+          "label": "🏹 Misdirection",
+          "rows": [
+            {
+              "id": 2608,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 2609,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 2504,
+          "label": "🔊 Lust / Drums",
+          "rows": [
+            {
+              "id": 2610,
+              "typeA": "text",
+              "valueA": "Timing",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            },
+            {
+              "id": 2611,
+              "typeA": "text",
+              "valueA": "Notes",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            }
+          ]
+        },
+        {
+          "id": 2505,
+          "label": "📋 Strategy Notes",
+          "rows": [
+            {
+              "id": 2612,
+              "typeA": "notes",
+              "valueA": "",
+              "arrow": false,
+              "typeB": null,
+              "valueB": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 26,
+      "name": "Bloodboil - P2",
+      "raid": "Black Temple",
+      "image": "strats/bt-bloodboil-p2.png",
+      "sections": [
+        {
+          "id": 2601,
+          "label": "🛡 Tanks",
+          "rows": [
+            {
+              "id": 2701,
+              "typeA": "text",
+              "valueA": "MT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 2702,
+              "typeA": "text",
+              "valueA": "OT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 2703,
+              "typeA": "text",
+              "valueA": "OT2",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 2602,
+          "label": "✚ Healer Assigns",
+          "rows": [
+            {
+              "id": 2704,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 2705,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 2706,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 2707,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 2603,
+          "label": "🏹 Misdirection",
+          "rows": [
+            {
+              "id": 2708,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 2709,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 2604,
+          "label": "🔊 Lust / Drums",
+          "rows": [
+            {
+              "id": 2710,
+              "typeA": "text",
+              "valueA": "Timing",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            },
+            {
+              "id": 2711,
+              "typeA": "text",
+              "valueA": "Notes",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            }
+          ]
+        },
+        {
+          "id": 2605,
+          "label": "📋 Strategy Notes",
+          "rows": [
+            {
+              "id": 2712,
+              "typeA": "notes",
+              "valueA": "",
+              "arrow": false,
+              "typeB": null,
+              "valueB": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 27,
+      "name": "Reliquary of Souls - P1",
+      "raid": "Black Temple",
+      "image": "strats/bt-reliquary-p1.png",
+      "sections": [
+        {
+          "id": 2701,
+          "label": "🛡 Tanks",
+          "rows": [
+            {
+              "id": 2801,
+              "typeA": "text",
+              "valueA": "MT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 2802,
+              "typeA": "text",
+              "valueA": "OT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 2803,
+              "typeA": "text",
+              "valueA": "OT2",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 2702,
+          "label": "✚ Healer Assigns",
+          "rows": [
+            {
+              "id": 2804,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 2805,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 2806,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 2807,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 2703,
+          "label": "🏹 Misdirection",
+          "rows": [
+            {
+              "id": 2808,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 2809,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 2704,
+          "label": "🔊 Lust / Drums",
+          "rows": [
+            {
+              "id": 2810,
+              "typeA": "text",
+              "valueA": "Timing",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            },
+            {
+              "id": 2811,
+              "typeA": "text",
+              "valueA": "Notes",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            }
+          ]
+        },
+        {
+          "id": 2705,
+          "label": "📋 Strategy Notes",
+          "rows": [
+            {
+              "id": 2812,
+              "typeA": "notes",
+              "valueA": "",
+              "arrow": false,
+              "typeB": null,
+              "valueB": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 28,
+      "name": "Reliquary of Souls - P2",
+      "raid": "Black Temple",
+      "image": "strats/bt-reliquary-p2.png",
+      "sections": [
+        {
+          "id": 2801,
+          "label": "🛡 Tanks",
+          "rows": [
+            {
+              "id": 2901,
+              "typeA": "text",
+              "valueA": "MT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 2902,
+              "typeA": "text",
+              "valueA": "OT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 2903,
+              "typeA": "text",
+              "valueA": "OT2",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 2802,
+          "label": "✚ Healer Assigns",
+          "rows": [
+            {
+              "id": 2904,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 2905,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 2906,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 2907,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 2803,
+          "label": "🏹 Misdirection",
+          "rows": [
+            {
+              "id": 2908,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 2909,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 2804,
+          "label": "🔊 Lust / Drums",
+          "rows": [
+            {
+              "id": 2910,
+              "typeA": "text",
+              "valueA": "Timing",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            },
+            {
+              "id": 2911,
+              "typeA": "text",
+              "valueA": "Notes",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            }
+          ]
+        },
+        {
+          "id": 2805,
+          "label": "📋 Strategy Notes",
+          "rows": [
+            {
+              "id": 2912,
+              "typeA": "notes",
+              "valueA": "",
+              "arrow": false,
+              "typeB": null,
+              "valueB": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 29,
+      "name": "Reliquary of Souls - P3",
+      "raid": "Black Temple",
+      "image": "strats/bt-reliquary-p3.png",
+      "sections": [
+        {
+          "id": 2901,
+          "label": "🛡 Tanks",
+          "rows": [
+            {
+              "id": 3001,
+              "typeA": "text",
+              "valueA": "MT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 3002,
+              "typeA": "text",
+              "valueA": "OT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 3003,
+              "typeA": "text",
+              "valueA": "OT2",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 2902,
+          "label": "✚ Healer Assigns",
+          "rows": [
+            {
+              "id": 3004,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 3005,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 3006,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 3007,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 2903,
+          "label": "🏹 Misdirection",
+          "rows": [
+            {
+              "id": 3008,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 3009,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 2904,
+          "label": "🔊 Lust / Drums",
+          "rows": [
+            {
+              "id": 3010,
+              "typeA": "text",
+              "valueA": "Timing",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            },
+            {
+              "id": 3011,
+              "typeA": "text",
+              "valueA": "Notes",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            }
+          ]
+        },
+        {
+          "id": 2905,
+          "label": "📋 Strategy Notes",
+          "rows": [
+            {
+              "id": 3012,
+              "typeA": "notes",
+              "valueA": "",
+              "arrow": false,
+              "typeB": null,
+              "valueB": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 30,
+      "name": "Mother Shahraz",
+      "raid": "Black Temple",
+      "image": "strats/bt-mother.png",
+      "sections": [
+        {
+          "id": 3001,
+          "label": "🛡 Tanks",
+          "rows": [
+            {
+              "id": 3101,
+              "typeA": "text",
+              "valueA": "MT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 3102,
+              "typeA": "text",
+              "valueA": "OT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 3103,
+              "typeA": "text",
+              "valueA": "OT2",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 3002,
+          "label": "✚ Healer Assigns",
+          "rows": [
+            {
+              "id": 3104,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 3105,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 3106,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 3107,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 3003,
+          "label": "🏹 Misdirection",
+          "rows": [
+            {
+              "id": 3108,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 3109,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 3004,
+          "label": "🔊 Lust / Drums",
+          "rows": [
+            {
+              "id": 3110,
+              "typeA": "text",
+              "valueA": "Timing",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            },
+            {
+              "id": 3111,
+              "typeA": "text",
+              "valueA": "Notes",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            }
+          ]
+        },
+        {
+          "id": 3005,
+          "label": "📋 Strategy Notes",
+          "rows": [
+            {
+              "id": 3112,
+              "typeA": "notes",
+              "valueA": "",
+              "arrow": false,
+              "typeB": null,
+              "valueB": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 31,
+      "name": "Illidari Council",
+      "raid": "Black Temple",
+      "image": "strats/bt-council.png",
+      "sections": [
+        {
+          "id": 3101,
+          "label": "🛡 Tanks",
+          "rows": [
+            {
+              "id": 3201,
+              "typeA": "text",
+              "valueA": "MT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 3202,
+              "typeA": "text",
+              "valueA": "OT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 3203,
+              "typeA": "text",
+              "valueA": "OT2",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 3102,
+          "label": "✚ Healer Assigns",
+          "rows": [
+            {
+              "id": 3204,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 3205,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 3206,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 3207,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 3103,
+          "label": "🏹 Misdirection",
+          "rows": [
+            {
+              "id": 3208,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 3209,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 3104,
+          "label": "🔊 Lust / Drums",
+          "rows": [
+            {
+              "id": 3210,
+              "typeA": "text",
+              "valueA": "Timing",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            },
+            {
+              "id": 3211,
+              "typeA": "text",
+              "valueA": "Notes",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            }
+          ]
+        },
+        {
+          "id": 3105,
+          "label": "📋 Strategy Notes",
+          "rows": [
+            {
+              "id": 3212,
+              "typeA": "notes",
+              "valueA": "",
+              "arrow": false,
+              "typeB": null,
+              "valueB": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 32,
+      "name": "Illidan Stormrage - P1",
+      "raid": "Black Temple",
+      "image": "strats/bt-illidan-p1.png",
+      "sections": [
+        {
+          "id": 3201,
+          "label": "🛡 Tanks",
+          "rows": [
+            {
+              "id": 3301,
+              "typeA": "text",
+              "valueA": "MT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 3302,
+              "typeA": "text",
+              "valueA": "OT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 3303,
+              "typeA": "text",
+              "valueA": "OT2",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 3202,
+          "label": "✚ Healer Assigns",
+          "rows": [
+            {
+              "id": 3304,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 3305,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 3306,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 3307,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 3203,
+          "label": "🏹 Misdirection",
+          "rows": [
+            {
+              "id": 3308,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 3309,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 3204,
+          "label": "🔊 Lust / Drums",
+          "rows": [
+            {
+              "id": 3310,
+              "typeA": "text",
+              "valueA": "Timing",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            },
+            {
+              "id": 3311,
+              "typeA": "text",
+              "valueA": "Notes",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            }
+          ]
+        },
+        {
+          "id": 3205,
+          "label": "📋 Strategy Notes",
+          "rows": [
+            {
+              "id": 3312,
+              "typeA": "notes",
+              "valueA": "",
+              "arrow": false,
+              "typeB": null,
+              "valueB": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 33,
+      "name": "Illidan Stormrage - P2",
+      "raid": "Black Temple",
+      "image": "strats/bt-illidan-p2.png",
+      "sections": [
+        {
+          "id": 3301,
+          "label": "🛡 Tanks",
+          "rows": [
+            {
+              "id": 3401,
+              "typeA": "text",
+              "valueA": "MT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 3402,
+              "typeA": "text",
+              "valueA": "OT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 3403,
+              "typeA": "text",
+              "valueA": "OT2",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 3302,
+          "label": "✚ Healer Assigns",
+          "rows": [
+            {
+              "id": 3404,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 3405,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 3406,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 3407,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 3303,
+          "label": "🏹 Misdirection",
+          "rows": [
+            {
+              "id": 3408,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 3409,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 3304,
+          "label": "🔊 Lust / Drums",
+          "rows": [
+            {
+              "id": 3410,
+              "typeA": "text",
+              "valueA": "Timing",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            },
+            {
+              "id": 3411,
+              "typeA": "text",
+              "valueA": "Notes",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            }
+          ]
+        },
+        {
+          "id": 3305,
+          "label": "📋 Strategy Notes",
+          "rows": [
+            {
+              "id": 3412,
+              "typeA": "notes",
+              "valueA": "",
+              "arrow": false,
+              "typeB": null,
+              "valueB": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 34,
+      "name": "Illidan Stormrage - P3",
+      "raid": "Black Temple",
+      "image": "strats/bt-illidan-p3.png",
+      "sections": [
+        {
+          "id": 3401,
+          "label": "🛡 Tanks",
+          "rows": [
+            {
+              "id": 3501,
+              "typeA": "text",
+              "valueA": "MT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 3502,
+              "typeA": "text",
+              "valueA": "OT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 3503,
+              "typeA": "text",
+              "valueA": "OT2",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 3402,
+          "label": "✚ Healer Assigns",
+          "rows": [
+            {
+              "id": 3504,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 3505,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 3506,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 3507,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 3403,
+          "label": "🏹 Misdirection",
+          "rows": [
+            {
+              "id": 3508,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 3509,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 3404,
+          "label": "🔊 Lust / Drums",
+          "rows": [
+            {
+              "id": 3510,
+              "typeA": "text",
+              "valueA": "Timing",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            },
+            {
+              "id": 3511,
+              "typeA": "text",
+              "valueA": "Notes",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            }
+          ]
+        },
+        {
+          "id": 3405,
+          "label": "📋 Strategy Notes",
+          "rows": [
+            {
+              "id": 3512,
+              "typeA": "notes",
+              "valueA": "",
+              "arrow": false,
+              "typeB": null,
+              "valueB": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 35,
+      "name": "Illidan Stormrage - P4",
+      "raid": "Black Temple",
+      "image": "strats/bt-illidan-p4.png",
+      "sections": [
+        {
+          "id": 3501,
+          "label": "🛡 Tanks",
+          "rows": [
+            {
+              "id": 3601,
+              "typeA": "text",
+              "valueA": "MT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 3602,
+              "typeA": "text",
+              "valueA": "OT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 3603,
+              "typeA": "text",
+              "valueA": "OT2",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 3502,
+          "label": "✚ Healer Assigns",
+          "rows": [
+            {
+              "id": 3604,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 3605,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 3606,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 3607,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 3503,
+          "label": "🏹 Misdirection",
+          "rows": [
+            {
+              "id": 3608,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 3609,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 3504,
+          "label": "🔊 Lust / Drums",
+          "rows": [
+            {
+              "id": 3610,
+              "typeA": "text",
+              "valueA": "Timing",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            },
+            {
+              "id": 3611,
+              "typeA": "text",
+              "valueA": "Notes",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            }
+          ]
+        },
+        {
+          "id": 3505,
+          "label": "📋 Strategy Notes",
+          "rows": [
+            {
+              "id": 3612,
+              "typeA": "notes",
+              "valueA": "",
+              "arrow": false,
+              "typeB": null,
+              "valueB": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 36,
+      "name": "Illidan Stormrage - P5",
+      "raid": "Black Temple",
+      "image": "strats/bt-illidan-p5.png",
+      "sections": [
+        {
+          "id": 3601,
+          "label": "🛡 Tanks",
+          "rows": [
+            {
+              "id": 3701,
+              "typeA": "text",
+              "valueA": "MT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 3702,
+              "typeA": "text",
+              "valueA": "OT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 3703,
+              "typeA": "text",
+              "valueA": "OT2",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 3602,
+          "label": "✚ Healer Assigns",
+          "rows": [
+            {
+              "id": 3704,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 3705,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 3706,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 3707,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 3603,
+          "label": "🏹 Misdirection",
+          "rows": [
+            {
+              "id": 3708,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 3709,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 3604,
+          "label": "🔊 Lust / Drums",
+          "rows": [
+            {
+              "id": 3710,
+              "typeA": "text",
+              "valueA": "Timing",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            },
+            {
+              "id": 3711,
+              "typeA": "text",
+              "valueA": "Notes",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            }
+          ]
+        },
+        {
+          "id": 3605,
+          "label": "📋 Strategy Notes",
+          "rows": [
+            {
+              "id": 3712,
+              "typeA": "notes",
+              "valueA": "",
+              "arrow": false,
+              "typeB": null,
+              "valueB": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 37,
+      "name": "Rage Winterchill",
+      "raid": "Battle for Mount Hyjal",
+      "image": "strats/hyjal-rage-winterchill.png",
+      "sections": [
+        {
+          "id": 3701,
+          "label": "🛡 Tanks",
+          "rows": [
+            {
+              "id": 3801,
+              "typeA": "text",
+              "valueA": "MT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 3802,
+              "typeA": "text",
+              "valueA": "OT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 3803,
+              "typeA": "text",
+              "valueA": "OT2",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 3702,
+          "label": "✚ Healer Assigns",
+          "rows": [
+            {
+              "id": 3804,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 3805,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 3806,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 3807,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 3703,
+          "label": "🏹 Misdirection",
+          "rows": [
+            {
+              "id": 3808,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 3809,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 3704,
+          "label": "🔊 Lust / Drums",
+          "rows": [
+            {
+              "id": 3810,
+              "typeA": "text",
+              "valueA": "Timing",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            },
+            {
+              "id": 3811,
+              "typeA": "text",
+              "valueA": "Notes",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            }
+          ]
+        },
+        {
+          "id": 3705,
+          "label": "📋 Strategy Notes",
+          "rows": [
+            {
+              "id": 3812,
+              "typeA": "notes",
+              "valueA": "",
+              "arrow": false,
+              "typeB": null,
+              "valueB": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 38,
+      "name": "Anetheron",
+      "raid": "Battle for Mount Hyjal",
+      "image": "strats/hyjal-anetheron.png",
+      "sections": [
+        {
+          "id": 3801,
+          "label": "🛡 Tanks",
+          "rows": [
+            {
+              "id": 3901,
+              "typeA": "text",
+              "valueA": "MT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 3902,
+              "typeA": "text",
+              "valueA": "OT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 3903,
+              "typeA": "text",
+              "valueA": "OT2",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 3802,
+          "label": "✚ Healer Assigns",
+          "rows": [
+            {
+              "id": 3904,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 3905,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 3906,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 3907,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 3803,
+          "label": "🏹 Misdirection",
+          "rows": [
+            {
+              "id": 3908,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 3909,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 3804,
+          "label": "🔊 Lust / Drums",
+          "rows": [
+            {
+              "id": 3910,
+              "typeA": "text",
+              "valueA": "Timing",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            },
+            {
+              "id": 3911,
+              "typeA": "text",
+              "valueA": "Notes",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            }
+          ]
+        },
+        {
+          "id": 3805,
+          "label": "📋 Strategy Notes",
+          "rows": [
+            {
+              "id": 3912,
+              "typeA": "notes",
+              "valueA": "",
+              "arrow": false,
+              "typeB": null,
+              "valueB": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 39,
+      "name": "Kaz'rogal",
+      "raid": "Battle for Mount Hyjal",
+      "image": "strats/hyjal-kazrogal.png",
+      "sections": [
+        {
+          "id": 3901,
+          "label": "🛡 Tanks",
+          "rows": [
+            {
+              "id": 4001,
+              "typeA": "text",
+              "valueA": "MT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 4002,
+              "typeA": "text",
+              "valueA": "OT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 4003,
+              "typeA": "text",
+              "valueA": "OT2",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 3902,
+          "label": "✚ Healer Assigns",
+          "rows": [
+            {
+              "id": 4004,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 4005,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 4006,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 4007,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 3903,
+          "label": "🏹 Misdirection",
+          "rows": [
+            {
+              "id": 4008,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 4009,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 3904,
+          "label": "🔊 Lust / Drums",
+          "rows": [
+            {
+              "id": 4010,
+              "typeA": "text",
+              "valueA": "Timing",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            },
+            {
+              "id": 4011,
+              "typeA": "text",
+              "valueA": "Notes",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            }
+          ]
+        },
+        {
+          "id": 3905,
+          "label": "📋 Strategy Notes",
+          "rows": [
+            {
+              "id": 4012,
+              "typeA": "notes",
+              "valueA": "",
+              "arrow": false,
+              "typeB": null,
+              "valueB": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 40,
+      "name": "Azgalor",
+      "raid": "Battle for Mount Hyjal",
+      "image": "strats/hyjal-azgalor.png",
+      "sections": [
+        {
+          "id": 4001,
+          "label": "🛡 Tanks",
+          "rows": [
+            {
+              "id": 4101,
+              "typeA": "text",
+              "valueA": "MT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 4102,
+              "typeA": "text",
+              "valueA": "OT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 4103,
+              "typeA": "text",
+              "valueA": "OT2",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 4002,
+          "label": "✚ Healer Assigns",
+          "rows": [
+            {
+              "id": 4104,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 4105,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 4106,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 4107,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 4003,
+          "label": "🏹 Misdirection",
+          "rows": [
+            {
+              "id": 4108,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 4109,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 4004,
+          "label": "🔊 Lust / Drums",
+          "rows": [
+            {
+              "id": 4110,
+              "typeA": "text",
+              "valueA": "Timing",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            },
+            {
+              "id": 4111,
+              "typeA": "text",
+              "valueA": "Notes",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            }
+          ]
+        },
+        {
+          "id": 4005,
+          "label": "📋 Strategy Notes",
+          "rows": [
+            {
+              "id": 4112,
+              "typeA": "notes",
+              "valueA": "",
+              "arrow": false,
+              "typeB": null,
+              "valueB": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 41,
+      "name": "Archimonde",
+      "raid": "Battle for Mount Hyjal",
+      "image": "strats/hyjal-archimonde.png",
+      "sections": [
+        {
+          "id": 4101,
+          "label": "🛡 Tanks",
+          "rows": [
+            {
+              "id": 4201,
+              "typeA": "text",
+              "valueA": "MT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 4202,
+              "typeA": "text",
+              "valueA": "OT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 4203,
+              "typeA": "text",
+              "valueA": "OT2",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 4102,
+          "label": "✚ Healer Assigns",
+          "rows": [
+            {
+              "id": 4204,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 4205,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 4206,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 4207,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 4103,
+          "label": "🏹 Misdirection",
+          "rows": [
+            {
+              "id": 4208,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 4209,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 4104,
+          "label": "🔊 Lust / Drums",
+          "rows": [
+            {
+              "id": 4210,
+              "typeA": "text",
+              "valueA": "Timing",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            },
+            {
+              "id": 4211,
+              "typeA": "text",
+              "valueA": "Notes",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            }
+          ]
+        },
+        {
+          "id": 4105,
+          "label": "📋 Strategy Notes",
+          "rows": [
+            {
+              "id": 4212,
+              "typeA": "notes",
+              "valueA": "",
+              "arrow": false,
+              "typeB": null,
+              "valueB": null
+            }
+          ]
+        }
+      ]
     }
   ],
-  "nextStratId": 21,
+  "nextStratId": 42,
   "attendanceLedger": [
     {
       "id": 6,
