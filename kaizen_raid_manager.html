@@ -3641,24 +3641,27 @@ async function fetchRHEventById(eventId) {
   }
 }
 
+// Confirmed live against a real event: Raid Helper's `status` field is NOT
+// the RSVP category at all - it came back "primary" for literally every
+// sign-up, including one RH's own Discord embed clearly listed under its
+// own "Absence (1)" line. The real signal was riding on `className`
+// instead: an Absence sign-up has className:"Absence" (and no specName/
+// roleName at all - there's no spec to report). Bench/Tentative/Late are
+// presumably encoded the exact same way (RH's event embed shows all four
+// as sibling RSVP buttons), so all four are checked here rather than just
+// the one we happened to catch live. Falls back to `status` for any event
+// that DOES use it as originally assumed, so this doesn't regress a
+// differently-configured event/template. Resolved once so every
+// downstream check (dedup priority AND the 4 category buckets) agrees.
+function rhCategoryOf(s) {
+  const cls = (s.className || '').trim().toLowerCase();
+  if (cls === 'absence' || cls === 'bench' || cls === 'tentative' || cls === 'late') return cls;
+  return s.status;
+}
+
 function processRHSignUps(event) {
   const signUps = event.signUps || [];
   const title = event.title || 'Raid Helper Event';
-
-  // Diagnostic round 3: confirmed live that EVERY sign-up, including
-  // someone RH's own Discord embed clearly separates into its own
-  // "Absence (1)" line below the main roster, comes back with
-  // status:"primary" - no "absence"/"bench"/"tentative" value anywhere in
-  // status. className/specName were the next guess, but rather than keep
-  // guessing field-by-field, dumping the ENTIRE raw record now - whatever
-  // field RH actually uses to mark this (a type, a boolean, something
-  // nested we haven't thought of) will be visible here regardless.
-  console.log('RH raw sign-ups this import (FULL records):', signUps);
-  // Full JSON per person, one line each - scannable for the one oddball
-  // record among ~27 real ones, whatever field turns out to differ.
-  const rawStatusSummary = signUps
-    .map(s => `${s.name}: ${JSON.stringify(s)}`)
-    .join('\n');
 
   // The event's own scheduled date (Unix seconds), not "whenever this
   // happened to get imported" - read later by recordBenchLog so a benched
@@ -3681,16 +3684,16 @@ function processRHSignUps(event) {
   for (const s of signUps) {
     const key = s.userId || s.name;
     const existing = byIdentity.get(key);
-    const rank = RH_STATUS_PRIORITY[s.status] || 0;
-    if (!existing || rank > (RH_STATUS_PRIORITY[existing.status] || 0)) byIdentity.set(key, s);
+    const rank = RH_STATUS_PRIORITY[rhCategoryOf(s)] || 0;
+    if (!existing || rank > (RH_STATUS_PRIORITY[rhCategoryOf(existing)] || 0)) byIdentity.set(key, s);
   }
   const dedupedSignUps = [...byIdentity.values()];
 
-  // Categorise by status
-  let attending  = dedupedSignUps.filter(s => s.status === 'primary' || s.status === 'late');
-  let benched    = dedupedSignUps.filter(s => s.status === 'bench');
-  let absent     = dedupedSignUps.filter(s => s.status === 'absence');
-  let tentative  = dedupedSignUps.filter(s => s.status === 'tentative');
+  // Categorise by (real) status
+  let attending  = dedupedSignUps.filter(s => rhCategoryOf(s) === 'primary' || rhCategoryOf(s) === 'late');
+  let benched    = dedupedSignUps.filter(s => rhCategoryOf(s) === 'bench');
+  let absent     = dedupedSignUps.filter(s => rhCategoryOf(s) === 'absence');
+  let tentative  = dedupedSignUps.filter(s => rhCategoryOf(s) === 'tentative');
 
   // Belt-and-suspenders on top of the userId-based dedupe above: that one
   // trusts userId to be consistently present across a person's duplicate
@@ -3843,10 +3846,6 @@ function processRHSignUps(event) {
         <button class="modal-close" onclick="document.getElementById('rh-preview-overlay').remove()">✕</button>
       </div>
       <div class="modal-body" style="overflow-y:auto;flex:1;">
-        <details style="background:rgba(80,80,90,0.15);border:1px solid var(--border);border-radius:3px;padding:6px 10px;margin-bottom:10px;font-size:10px;color:var(--text-dim);font-family:monospace;">
-          <summary style="cursor:pointer;">🔧 raw RH sign-up data this import (${signUps.length}) - click to expand</summary>
-          <div style="max-height:220px;overflow-y:auto;white-space:pre-wrap;margin-top:6px;">${(rawStatusSummary || '(no sign-ups)').replace(/</g, '&lt;')}</div>
-        </details>
         ${unmatchedCount > 0 ? `<div style="background:rgba(201,162,39,0.08);border:1px solid var(--gold-dim);border-radius:3px;padding:8px 12px;margin-bottom:14px;font-size:12px;color:var(--gold);">
           ⚠ ${unmatchedCount} unmatched — click <strong>Assign →</strong> to link them to a guildie, or they'll be added as pugs.
         </div>` : ''}
@@ -4169,7 +4168,12 @@ function applyRHImport() {
         // class/color - an impossible combination that also fed the wrong
         // class's spec list into the edit dropdown, since it reads off
         // whatever class ends up on the pool entry.
-        const RH_GENERIC_CLASS_LABELS = new Set(['Tank', 'Healer', 'DPS', 'Damage']);
+        // Also guards against RH's confirmed-live overload of className for
+        // RSVP status (Absence/Bench/Tentative/Late - see rhCategoryOf) -
+        // translateRHSpec already bails out safely when there's no
+        // specName to go with one of these (an Absence sign-up never has
+        // one), but this is cheap, correct defense-in-depth regardless.
+        const RH_GENERIC_CLASS_LABELS = new Set(['Tank', 'Healer', 'DPS', 'Damage', 'Absence', 'Bench', 'Tentative', 'Late']);
         const effectiveClass = (!su.className || RH_GENERIC_CLASS_LABELS.has(su.className)) ? p.class : su.className;
         const translated = translateRHSpec(su.specName, effectiveClass);
         if (translated) {
