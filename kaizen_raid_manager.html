@@ -3645,21 +3645,23 @@ function processRHSignUps(event) {
   const signUps = event.signUps || [];
   const title = event.title || 'Raid Helper Event';
 
-  // Diagnostic: someone clearly marked Absence in Raid Helper's own UI is
-  // STILL showing up as attending all the way through our pipeline even
-  // after two rounds of dedup fixes - meaning the mismatch may be earlier
-  // than any of our categorization logic, e.g. the real status string
-  // isn't literally "absence"/"bench"/"tentative"/"primary"/"late" the way
-  // we've been assuming. Logged to console AND surfaced right in the
-  // preview modal (see rawStatusSummary below) so this is visible without
-  // needing devtools open.
-  console.log('RH raw sign-ups this import:', signUps.map(s => ({ name: s.name, status: s.status, userId: s.userId })));
-  const rawStatusCounts = new Map();
-  for (const s of signUps) {
-    const key = s.status === undefined ? '(no status field)' : JSON.stringify(s.status);
-    rawStatusCounts.set(key, (rawStatusCounts.get(key) || 0) + 1);
-  }
-  const rawStatusSummary = [...rawStatusCounts.entries()].map(([k, n]) => `${k} ×${n}`).join(', ');
+  // Diagnostic round 2: confirmed live that EVERY sign-up (including
+  // someone RH's own UI clearly shows as Absence) comes back with
+  // status:"primary" - there is no "absence"/"bench"/"tentative" status
+  // value at all in this event's raw data. So the signal has to be riding
+  // on some OTHER field. Leading theory: RH already overloads className
+  // with non-class placeholder values for generic role buckets (confirmed
+  // earlier - tank sign-ups report className "Tank"), so "Absence" as a
+  // selectable pseudo-class on the same field is plausible too. Widened
+  // to show className/specName per status bucket so that pattern (or
+  // whatever else it actually is) is visible without more guessing.
+  console.log('RH raw sign-ups this import:', signUps.map(s => ({ name: s.name, status: s.status, className: s.className, specName: s.specName, userId: s.userId })));
+  // A grouped count doesn't actually collapse much when most people have a
+  // distinct class/spec anyway - a per-person list is more scannable for
+  // spotting the one oddball row (Oreoshake) among ~27 real ones by eye.
+  const rawStatusSummary = signUps
+    .map(s => `${s.name}: status=${JSON.stringify(s.status)} class=${JSON.stringify(s.className)} spec=${JSON.stringify(s.specName)}`)
+    .join('\n');
 
   // The event's own scheduled date (Unix seconds), not "whenever this
   // happened to get imported" - read later by recordBenchLog so a benched
@@ -3844,9 +3846,10 @@ function processRHSignUps(event) {
         <button class="modal-close" onclick="document.getElementById('rh-preview-overlay').remove()">✕</button>
       </div>
       <div class="modal-body" style="overflow-y:auto;flex:1;">
-        <div style="background:rgba(80,80,90,0.15);border:1px solid var(--border);border-radius:3px;padding:6px 10px;margin-bottom:10px;font-size:10px;color:var(--text-dim);font-family:monospace;">
-          🔧 raw RH statuses this import: ${rawStatusSummary || '(no sign-ups)'}
-        </div>
+        <details style="background:rgba(80,80,90,0.15);border:1px solid var(--border);border-radius:3px;padding:6px 10px;margin-bottom:10px;font-size:10px;color:var(--text-dim);font-family:monospace;">
+          <summary style="cursor:pointer;">🔧 raw RH sign-up data this import (${signUps.length}) - click to expand</summary>
+          <div style="max-height:220px;overflow-y:auto;white-space:pre-wrap;margin-top:6px;">${(rawStatusSummary || '(no sign-ups)').replace(/</g, '&lt;')}</div>
+        </details>
         ${unmatchedCount > 0 ? `<div style="background:rgba(201,162,39,0.08);border:1px solid var(--gold-dim);border-radius:3px;padding:8px 12px;margin-bottom:14px;font-size:12px;color:var(--gold);">
           ⚠ ${unmatchedCount} unmatched — click <strong>Assign →</strong> to link them to a guildie, or they'll be added as pugs.
         </div>` : ''}
