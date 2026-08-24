@@ -2207,9 +2207,17 @@ function buildRosterEmbed(raid, roster, pugs, guildies = [], notify = true) {
   // the rankings embed - unlikely to matter for a bench list, cheap
   // insurance against a real "Invalid Form Body" on a big roster night.
   const capField = v => v.length > 1024 ? v.slice(0, 1009) + '\n_(truncated)_' : v;
-  if (benchNames.length) spacedFields.push({ name: '🪑 Bench', value: capField(benchNames.join(', ')), inline: false });
-  if (absentNames.length) spacedFields.push({ name: '❌ Absent', value: capField(absentNames.join(', ')), inline: false });
-  if (tentativeNames.length) spacedFields.push({ name: '❔ Tentative', value: capField(tentativeNames.join(', ')), inline: false });
+  if (benchNames.length || absentNames.length || tentativeNames.length) {
+    // Same breathing-room spacer used between the group rows above -
+    // without it this section reads as crowded right up against the last
+    // group, reported live. inline:true (not false, like before) so the
+    // three sit side by side as their own row, same 2-3-per-row pattern
+    // the groups already use, instead of stacking full-width.
+    spacedFields.push({ name: '​', value: '​', inline: false });
+    if (benchNames.length) spacedFields.push({ name: '🪑 Bench', value: capField(benchNames.join(', ')), inline: true });
+    if (absentNames.length) spacedFields.push({ name: '❌ Absent', value: capField(absentNames.join(', ')), inline: true });
+    if (tentativeNames.length) spacedFields.push({ name: '❔ Tentative', value: capField(tentativeNames.join(', ')), inline: true });
+  }
 
   return {
     title: `${raid.name} — ${total} Raiders`,
