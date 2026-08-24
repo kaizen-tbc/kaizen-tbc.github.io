@@ -2685,49 +2685,78 @@ async function refreshGuildLogsChannelNames() {
 // ======================================================
 // ATTENDANCE IMPORT (Warcraft Logs — replaces manual CSV upload)
 // ======================================================
-let _pendingWCLAttendance = null; // { reportTitle, reportDate, matched: [names], checked: Set, unmatchedNames: [] }
+let _pendingWCLAttendance = null; // { reportTitle, reportDate, matched: [names], checked: Set, unmatchedNames: [], benched: [names], missingFromLog: [names], unexpectedInLog: [names] }
 
 async function openWCLAttendanceImport() {
-  showToast('⬇ Fetching latest Warcraft Logs report...');
-  try {
-    const res = await fetch(`${RH_WORKER}/logs/latest`);
-    const data = await res.json();
-    if (data.error) throw new Error(data.error);
-
-    // Match the log's raw participant names against the live roster —
-    // done here (not by the Worker) so it always reflects any unsaved
-    // local roster edits, same as the RH import's matching does.
-    const rosterByName = new Map(roster.map(p => [p.name.toLowerCase(), p.name]));
-    const matched = [];
-    const unmatchedNames = [];
-    (data.participants || []).forEach(n => {
-      const rosterName = rosterByName.get(String(n).toLowerCase());
-      if (rosterName) matched.push(rosterName);
-      else unmatchedNames.push(n);
-    });
-    const uniqueMatched = [...new Set(matched)];
-    const reportDate = data.report?.startTime ? new Date(data.report.startTime).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10);
-
-    // Anyone Raid Helper marked Bench for this date showed up and made
-    // themselves available - a comp call just didn't roster them, so they
-    // shouldn't read as a no-show just because they're missing from the
-    // combat log. Pre-checked like a real match, but tracked separately so
-    // the modal can label WHY they're here with no log data behind them.
-    const benchEntry = benchLog.find(b => b.date === reportDate);
-    const benchedNames = (benchEntry?.names || []).filter(n => !uniqueMatched.includes(n));
-
-    _pendingWCLAttendance = {
-      reportTitle: data.report?.title || 'Raid Log',
-      reportDate,
-      matched: uniqueMatched,
-      benched: benchedNames,
-      checked: new Set([...uniqueMatched, ...benchedNames]),
-      unmatchedNames,
-    };
-    renderWCLAttendanceModal();
-  } catch (err) {
-    showToast(`Couldn't fetch log data: ${err.message}`, true);
+  let data;
+  // Reuse whatever the Guild Logs tab already fetched this session instead
+  // of spending another round trip - same report either way, and it
+  // guarantees attendance reflects exactly the log you already reviewed
+  // rather than "whatever WCL currently calls latest". Worth noting: even
+  // the fallback fetch below barely costs anything anymore either - the
+  // Worker caches a report's full data in KV indefinitely once any session
+  // has pulled it, so a fresh /logs/latest call here is a cache hit unless
+  // this is genuinely the first time anyone's looked at this report.
+  if (_lastLogFetch?.report) {
+    data = _lastLogFetch;
+  } else {
+    showToast('⬇ Fetching latest Warcraft Logs report...');
+    try {
+      const res = await fetch(`${RH_WORKER}/logs/latest`);
+      data = await res.json();
+      if (data.error) throw new Error(data.error);
+    } catch (err) {
+      showToast(`Couldn't fetch log data: ${err.message}`, true);
+      return;
+    }
   }
+
+  // Match the log's raw participant names against the live roster —
+  // done here (not by the Worker) so it always reflects any unsaved
+  // local roster edits, same as the RH import's matching does. This is a
+  // plain exact match (not fuzzy) deliberately - WCL participant names are
+  // real in-game character names straight from the client, same as roster
+  // names, so there's no Discord-nickname-vs-character-name ambiguity to
+  // resolve here the way the RH sign-up importer has to.
+  const rosterByName = new Map(roster.map(p => [p.name.toLowerCase(), p.name]));
+  const matched = [];
+  const unmatchedNames = [];
+  (data.participants || []).forEach(n => {
+    const rosterName = rosterByName.get(String(n).toLowerCase());
+    if (rosterName) matched.push(rosterName);
+    else unmatchedNames.push(n);
+  });
+  const uniqueMatched = [...new Set(matched)];
+  const reportDate = data.report?.startTime ? new Date(data.report.startTime).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10);
+
+  // Anyone Raid Helper marked Bench for this date showed up and made
+  // themselves available - a comp call just didn't roster them, so they
+  // shouldn't read as a no-show just because they're missing from the
+  // combat log. Pre-checked like a real match, but tracked separately so
+  // the modal can label WHY they're here with no log data behind them.
+  const snapshot = benchLog.find(b => b.date === reportDate);
+  const benchedNames = (snapshot?.names || []).filter(n => !uniqueMatched.includes(n));
+
+  // Reconciliation against the finalized roster snapshot for this date, if
+  // one exists (older raids or ones never built through this app's roster
+  // tool won't have one - silently skipped, nothing to compare against).
+  // Purely informational: neither list changes who's checked/counted,
+  // that's still governed by the real log match + explicit bench flag.
+  const rosteredNames = snapshot?.rostered || [];
+  const missingFromLog = rosteredNames.filter(n => !uniqueMatched.includes(n) && !benchedNames.includes(n));
+  const unexpectedInLog = rosteredNames.length ? uniqueMatched.filter(n => !rosteredNames.includes(n)) : [];
+
+  _pendingWCLAttendance = {
+    reportTitle: data.report?.title || 'Raid Log',
+    reportDate,
+    matched: uniqueMatched,
+    benched: benchedNames,
+    checked: new Set([...uniqueMatched, ...benchedNames]),
+    unmatchedNames,
+    missingFromLog,
+    unexpectedInLog,
+  };
+  renderWCLAttendanceModal();
 }
 
 function renderWCLAttendanceModal() {
@@ -2770,6 +2799,12 @@ function renderWCLAttendanceModal() {
           <p style="font-size:11px;color:var(--text-dim);margin-top:10px;">
             ${p.unmatchedNames.length} name${p.unmatchedNames.length === 1 ? '' : 's'} in the log didn't match your roster (not counted): ${p.unmatchedNames.join(', ')}
           </p>` : ''}
+        ${(p.missingFromLog.length || p.unexpectedInLog.length) ? `
+          <div style="background:rgba(201,162,39,0.08);border:1px solid var(--gold-dim);border-radius:3px;padding:8px 10px;margin-top:10px;font-size:11px;color:var(--text-mid);">
+            <div style="font-weight:700;color:var(--gold);margin-bottom:4px;">⚠ Roster reconciliation</div>
+            ${p.missingFromLog.length ? `<div style="margin-bottom:3px;">Rostered but missing from the log, not benched either — double-check these, not auto-counted: <strong>${p.missingFromLog.join(', ')}</strong></div>` : ''}
+            ${p.unexpectedInLog.length ? `<div>In the log but not part of the finalized roster — already counted above, probably a late sub: <strong>${p.unexpectedInLog.join(', ')}</strong></div>` : ''}
+          </div>` : ''}
       </div>
       <div class="modal-footer">
         <button class="btn" onclick="cancelWCLAttendanceImport()">Cancel</button>
@@ -3885,9 +3920,10 @@ async function publishRosterToDiscord(notify = true) {
 
   try {
     // Posting is the "this roster is now final" moment - snapshot who's
-    // benched (RH RSVP or comp decision made here) before saving, so
-    // attendance import can find it later without docking them.
-    recordBenchLog();
+    // benched (RH RSVP) and who's actually rostered before saving, so
+    // attendance import can find both later: don't dock the benched, and
+    // flag anyone slotted-but-missing from the log for a human look.
+    recordRosterSnapshot();
     // Save current state to GitHub first so Worker has latest data
     await saveToGitHub();
 
@@ -5268,18 +5304,38 @@ function computeBenchedNames() {
     .map(p => p.name);
 }
 
-// Snapshots computeBenchedNames() into benchLog, keyed by the raid's actual
-// scheduled date (captured at import time - see processRHSignUps), so the
-// WCL attendance importer can find it later even in a separate session,
-// which is the common case (roster gets finalized raid night, attendance
-// often gets imported afterward once the log's up).
-function recordBenchLog() {
-  const names = computeBenchedNames();
-  if (!names.length) return;
+// Everyone actually slotted into a group when the roster was finalized -
+// the "who was supposed to be there" half of the reconciliation check
+// against the WCL log later (computeBenchedNames is the "who was excused"
+// half). Reads straight off roster/groups rather than signUpPool, since
+// groups can hold anyone with a real roster id regardless of how they got
+// there (RH import, +Guildie, a drag from elsewhere).
+function computeRosteredNames() {
+  const ids = new Set(groups.flat().filter(id => id != null && id >= 0).map(Number));
+  return roster.filter(p => ids.has(p.id)).map(p => p.name);
+}
+
+// Snapshots both lists into benchLog, keyed by the raid's actual scheduled
+// date (captured at import time - see processRHSignUps), so the WCL
+// attendance importer can find it later even in a separate session, which
+// is the common case (roster gets finalized raid night, attendance often
+// gets imported afterward once the log's up). "rostered" is what lets the
+// attendance importer flag a mismatch (someone slotted but missing from
+// the log with no bench excuse, or someone in the log who wasn't part of
+// this snapshot at all - probably a late sub) instead of silently trusting
+// either side.
+function recordRosterSnapshot() {
+  const benched = computeBenchedNames();
+  const rostered = computeRosteredNames();
+  if (!benched.length && !rostered.length) return;
   const date = _lastRHImportDate || new Date().toISOString().slice(0, 10);
   const existing = benchLog.find(b => b.date === date);
-  if (existing) existing.names = [...new Set([...existing.names, ...names])];
-  else benchLog.push({ date, names });
+  if (existing) {
+    existing.names = [...new Set([...existing.names, ...benched])];
+    existing.rostered = [...new Set([...(existing.rostered || []), ...rostered])];
+  } else {
+    benchLog.push({ date, names: benched, rostered });
+  }
 }
 
 // drag state: track both the player id AND the source group/slot
