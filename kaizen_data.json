@@ -3990,7 +3990,7 @@
             {
               "id": 2212,
               "typeA": "notes",
-              "valueA": "",
+              "valueA": "Tank against a wall. Ranged/melee grab impaling spines off the ground and use them to interrupt Tidal Shield or burst him down - don't let spines sit unused.",
               "arrow": false,
               "typeB": null,
               "valueB": null
@@ -4124,7 +4124,7 @@
             {
               "id": 2312,
               "typeA": "notes",
-              "valueA": "",
+              "valueA": "Alternates melee (on tank) and ranged (chases a random ranged player, leaves a fire trail) phases. Spread and kite during the ranged phase without crossing trails; get him back to the tank quickly once he returns to melee.",
               "arrow": false,
               "typeB": null,
               "valueB": null
@@ -4258,7 +4258,7 @@
             {
               "id": 2412,
               "typeA": "notes",
-              "valueA": "",
+              "valueA": "Kill the channelers on both sides first, feeding trash/adds into the caster group as Seed of Corruption soak targets. Left/Right Add Tanks hold the adds at the side doors (Frost Traps/Earthbind Totems help), healers keep them topped. Burn Akama fast with lust once the channelers die and he engages.",
               "arrow": false,
               "typeB": null,
               "valueB": null
@@ -4392,7 +4392,7 @@
             {
               "id": 2512,
               "typeA": "notes",
-              "valueA": "",
+              "valueA": "Tank swap on stacking Shadow of Death. Kill Spirits of the Dead the instant they spawn - one reaching a player enrages the raid. Watch Incinerate targets and any Shadowy Constructs.",
               "arrow": false,
               "typeB": null,
               "valueB": null
@@ -4526,7 +4526,7 @@
             {
               "id": 2612,
               "typeA": "notes",
-              "valueA": "",
+              "valueA": "60-second melee phase. Run 3 rotating groups of 5 to spread Blood Boil stacks, rotate every ~10s. Keep melee stacked tight behind the boss for Fel-Acid Breath.",
               "arrow": false,
               "typeB": null,
               "valueB": null
@@ -4660,7 +4660,7 @@
             {
               "id": 2712,
               "typeA": "notes",
-              "valueA": "",
+              "valueA": "30-second Fel Rage phase. The Fel Rage target gets a massive damage/health/healing buff - pour all heals and defensive cooldowns into them. Everyone else spreads for Fel Geyser knockback, then resets to Phase 1 spots once it ends.",
               "arrow": false,
               "typeB": null,
               "valueB": null
@@ -4794,7 +4794,7 @@
             {
               "id": 2812,
               "typeA": "notes",
-              "valueA": "",
+              "valueA": "Essence of Suffering - fear-heavy phase. Have Tremor Totem/fear wards ready and kill her promptly.",
               "arrow": false,
               "typeB": null,
               "valueB": null
@@ -4928,7 +4928,7 @@
             {
               "id": 2912,
               "typeA": "notes",
-              "valueA": "",
+              "valueA": "Essence of Anger - enrage/knockback mechanics. Watch for stacking debuffs that force a tank swap.",
               "arrow": false,
               "typeB": null,
               "valueB": null
@@ -5062,7 +5062,7 @@
             {
               "id": 3012,
               "typeA": "notes",
-              "valueA": "",
+              "valueA": "Essence of Desire - mind control phase. Be ready to CC or peel anyone who gets controlled.",
               "arrow": false,
               "typeB": null,
               "valueB": null
@@ -5196,7 +5196,7 @@
             {
               "id": 3112,
               "typeA": "notes",
-              "valueA": "",
+              "valueA": "Tank swap on the stacking Shivan debuff. Spread out to avoid Fatal Attraction chain-pulls and stacking beam damage; watch tank positioning/line-of-sight on the beams.",
               "arrow": false,
               "typeB": null,
               "valueB": null
@@ -5330,7 +5330,7 @@
             {
               "id": 3212,
               "typeA": "notes",
-              "valueA": "",
+              "valueA": "Four casters, each with a distinct kit (fear, arcane burst, silence/root, healing debuff) - pick a kill order and stick to it, interrupt heals, and spread for their AoE.",
               "arrow": false,
               "typeB": null,
               "valueB": null
@@ -5464,7 +5464,7 @@
             {
               "id": 3312,
               "typeA": "notes",
-              "valueA": "",
+              "valueA": "Standard tank-and-spank with Agonizing Flames (fire patches to avoid) and Parasitic Shadowfiend spawns - kill the fiend quickly before it explodes.",
               "arrow": false,
               "typeB": null,
               "valueB": null
@@ -5598,7 +5598,7 @@
             {
               "id": 3412,
               "typeA": "notes",
-              "valueA": "",
+              "valueA": "Flames of Azzinoth - two adds spawn with a beam attack to dodge; burn them down before their enrage timer. Keep Illidan tanked away from the adds.",
               "arrow": false,
               "typeB": null,
               "valueB": null
@@ -5732,7 +5732,7 @@
             {
               "id": 3512,
               "typeA": "notes",
-              "valueA": "",
+              "valueA": "Phase 1 abilities return plus new ones (cage mechanic) - handle cage swaps promptly while executing Phase 1 fundamentals cleanly.",
               "arrow": false,
               "typeB": null,
               "valueB": null
@@ -5866,7 +5866,7 @@
             {
               "id": 3612,
               "typeA": "notes",
-              "valueA": "",
+              "valueA": "Demon Phase - Illidan takes flight; raid handles ground effects and adds coming from the air while staying spread.",
               "arrow": false,
               "typeB": null,
               "valueB": null
@@ -6000,7 +6000,7 @@
             {
               "id": 3712,
               "typeA": "notes",
-              "valueA": "",
+              "valueA": "Combines Phase 1 and Phase 3 mechanics plus new abilities as the enrage timer closes in - this is usually the real DPS/execution check.",
               "arrow": false,
               "typeB": null,
               "valueB": null
@@ -6134,7 +6134,7 @@
             {
               "id": 3812,
               "typeA": "notes",
-              "valueA": "",
+              "valueA": "Watch for friendly-fire deaths from Ice Block interactions. Tank keeps him still for melee; ranged/healers stay spread for Death and Decay.",
               "arrow": false,
               "typeB": null,
               "valueB": null
@@ -6268,7 +6268,7 @@
             {
               "id": 3912,
               "typeA": "notes",
-              "valueA": "",
+              "valueA": "Kill Vines immediately when they spawn, before they root/silence the raid. Watch Sleep so it doesn't take a key player out at a bad moment.",
               "arrow": false,
               "typeB": null,
               "valueB": null
@@ -6402,7 +6402,7 @@
             {
               "id": 4012,
               "typeA": "notes",
-              "valueA": "",
+              "valueA": "Watch personal mana - Mana Burn can one-shot a low-mana caster, so pre-drink/pot beforehand. Melee stays mobile to dodge ranged Cleave/void effects.",
               "arrow": false,
               "typeB": null,
               "valueB": null
@@ -6536,7 +6536,7 @@
             {
               "id": 4112,
               "typeA": "notes",
-              "valueA": "",
+              "valueA": "Rain of Fire zones move with him, so melee needs to stay mobile. Watch for his fear and cleave; otherwise a standard tank-and-spank.",
               "arrow": false,
               "typeB": null,
               "valueB": null
@@ -6670,6 +6670,2686 @@
             {
               "id": 4212,
               "typeA": "notes",
+              "valueA": "Pull from range on mounts with rolling HoTs on the MT. Don't turn your back to the water - landing in it from Air Blast silences you.",
+              "arrow": false,
+              "typeB": null,
+              "valueB": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 42,
+      "name": "High King Maulgar",
+      "raid": "Gruul's Lair & Magtheridon's Lair",
+      "image": "strats/high-king.png",
+      "sections": [
+        {
+          "id": 4201,
+          "label": "🛡 Tanks",
+          "rows": [
+            {
+              "id": 4301,
+              "typeA": "text",
+              "valueA": "MT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 4302,
+              "typeA": "text",
+              "valueA": "OT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 4303,
+              "typeA": "text",
+              "valueA": "OT2",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 4202,
+          "label": "✚ Healer Assigns",
+          "rows": [
+            {
+              "id": 4304,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 4305,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 4306,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 4307,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 4203,
+          "label": "🏹 Misdirection",
+          "rows": [
+            {
+              "id": 4308,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 4309,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 4204,
+          "label": "🔊 Lust / Drums",
+          "rows": [
+            {
+              "id": 4310,
+              "typeA": "text",
+              "valueA": "Timing",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            },
+            {
+              "id": 4311,
+              "typeA": "text",
+              "valueA": "Notes",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            }
+          ]
+        },
+        {
+          "id": 4205,
+          "label": "📋 Strategy Notes",
+          "rows": [
+            {
+              "id": 4312,
+              "typeA": "notes",
+              "valueA": "",
+              "arrow": false,
+              "typeB": null,
+              "valueB": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 43,
+      "name": "Gruul the Dragonkiller",
+      "raid": "Gruul's Lair & Magtheridon's Lair",
+      "image": "strats/gruul.png",
+      "sections": [
+        {
+          "id": 4301,
+          "label": "🛡 Tanks",
+          "rows": [
+            {
+              "id": 4401,
+              "typeA": "text",
+              "valueA": "MT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 4402,
+              "typeA": "text",
+              "valueA": "OT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 4403,
+              "typeA": "text",
+              "valueA": "OT2",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 4302,
+          "label": "✚ Healer Assigns",
+          "rows": [
+            {
+              "id": 4404,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 4405,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 4406,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 4407,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 4303,
+          "label": "🏹 Misdirection",
+          "rows": [
+            {
+              "id": 4408,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 4409,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 4304,
+          "label": "🔊 Lust / Drums",
+          "rows": [
+            {
+              "id": 4410,
+              "typeA": "text",
+              "valueA": "Timing",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            },
+            {
+              "id": 4411,
+              "typeA": "text",
+              "valueA": "Notes",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            }
+          ]
+        },
+        {
+          "id": 4305,
+          "label": "📋 Strategy Notes",
+          "rows": [
+            {
+              "id": 4412,
+              "typeA": "notes",
+              "valueA": "",
+              "arrow": false,
+              "typeB": null,
+              "valueB": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 44,
+      "name": "Magtheridon - P1",
+      "raid": "Gruul's Lair & Magtheridon's Lair",
+      "image": "strats/mag-1.png",
+      "sections": [
+        {
+          "id": 4401,
+          "label": "🛡 Tanks",
+          "rows": [
+            {
+              "id": 4501,
+              "typeA": "text",
+              "valueA": "MT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 4502,
+              "typeA": "text",
+              "valueA": "OT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 4503,
+              "typeA": "text",
+              "valueA": "OT2",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 4402,
+          "label": "✚ Healer Assigns",
+          "rows": [
+            {
+              "id": 4504,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 4505,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 4506,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 4507,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 4403,
+          "label": "🏹 Misdirection",
+          "rows": [
+            {
+              "id": 4508,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 4509,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 4404,
+          "label": "🔊 Lust / Drums",
+          "rows": [
+            {
+              "id": 4510,
+              "typeA": "text",
+              "valueA": "Timing",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            },
+            {
+              "id": 4511,
+              "typeA": "text",
+              "valueA": "Notes",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            }
+          ]
+        },
+        {
+          "id": 4405,
+          "label": "📋 Strategy Notes",
+          "rows": [
+            {
+              "id": 4512,
+              "typeA": "notes",
+              "valueA": "",
+              "arrow": false,
+              "typeB": null,
+              "valueB": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 45,
+      "name": "Magtheridon - P2",
+      "raid": "Gruul's Lair & Magtheridon's Lair",
+      "image": "strats/mag-2.png",
+      "sections": [
+        {
+          "id": 4501,
+          "label": "🛡 Tanks",
+          "rows": [
+            {
+              "id": 4601,
+              "typeA": "text",
+              "valueA": "MT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 4602,
+              "typeA": "text",
+              "valueA": "OT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 4603,
+              "typeA": "text",
+              "valueA": "OT2",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 4502,
+          "label": "✚ Healer Assigns",
+          "rows": [
+            {
+              "id": 4604,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 4605,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 4606,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 4607,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 4503,
+          "label": "🏹 Misdirection",
+          "rows": [
+            {
+              "id": 4608,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 4609,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 4504,
+          "label": "🔊 Lust / Drums",
+          "rows": [
+            {
+              "id": 4610,
+              "typeA": "text",
+              "valueA": "Timing",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            },
+            {
+              "id": 4611,
+              "typeA": "text",
+              "valueA": "Notes",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            }
+          ]
+        },
+        {
+          "id": 4505,
+          "label": "📋 Strategy Notes",
+          "rows": [
+            {
+              "id": 4612,
+              "typeA": "notes",
+              "valueA": "",
+              "arrow": false,
+              "typeB": null,
+              "valueB": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 46,
+      "name": "Kalecgos - P1",
+      "raid": "Sunwell Plateau",
+      "image": "strats/kalecgos-1.png",
+      "sections": [
+        {
+          "id": 4601,
+          "label": "🛡 Tanks",
+          "rows": [
+            {
+              "id": 4701,
+              "typeA": "text",
+              "valueA": "MT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 4702,
+              "typeA": "text",
+              "valueA": "OT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 4703,
+              "typeA": "text",
+              "valueA": "OT2",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 4602,
+          "label": "✚ Healer Assigns",
+          "rows": [
+            {
+              "id": 4704,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 4705,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 4706,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 4707,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 4603,
+          "label": "🏹 Misdirection",
+          "rows": [
+            {
+              "id": 4708,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 4709,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 4604,
+          "label": "🔊 Lust / Drums",
+          "rows": [
+            {
+              "id": 4710,
+              "typeA": "text",
+              "valueA": "Timing",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            },
+            {
+              "id": 4711,
+              "typeA": "text",
+              "valueA": "Notes",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            }
+          ]
+        },
+        {
+          "id": 4605,
+          "label": "📋 Strategy Notes",
+          "rows": [
+            {
+              "id": 4712,
+              "typeA": "notes",
+              "valueA": "",
+              "arrow": false,
+              "typeB": null,
+              "valueB": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 47,
+      "name": "Kalecgos - P2",
+      "raid": "Sunwell Plateau",
+      "image": "strats/kalecgos-2.png",
+      "sections": [
+        {
+          "id": 4701,
+          "label": "🛡 Tanks",
+          "rows": [
+            {
+              "id": 4801,
+              "typeA": "text",
+              "valueA": "MT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 4802,
+              "typeA": "text",
+              "valueA": "OT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 4803,
+              "typeA": "text",
+              "valueA": "OT2",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 4702,
+          "label": "✚ Healer Assigns",
+          "rows": [
+            {
+              "id": 4804,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 4805,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 4806,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 4807,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 4703,
+          "label": "🏹 Misdirection",
+          "rows": [
+            {
+              "id": 4808,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 4809,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 4704,
+          "label": "🔊 Lust / Drums",
+          "rows": [
+            {
+              "id": 4810,
+              "typeA": "text",
+              "valueA": "Timing",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            },
+            {
+              "id": 4811,
+              "typeA": "text",
+              "valueA": "Notes",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            }
+          ]
+        },
+        {
+          "id": 4705,
+          "label": "📋 Strategy Notes",
+          "rows": [
+            {
+              "id": 4812,
+              "typeA": "notes",
+              "valueA": "",
+              "arrow": false,
+              "typeB": null,
+              "valueB": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 48,
+      "name": "Brutallus",
+      "raid": "Sunwell Plateau",
+      "image": "strats/brutallus.png",
+      "sections": [
+        {
+          "id": 4801,
+          "label": "🛡 Tanks",
+          "rows": [
+            {
+              "id": 4901,
+              "typeA": "text",
+              "valueA": "MT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 4902,
+              "typeA": "text",
+              "valueA": "OT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 4903,
+              "typeA": "text",
+              "valueA": "OT2",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 4802,
+          "label": "✚ Healer Assigns",
+          "rows": [
+            {
+              "id": 4904,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 4905,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 4906,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 4907,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 4803,
+          "label": "🏹 Misdirection",
+          "rows": [
+            {
+              "id": 4908,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 4909,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 4804,
+          "label": "🔊 Lust / Drums",
+          "rows": [
+            {
+              "id": 4910,
+              "typeA": "text",
+              "valueA": "Timing",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            },
+            {
+              "id": 4911,
+              "typeA": "text",
+              "valueA": "Notes",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            }
+          ]
+        },
+        {
+          "id": 4805,
+          "label": "📋 Strategy Notes",
+          "rows": [
+            {
+              "id": 4912,
+              "typeA": "notes",
+              "valueA": "",
+              "arrow": false,
+              "typeB": null,
+              "valueB": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 49,
+      "name": "Felmyst - P1",
+      "raid": "Sunwell Plateau",
+      "image": "strats/felmyst-1.png",
+      "sections": [
+        {
+          "id": 4901,
+          "label": "🛡 Tanks",
+          "rows": [
+            {
+              "id": 5001,
+              "typeA": "text",
+              "valueA": "MT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 5002,
+              "typeA": "text",
+              "valueA": "OT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 5003,
+              "typeA": "text",
+              "valueA": "OT2",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 4902,
+          "label": "✚ Healer Assigns",
+          "rows": [
+            {
+              "id": 5004,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 5005,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 5006,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 5007,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 4903,
+          "label": "🏹 Misdirection",
+          "rows": [
+            {
+              "id": 5008,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 5009,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 4904,
+          "label": "🔊 Lust / Drums",
+          "rows": [
+            {
+              "id": 5010,
+              "typeA": "text",
+              "valueA": "Timing",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            },
+            {
+              "id": 5011,
+              "typeA": "text",
+              "valueA": "Notes",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            }
+          ]
+        },
+        {
+          "id": 4905,
+          "label": "📋 Strategy Notes",
+          "rows": [
+            {
+              "id": 5012,
+              "typeA": "notes",
+              "valueA": "",
+              "arrow": false,
+              "typeB": null,
+              "valueB": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 50,
+      "name": "Felmyst - P2",
+      "raid": "Sunwell Plateau",
+      "image": "strats/felmyst-2.png",
+      "sections": [
+        {
+          "id": 5001,
+          "label": "🛡 Tanks",
+          "rows": [
+            {
+              "id": 5101,
+              "typeA": "text",
+              "valueA": "MT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 5102,
+              "typeA": "text",
+              "valueA": "OT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 5103,
+              "typeA": "text",
+              "valueA": "OT2",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 5002,
+          "label": "✚ Healer Assigns",
+          "rows": [
+            {
+              "id": 5104,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 5105,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 5106,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 5107,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 5003,
+          "label": "🏹 Misdirection",
+          "rows": [
+            {
+              "id": 5108,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 5109,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 5004,
+          "label": "🔊 Lust / Drums",
+          "rows": [
+            {
+              "id": 5110,
+              "typeA": "text",
+              "valueA": "Timing",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            },
+            {
+              "id": 5111,
+              "typeA": "text",
+              "valueA": "Notes",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            }
+          ]
+        },
+        {
+          "id": 5005,
+          "label": "📋 Strategy Notes",
+          "rows": [
+            {
+              "id": 5112,
+              "typeA": "notes",
+              "valueA": "",
+              "arrow": false,
+              "typeB": null,
+              "valueB": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 51,
+      "name": "The Eredar Twins",
+      "raid": "Sunwell Plateau",
+      "image": "strats/eredar-twins.png",
+      "sections": [
+        {
+          "id": 5101,
+          "label": "🛡 Tanks",
+          "rows": [
+            {
+              "id": 5201,
+              "typeA": "text",
+              "valueA": "MT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 5202,
+              "typeA": "text",
+              "valueA": "OT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 5203,
+              "typeA": "text",
+              "valueA": "OT2",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 5102,
+          "label": "✚ Healer Assigns",
+          "rows": [
+            {
+              "id": 5204,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 5205,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 5206,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 5207,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 5103,
+          "label": "🏹 Misdirection",
+          "rows": [
+            {
+              "id": 5208,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 5209,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 5104,
+          "label": "🔊 Lust / Drums",
+          "rows": [
+            {
+              "id": 5210,
+              "typeA": "text",
+              "valueA": "Timing",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            },
+            {
+              "id": 5211,
+              "typeA": "text",
+              "valueA": "Notes",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            }
+          ]
+        },
+        {
+          "id": 5105,
+          "label": "📋 Strategy Notes",
+          "rows": [
+            {
+              "id": 5212,
+              "typeA": "notes",
+              "valueA": "",
+              "arrow": false,
+              "typeB": null,
+              "valueB": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 52,
+      "name": "M'uru - P1",
+      "raid": "Sunwell Plateau",
+      "image": "strats/muru-1.png",
+      "sections": [
+        {
+          "id": 5201,
+          "label": "🛡 Tanks",
+          "rows": [
+            {
+              "id": 5301,
+              "typeA": "text",
+              "valueA": "MT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 5302,
+              "typeA": "text",
+              "valueA": "OT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 5303,
+              "typeA": "text",
+              "valueA": "OT2",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 5202,
+          "label": "✚ Healer Assigns",
+          "rows": [
+            {
+              "id": 5304,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 5305,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 5306,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 5307,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 5203,
+          "label": "🏹 Misdirection",
+          "rows": [
+            {
+              "id": 5308,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 5309,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 5204,
+          "label": "🔊 Lust / Drums",
+          "rows": [
+            {
+              "id": 5310,
+              "typeA": "text",
+              "valueA": "Timing",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            },
+            {
+              "id": 5311,
+              "typeA": "text",
+              "valueA": "Notes",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            }
+          ]
+        },
+        {
+          "id": 5205,
+          "label": "📋 Strategy Notes",
+          "rows": [
+            {
+              "id": 5312,
+              "typeA": "notes",
+              "valueA": "",
+              "arrow": false,
+              "typeB": null,
+              "valueB": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 53,
+      "name": "M'uru - P2",
+      "raid": "Sunwell Plateau",
+      "image": "strats/muru-2.png",
+      "sections": [
+        {
+          "id": 5301,
+          "label": "🛡 Tanks",
+          "rows": [
+            {
+              "id": 5401,
+              "typeA": "text",
+              "valueA": "MT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 5402,
+              "typeA": "text",
+              "valueA": "OT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 5403,
+              "typeA": "text",
+              "valueA": "OT2",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 5302,
+          "label": "✚ Healer Assigns",
+          "rows": [
+            {
+              "id": 5404,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 5405,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 5406,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 5407,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 5303,
+          "label": "🏹 Misdirection",
+          "rows": [
+            {
+              "id": 5408,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 5409,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 5304,
+          "label": "🔊 Lust / Drums",
+          "rows": [
+            {
+              "id": 5410,
+              "typeA": "text",
+              "valueA": "Timing",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            },
+            {
+              "id": 5411,
+              "typeA": "text",
+              "valueA": "Notes",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            }
+          ]
+        },
+        {
+          "id": 5305,
+          "label": "📋 Strategy Notes",
+          "rows": [
+            {
+              "id": 5412,
+              "typeA": "notes",
+              "valueA": "",
+              "arrow": false,
+              "typeB": null,
+              "valueB": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 54,
+      "name": "M'uru - P3",
+      "raid": "Sunwell Plateau",
+      "image": "strats/muru-3.png",
+      "sections": [
+        {
+          "id": 5401,
+          "label": "🛡 Tanks",
+          "rows": [
+            {
+              "id": 5501,
+              "typeA": "text",
+              "valueA": "MT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 5502,
+              "typeA": "text",
+              "valueA": "OT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 5503,
+              "typeA": "text",
+              "valueA": "OT2",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 5402,
+          "label": "✚ Healer Assigns",
+          "rows": [
+            {
+              "id": 5504,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 5505,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 5506,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 5507,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 5403,
+          "label": "🏹 Misdirection",
+          "rows": [
+            {
+              "id": 5508,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 5509,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 5404,
+          "label": "🔊 Lust / Drums",
+          "rows": [
+            {
+              "id": 5510,
+              "typeA": "text",
+              "valueA": "Timing",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            },
+            {
+              "id": 5511,
+              "typeA": "text",
+              "valueA": "Notes",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            }
+          ]
+        },
+        {
+          "id": 5405,
+          "label": "📋 Strategy Notes",
+          "rows": [
+            {
+              "id": 5512,
+              "typeA": "notes",
+              "valueA": "",
+              "arrow": false,
+              "typeB": null,
+              "valueB": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 55,
+      "name": "M'uru - P4",
+      "raid": "Sunwell Plateau",
+      "image": "strats/muru-4.png",
+      "sections": [
+        {
+          "id": 5501,
+          "label": "🛡 Tanks",
+          "rows": [
+            {
+              "id": 5601,
+              "typeA": "text",
+              "valueA": "MT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 5602,
+              "typeA": "text",
+              "valueA": "OT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 5603,
+              "typeA": "text",
+              "valueA": "OT2",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 5502,
+          "label": "✚ Healer Assigns",
+          "rows": [
+            {
+              "id": 5604,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 5605,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 5606,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 5607,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 5503,
+          "label": "🏹 Misdirection",
+          "rows": [
+            {
+              "id": 5608,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 5609,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 5504,
+          "label": "🔊 Lust / Drums",
+          "rows": [
+            {
+              "id": 5610,
+              "typeA": "text",
+              "valueA": "Timing",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            },
+            {
+              "id": 5611,
+              "typeA": "text",
+              "valueA": "Notes",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            }
+          ]
+        },
+        {
+          "id": 5505,
+          "label": "📋 Strategy Notes",
+          "rows": [
+            {
+              "id": 5612,
+              "typeA": "notes",
+              "valueA": "",
+              "arrow": false,
+              "typeB": null,
+              "valueB": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 56,
+      "name": "Kil'jaeden - P1",
+      "raid": "Sunwell Plateau",
+      "image": "strats/kj-1.png",
+      "sections": [
+        {
+          "id": 5601,
+          "label": "🛡 Tanks",
+          "rows": [
+            {
+              "id": 5701,
+              "typeA": "text",
+              "valueA": "MT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 5702,
+              "typeA": "text",
+              "valueA": "OT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 5703,
+              "typeA": "text",
+              "valueA": "OT2",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 5602,
+          "label": "✚ Healer Assigns",
+          "rows": [
+            {
+              "id": 5704,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 5705,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 5706,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 5707,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 5603,
+          "label": "🏹 Misdirection",
+          "rows": [
+            {
+              "id": 5708,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 5709,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 5604,
+          "label": "🔊 Lust / Drums",
+          "rows": [
+            {
+              "id": 5710,
+              "typeA": "text",
+              "valueA": "Timing",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            },
+            {
+              "id": 5711,
+              "typeA": "text",
+              "valueA": "Notes",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            }
+          ]
+        },
+        {
+          "id": 5605,
+          "label": "📋 Strategy Notes",
+          "rows": [
+            {
+              "id": 5712,
+              "typeA": "notes",
+              "valueA": "",
+              "arrow": false,
+              "typeB": null,
+              "valueB": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 57,
+      "name": "Kil'jaeden - P2",
+      "raid": "Sunwell Plateau",
+      "image": "strats/kj-2.png",
+      "sections": [
+        {
+          "id": 5701,
+          "label": "🛡 Tanks",
+          "rows": [
+            {
+              "id": 5801,
+              "typeA": "text",
+              "valueA": "MT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 5802,
+              "typeA": "text",
+              "valueA": "OT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 5803,
+              "typeA": "text",
+              "valueA": "OT2",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 5702,
+          "label": "✚ Healer Assigns",
+          "rows": [
+            {
+              "id": 5804,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 5805,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 5806,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 5807,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 5703,
+          "label": "🏹 Misdirection",
+          "rows": [
+            {
+              "id": 5808,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 5809,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 5704,
+          "label": "🔊 Lust / Drums",
+          "rows": [
+            {
+              "id": 5810,
+              "typeA": "text",
+              "valueA": "Timing",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            },
+            {
+              "id": 5811,
+              "typeA": "text",
+              "valueA": "Notes",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            }
+          ]
+        },
+        {
+          "id": 5705,
+          "label": "📋 Strategy Notes",
+          "rows": [
+            {
+              "id": 5812,
+              "typeA": "notes",
+              "valueA": "",
+              "arrow": false,
+              "typeB": null,
+              "valueB": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 58,
+      "name": "Kil'jaeden - P3",
+      "raid": "Sunwell Plateau",
+      "image": "strats/kj-3.png",
+      "sections": [
+        {
+          "id": 5801,
+          "label": "🛡 Tanks",
+          "rows": [
+            {
+              "id": 5901,
+              "typeA": "text",
+              "valueA": "MT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 5902,
+              "typeA": "text",
+              "valueA": "OT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 5903,
+              "typeA": "text",
+              "valueA": "OT2",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 5802,
+          "label": "✚ Healer Assigns",
+          "rows": [
+            {
+              "id": 5904,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 5905,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 5906,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 5907,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 5803,
+          "label": "🏹 Misdirection",
+          "rows": [
+            {
+              "id": 5908,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 5909,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 5804,
+          "label": "🔊 Lust / Drums",
+          "rows": [
+            {
+              "id": 5910,
+              "typeA": "text",
+              "valueA": "Timing",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            },
+            {
+              "id": 5911,
+              "typeA": "text",
+              "valueA": "Notes",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            }
+          ]
+        },
+        {
+          "id": 5805,
+          "label": "📋 Strategy Notes",
+          "rows": [
+            {
+              "id": 5912,
+              "typeA": "notes",
+              "valueA": "",
+              "arrow": false,
+              "typeB": null,
+              "valueB": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 59,
+      "name": "Kil'jaeden - P4",
+      "raid": "Sunwell Plateau",
+      "image": "strats/kj-4.png",
+      "sections": [
+        {
+          "id": 5901,
+          "label": "🛡 Tanks",
+          "rows": [
+            {
+              "id": 6001,
+              "typeA": "text",
+              "valueA": "MT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 6002,
+              "typeA": "text",
+              "valueA": "OT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 6003,
+              "typeA": "text",
+              "valueA": "OT2",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 5902,
+          "label": "✚ Healer Assigns",
+          "rows": [
+            {
+              "id": 6004,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 6005,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 6006,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 6007,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 5903,
+          "label": "🏹 Misdirection",
+          "rows": [
+            {
+              "id": 6008,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 6009,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 5904,
+          "label": "🔊 Lust / Drums",
+          "rows": [
+            {
+              "id": 6010,
+              "typeA": "text",
+              "valueA": "Timing",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            },
+            {
+              "id": 6011,
+              "typeA": "text",
+              "valueA": "Notes",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            }
+          ]
+        },
+        {
+          "id": 5905,
+          "label": "📋 Strategy Notes",
+          "rows": [
+            {
+              "id": 6012,
+              "typeA": "notes",
+              "valueA": "",
+              "arrow": false,
+              "typeB": null,
+              "valueB": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 60,
+      "name": "Kil'jaeden - P5",
+      "raid": "Sunwell Plateau",
+      "image": "strats/kj-5.png",
+      "sections": [
+        {
+          "id": 6001,
+          "label": "🛡 Tanks",
+          "rows": [
+            {
+              "id": 6101,
+              "typeA": "text",
+              "valueA": "MT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 6102,
+              "typeA": "text",
+              "valueA": "OT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 6103,
+              "typeA": "text",
+              "valueA": "OT2",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 6002,
+          "label": "✚ Healer Assigns",
+          "rows": [
+            {
+              "id": 6104,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 6105,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 6106,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 6107,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 6003,
+          "label": "🏹 Misdirection",
+          "rows": [
+            {
+              "id": 6108,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 6109,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 6004,
+          "label": "🔊 Lust / Drums",
+          "rows": [
+            {
+              "id": 6110,
+              "typeA": "text",
+              "valueA": "Timing",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            },
+            {
+              "id": 6111,
+              "typeA": "text",
+              "valueA": "Notes",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            }
+          ]
+        },
+        {
+          "id": 6005,
+          "label": "📋 Strategy Notes",
+          "rows": [
+            {
+              "id": 6112,
+              "typeA": "notes",
+              "valueA": "",
+              "arrow": false,
+              "typeB": null,
+              "valueB": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 61,
+      "name": "Kil'jaeden - P6",
+      "raid": "Sunwell Plateau",
+      "image": "strats/kj-6.png",
+      "sections": [
+        {
+          "id": 6101,
+          "label": "🛡 Tanks",
+          "rows": [
+            {
+              "id": 6201,
+              "typeA": "text",
+              "valueA": "MT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 6202,
+              "typeA": "text",
+              "valueA": "OT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 6203,
+              "typeA": "text",
+              "valueA": "OT2",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 6102,
+          "label": "✚ Healer Assigns",
+          "rows": [
+            {
+              "id": 6204,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 6205,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 6206,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 6207,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 6103,
+          "label": "🏹 Misdirection",
+          "rows": [
+            {
+              "id": 6208,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 6209,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 6104,
+          "label": "🔊 Lust / Drums",
+          "rows": [
+            {
+              "id": 6210,
+              "typeA": "text",
+              "valueA": "Timing",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            },
+            {
+              "id": 6211,
+              "typeA": "text",
+              "valueA": "Notes",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            }
+          ]
+        },
+        {
+          "id": 6105,
+          "label": "📋 Strategy Notes",
+          "rows": [
+            {
+              "id": 6212,
+              "typeA": "notes",
               "valueA": "",
               "arrow": false,
               "typeB": null,
@@ -6680,7 +9360,7 @@
       ]
     }
   ],
-  "nextStratId": 42,
+  "nextStratId": 62,
   "attendanceLedger": [
     {
       "id": 6,
