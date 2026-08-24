@@ -238,6 +238,14 @@ function buildStratAssignsEmbed(strat, roster, guildies, pugs) {
 function buildStratImageEmbed(strat, imageUrl) {
   return {
     title: `🗺️ ${strat.name}`,
+    // Confirmed live: an embed's card width is driven by its own content
+    // (title/description/fields), not the attached image's resolution -
+    // a short title with nothing else renders a narrow card, and the
+    // image (even a genuinely wide one) gets fit into that narrow card
+    // rather than its own native size. This description is real content
+    // (not filler), but it's also long enough to push the card toward
+    // Discord's max width so the image actually gets room to render wide.
+    description: `${strat.raid ? strat.raid + ' — ' : ''}Assignments (tanks, healers, and everything else) are in the message right below this one.`,
     color: 0xC9A227,
     image: { url: imageUrl },
     footer: { text: 'Kaizen Raid Manager' },
