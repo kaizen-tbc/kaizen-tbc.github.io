@@ -3644,10 +3644,37 @@ function processRHSignUps(event) {
   const dedupedSignUps = [...byIdentity.values()];
 
   // Categorise by status
-  const attending  = dedupedSignUps.filter(s => s.status === 'primary' || s.status === 'late');
-  const benched    = dedupedSignUps.filter(s => s.status === 'bench');
-  const absent     = dedupedSignUps.filter(s => s.status === 'absence');
-  const tentative  = dedupedSignUps.filter(s => s.status === 'tentative');
+  let attending  = dedupedSignUps.filter(s => s.status === 'primary' || s.status === 'late');
+  let benched    = dedupedSignUps.filter(s => s.status === 'bench');
+  let absent     = dedupedSignUps.filter(s => s.status === 'absence');
+  let tentative  = dedupedSignUps.filter(s => s.status === 'tentative');
+
+  // Belt-and-suspenders on top of the userId-based dedupe above: that one
+  // trusts userId to be consistently present across a person's duplicate
+  // records, which real Raid Helper data apparently doesn't guarantee
+  // (confirmed live - the userId dedupe alone did NOT catch a real
+  // Absence case that still got auto-filled). This pass makes a simpler,
+  // harder-to-break guarantee instead: no name appears in more than one
+  // status bucket, full stop, enforced in priority order (absence >
+  // tentative > bench > attending) purely by name string, no field
+  // presence assumptions required.
+  {
+    const seen = new Set();
+    const keepFirstSeen = list => list.filter(s => {
+      const key = (s.name || '').toLowerCase().trim();
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+    const beforeAttending = attending.length;
+    absent = keepFirstSeen(absent);
+    tentative = keepFirstSeen(tentative);
+    benched = keepFirstSeen(benched);
+    attending = keepFirstSeen(attending);
+    if (attending.length < beforeAttending) {
+      console.warn('RH import: dropped', beforeAttending - attending.length, 'attending record(s) that duplicated a more restrictive status (bench/absence/tentative) for the same name.');
+    }
+  }
 
   // Fuzzy-match each sign-up against roster
   function matchToRoster(name) {
