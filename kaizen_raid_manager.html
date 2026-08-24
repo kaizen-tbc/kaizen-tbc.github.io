@@ -6873,33 +6873,44 @@ function closeGuildieModal() {
 
 function renderGuildieList() {
   const search = document.getElementById('guildie-search').value.toLowerCase();
-  const guildieIds = new Set(guildies.map(g => g.id));
 
-  // Show alts and casuals only
-  let players = roster.filter(p => p.status === 'Alt' || p.status === 'Casual');
+  // A Main missing from the RH import is exactly as real a case as a
+  // missed Alt/Casual - people forget to sign up regardless of status, so
+  // this searches the whole roster now, not just Alt/Casual. What it DOES
+  // exclude: anyone already actually in the pool, whether via a successful
+  // RH sign-up match (signUpPool carries their real roster id then) or a
+  // previous manual add (guildies[]._rosterId) - so this list only ever
+  // shows people genuinely missing, not duplicates of someone already
+  // there. (Previously there was an "already added" dimmed state here, but
+  // it compared roster ids against guildie tempIds - two different ID
+  // spaces that can never match - so it silently never worked; excluding
+  // them outright is both the fix and a clearer result than a dead dim.)
+  const alreadyInPool = new Set([
+    ...signUpPool.filter(p => p.id >= 0).map(p => p.id),
+    ...guildies.map(g => g._rosterId),
+  ]);
+  let players = roster.filter(p => !alreadyInPool.has(p.id));
   if (search) players = players.filter(p => p.name.toLowerCase().includes(search));
 
   const list = document.getElementById('guildie-list');
   if (players.length === 0) {
-    list.innerHTML = '<div style="color:var(--text-dim);font-size:13px;padding:8px;">No players found.</div>';
+    list.innerHTML = '<div style="color:var(--text-dim);font-size:13px;padding:8px;">Nobody missing — everyone matching is already in the pool.</div>';
     return;
   }
 
   list.innerHTML = players.map(p => {
     const cc = classColor(p.class);
-    const already = guildieIds.has(p.id);
-    return `<div onclick="${already ? '' : `addGuildie(${p.id})`}"
+    return `<div onclick="addGuildie(${p.id})"
       style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:3px;
              border:1px solid var(--border);background:var(--bg-card);
-             ${already ? 'opacity:0.4;cursor:not-allowed;' : 'cursor:pointer;'}
+             cursor:pointer;
              transition:background 0.12s;"
-      onmouseover="if(!${already})this.style.background='var(--bg-hover)'"
+      onmouseover="this.style.background='var(--bg-hover)'"
       onmouseout="this.style.background='var(--bg-card)'">
       <span class="class-dot" style="background:var(--${cc});width:9px;height:9px;flex-shrink:0;border-radius:50%;"></span>
       <span class="class-${cc}" style="font-weight:600;font-size:14px;">${p.name}</span>
       <span style="font-size:12px;color:var(--text-dim);margin-left:4px;">${p.ms} ${p.class}</span>
       <span style="font-size:11px;color:var(--text-dim);margin-left:auto;">${p.status}</span>
-      ${already ? '<span style="font-size:10px;color:var(--teal);">in pool</span>' : ''}
     </div>`;
   }).join('');
 }
