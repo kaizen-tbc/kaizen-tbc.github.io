@@ -5156,6 +5156,14 @@ function renderPool() {
       const isBench = p._rhStatus === 'bench';
       const borderStyle = isBench ? 'border-color:var(--gold-dim);' : isPug ? 'border-style:dashed;' : isGuildie ? 'border-style:dotted;' : '';
 
+      // Only manually-added pugs/guildies get a remove control here - RH
+      // import entries are managed as a whole via "Clear Import" instead.
+      const removeBtn = isPug
+        ? `<button onclick="event.stopPropagation();removePug(${numId})" style="background:none;border:none;color:var(--red-bright);cursor:pointer;font-size:10px;padding:0 0 0 6px;opacity:0.6;" title="Remove pug">✕</button>`
+        : isGuildie
+        ? `<button onclick="event.stopPropagation();removeGuildie(${numId})" style="background:none;border:none;color:var(--red-bright);cursor:pointer;font-size:10px;padding:0 0 0 6px;opacity:0.6;" title="Remove">✕</button>`
+        : '';
+
       return `<div class="pool-player class-${cc}"
         draggable="true"
         ondragstart="onDragStart(event,${numId},-1,-1)"
@@ -5167,6 +5175,7 @@ function renderPool() {
         ${p.name}
         ${isBench ? `<span style="font-size:10px;color:var(--gold);font-weight:700;margin-left:4px;">BENCH</span>` : ''}
         ${isPug ? `<span style="font-size:10px;color:var(--teal);font-weight:700;margin-left:4px;">PUG</span>` : ''}
+        ${removeBtn}
       </div>`;
     }).join('');
   }
@@ -5877,7 +5886,13 @@ function savePug() {
   const role = document.getElementById('pug-role').value;
   if (!name || !cls) return;
   const pugId = nextPugId--;
-  pugs.push({ id: pugId, name, class: cls, ms, os: '', role, status: 'Main', altOf: '', notes: 'PUG' });
+  const pug = { id: pugId, name, class: cls, ms, os: '', role, status: 'Main', altOf: '', notes: 'PUG' };
+  pugs.push(pug);
+  // renderPool() only ever reads from signUpPool (see renderPool) - without
+  // this, a manually-added pug landed in `pugs` but never actually showed
+  // up as selectable/draggable, matching exactly what the RH import path
+  // itself does for its own ad-hoc pugs (see confirmRHImport).
+  signUpPool.push(pug);
   closePugModal();
   renderBuilder();
   showToast(`${name} added to the pool as a pug.`);
@@ -5889,6 +5904,9 @@ function removePug(id) {
   groups = groups.map(g => g.filter(gid => Number(gid) !== id));
   // Remove from pugs array
   pugs = pugs.filter(p => Number(p.id) !== id);
+  // ...and the pool's own display list, or it'd keep showing a pug that no
+  // longer resolves to anything (see savePug's matching push).
+  signUpPool = signUpPool.filter(p => Number(p.id) !== id);
   renderBuilder();
 }
 
@@ -5904,6 +5922,7 @@ function removeGuildie(id) {
   id = Number(id);
   groups = groups.map(g => g.filter(gid => Number(gid) !== id));
   guildies = guildies.filter(g => Number(g.id) !== id);
+  signUpPool = signUpPool.filter(p => Number(p.id) !== id);
   renderBuilder();
 }
 
@@ -6890,7 +6909,12 @@ function addGuildie(id) {
   if (!p) return;
   const tempId = -(1000 + id);
   if (guildies.find(g => g.id === tempId)) return; // already added
-  guildies.push({ ...p, id: tempId, _rosterId: id });
+  const entry = { ...p, id: tempId, _rosterId: id };
+  guildies.push(entry);
+  // renderPool() only ever reads from signUpPool - same fix as savePug,
+  // without this a manually-added guildie never actually showed up as
+  // selectable/draggable in "Unassigned Raiders".
+  signUpPool.push(entry);
   closeGuildieModal();
   renderBuilder();
   showToast(`${p.name} added to pool.`);
