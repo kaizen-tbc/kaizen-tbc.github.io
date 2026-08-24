@@ -3645,22 +3645,19 @@ function processRHSignUps(event) {
   const signUps = event.signUps || [];
   const title = event.title || 'Raid Helper Event';
 
-  // Diagnostic round 2: confirmed live that EVERY sign-up (including
-  // someone RH's own UI clearly shows as Absence) comes back with
-  // status:"primary" - there is no "absence"/"bench"/"tentative" status
-  // value at all in this event's raw data. So the signal has to be riding
-  // on some OTHER field. Leading theory: RH already overloads className
-  // with non-class placeholder values for generic role buckets (confirmed
-  // earlier - tank sign-ups report className "Tank"), so "Absence" as a
-  // selectable pseudo-class on the same field is plausible too. Widened
-  // to show className/specName per status bucket so that pattern (or
-  // whatever else it actually is) is visible without more guessing.
-  console.log('RH raw sign-ups this import:', signUps.map(s => ({ name: s.name, status: s.status, className: s.className, specName: s.specName, userId: s.userId })));
-  // A grouped count doesn't actually collapse much when most people have a
-  // distinct class/spec anyway - a per-person list is more scannable for
-  // spotting the one oddball row (Oreoshake) among ~27 real ones by eye.
+  // Diagnostic round 3: confirmed live that EVERY sign-up, including
+  // someone RH's own Discord embed clearly separates into its own
+  // "Absence (1)" line below the main roster, comes back with
+  // status:"primary" - no "absence"/"bench"/"tentative" value anywhere in
+  // status. className/specName were the next guess, but rather than keep
+  // guessing field-by-field, dumping the ENTIRE raw record now - whatever
+  // field RH actually uses to mark this (a type, a boolean, something
+  // nested we haven't thought of) will be visible here regardless.
+  console.log('RH raw sign-ups this import (FULL records):', signUps);
+  // Full JSON per person, one line each - scannable for the one oddball
+  // record among ~27 real ones, whatever field turns out to differ.
   const rawStatusSummary = signUps
-    .map(s => `${s.name}: status=${JSON.stringify(s.status)} class=${JSON.stringify(s.className)} spec=${JSON.stringify(s.specName)}`)
+    .map(s => `${s.name}: ${JSON.stringify(s)}`)
     .join('\n');
 
   // The event's own scheduled date (Unix seconds), not "whenever this
