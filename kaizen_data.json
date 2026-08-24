@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-08-24T20:21:20.414Z",
+  "savedAt": "2026-08-24T20:34:09.821Z",
   "roster": [
     {
       "id": 1,
@@ -1087,7 +1087,8 @@
         "68": "278348975504097281"
       },
       "bench": [
-        41
+        41,
+        -1031
       ],
       "absent": [
         33
@@ -1525,6 +1526,19 @@
           "notes": "",
           "_rhStatus": "absence",
           "_userId": "356427338373791746"
+        },
+        {
+          "id": -1031,
+          "name": "Nechristo",
+          "class": "Warrior",
+          "ms": "Arms",
+          "os": "",
+          "role": "Melee",
+          "status": "Main",
+          "altOf": "",
+          "level": 70,
+          "notes": "",
+          "_rosterId": 31
         }
       ],
       "rhEventTitle": "SSC Last Ride",
@@ -2550,6 +2564,19 @@
       "level": 70,
       "notes": "",
       "_rosterId": 79
+    },
+    {
+      "id": -1031,
+      "name": "Nechristo",
+      "class": "Warrior",
+      "ms": "Arms",
+      "os": "",
+      "role": "Melee",
+      "status": "Main",
+      "altOf": "",
+      "level": 70,
+      "notes": "",
+      "_rosterId": 31
     }
   ],
   "strats": [
