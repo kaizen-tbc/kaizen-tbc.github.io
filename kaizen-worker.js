@@ -1099,31 +1099,6 @@ function buildLogSummaryEmbed(report, details, roster) {
   };
 }
 
-// Plain `content` messages instead of an embed - same reasoning as the
-// strat posts: no colored card container, reads like a normal person
-// posting. One message per section (header, DPS, Healers, Attendance)
-// rather than one dense combined post, and each stays well clear of
-// Discord's 2000-char plain-message cap (the old single-embed version had
-// more headroom via embed fields, but was already getting crowded once
-// small-sample warnings and raid-share notes were added).
-function buildRankingsMessages(report, details, roster) {
-  const participants = extractParticipantNames(details.playerDetailsRaw);
-  const attendance = matchAttendanceToRoster(participants, roster);
-  const deaths = extractDeaths(details.deathsRaw);
-  const dps = extractRoleParses(details.rankingsRawDps, 'dps', deaths);
-  const healers = extractRoleParses(details.rankingsRawHealers, 'healers', deaths);
-  const fightNameById = new Map(details.fights.map(f => [f.id, f.name]));
-
-  const header = `**📊 ${report.title || 'Raid Log Summary'}**\n` +
-    `${details.killFights.length}/${details.fights.length} encounters killed · ${attendance.length} guildies logged\n` +
-    `🔗 https://www.warcraftlogs.com/reports/${report.code}`;
-  const dpsMsg = `**⚔️ DPS**\n${formatTopAndBottom(dps, deathsForRole(deaths, dps, fightNameById))}`;
-  const healersMsg = `**✚ Healers**\n${formatTopAndBottom(healers, deathsForRole(deaths, healers, fightNameById))}`;
-  const attendanceMsg = `**👥 Attendance**\n${attendance.length ? attendance.join(', ') : '—'}`;
-
-  return [header, dpsMsg, healersMsg, attendanceMsg].map(m => m.slice(0, 2000));
-}
-
 // /post-logs — deferred, since the WCL round trips (auth + 2 queries) can
 // exceed Discord's 3-second initial-response window. Respond immediately,
 // then patch the real content in via ctx.waitUntil once it's ready.
@@ -1306,18 +1281,17 @@ async function handleDirectLogPost(request, env) {
     const dataRes = await fetch(`https://kaizen-tbc.github.io/kaizen_data.json?v=${Date.now()}`);
     const guildData = dataRes.ok ? await dataRes.json() : { roster: [] };
 
-    const headers = { 'Authorization': `Bot ${env.DISCORD_BOT_TOKEN}`, 'Content-Type': 'application/json' };
-    for (const content of buildRankingsMessages(report, details, guildData.roster || [])) {
-      const postRes = await fetch(`${DISCORD_API}/channels/${channelId}/messages`, {
-        method: 'POST', headers, body: JSON.stringify({ content }),
-      });
-      if (!postRes.ok) {
-        const err = await postRes.json().catch(() => ({}));
-        throw new Error(err.message || `Discord API error ${postRes.status}`);
-      }
-      // Small gap between sequential posts respects Discord's per-channel
-      // rate limit on this 4-message batch.
-      await new Promise(r => setTimeout(r, 350));
+    // Embed, not plain content - tested live, without a card the rankings
+    // read cramped/ran together (same finding as strats and fallout).
+    const embed = buildLogSummaryEmbed(report, details, guildData.roster || []);
+    const postRes = await fetch(`${DISCORD_API}/channels/${channelId}/messages`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bot ${env.DISCORD_BOT_TOKEN}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ embeds: [embed] }),
+    });
+    if (!postRes.ok) {
+      const err = await postRes.json().catch(() => ({}));
+      throw new Error(err.message || `Discord API error ${postRes.status}`);
     }
 
     return corsResponse(JSON.stringify({ ok: true, report: { title: report.title, code: report.code } }), 200);
@@ -1538,20 +1512,29 @@ async function handleFalloutReport(request, env) {
 }
 
 // Posts arbitrary pre-generated text (the fallout report) as its own
-// plain message - no embed/card container, reads like a normal person
-// posting, same as the strat/rankings posts.
+// message. Back to an embed after testing plain content live - without a
+// card, everything ran together and read badly (same finding as strats,
+// and rankings gets the same treatment for consistency).
 async function handlePostTextMessage(request, env) {
   try {
     const { channelId, title, text } = await request.json();
     if (!channelId) throw new Error('No channel ID provided.');
     if (!text) throw new Error('No text to post.');
 
-    // Discord hard-caps plain message content at 2000 chars - post
-    // silently failed in the past when the AI ran long against the old
-    // embed's 4096 cap. Truncate defensively rather than trust the
-    // prompt's soft word target to always hold.
-    const combined = title ? `**${title}**\n${text}` : text;
-    const content = combined.length > 2000 ? combined.slice(0, 1985) + '\n\n_(truncated)_' : combined;
+    // Discord hard-caps an embed description at 4096 chars (and a title at
+    // 256) - post silently failed with a 400 in the past when the AI ran
+    // long. Truncate defensively rather than trust the prompt's soft word
+    // target to always hold.
+    const safeTitle = (title || '').slice(0, 256);
+    const safeText = text.length > 4000 ? text.slice(0, 3985) + '\n\n_(truncated)_' : text;
+
+    const embed = {
+      title: safeTitle || undefined,
+      description: safeText,
+      color: 0xC9A227,
+      footer: { text: 'Kaizen Raid Manager' },
+      timestamp: new Date().toISOString(),
+    };
 
     const postRes = await fetch(`${DISCORD_API}/channels/${channelId}/messages`, {
       method: 'POST',
@@ -1559,7 +1542,7 @@ async function handlePostTextMessage(request, env) {
         'Authorization': `Bot ${env.DISCORD_BOT_TOKEN}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ content }),
+      body: JSON.stringify({ embeds: [embed] }),
     });
     if (!postRes.ok) {
       const err = await postRes.json();
