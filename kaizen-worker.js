@@ -31,6 +31,13 @@ export default {
       return handleRenameRHEvent(request, env);
     }
 
+    // ── Edit an already-posted roster (embed + its follow-up plain
+    // message) in place, using whatever's currently in kaizen_data.json -
+    // /edit-roster-post
+    if (url.pathname === '/edit-roster-post' && request.method === 'POST') {
+      return handleEditRosterPost(request, env);
+    }
+
     // ── Post a strat's image + assignments to Discord, clearing the
     // channel first ── /post-strat
     if (url.pathname === '/post-strat' && request.method === 'POST') {
@@ -155,17 +162,7 @@ async function handleDirectRosterPost(request, env) {
       throw new Error(err.message || `Discord API error ${postRes.status}`);
     }
 
-    // Follow-up plain message (not another embed) right after the roster -
-    // raid.rhEventTitle/rhEventDate come from the Raid Helper event this
-    // roster was imported from (persisted at import time so they're still
-    // right even if posting happens in a later session); falls back to
-    // the raid tab's own name/today's date for a roster built without an
-    // import at all.
-    const titleForMsg = raid.rhEventTitle || raid.name;
-    const dateForMsg = raid.rhEventDate
-      ? new Date(raid.rhEventDate + 'T00:00:00Z').toLocaleDateString('en-US', { timeZone: 'UTC', month: 'long', day: 'numeric', year: 'numeric' })
-      : new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-    const followUp = `Here are the comps for **${titleForMsg}** (${dateForMsg}). If you're on the bench, please stay available in case someone drops. Invites go out **30 minutes** before raid start!`;
+    const followUp = buildRosterFollowUpText(raid);
     await fetch(`${DISCORD_API}/channels/${channelId}/messages`, {
       method: 'POST',
       headers: {
@@ -177,6 +174,83 @@ async function handleDirectRosterPost(request, env) {
 
     return corsResponse(JSON.stringify({ ok: true }), 200);
   } catch(err) {
+    return corsResponse(JSON.stringify({ error: err.message }), 500);
+  }
+}
+
+// raid.rhEventTitle/rhEventDate come from the Raid Helper event this roster
+// was imported from (persisted at import time so they're still right even
+// if posting/editing happens in a later session); falls back to the raid
+// tab's own name/today's date for a roster built without an import at all,
+// or titleOverride when neither of those is actually correct (e.g. editing
+// an older post whose raid.rhEventTitle was never captured, but the real
+// RH event title is now known good from elsewhere).
+function buildRosterFollowUpText(raid, titleOverride) {
+  const titleForMsg = titleOverride || raid.rhEventTitle || raid.name;
+  const dateForMsg = raid.rhEventDate
+    ? new Date(raid.rhEventDate + 'T00:00:00Z').toLocaleDateString('en-US', { timeZone: 'UTC', month: 'long', day: 'numeric', year: 'numeric' })
+    : new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  return `Here are the comps for **${titleForMsg}** (${dateForMsg}). If you're on the bench, please stay available in case someone drops. Invites go out **30 minutes** before raid start!`;
+}
+
+// Edits an already-posted roster in place: rebuilds the embed from
+// whatever's currently in kaizen_data.json (so it picks up any fix or edit
+// made since - plain names instead of mentions, a newly-benched player,
+// etc.) and PATCHes it over the bot's own existing roster message, plus
+// the plain follow-up message right after it. Finds both by listing the
+// channel's recent messages and picking the bot's own most recent embed
+// message (the roster) and most recent plain-content message (the
+// follow-up) - explicit messageId isn't required, but accepted if given
+// for precision.
+async function handleEditRosterPost(request, env) {
+  try {
+    const { raidId, channelId, notify = true, titleOverride, rosterMessageId, followUpMessageId } = await request.json();
+    if (!channelId) throw new Error('No channel ID provided.');
+
+    const dataRes = await fetch(`https://kaizen-tbc.github.io/kaizen_data.json?v=${Date.now()}`);
+    if (!dataRes.ok) throw new Error('Could not load raid data');
+    const data = await dataRes.json();
+
+    const raids  = data.raids || [];
+    const roster = data.roster || [];
+    const raid   = raids.find(r => r.id === raidId) || raids[0];
+    if (!raid) throw new Error('Raid not found');
+
+    const headers = { 'Authorization': `Bot ${env.DISCORD_BOT_TOKEN}` };
+    let targetRosterId = rosterMessageId, targetFollowUpId = followUpMessageId;
+
+    if (!targetRosterId || !targetFollowUpId) {
+      const meRes = await fetch(`${DISCORD_API}/users/@me`, { headers });
+      if (!meRes.ok) throw new Error('Could not identify the bot itself to find its last messages.');
+      const me = await meRes.json();
+      const listRes = await fetch(`${DISCORD_API}/channels/${channelId}/messages?limit=10`, { headers });
+      if (!listRes.ok) { const err = await listRes.json().catch(() => ({})); throw new Error(err.message || `Failed to list messages: ${listRes.status}`); }
+      const messages = await listRes.json();
+      const mine = messages.filter(m => m.author?.id === me.id);
+      if (!targetRosterId) targetRosterId = mine.find(m => m.embeds?.length > 0)?.id;
+      if (!targetFollowUpId) targetFollowUpId = mine.find(m => !(m.embeds?.length > 0) && m.content)?.id;
+      if (!targetRosterId && !targetFollowUpId) throw new Error("Couldn't find a recent roster post from the bot in that channel.");
+    }
+
+    const patchHeaders = { ...headers, 'Content-Type': 'application/json' };
+
+    if (targetRosterId) {
+      const embed = buildRosterEmbed(raid, roster, raid.pugs || [], data.guildies || [], notify);
+      const res = await fetch(`${DISCORD_API}/channels/${channelId}/messages/${targetRosterId}`, {
+        method: 'PATCH', headers: patchHeaders, body: JSON.stringify({ embeds: [embed] }),
+      });
+      if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.message || `Failed to edit roster embed: ${res.status}`); }
+    }
+
+    if (targetFollowUpId) {
+      const res = await fetch(`${DISCORD_API}/channels/${channelId}/messages/${targetFollowUpId}`, {
+        method: 'PATCH', headers: patchHeaders, body: JSON.stringify({ content: buildRosterFollowUpText(raid, titleOverride) }),
+      });
+      if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.message || `Failed to edit follow-up message: ${res.status}`); }
+    }
+
+    return corsResponse(JSON.stringify({ ok: true, editedRoster: !!targetRosterId, editedFollowUp: !!targetFollowUpId }), 200);
+  } catch (err) {
     return corsResponse(JSON.stringify({ error: err.message }), 500);
   }
 }
