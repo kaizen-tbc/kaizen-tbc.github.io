@@ -26,6 +26,11 @@ export default {
       return handleDirectRosterPost(request, env);
     }
 
+    // ── Rename a Raid Helper event's title ── /rename-rh-event
+    if (url.pathname === '/rename-rh-event' && request.method === 'POST') {
+      return handleRenameRHEvent(request, env);
+    }
+
     // ── Post a strat's image + assignments to Discord, clearing the
     // channel first ── /post-strat
     if (url.pathname === '/post-strat' && request.method === 'POST') {
@@ -345,6 +350,35 @@ async function handlePostStrat(request, env) {
 }
 
 // ── Raid Helper Proxy ─────────────────────────────────────────
+// PATCH https://raid-helper.xyz/api/v4/events/EVENTID - per RH's own API
+// docs this is a server-authorized write (unlike the GET single-event
+// fetch, which explicitly doesn't need auth), so it uses the same
+// RH_API_KEY the guild already has configured via Discord's /apikey
+// command, same as handleRHProxy's server-scoped GET calls below.
+async function handleRenameRHEvent(request, env) {
+  try {
+    if (!env.RH_API_KEY) throw new Error('RH_API_KEY is not configured.');
+    const { eventId, title } = await request.json();
+    if (!eventId) throw new Error('No Raid Helper event ID provided.');
+    if (!title) throw new Error('No new title provided.');
+
+    const res = await fetch(`${RH_API}/events/${eventId}`, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': env.RH_API_KEY,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ title }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || data.message || `Raid Helper API error ${res.status}`);
+
+    return corsResponse(JSON.stringify({ ok: true }), 200);
+  } catch (err) {
+    return corsResponse(JSON.stringify({ error: err.message }), 500);
+  }
+}
+
 async function handleRHProxy(request, url, env) {
   // /rh/events/:id  → GET single event (no auth)
   // /rh/servers/:id/events → GET server events (needs RH API key)
@@ -2174,12 +2208,12 @@ function buildRosterEmbed(raid, roster, pugs, guildies = [], notify = true) {
           if (!p) return null;
           const spec = specOv[p.id] || p.ms || p.class;
           const icon = getSpecEmoji(p.class, spec);
-          // Discord pings for <@id> mentions anywhere in a message, including
-          // inside embed fields — not just the top summary line. Only use
-          // real mentions here when notify is on, otherwise plain names, or
-          // unchecking "notify" silently still pings everyone individually.
-          const mention = (notify && userIdMap[p.id]) ? `<@${userIdMap[p.id]}>` : p.name;
-          return `${icon} ${mention}`;
+          // Plain name, not a real <@id> mention - the top summary line
+          // already pings everyone once (see mentionLine above), so doing
+          // it again per group just repeats the same notification and,
+          // reported live, makes the group lists harder to read (each name
+          // renders as a highlighted mention pill instead of plain text).
+          return `${icon} ${p.name}`;
         })
         .filter(Boolean)
         .join('\n');
