@@ -228,6 +228,11 @@ function buildStratAssignsEmbed(strat, roster, guildies, pugs) {
   const fields = buildStratSectionFields(strat, roster, guildies, pugs);
   return {
     title: `📋 ${strat.name} — Assignments`,
+    // Same fix as the image embed: an embed's card width is driven by its
+    // title/description, not by how many inline fields sit side by side -
+    // with no description this rendered narrower than the image post
+    // right above it, so the two cards didn't line up edge to edge.
+    description: `Who's assigned where for ${strat.name}${strat.raid ? ' (' + strat.raid + ')' : ''}. Update this as raid comp changes.`,
     color: 0xC9A227,
     fields: fields.length ? fields : [{ name: 'No assignments yet', value: '—' }],
     footer: { text: 'Kaizen Raid Manager' },
