@@ -4247,7 +4247,19 @@ function applyRHImport() {
   absent = signUpPool.filter(p => p._rhStatus === 'absence').map(p => p.id);
   tentative = signUpPool.filter(p => p._rhStatus === 'tentative').map(p => p.id);
 
-  // Save to active raid BEFORE syncing so specOverrides/roleOverrides aren't wiped
+  // Save to active raid BEFORE syncing so specOverrides/roleOverrides aren't
+  // wiped - same reasoning applies to pugs/nextPugId/signUpPool now that
+  // they're per-raid too (missed when that migration went in): without
+  // writing these first, syncActiveRaid() below would immediately overwrite
+  // the signUpPool/pugs this loop just spent building with whatever STALE
+  // values were already on r from before this import, since it reads
+  // r.signUpPool/r.pugs back onto the page-level vars unconditionally.
+  // That's exactly what just happened live: Unassigned Raiders came back
+  // empty (it has nothing to fall back to, unlike bench/absent/tentative,
+  // which still resolved via getPlayerById), and autoFillGroups - finding
+  // signUpPool empty - fell back to raw getActiveRaiders(), which has no
+  // idea about the tentative/bench/absent flags at all, so it placed
+  // someone the fresh import had correctly flagged Tentative.
   const r = getActiveRaid();
   if (r) {
     r.specOverrides = { ...specOverrides };
@@ -4255,6 +4267,9 @@ function applyRHImport() {
     r.bench = bench;
     r.absent = absent;
     r.tentative = tentative;
+    r.pugs = pugs;
+    r.nextPugId = nextPugId;
+    r.signUpPool = signUpPool;
     r.userIdMap = {};
     signUpPool.forEach(p => {
       if (p._userId) r.userIdMap[p.id] = p._userId;
@@ -5891,10 +5906,17 @@ function autoFillGroups() {
   // Raid Helper still got auto-filled into the comp. An officer can always
   // manually drag someone in from one of these 3 pools if their status
   // changes - auto-fill just never does it for them on its own.
+  // Applied to BOTH branches below, not just the signUpPool one - a
+  // no-import-yet raid can still have someone manually dragged into Bench/
+  // Absent/Tentative, and the getActiveRaiders() fallback has no other way
+  // to know that. (Also just defense-in-depth against the signUpPool-went-
+  // empty bug fixed alongside this - that fallback silently ignoring these
+  // flags entirely is exactly what let it place someone real data had
+  // correctly excluded.)
   const specialIds = new Set([...bench, ...absent, ...tentative].map(Number));
   const pool = signUpPool.length > 0
     ? signUpPool.filter(p => !specialIds.has(Number(p.id)))
-    : getActiveRaiders();
+    : getActiveRaiders().filter(p => !specialIds.has(Number(p.id)));
 
   if (pool.length === 0) { showToast('No players in pool to fill.', true); return; }
 
