@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-08-24T19:52:55.717Z",
+  "savedAt": "2026-08-24T20:16:02.231Z",
   "roster": [
     {
       "id": 1,
@@ -962,7 +962,7 @@
         [
           40,
           35,
-          21,
+          11,
           14,
           5
         ],
@@ -970,7 +970,7 @@
           46,
           38,
           29,
-          11,
+          21,
           17
         ],
         [
@@ -983,13 +983,13 @@
         [
           10,
           25,
-          22,
+          37,
           28,
           36
         ],
         [
           55,
-          37,
+          22,
           27,
           19,
           68
@@ -1007,12 +1007,11 @@
         "4": "Balance",
         "5": "Retribution",
         "10": "Restoration",
-        "11": "Beastmastery",
+        "11": "Survival",
         "12": "Destruction",
         "14": "Feral",
         "17": "Beastmastery",
         "19": "Holy",
-        "21": "Beastmastery",
         "22": "Affliction",
         "25": "Arcane",
         "27": "Restoration",
