@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-08-24T14:06:20.971Z",
+  "savedAt": "2026-08-24T14:07:40.079Z",
   "roster": [
     {
       "id": 1,
@@ -945,7 +945,7 @@
       "name": "TUESDAY 25",
       "size": 25,
       "rhChannelId": "1498198665045737492",
-      "discordChannelId": "1539366128898285629",
+      "discordChannelId": "1498198665045737492",
       "groups": [
         [
           40,
