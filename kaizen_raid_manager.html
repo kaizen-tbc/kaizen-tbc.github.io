@@ -2599,6 +2599,34 @@ function syncActiveRaid() {
   roleOverrides = r.roleOverrides;
 }
 
+// The shim above (groups = r.groups) is a REFERENCE - but plenty of
+// mutation functions reassign groups to a brand-new array instead of
+// mutating in place (groups = groups.map(...), very common in drag-and-
+// drop to strip out nulls/removed ids), which silently breaks that
+// reference. Nothing ever re-established it afterward. Concretely:
+// saveToGitHub() serializes `raids` directly, never these page-level
+// shim variables - so once the reference broke, any further edit on that
+// tab was silently never persisted. It would just sit there stale until
+// the next explicit re-sync (switching tabs, Auto-Fill, etc), at which
+// point switching back to that tab would even revert the "edits" that
+// were made but never actually saved. Reported symptom: saving one raid
+// tab appeared to "re-adjust" another's lineup - what was really
+// happening is the OTHER tab's real edits had already silently failed to
+// persist earlier, so whatever got saved was its stale pre-edit state,
+// surfacing as an unexplained revert whenever anyone looked.
+// Fixed at the root here rather than patching each individual mutation
+// site: renderBuilder() already runs after every single group edit, so
+// writing these back into the currently active raid on every render
+// closes the gap for good, regardless of how future code mutates them.
+function syncGroupsToActiveRaid() {
+  const r = getActiveRaid();
+  if (!r) return;
+  r.groups = groups;
+  r.groupTitles = groupTitles;
+  r.specOverrides = specOverrides;
+  r.roleOverrides = roleOverrides;
+}
+
 let pugs = []; // global — shared across all raid tabs
 let nextPugId = -1;
 let guildies = []; // alts/casuals temporarily added to group builder pool
@@ -5133,6 +5161,11 @@ function getGroupCount() {
 }
 
 function renderBuilder() {
+  // Reconcile the shim vars back into the active raid FIRST - see
+  // syncGroupsToActiveRaid's comment. Every group edit funnels through
+  // this function, so this is the one place that guarantees it happens.
+  syncGroupsToActiveRaid();
+
   const groupCount = getGroupCount();
   const container = document.getElementById('groups-container');
 
