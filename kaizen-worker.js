@@ -1124,7 +1124,66 @@ function formatTopAndBottom(list, died, topN = 3, bottomN = 7) {
   return out;
 }
 
-function buildLogSummaryEmbed(report, details, roster) {
+// Discord hard-caps a single embed field's value at 1024 chars - real
+// failure seen live: "Invalid Form Body" with no field name to blame,
+// because top-3/needs-work-7 plus the small-sample warnings, raid-share
+// notes, and Died fact-sheet added tonight can now realistically push
+// DPS/Healers past that cap (and a big attendance list can too). Rather
+// than silently truncating real performance data, split an overlong
+// section across "(cont.)" fields at line boundaries so nothing is lost.
+function splitIntoFields(name, value, maxLen = 1024) {
+  if (value.length <= maxLen) return [{ name, value, inline: false }];
+  const lines = value.split('\n');
+  const chunks = [];
+  let current = '';
+  for (const line of lines) {
+    // A single line longer than the whole cap (pathological) still needs
+    // a hard break so we never emit an invalid field.
+    if (line.length > maxLen) {
+      if (current) { chunks.push(current); current = ''; }
+      for (let i = 0; i < line.length; i += maxLen) chunks.push(line.slice(i, i + maxLen));
+      continue;
+    }
+    const next = current ? `${current}\n${line}` : line;
+    if (next.length > maxLen) { chunks.push(current); current = line; }
+    else current = next;
+  }
+  if (current) chunks.push(current);
+  return chunks.map((v, i) => ({ name: i === 0 ? name : `${name} (cont.)`, value: v, inline: false }));
+}
+
+// Discord also caps an embed at 25 fields and ~6000 total chars across
+// title+description+footer+all field names/values. Splitting fields alone
+// can't fix that ceiling on a genuinely huge roster, so as a last resort
+// spill overflow fields into additional embeds (still one Discord message -
+// up to 10 embeds/message - so it reads as one post, not a flood).
+function packFieldsIntoEmbeds(baseEmbed, fields) {
+  const baseLen = (baseEmbed.title?.length || 0) + (baseEmbed.description?.length || 0) + (baseEmbed.footer?.text?.length || 0);
+  const groups = [];
+  let group = [];
+  let groupLen = baseLen;
+  for (const f of fields) {
+    const fLen = f.name.length + f.value.length;
+    if (group.length && (group.length >= 25 || groupLen + fLen > 5900)) {
+      groups.push(group);
+      group = [];
+      groupLen = baseLen;
+    }
+    group.push(f);
+    groupLen += fLen;
+  }
+  if (group.length) groups.push(group);
+  return groups.map((fields, i) => ({
+    ...baseEmbed,
+    title: i === 0 ? baseEmbed.title : `${baseEmbed.title} (cont.)`,
+    description: i === 0 ? baseEmbed.description : undefined,
+    fields,
+  }));
+}
+
+// Returns an array of embeds (almost always just one) - callers post them
+// together in a single Discord message via { embeds: [...] }.
+function buildLogSummaryEmbeds(report, details, roster) {
   const participants = extractParticipantNames(details.playerDetailsRaw);
   const attendance = matchAttendanceToRoster(participants, roster);
   const deaths = extractDeaths(details.deathsRaw);
@@ -1132,22 +1191,25 @@ function buildLogSummaryEmbed(report, details, roster) {
   const healers = extractRoleParses(details.rankingsRawHealers, 'healers', deaths);
   const fightNameById = new Map(details.fights.map(f => [f.id, f.name]));
 
-  return {
+  const fields = [
+    // Stacked full-width instead of side-by-side inline - two inline
+    // columns squeeze each into ~half the embed's (fixed, Discord-
+    // controlled) width, forcing mid-entry wraps that look cramped.
+    ...splitIntoFields('⚔️ DPS', formatTopAndBottom(dps, deathsForRole(deaths, dps, fightNameById))),
+    ...splitIntoFields('✚ Healers', formatTopAndBottom(healers, deathsForRole(deaths, healers, fightNameById))),
+    ...splitIntoFields('👥 Attendance', attendance.length ? attendance.join(', ') : '—'),
+  ];
+
+  const baseEmbed = {
     title: `📊 ${report.title || 'Raid Log Summary'}`,
     url: `https://www.warcraftlogs.com/reports/${report.code}`,
     description: `${details.killFights.length}/${details.fights.length} encounters killed · ${attendance.length} guildies logged`,
-    fields: [
-      // Stacked full-width instead of side-by-side inline - two inline
-      // columns squeeze each into ~half the embed's (fixed, Discord-
-      // controlled) width, forcing mid-entry wraps that look cramped.
-      { name: '⚔️ DPS', value: formatTopAndBottom(dps, deathsForRole(deaths, dps, fightNameById)), inline: false },
-      { name: '✚ Healers', value: formatTopAndBottom(healers, deathsForRole(deaths, healers, fightNameById)), inline: false },
-      { name: '👥 Attendance', value: attendance.length ? attendance.join(', ') : '—', inline: false },
-    ],
     color: 0xC9A227,
     footer: { text: 'Kaizen Raid Manager • click title for the full report' },
     timestamp: new Date().toISOString(),
   };
+
+  return packFieldsIntoEmbeds(baseEmbed, fields);
 }
 
 // /post-logs — deferred, since the WCL round trips (auth + 2 queries) can
@@ -1175,12 +1237,15 @@ async function runPostLogs(interaction, env) {
     const dataRes = await fetch(`https://kaizen-tbc.github.io/kaizen_data.json?v=${Date.now()}`);
     const guildData = dataRes.ok ? await dataRes.json() : { roster: [] };
 
-    const embed = buildLogSummaryEmbed(report, details, guildData.roster || []);
+    const embeds = buildLogSummaryEmbeds(report, details, guildData.roster || []);
 
+    // Slash-command replies only support one PATCH to @original, so even
+    // in the rare overflow-to-multiple-embeds case this stays one message
+    // (Discord allows up to 10 embeds per message).
     await fetch(followupUrl, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ embeds: [embed] }),
+      body: JSON.stringify({ embeds: embeds.slice(0, 10) }),
     });
   } catch (err) {
     await fetch(followupUrl, {
@@ -1334,15 +1399,23 @@ async function handleDirectLogPost(request, env) {
 
     // Embed, not plain content - tested live, without a card the rankings
     // read cramped/ran together (same finding as strats and fallout).
-    const embed = buildLogSummaryEmbed(report, details, guildData.roster || []);
-    const postRes = await fetch(`${DISCORD_API}/channels/${channelId}/messages`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bot ${env.DISCORD_BOT_TOKEN}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ embeds: [embed] }),
-    });
-    if (!postRes.ok) {
-      const err = await postRes.json().catch(() => ({}));
-      throw new Error(err.message || `Discord API error ${postRes.status}`);
+    const embeds = buildLogSummaryEmbeds(report, details, guildData.roster || []);
+
+    // Almost always one message. Only a genuinely huge roster (25+ embeds
+    // worth of overflow, effectively never in an 8-40 person raid) would
+    // need more than the 10 embeds Discord allows per message - handled
+    // here by posting in sequential batches rather than failing outright.
+    for (let i = 0; i < embeds.length; i += 10) {
+      const batch = embeds.slice(i, i + 10);
+      const postRes = await fetch(`${DISCORD_API}/channels/${channelId}/messages`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bot ${env.DISCORD_BOT_TOKEN}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ embeds: batch }),
+      });
+      if (!postRes.ok) {
+        const err = await postRes.json().catch(() => ({}));
+        throw new Error(err.message || `Discord API error ${postRes.status}`);
+      }
     }
 
     return corsResponse(JSON.stringify({ ok: true, report: { title: report.title, code: report.code } }), 200);
