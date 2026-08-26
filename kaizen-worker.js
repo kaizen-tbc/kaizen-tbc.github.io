@@ -2021,9 +2021,9 @@ async function handlePostTextMessage(request, env) {
 // didn't capture the ID from the original post response.
 async function handleEditMessage(request, env) {
   try {
-    const { channelId, messageId: givenId, title, text, plain } = await request.json();
+    const { channelId, messageId: givenId, title, text, plain, fields } = await request.json();
     if (!channelId) throw new Error('No channel ID provided.');
-    if (!text) throw new Error('No text to post.');
+    if (!text && !(fields && fields.length)) throw new Error('No text to post.');
 
     const headers = { 'Authorization': `Bot ${env.DISCORD_BOT_TOKEN}` };
 
@@ -2051,11 +2051,20 @@ async function handleEditMessage(request, env) {
       body = { content };
     } else {
       const safeTitle = (title || '').slice(0, 256);
-      const safeText = text.length > 4000 ? text.slice(0, 3985) + '\n\n_(truncated)_' : text;
+      const safeText = (text || '').length > 4000 ? text.slice(0, 3985) + '\n\n_(truncated)_' : (text || '');
+      // Same fields support as /post-text-message - an edit needs to be
+      // able to reproduce whatever the original post used, fields
+      // included, not just title/description.
+      const safeFields = (fields || []).slice(0, 25).map(f => ({
+        name: (f.name || '').slice(0, 256),
+        value: (f.value || '').length > 1024 ? f.value.slice(0, 1009) + '\n_(truncated)_' : (f.value || ''),
+        inline: !!f.inline,
+      }));
       body = {
         embeds: [{
           title: safeTitle || undefined,
-          description: safeText,
+          description: safeText || undefined,
+          fields: safeFields.length ? safeFields : undefined,
           color: 0xC9A227,
           footer: { text: 'Kaizen Raid Manager' },
           timestamp: new Date().toISOString(),
