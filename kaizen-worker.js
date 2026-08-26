@@ -21,6 +21,12 @@ export default {
       return handleRHProxy(request, url, env);
     }
 
+    // ── Current WCL rate-limit status, read-only diagnostic ── /wcl-status
+    if (url.pathname === '/wcl-status' && request.method === 'GET') {
+      const rl = await getWCLRateLimit(env);
+      return corsResponse(JSON.stringify({ rateLimit: rl }), 200);
+    }
+
     // ── Direct roster post from raid manager ── /post-roster
     if (url.pathname === '/post-roster' && request.method === 'POST') {
       return handleDirectRosterPost(request, env);
