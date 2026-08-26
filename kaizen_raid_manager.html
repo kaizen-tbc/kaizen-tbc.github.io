@@ -2640,13 +2640,21 @@ function defaultRaid(name = 'Tuesday 25', size = 25) {
     // - reported live as "Tuesday's import got replaced by Thursday's".
     // signUpPool had the exact same problem for the same reason (it's what
     // drives the Unassigned/Bench/Absent/Tentative pool boxes and this-
-    // week class/spec resolution - see resolvePoolPlayer). guildies is
-    // deliberately left global still - it's never reset on import, so it
-    // doesn't lose data the way these did, just a smaller cross-tab
-    // visibility quirk not worth the same treatment right now.
+    // week class/spec resolution - see resolvePoolPlayer).
     pugs: [],
     nextPugId: -1,
     signUpPool: [],
+    // guildies was left global a bit longer than the above (never reset on
+    // import, so it wasn't the source of THAT data-loss bug) - but reported
+    // live: an officer's +Guildie "isn't working" on a different tab than
+    // the one it was actually tested on all day. Root cause: addGuildie's
+    // dedup id (-(1000+rosterId), deterministic per roster id regardless
+    // of tab) and renderGuildieList's "already added" exclusion both read
+    // the one shared array - so once someone's added as a guildie on ANY
+    // tab, every OTHER tab's +Guildie search silently excludes them too,
+    // even though they were never actually added to that tab's own pool.
+    // Per-raid now, matching everything else above.
+    guildies: [],
   };
 }
 
@@ -2671,6 +2679,7 @@ let tentative = [];
 let pugs = [];
 let nextPugId = -1;
 let signUpPool = [];
+let guildies = [];
 
 function syncActiveRaid() {
   const r = getActiveRaid();
@@ -2687,6 +2696,7 @@ function syncActiveRaid() {
   pugs        = r.pugs        || (r.pugs = []);
   nextPugId   = r.nextPugId ?? (r.nextPugId = -1);
   signUpPool  = r.signUpPool  || (r.signUpPool = []);
+  guildies    = r.guildies    || (r.guildies = []);
 }
 
 // The shim above (groups = r.groups) is a REFERENCE - but plenty of
@@ -2721,15 +2731,8 @@ function syncGroupsToActiveRaid() {
   r.pugs = pugs;
   r.nextPugId = nextPugId;
   r.signUpPool = signUpPool;
+  r.guildies = guildies;
 }
-
-// guildies deliberately stays global (not per-raid, unlike everything
-// above) - +Guildie never gets reset on import, so it was never the source
-// of the reported cross-tab data loss. Per-raid-izing it too is a
-// reasonable future improvement (right now an Alt added for Tuesday shows
-// as "already added" if you open +Guildie on Thursday) but it's a smaller
-// visibility quirk, not data loss, so left alone for now.
-let guildies = [];
 
 // Attendance: weeks array, each week = { label, data: {name: state} }
 let attendance = [];
@@ -7312,12 +7315,12 @@ async function saveToGitHub() {
   const payload = {
     version: 3,
     savedAt: new Date().toISOString(),
-    // pugs/nextPugId are per-raid now (see raids[].pugs) - not duplicated
-    // here anymore, since a stale top-level copy is exactly what caused
-    // one raid's import to silently erase another's. The Worker computes
-    // whatever cross-raid pug lookup it needs (e.g. strat assigns) from
-    // raids[] directly.
-    roster, raids, nextRaidId, attendance, nextId, guildInfo, guildies, strats, nextStratId,
+    // pugs/nextPugId/guildies are per-raid now (see raids[].pugs etc) - not
+    // duplicated here anymore, since a stale top-level copy is exactly what
+    // caused one raid's import/edit to silently erase or shadow another's.
+    // The Worker computes whatever cross-raid lookup it needs (e.g. strat
+    // assigns referencing a guildie/pug from any raid) from raids[] directly.
+    roster, raids, nextRaidId, attendance, nextId, guildInfo, strats, nextStratId,
     attendanceLedger, nextLedgerId, benchLog,
     nameAliases,
     logsChannelId,
@@ -7872,13 +7875,22 @@ async function initFromJson() {
       const r = getActiveRaid();
       if (r) { r.pugs = pugs; r.nextPugId = nextPugId; }
     }
+    // Same one-time recovery for guildies, now per-raid too. It used to be
+    // shared across every tab, so which raid any given entry "really"
+    // belonged to isn't recoverable - putting the whole list onto the
+    // active raid just means nothing gets silently lost; re-adding one on
+    // the right tab later is a small ask compared to that.
+    if (data.guildies?.length && !guildies.length) {
+      guildies = data.guildies;
+      const r = getActiveRaid();
+      if (r) r.guildies = guildies;
+    }
 
     if (data.attendance) attendance = data.attendance;
     if (data.nextId) nextId = data.nextId;
     if (data.guildInfo) guildInfo = { ...guildInfo, ...data.guildInfo };
     if (data.strats) strats = data.strats;
     if (data.nextStratId) nextStratId = data.nextStratId;
-    if (data.guildies) guildies = data.guildies;
     if (data.attendanceLedger) attendanceLedger = data.attendanceLedger;
     if (data.nextLedgerId) nextLedgerId = data.nextLedgerId;
     if (data.benchLog) benchLog = data.benchLog;

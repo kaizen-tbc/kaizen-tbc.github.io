@@ -143,10 +143,10 @@ async function handleDirectRosterPost(request, env) {
 
     if (!raid) throw new Error('Raid not found');
 
-    // pugs are per-raid now (not a shared top-level list) - importing one
-    // raid's roster used to silently wipe every other raid's pugs, since
-    // they all pointed at the same array. raid.pugs is that raid's own.
-    const embed = buildRosterEmbed(raid, roster, raid.pugs || [], data.guildies || [], notify);
+    // pugs/guildies are per-raid now (not shared top-level lists) -
+    // importing/editing one raid's roster used to silently wipe or shadow
+    // every other raid's, since they all pointed at the same array.
+    const embed = buildRosterEmbed(raid, roster, raid.pugs || [], raid.guildies || [], notify);
 
     const postRes = await fetch(`${DISCORD_API}/channels/${channelId}/messages`, {
       method: 'POST',
@@ -235,7 +235,7 @@ async function handleEditRosterPost(request, env) {
     const patchHeaders = { ...headers, 'Content-Type': 'application/json' };
 
     if (targetRosterId) {
-      const embed = buildRosterEmbed(raid, roster, raid.pugs || [], data.guildies || [], notify);
+      const embed = buildRosterEmbed(raid, roster, raid.pugs || [], raid.guildies || [], notify);
       const res = await fetch(`${DISCORD_API}/channels/${channelId}/messages/${targetRosterId}`, {
         method: 'PATCH', headers: patchHeaders, body: JSON.stringify({ embeds: [embed] }),
       });
@@ -404,18 +404,24 @@ async function handlePostStrat(request, env) {
     // out as a grid within this single embed instead (see
     // buildStratSectionFields): paired side by side where that makes
     // sense, full-width for prose sections.
-    // pugs are per-raid now, not a shared top-level list (see
+    // pugs/guildies are per-raid now, not shared top-level lists (see
     // handleDirectRosterPost) - a strat assign slot isn't tied to any one
-    // raid tab though, so a pug assigned to a strat could come from any of
-    // them. Union across all raids (deduped by id) preserves that lookup.
+    // raid tab though, so a pug/guildie assigned to a strat could come from
+    // any of them. Union across all raids (deduped by id) preserves that
+    // lookup either way.
     const allPugs = [];
     const seenPugIds = new Set();
+    const allGuildies = [];
+    const seenGuildieIds = new Set();
     for (const r of (data.raids || [])) {
       for (const p of (r.pugs || [])) {
         if (!seenPugIds.has(p.id)) { seenPugIds.add(p.id); allPugs.push(p); }
       }
+      for (const g of (r.guildies || [])) {
+        if (!seenGuildieIds.has(g.id)) { seenGuildieIds.add(g.id); allGuildies.push(g); }
+      }
     }
-    await postEmbed(buildStratAssignsEmbed(strat, data.roster || [], data.guildies || [], allPugs));
+    await postEmbed(buildStratAssignsEmbed(strat, data.roster || [], allGuildies, allPugs));
 
     return corsResponse(JSON.stringify({ ok: true }), 200);
   } catch (err) {
@@ -596,7 +602,7 @@ async function handlePostRosterCommand(interaction, guildId, options, env) {
       });
     }
 
-    const embed = buildRosterEmbed(raid, roster, raid.pugs || [], data.guildies || []);
+    const embed = buildRosterEmbed(raid, roster, raid.pugs || [], raid.guildies || []);
 
     // Post via bot token to the configured channel
     const postChannelId = raid.discordChannelId || channelId;
