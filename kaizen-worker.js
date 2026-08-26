@@ -1943,9 +1943,9 @@ async function handleFalloutReport(request, env) {
 // and rankings gets the same treatment for consistency).
 async function handlePostTextMessage(request, env) {
   try {
-    const { channelId, title, text, plain } = await request.json();
+    const { channelId, title, text, plain, fields } = await request.json();
     if (!channelId) throw new Error('No channel ID provided.');
-    if (!text) throw new Error('No text to post.');
+    if (!text && !(fields && fields.length)) throw new Error('No text to post.');
 
     let body;
     if (plain) {
@@ -1963,11 +1963,21 @@ async function handlePostTextMessage(request, env) {
       // ran long. Truncate defensively rather than trust the prompt's soft
       // word target to always hold.
       const safeTitle = (title || '').slice(0, 256);
-      const safeText = text.length > 4000 ? text.slice(0, 3985) + '\n\n_(truncated)_' : text;
+      const safeText = (text || '').length > 4000 ? text.slice(0, 3985) + '\n\n_(truncated)_' : (text || '');
+      // Optional fields - one card per item (loot priorities, etc) instead
+      // of everything crammed into one description block. Same 1024-char
+      // per-field cap already established elsewhere (rankings/roster
+      // embeds) - cheap insurance against a real "Invalid Form Body".
+      const safeFields = (fields || []).slice(0, 25).map(f => ({
+        name: (f.name || '').slice(0, 256),
+        value: (f.value || '').length > 1024 ? f.value.slice(0, 1009) + '\n_(truncated)_' : (f.value || ''),
+        inline: !!f.inline,
+      }));
       body = {
         embeds: [{
           title: safeTitle || undefined,
-          description: safeText,
+          description: safeText || undefined,
+          fields: safeFields.length ? safeFields : undefined,
           color: 0xC9A227,
           footer: { text: 'Kaizen Raid Manager' },
           timestamp: new Date().toISOString(),
