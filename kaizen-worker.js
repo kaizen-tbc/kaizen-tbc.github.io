@@ -44,6 +44,12 @@ export default {
       return handleEditRosterPost(request, env);
     }
 
+    // ── Send individual DMs (fallout report per-person coaching, etc) -
+    // /send-dms
+    if (url.pathname === '/send-dms' && request.method === 'POST') {
+      return handleSendDMs(request, env);
+    }
+
     // ── Post a strat's image + assignments to Discord, clearing the
     // channel first ── /post-strat
     if (url.pathname === '/post-strat' && request.method === 'POST') {
@@ -1818,6 +1824,13 @@ const FALLOUT_REPORT_SCHEMA = {
 // of text. Split into two separate posts (DPS, then Healers + interrupts)
 // per explicit request - keeps each message shorter (helps stay under
 // Discord's per-embed character limit too) and easier to actually read.
+// Public posts stay aggregate-only now - general notes + interrupts, no
+// individual names attached in front of the whole raid. The actual named,
+// interpretive coaching ("needs work") goes out as a private DM per
+// person instead (see dmTargets) - not hiding the data (the rankings post
+// already covers who parsed what), just not pairing a specific person's
+// name with a specific claim about why in a public channel, where a
+// single wrong detail costs a lot more trust than it would in a DM.
 function buildFalloutMarkdowns(parsed, dpsSurvivedBad, healersSurvivedBad) {
   const known = new Map();
   for (const p of [...(dpsSurvivedBad || []), ...(healersSurvivedBad || [])]) {
@@ -1825,20 +1838,6 @@ function buildFalloutMarkdowns(parsed, dpsSurvivedBad, healersSurvivedBad) {
   }
   const dpsNames = new Set((dpsSurvivedBad || []).map(p => p.name));
   const healerNames = new Set((healersSurvivedBad || []).map(p => p.name));
-
-  const renderEntry = item => {
-    const p = known.get(item.name);
-    const icon = p ? getWCLSpecEmoji(p.class, p.spec) : '';
-    const encounter = p ? ` — _${p.encounter}_` : '';
-    return `${icon ? icon + ' ' : ''}**${item.name}**${encounter}\n${item.tip}`;
-  };
-
-  const needsWork = parsed.needsWork || [];
-  // A name could in principle not match either list if the model didn't
-  // copy it exactly - dropped silently rather than guessed at, same as
-  // the icon-lookup fallback below.
-  const dpsEntries = needsWork.filter(item => dpsNames.has(item.name));
-  const healerEntries = needsWork.filter(item => healerNames.has(item.name));
 
   // Explicit framing on both posts (not just the first one) since they go
   // out as separate messages and someone might only ever see the healers
@@ -1849,14 +1848,27 @@ function buildFalloutMarkdowns(parsed, dpsSurvivedBad, healersSurvivedBad) {
   // this repeats on every single report, every week.
   const disclaimer = `_Automatically generated from this raid's WCL data. The analysis is generalized and may not account for every factor behind your parse._`;
 
-  const dpsText = `${disclaimer}\n\n**General Notes**\n${parsed.generalNotes}\n\n**DPS Needs Work**\n${
-    dpsEntries.length ? dpsEntries.map(renderEntry).join('\n\n') : '_Nobody survived-and-grey on DPS this raid — nice._'
-  }`;
-  const healersText = `${disclaimer}\n\n**Healers Needs Work**\n${
-    healerEntries.length ? healerEntries.map(renderEntry).join('\n\n') : '_Nobody survived-and-grey on healing this raid — nice._'
-  }\n\n**Interrupts**\n${parsed.interruptsNote}`;
+  const dpsText = `${disclaimer}\n\n**General Notes**\n${parsed.generalNotes}`;
+  const healersText = `${disclaimer}\n\n**Interrupts**\n${parsed.interruptsNote}`;
 
-  return { dpsText, healersText };
+  // A name could in principle not match either list if the model didn't
+  // copy it exactly - dropped silently rather than guessed at, same
+  // caution the old public-post rendering already had.
+  const needsWork = parsed.needsWork || [];
+  const dmTargets = needsWork
+    .filter(item => dpsNames.has(item.name) || healerNames.has(item.name))
+    .map(item => {
+      const p = known.get(item.name);
+      return {
+        name: item.name,
+        tip: item.tip,
+        role: dpsNames.has(item.name) ? 'dps' : 'healer',
+        encounter: p?.encounter || null,
+        icon: p ? getWCLSpecEmoji(p.class, p.spec) : '',
+      };
+    });
+
+  return { dpsText, healersText, dmTargets };
 }
 
 // The Responses API's output_text is an SDK convenience property, not
@@ -1935,9 +1947,9 @@ async function handleFalloutReport(request, env) {
     const raw = extractOpenAIText(data);
     if (!raw) throw new Error('OpenAI returned no text output.');
     const parsed = JSON.parse(raw); // structured output - guaranteed valid JSON matching FALLOUT_REPORT_SCHEMA
-    const { dpsText, healersText } = buildFalloutMarkdowns(parsed, dpsSurvivedBad, healersSurvivedBad);
+    const { dpsText, healersText, dmTargets } = buildFalloutMarkdowns(parsed, dpsSurvivedBad, healersSurvivedBad);
 
-    return corsResponse(JSON.stringify({ dpsText, healersText }), 200);
+    return corsResponse(JSON.stringify({ dpsText, healersText, dmTargets }), 200);
   } catch (err) {
     return corsResponse(JSON.stringify({ error: err.message }), 500);
   }
@@ -2083,6 +2095,59 @@ async function handleEditMessage(request, env) {
     }
 
     return corsResponse(JSON.stringify({ ok: true, messageId }), 200);
+  } catch (err) {
+    return corsResponse(JSON.stringify({ error: err.message }), 500);
+  }
+}
+
+// Sends one or more individual DMs - e.g. per-person fallout report
+// coaching, kept out of the public channel entirely (see
+// buildFalloutMarkdowns' dmTargets). Opening a DM channel is a real
+// Discord API step distinct from just having a user id (POST /users/@me/
+// channels with recipient_id), so this is two requests per person, not
+// one. Best-effort per-message: one person having DMs closed/not sharing
+// a server with the bot shouldn't fail everyone else's - each result is
+// reported individually rather than the whole call failing on the first
+// error. A small gap between sends is gentle on rate limits, same pattern
+// used for sequential embed posts elsewhere.
+async function handleSendDMs(request, env) {
+  try {
+    const { messages } = await request.json();
+    if (!Array.isArray(messages) || !messages.length) throw new Error('No messages to send.');
+
+    const headers = { 'Authorization': `Bot ${env.DISCORD_BOT_TOKEN}`, 'Content-Type': 'application/json' };
+    const results = [];
+
+    for (const m of messages) {
+      if (!m.userId || !m.content) {
+        results.push({ userId: m.userId || null, name: m.name || null, ok: false, error: 'Missing userId or content.' });
+        continue;
+      }
+      try {
+        const dmRes = await fetch(`${DISCORD_API}/users/@me/channels`, {
+          method: 'POST', headers, body: JSON.stringify({ recipient_id: m.userId }),
+        });
+        if (!dmRes.ok) {
+          const err = await dmRes.json().catch(() => ({}));
+          throw new Error(err.message || `Could not open a DM channel: ${dmRes.status}`);
+        }
+        const dmChannel = await dmRes.json();
+
+        const sendRes = await fetch(`${DISCORD_API}/channels/${dmChannel.id}/messages`, {
+          method: 'POST', headers, body: JSON.stringify({ content: m.content }),
+        });
+        if (!sendRes.ok) {
+          const err = await sendRes.json().catch(() => ({}));
+          throw new Error(err.message || `Send failed: ${sendRes.status}`);
+        }
+        results.push({ userId: m.userId, name: m.name || null, ok: true });
+      } catch (err) {
+        results.push({ userId: m.userId, name: m.name || null, ok: false, error: err.message });
+      }
+      await new Promise(r => setTimeout(r, 350));
+    }
+
+    return corsResponse(JSON.stringify({ ok: true, results }), 200);
   } catch (err) {
     return corsResponse(JSON.stringify({ error: err.message }), 500);
   }
