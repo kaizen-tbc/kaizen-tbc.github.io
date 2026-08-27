@@ -1812,6 +1812,19 @@ const HEALER_COACHING_RULES = `FOR HEALERS: you do NOT have ability-mix data for
    - Raid healing share is the harder-to-game number: a low percentile paired with a reasonable share of the raid's total healing that fight suggests the encounter made healing hard for everyone, not just this person - say so rather than treating the percentile as damning on its own. A low percentile AND a tiny share together is the real problem worth naming plainly.
    - Only fall back to generic advice (no specific number cited) for someone with no active-time/overheal/share data available.`;
 
+// Tanks are their own WCL role bucket (roles.tanks), separate from dps and
+// healers - their "parse" here is a damage-done percentile while
+// off/main-tanking, NOT a measure of threat, survivability, or how well
+// they actually tanked. Confirmed live: a tank rostered onto add/mechanic
+// duty (core/pylon carrying on Vashj, off-tanking adds, kiting) can have a
+// perfectly correct, low-damage night that looks identical to bad tanking
+// in the numbers alone - don't conflate the two.
+const TANK_COACHING_RULES = `FOR TANKS: the percentile here is a DAMAGE-DONE ranking while tanking, not a measure of threat, survivability, or tanking skill itself - a low number does not mean they tanked badly.
+   - Active time is still the most reliable signal: low active time means real downtime between casts/swings, worth naming. High active time with a low percentile just means their damage output that fight was low relative to other tanks, which has plenty of valid explanations (assigned to add/mechanic duty instead of the main target, kiting, taunt-swapping) - note it as a factual observation, don't assume it means something went wrong.
+   - Same caution as DPS applies to "top sources": which ability dominates their damage is highly weapon/talent/spec dependent and easy to misread as a rotation problem when it isn't - only call it out if you are genuinely confident that specific pattern is wrong for that spec at level 70 TBC, otherwise report it neutrally.
+   - Do not speculate about threat, aggro, or whether they held the boss - none of that is in this data at all.
+   - Only fall back to generic advice (no specific number cited) for someone with no active-time data available.`;
+
 // A 0% parse from dying tells you nothing you don't already know ("don't
 // die"). The real red flag is a grey-tier parse (WCL's own 0-24 tier) from
 // someone who SURVIVED the whole fight - that's an actual rotation/gear/
@@ -1929,17 +1942,18 @@ const PERSONAL_REPORT_SCHEMA = {
   additionalProperties: false,
 };
 
-// Combines DPS + healer fights into one indexed list so the model can
-// reference a specific fight by a stable integer (fightIndex) rather than
-// by encounter name, which isn't unique when the same boss was pulled more
-// than once in a night (a wipe and a kill on the same encounter would
-// otherwise be indistinguishable). Built once in handlePersonalReport and
-// shared between the prompt and the final assembly so both are looking at
-// exactly the same indices.
-function combineFightsForPersonalReport(dpsFights, healerFights) {
+// Combines DPS + healer + tank fights into one indexed list so the model
+// can reference a specific fight by a stable integer (fightIndex) rather
+// than by encounter name, which isn't unique when the same boss was
+// pulled more than once in a night (a wipe and a kill on the same
+// encounter would otherwise be indistinguishable). Built once in
+// handlePersonalReport and shared between the prompt and the final
+// assembly so both are looking at exactly the same indices.
+function combineFightsForPersonalReport(dpsFights, healerFights, tankFights = []) {
   return [
     ...dpsFights.map(f => ({ ...f, role: 'dps' })),
     ...healerFights.map(f => ({ ...f, role: 'healer' })),
+    ...tankFights.map(f => ({ ...f, role: 'tank' })),
   ].map((f, index) => ({ ...f, index }));
 }
 
@@ -1974,8 +1988,10 @@ function fightStatsLine(f) {
 function buildPersonalReportPrompt(report, playerName, fights, stratNotes) {
   const dpsFights = fights.filter(f => f.role === 'dps');
   const healerFights = fights.filter(f => f.role === 'healer');
+  const tankFights = fights.filter(f => f.role === 'tank');
+  const roleLabel = { healer: 'Healing', tank: 'Tanking' };
   const fightListText = fights
-    .map(f => `Fight ${f.index} (${f.role === 'healer' ? 'Healing' : 'DPS'}): ${fightLabel(f)}\n${fightStatsLine(f)}`)
+    .map(f => `Fight ${f.index} (${roleLabel[f.role] || 'DPS'}): ${fightLabel(f)}\n${fightStatsLine(f)}`)
     .join('\n\n');
 
   return `You are writing a personal, one-on-one coaching report for ONE specific player, ${playerName}, from last night's raid ("${report?.title || 'Raid'}") in a World of Warcraft: TBC Classic guild. This is a PRIVATE message sent directly to them, not a public post. Tone: the same as a good 1-on-1 coaching conversation - factual, genuinely encouraging where it's earned, honest where it's not, never shaming.
@@ -1987,6 +2003,7 @@ ${fightListText}
 
 ${dpsFights.length ? DPS_COACHING_RULES : ''}
 ${healerFights.length ? HEALER_COACHING_RULES : ''}
+${tankFights.length ? TANK_COACHING_RULES : ''}
 
 KNOWN GUILD TACTICS for the encounters above (this guild's own strategy notes, not generic textbook knowledge) - treat these as ground truth for THIS guild's actual play, and let them override your own generic-convention assumptions when they conflict:
 ${stratNotes || '(no strategy notes on file for these encounters)'}
@@ -2222,8 +2239,19 @@ async function handlePersonalReport(request, env) {
 
     let dpsFights = extractAllParsesForPlayer(details.rankingsRawDps, 'dps', playerName, deaths);
     let healerFights = extractAllParsesForPlayer(details.rankingsRawHealers, 'healers', playerName, deaths);
+    // Tanks are their own WCL role bucket (roles.tanks), separate from dps
+    // and healers - confirmed live (Sobadai, a Feral/Guardian/Warden Druid
+    // tank, was completely invisible here despite contributing to several
+    // real kills) that a tank's data was sitting right in rankingsRawDps
+    // all along, just under .tanks instead of .dps, which nothing ever
+    // read. Deliberately NOT also reading roles.tanks from
+    // rankingsRawHealers - that bucket's "amount" for a tank looks like
+    // incidental self-healing (a few Rejuvenation ticks, Lifebloom, etc.),
+    // not a meaningful healing performance, and would be misleading to
+    // present as one.
+    let tankFights = extractAllParsesForPlayer(details.rankingsRawDps, 'tanks', playerName, deaths);
 
-    if (!dpsFights.length && !healerFights.length) {
+    if (!dpsFights.length && !healerFights.length && !tankFights.length) {
       throw new Error(`No parse data found for "${playerName}" in this report - check the name matches exactly.`);
     }
 
@@ -2232,6 +2260,7 @@ async function handlePersonalReport(request, env) {
     try {
       if (dpsFights.length) dpsFights = await enrichWithFightBreakdown(env, reportCode, dpsFights, 'DamageDone', fightDurationById);
       if (healerFights.length) healerFights = await enrichWithFightBreakdown(env, reportCode, healerFights, 'Healing', fightDurationById);
+      if (tankFights.length) tankFights = await enrichWithFightBreakdown(env, reportCode, tankFights, 'DamageDone', fightDurationById);
     } catch (err) {
       console.warn('Personal report enrichment failed:', err.message);
     }
@@ -2244,11 +2273,11 @@ async function handlePersonalReport(request, env) {
       const dataRes = await fetch(`https://kaizen-tbc.github.io/kaizen_data.json?v=${Date.now()}`);
       const guildData = dataRes.ok ? await dataRes.json() : null;
       if (guildData?.strats) {
-        stratNotes = gatherRelevantStratNotes(guildData.strats, dpsFights, healerFights, { byEncounter: [] });
+        stratNotes = gatherRelevantStratNotes(guildData.strats, [...dpsFights, ...tankFights], healerFights, { byEncounter: [] });
       }
     } catch { /* fine, prompt just runs without guild-specific tactics */ }
 
-    const fights = combineFightsForPersonalReport(dpsFights, healerFights);
+    const fights = combineFightsForPersonalReport(dpsFights, healerFights, tankFights);
 
     const res = await callOpenAIWithRetry({
       model: OPENAI_MODEL,
@@ -2269,7 +2298,7 @@ async function handlePersonalReport(request, env) {
     const parsed = JSON.parse(raw); // structured output - guaranteed valid JSON matching PERSONAL_REPORT_SCHEMA
     const text = assemblePersonalReportText(parsed, fights);
 
-    return corsResponse(JSON.stringify({ text, dpsFightCount: dpsFights.length, healerFightCount: healerFights.length }), 200);
+    return corsResponse(JSON.stringify({ text, dpsFightCount: dpsFights.length, healerFightCount: healerFights.length, tankFightCount: tankFights.length }), 200);
   } catch (err) {
     return corsResponse(JSON.stringify({ error: err.message }), 500);
   }

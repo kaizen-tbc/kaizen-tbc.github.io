@@ -3581,6 +3581,17 @@ function openPersonalReportPicker() {
     if (!byName.has(p.name)) byName.set(p.name, { name: p.name, roles: [] });
     byName.get(p.name).roles.push('healer');
   }
+  // dps/healers only cover WCL's own damage/healing role buckets - tanks
+  // are a THIRD bucket the worker now also reads (see
+  // combineFightsForPersonalReport), but there's no client-side "tanks"
+  // list to match it against here. Rather than duplicate that lookup,
+  // fall back to full attendance for anyone not already in dps/healers -
+  // confirmed live (Sobadai, a tank) that someone who attended and even
+  // contributed to real kills could otherwise be completely absent from
+  // this picker.
+  for (const name of _lastLogFetch.participants || []) {
+    if (!byName.has(name)) byName.set(name, { name, roles: [] });
+  }
   _personalReportNames = [...byName.values()].sort((a, b) => a.name.localeCompare(b.name));
   document.getElementById('personal-report-search').value = '';
   renderPersonalReportPickerList();
@@ -3600,7 +3611,13 @@ function renderPersonalReportPickerList() {
     return;
   }
   list.innerHTML = rows.map(p => {
-    const roleLabel = p.roles.includes('dps') && p.roles.includes('healer') ? 'DPS + Healer' : p.roles.includes('healer') ? 'Healer' : 'DPS';
+    const roleLabel = p.roles.includes('dps') && p.roles.includes('healer') ? 'DPS + Healer'
+      : p.roles.includes('healer') ? 'Healer'
+      : p.roles.includes('dps') ? 'DPS'
+      // Not in either ranked bucket - most likely a tank (see
+      // openPersonalReportPicker), so use the roster's own role if we
+      // have it rather than just guessing.
+      : (roster.find(r => r.name === p.name)?.role || 'Attended');
     return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid var(--border);cursor:pointer;" onclick="selectPersonalReportPlayer('${p.name.replace(/'/g, "\\'")}')" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background=''">
       <span>${p.name}</span>
       <span style="font-size:11px;color:var(--text-dim);">${roleLabel}</span>
