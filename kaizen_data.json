@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-08-27T15:59:29.839Z",
+  "savedAt": "2026-08-27T17:08:02.050Z",
   "roster": [
     {
       "id": 1,
@@ -10546,355 +10546,7 @@
     }
   ],
   "nextStratId": 62,
-  "attendanceLedger": [
-    {
-      "id": 6,
-      "date": "2026-08-11",
-      "label": "Damage Taken - Encounters (All Kills) - Report SSC - 2026-08-11  Warcraft Logs Classic Fresh",
-      "names": [
-        "Sobadai",
-        "Rodentp",
-        "Kiricolo",
-        "Krunkette",
-        "Sylics",
-        "Nechristo",
-        "Chewïe",
-        "Popeshe",
-        "Caelø",
-        "Zabanya",
-        "Oshika",
-        "Muvrin",
-        "Clutchløck",
-        "Priestous",
-        "Oreoshake",
-        "Akohre",
-        "Healkinz",
-        "Keishatini",
-        "Mikeanese",
-        "Tishee",
-        "Howiebling",
-        "Velogis",
-        "Shamanitis",
-        "Hasu",
-        "Eddiemage"
-      ]
-    },
-    {
-      "id": 7,
-      "date": "2026-08-13",
-      "label": "Damage Taken - Encounters (All Kills) - Report TK - 2026-08-13  Warcraft Logs Classic Fresh",
-      "names": [
-        "Sobadai",
-        "Rodentp",
-        "Hasu",
-        "Caelø",
-        "Krunkette",
-        "Nechristo",
-        "Clutchløck",
-        "Zabanya",
-        "Priestous",
-        "Ytknight",
-        "Tishee",
-        "Chewïe",
-        "Popeshe",
-        "Healkinz",
-        "Shamanitis",
-        "Dartht",
-        "Keishatini",
-        "Muvrin",
-        "Velogis",
-        "Eddiemage",
-        "Oreoshake",
-        "Sylics",
-        "Akohre",
-        "Daisojenn",
-        "Mikeanese"
-      ]
-    },
-    {
-      "id": 8,
-      "date": "2026-08-18",
-      "label": "Damage Taken - Encounters (All Kills) - Report SSC  TK - 2026-08-18  Warcraft Logs Classic Fresh",
-      "names": [
-        "Sobadai",
-        "Ytknight",
-        "Rodentp",
-        "Lakito",
-        "Darthorg",
-        "Nechristo",
-        "Popeshe",
-        "Krunkette",
-        "Chewïe",
-        "Zabanya",
-        "Caelø",
-        "Charcoochy",
-        "Zapthrak",
-        "Vestuvian",
-        "Clutchløck",
-        "Velogis",
-        "Akohre",
-        "Healkinz",
-        "Tishee",
-        "Mikeanese",
-        "Eddiemage",
-        "Keishatini",
-        "Oreoshake",
-        "Hasu",
-        "Shamanitis"
-      ]
-    },
-    {
-      "id": 9,
-      "date": "2026-08-06",
-      "label": "Damage Taken - Encounters (All Kills) - Report TK - 2026-08-06  Warcraft Logs Classic Fresh",
-      "names": [
-        "Sobadai",
-        "Rodentp",
-        "Kiricolo",
-        "Caelø",
-        "Krunkette",
-        "Chewïe",
-        "Nechristo",
-        "Popeshe",
-        "Oreoshake",
-        "Charcoochy",
-        "Clutchløck",
-        "Oogapower",
-        "Ytknight",
-        "Zabanya",
-        "Priestous",
-        "Eddiemage",
-        "Muvrin",
-        "Keishatini",
-        "Dartht",
-        "Akohre",
-        "Tishee",
-        "Howiebling",
-        "Healkinz",
-        "Daisojenn"
-      ]
-    },
-    {
-      "id": 10,
-      "date": "2026-08-04",
-      "label": "Damage Taken - Encounters (All Kills) - Report SSC - 2026-08-04  Warcraft Logs Classic Fresh",
-      "names": [
-        "Sobadai",
-        "Rodentp",
-        "Kiricolo",
-        "Chewïe",
-        "Nechristo",
-        "Caelø",
-        "Krunkette",
-        "Popeshe",
-        "Sylics",
-        "Ytknight",
-        "Charcoochy",
-        "Zabanya",
-        "Healkinz",
-        "Velogis",
-        "Keishatini",
-        "Muvrin",
-        "Priestous",
-        "Eddiemage",
-        "Oreoshake",
-        "Dartht",
-        "Oshika",
-        "Tishee",
-        "Clutchløck",
-        "Mikeanese",
-        "Daisojenn"
-      ]
-    },
-    {
-      "id": 11,
-      "date": "2026-07-30",
-      "label": "Damage Taken - Encounters (All Kills) - Report TK - 2026-07-30  Warcraft Logs Classic Fresh",
-      "names": [
-        "Sobadai",
-        "Rodentp",
-        "Bradpitiful",
-        "Oshika",
-        "Caelø",
-        "Nechristo",
-        "Krunkette",
-        "Muvrin",
-        "Clutchløck",
-        "Shrewmy",
-        "Priestous",
-        "Keishatini",
-        "Popeshe",
-        "Oreoshake",
-        "Oogapower",
-        "Howiebling",
-        "Zuulman",
-        "Eddiemage",
-        "Healkinz",
-        "Akohre",
-        "Mikeanese"
-      ]
-    }
-  ],
-  "nextLedgerId": 16,
-  "benchLog": [
-    {
-      "date": "2026-08-28",
-      "names": [],
-      "rostered": [
-        "Charcoochy",
-        "Healkinz",
-        "Kiricolo",
-        "Zabanya",
-        "Zuulman",
-        "Clutchløck",
-        "Sobadai",
-        "Akohre",
-        "Caelø",
-        "Daisojenn",
-        "Darthorg",
-        "Eddiemage",
-        "Keishatini",
-        "Krunkette",
-        "Mikeanese",
-        "Popeshe",
-        "Priestous",
-        "Rodentp",
-        "Sylics",
-        "Tishee",
-        "Totemy",
-        "Chewïe",
-        "Hasu",
-        "Shamanitis",
-        "Shrewmy"
-      ]
-    },
-    {
-      "date": "2026-08-24",
-      "names": [],
-      "rostered": [
-        "Charcoochy",
-        "Healkinz",
-        "Kiricolo",
-        "Zabanya",
-        "Zuulman",
-        "Clutchløck",
-        "Sobadai",
-        "Akohre",
-        "Caelø",
-        "Daisojenn",
-        "Darthorg",
-        "Eddiemage",
-        "Keishatini",
-        "Krunkette",
-        "Mikeanese",
-        "Popeshe",
-        "Priestous",
-        "Rodentp",
-        "Sylics",
-        "Tishee",
-        "Totemy",
-        "Chewïe",
-        "Hasu",
-        "Shamanitis",
-        "Shrewmy"
-      ]
-    },
-    {
-      "date": "2026-08-26",
-      "names": [],
-      "rostered": [
-        "Charcoochy",
-        "Healkinz",
-        "Kiricolo",
-        "Zabanya",
-        "Zuulman",
-        "Clutchløck",
-        "Sobadai",
-        "Akohre",
-        "Caelø",
-        "Daisojenn",
-        "Darthorg",
-        "Eddiemage",
-        "Keishatini",
-        "Krunkette",
-        "Mikeanese",
-        "Popeshe",
-        "Priestous",
-        "Rodentp",
-        "Sylics",
-        "Tishee",
-        "Totemy",
-        "Chewïe",
-        "Hasu",
-        "Shamanitis",
-        "Shrewmy"
-      ]
-    }
-  ],
-  "nameAliases": {
-    "Depew/Kiricolo": [
-      5
-    ],
-    "Bradpitiful/Zabanya": [
-      10
-    ],
-    "Eddie": [
-      25
-    ],
-    "Clutch": [
-      12
-    ],
-    "Tilatia": [
-      4
-    ],
-    "Oshika/Lakito": [
-      79
-    ],
-    "Charcoochy/KingDingaling": [
-      2
-    ],
-    "Ytknight/Zuulman": [
-      11
-    ]
-  },
-  "logsChannelId": "1528630952111374418",
-  "archiveChannelId": "1540891396515307640",
-  "stratsChannelId": "1539366128898285629",
   "trashBestiary": [
-    {
-      "id": 1,
-      "raid": "Battle for Mount Hyjal",
-      "name": "Ghoul",
-      "image": "trash/mobs/ghoul.png",
-      "abilities": [
-        {
-          "title": "Cannibalize (ID: 17895)",
-          "desc": "At low health, runs to nearest corpse and eats it, restoring 8% HP every 2 seconds over 12 seconds."
-        },
-        {
-          "title": "Enrage (ID: 31549)",
-          "desc": "Effect: 150% melee attack speed // 20% size increase. Can be dispelled with Tranq Shot."
-        }
-      ],
-      "tip": "Enrage isn't that big of a deal; just kill."
-    },
-    {
-      "id": 2,
-      "raid": "Battle for Mount Hyjal",
-      "name": "Crypt Fiend",
-      "image": "trash/mobs/crypt-fiend.png",
-      "abilities": [
-        {
-          "title": "Web (ID: 28991)",
-          "desc": "Roots target for 10 seconds."
-        },
-        {
-          "title": "Crypt Scarabs (ID: 31591)",
-          "desc": "Summons 3 scarabs for 10 seconds. Spams this ability if not in melee range of primary threat target."
-        }
-      ],
-      "tip": "Nothing to worry about. If you're LoSing properly, these will never cause issues."
-    },
     {
       "id": 3,
       "raid": "Battle for Mount Hyjal",
@@ -11239,5 +10891,319 @@
     }
   ],
   "nextTrashGuideId": 5,
-  "nextWaveId": 33
+  "nextWaveId": 33,
+  "attendanceLedger": [
+    {
+      "id": 6,
+      "date": "2026-08-11",
+      "label": "Damage Taken - Encounters (All Kills) - Report SSC - 2026-08-11  Warcraft Logs Classic Fresh",
+      "names": [
+        "Sobadai",
+        "Rodentp",
+        "Kiricolo",
+        "Krunkette",
+        "Sylics",
+        "Nechristo",
+        "Chewïe",
+        "Popeshe",
+        "Caelø",
+        "Zabanya",
+        "Oshika",
+        "Muvrin",
+        "Clutchløck",
+        "Priestous",
+        "Oreoshake",
+        "Akohre",
+        "Healkinz",
+        "Keishatini",
+        "Mikeanese",
+        "Tishee",
+        "Howiebling",
+        "Velogis",
+        "Shamanitis",
+        "Hasu",
+        "Eddiemage"
+      ]
+    },
+    {
+      "id": 7,
+      "date": "2026-08-13",
+      "label": "Damage Taken - Encounters (All Kills) - Report TK - 2026-08-13  Warcraft Logs Classic Fresh",
+      "names": [
+        "Sobadai",
+        "Rodentp",
+        "Hasu",
+        "Caelø",
+        "Krunkette",
+        "Nechristo",
+        "Clutchløck",
+        "Zabanya",
+        "Priestous",
+        "Ytknight",
+        "Tishee",
+        "Chewïe",
+        "Popeshe",
+        "Healkinz",
+        "Shamanitis",
+        "Dartht",
+        "Keishatini",
+        "Muvrin",
+        "Velogis",
+        "Eddiemage",
+        "Oreoshake",
+        "Sylics",
+        "Akohre",
+        "Daisojenn",
+        "Mikeanese"
+      ]
+    },
+    {
+      "id": 8,
+      "date": "2026-08-18",
+      "label": "Damage Taken - Encounters (All Kills) - Report SSC  TK - 2026-08-18  Warcraft Logs Classic Fresh",
+      "names": [
+        "Sobadai",
+        "Ytknight",
+        "Rodentp",
+        "Lakito",
+        "Darthorg",
+        "Nechristo",
+        "Popeshe",
+        "Krunkette",
+        "Chewïe",
+        "Zabanya",
+        "Caelø",
+        "Charcoochy",
+        "Zapthrak",
+        "Vestuvian",
+        "Clutchløck",
+        "Velogis",
+        "Akohre",
+        "Healkinz",
+        "Tishee",
+        "Mikeanese",
+        "Eddiemage",
+        "Keishatini",
+        "Oreoshake",
+        "Hasu",
+        "Shamanitis"
+      ]
+    },
+    {
+      "id": 9,
+      "date": "2026-08-06",
+      "label": "Damage Taken - Encounters (All Kills) - Report TK - 2026-08-06  Warcraft Logs Classic Fresh",
+      "names": [
+        "Sobadai",
+        "Rodentp",
+        "Kiricolo",
+        "Caelø",
+        "Krunkette",
+        "Chewïe",
+        "Nechristo",
+        "Popeshe",
+        "Oreoshake",
+        "Charcoochy",
+        "Clutchløck",
+        "Oogapower",
+        "Ytknight",
+        "Zabanya",
+        "Priestous",
+        "Eddiemage",
+        "Muvrin",
+        "Keishatini",
+        "Dartht",
+        "Akohre",
+        "Tishee",
+        "Howiebling",
+        "Healkinz",
+        "Daisojenn"
+      ]
+    },
+    {
+      "id": 10,
+      "date": "2026-08-04",
+      "label": "Damage Taken - Encounters (All Kills) - Report SSC - 2026-08-04  Warcraft Logs Classic Fresh",
+      "names": [
+        "Sobadai",
+        "Rodentp",
+        "Kiricolo",
+        "Chewïe",
+        "Nechristo",
+        "Caelø",
+        "Krunkette",
+        "Popeshe",
+        "Sylics",
+        "Ytknight",
+        "Charcoochy",
+        "Zabanya",
+        "Healkinz",
+        "Velogis",
+        "Keishatini",
+        "Muvrin",
+        "Priestous",
+        "Eddiemage",
+        "Oreoshake",
+        "Dartht",
+        "Oshika",
+        "Tishee",
+        "Clutchløck",
+        "Mikeanese",
+        "Daisojenn"
+      ]
+    },
+    {
+      "id": 11,
+      "date": "2026-07-30",
+      "label": "Damage Taken - Encounters (All Kills) - Report TK - 2026-07-30  Warcraft Logs Classic Fresh",
+      "names": [
+        "Sobadai",
+        "Rodentp",
+        "Bradpitiful",
+        "Oshika",
+        "Caelø",
+        "Nechristo",
+        "Krunkette",
+        "Muvrin",
+        "Clutchløck",
+        "Shrewmy",
+        "Priestous",
+        "Keishatini",
+        "Popeshe",
+        "Oreoshake",
+        "Oogapower",
+        "Howiebling",
+        "Zuulman",
+        "Eddiemage",
+        "Healkinz",
+        "Akohre",
+        "Mikeanese"
+      ]
+    }
+  ],
+  "nextLedgerId": 16,
+  "benchLog": [
+    {
+      "date": "2026-08-28",
+      "names": [],
+      "rostered": [
+        "Charcoochy",
+        "Healkinz",
+        "Kiricolo",
+        "Zabanya",
+        "Zuulman",
+        "Clutchløck",
+        "Sobadai",
+        "Akohre",
+        "Caelø",
+        "Daisojenn",
+        "Darthorg",
+        "Eddiemage",
+        "Keishatini",
+        "Krunkette",
+        "Mikeanese",
+        "Popeshe",
+        "Priestous",
+        "Rodentp",
+        "Sylics",
+        "Tishee",
+        "Totemy",
+        "Chewïe",
+        "Hasu",
+        "Shamanitis",
+        "Shrewmy"
+      ]
+    },
+    {
+      "date": "2026-08-24",
+      "names": [],
+      "rostered": [
+        "Charcoochy",
+        "Healkinz",
+        "Kiricolo",
+        "Zabanya",
+        "Zuulman",
+        "Clutchløck",
+        "Sobadai",
+        "Akohre",
+        "Caelø",
+        "Daisojenn",
+        "Darthorg",
+        "Eddiemage",
+        "Keishatini",
+        "Krunkette",
+        "Mikeanese",
+        "Popeshe",
+        "Priestous",
+        "Rodentp",
+        "Sylics",
+        "Tishee",
+        "Totemy",
+        "Chewïe",
+        "Hasu",
+        "Shamanitis",
+        "Shrewmy"
+      ]
+    },
+    {
+      "date": "2026-08-26",
+      "names": [],
+      "rostered": [
+        "Charcoochy",
+        "Healkinz",
+        "Kiricolo",
+        "Zabanya",
+        "Zuulman",
+        "Clutchløck",
+        "Sobadai",
+        "Akohre",
+        "Caelø",
+        "Daisojenn",
+        "Darthorg",
+        "Eddiemage",
+        "Keishatini",
+        "Krunkette",
+        "Mikeanese",
+        "Popeshe",
+        "Priestous",
+        "Rodentp",
+        "Sylics",
+        "Tishee",
+        "Totemy",
+        "Chewïe",
+        "Hasu",
+        "Shamanitis",
+        "Shrewmy"
+      ]
+    }
+  ],
+  "nameAliases": {
+    "Depew/Kiricolo": [
+      5
+    ],
+    "Bradpitiful/Zabanya": [
+      10
+    ],
+    "Eddie": [
+      25
+    ],
+    "Clutch": [
+      12
+    ],
+    "Tilatia": [
+      4
+    ],
+    "Oshika/Lakito": [
+      79
+    ],
+    "Charcoochy/KingDingaling": [
+      2
+    ],
+    "Ytknight/Zuulman": [
+      11
+    ]
+  },
+  "logsChannelId": "1528630952111374418",
+  "archiveChannelId": "1540891396515307640",
+  "stratsChannelId": "1539366128898285629"
 }
