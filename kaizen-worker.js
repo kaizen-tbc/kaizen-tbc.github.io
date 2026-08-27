@@ -2337,6 +2337,33 @@ async function handleEditMessage(request, env) {
 // buildFalloutMarkdowns' dmTargets). Opening a DM channel is a real
 // Discord API step distinct from just having a user id (POST /users/@me/
 // channels with recipient_id), so this is two requests per person, not
+// Discord hard-caps a message's content at 2000 characters - a full
+// personal report covering every fight in a raid can easily run past that,
+// and Discord just rejects the whole send with a generic "invalid form
+// body" (no useful detail) rather than truncating anything. Split on line
+// boundaries same as splitIntoFields does for embed fields, so a long
+// report arrives as consecutive DMs instead of failing outright.
+function splitTextIntoMessages(text, maxLen = 2000) {
+  if (text.length <= maxLen) return [text];
+  const lines = text.split('\n');
+  const chunks = [];
+  let current = '';
+  for (const line of lines) {
+    // A single line longer than the whole cap (pathological) still needs
+    // a hard break so we never emit an over-limit chunk.
+    if (line.length > maxLen) {
+      if (current) { chunks.push(current); current = ''; }
+      for (let i = 0; i < line.length; i += maxLen) chunks.push(line.slice(i, i + maxLen));
+      continue;
+    }
+    const next = current ? `${current}\n${line}` : line;
+    if (next.length > maxLen) { chunks.push(current); current = line; }
+    else current = next;
+  }
+  if (current) chunks.push(current);
+  return chunks;
+}
+
 // one. Best-effort per-message: one person having DMs closed/not sharing
 // a server with the bot shouldn't fail everyone else's - each result is
 // reported individually rather than the whole call failing on the first
@@ -2365,12 +2392,16 @@ async function handleSendDMs(request, env) {
         }
         const dmChannel = await dmRes.json();
 
-        const sendRes = await fetch(`${DISCORD_API}/channels/${dmChannel.id}/messages`, {
-          method: 'POST', headers, body: JSON.stringify({ content: m.content }),
-        });
-        if (!sendRes.ok) {
-          const err = await sendRes.json().catch(() => ({}));
-          throw new Error(err.message || `Send failed: ${sendRes.status}`);
+        const parts = splitTextIntoMessages(m.content);
+        for (let i = 0; i < parts.length; i++) {
+          const sendRes = await fetch(`${DISCORD_API}/channels/${dmChannel.id}/messages`, {
+            method: 'POST', headers, body: JSON.stringify({ content: parts[i] }),
+          });
+          if (!sendRes.ok) {
+            const err = await sendRes.json().catch(() => ({}));
+            throw new Error(err.message || `Send failed: ${sendRes.status}`);
+          }
+          if (i < parts.length - 1) await new Promise(r => setTimeout(r, 350));
         }
         results.push({ userId: m.userId, name: m.name || null, ok: true });
       } catch (err) {
