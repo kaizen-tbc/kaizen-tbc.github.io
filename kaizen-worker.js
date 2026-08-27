@@ -1904,12 +1904,19 @@ Be direct, no fluffy intro or conclusion - just the substance for each of the th
 // structured JSON output like buildFalloutPrompt - this is a freeform
 // written report, not something that needs field-by-field reassembly.
 function buildPersonalReportPrompt(report, playerName, dpsFights, healerFights, stratNotes) {
+  // Pre-built, ready-to-copy label per fight - bold name, the same
+  // parse-tier color dot used everywhere else in the app, "Parse" instead
+  // of "percentile" (matches how the rest of the app phrases it). Handing
+  // the model an exact string to reuse means correct formatting is
+  // guaranteed by us, not left to the AI to reconstruct (which tier a
+  // number falls in, whether to bold, etc.) - it only has to copy it.
+  const fightLabel = f => `**${f.encounter}** ${parseColorEmoji(f.rankPercent)} Parse ${Math.round(f.rankPercent)}`;
   const fmtFight = (f, extra) => {
     const smallSampleNote = typeof f.totalParses === 'number' && f.totalParses < WCL_SMALL_SAMPLE_THRESHOLD
       ? ` [rare spec/role combo - only ${f.totalParses} logged parses to compare against, percentile may not be meaningful]`
       : '';
     const deathNote = f.died ? ' (died this pull - treat as context, not a rotation/execution problem)' : ' (survived the full fight)';
-    return `${f.encounter}: ${Math.round(f.rankPercent)} percentile${extra}${deathNote}${smallSampleNote}`;
+    return `${fightLabel(f)}${extra}${deathNote}${smallSampleNote}`;
   };
   const dpsSection = dpsFights.length ? `DPS - every fight this raid:\n${dpsFights.map(f => {
     const uptimeNote = f.uptimePct != null ? `, ${f.uptimePct}% active time` : '';
@@ -1936,7 +1943,9 @@ ${healerFights.length ? HEALER_COACHING_RULES : ''}
 KNOWN GUILD TACTICS for the encounters above (this guild's own strategy notes, not generic textbook knowledge) - treat these as ground truth for THIS guild's actual play, and let them override your own generic-convention assumptions when they conflict:
 ${stratNotes || '(no strategy notes on file for these encounters)'}
 
-Write the report as: (1) one sentence summarizing their night overall, (2) a short note on each fight that actually stands out either way - genuinely strong pulls worth naming, and pulls that need work - don't manufacture a comment for every single fight if most were unremarkable, (3) one or two concrete things to focus on next raid, grounded in the real numbers above, not generic advice. Address them directly as "you", not in the third person. No fluffy intro or sign-off, just the substance - this is a private message, not a public announcement.`;
+Write the report as: (1) one sentence summarizing their night overall, (2) a short note on each fight that actually stands out either way - genuinely strong pulls worth naming, and pulls that need work - don't manufacture a comment for every single fight if most were unremarkable, (3) one or two concrete things to focus on next raid, grounded in the real numbers above, not generic advice. Address them directly as "you", not in the third person. No fluffy intro or sign-off, just the substance - this is a private message, not a public announcement.
+
+FORMATTING: whenever you mention a specific fight, copy its label EXACTLY as given above (e.g. "**Lady Vashj** 🔵 Parse 71") rather than writing the boss name or number yourself - don't say "percentile", don't leave out the bold or the colored dot, don't recompute the number. Put a blank line between each fight you discuss so the message reads as separate short paragraphs, not one dense block.`;
 }
 
 // Strict-mode JSON schema (OpenAI Structured Outputs, /v1/responses) - every
@@ -2343,17 +2352,39 @@ async function handleEditMessage(request, env) {
 // body" (no useful detail) rather than truncating anything. Split on line
 // boundaries same as splitIntoFields does for embed fields, so a long
 // report arrives as consecutive DMs instead of failing outright.
+// Breaks one overlong line (no internal '\n' to split on) at the last
+// sentence end before maxLen, falling back to the last space, and only
+// falling back to a mid-word hard cut if there's truly nowhere else to
+// break - seen live: an AI-written paragraph with no line breaks between
+// fights got hard-sliced at exactly the 2000th character, splitting a
+// sentence (and its boss name) in half mid-word. Sentence/word boundaries
+// keep every chunk readable on its own regardless of how the text is
+// structured.
+function breakLongLine(line, maxLen) {
+  const pieces = [];
+  let rest = line;
+  while (rest.length > maxLen) {
+    const window = rest.slice(0, maxLen);
+    let cut = Math.max(window.lastIndexOf('. '), window.lastIndexOf('! '), window.lastIndexOf('? '));
+    if (cut > maxLen * 0.4) cut += 1; // keep the punctuation, drop the space that follows it
+    else cut = window.lastIndexOf(' ');
+    if (cut <= 0) cut = maxLen; // no space at all in range - genuinely nowhere else to break
+    pieces.push(rest.slice(0, cut).trimEnd());
+    rest = rest.slice(cut).trimStart();
+  }
+  if (rest) pieces.push(rest);
+  return pieces;
+}
+
 function splitTextIntoMessages(text, maxLen = 2000) {
   if (text.length <= maxLen) return [text];
   const lines = text.split('\n');
   const chunks = [];
   let current = '';
   for (const line of lines) {
-    // A single line longer than the whole cap (pathological) still needs
-    // a hard break so we never emit an over-limit chunk.
     if (line.length > maxLen) {
       if (current) { chunks.push(current); current = ''; }
-      for (let i = 0; i < line.length; i += maxLen) chunks.push(line.slice(i, i + maxLen));
+      chunks.push(...breakLongLine(line, maxLen));
       continue;
     }
     const next = current ? `${current}\n${line}` : line;
