@@ -477,23 +477,22 @@ function bestiaryMobForName(bestiaryForRaid, name) {
     || bestiaryForRaid.find(m => n.includes(m.name.toLowerCase()) || m.name.toLowerCase().includes(n));
 }
 
-// One compact embed per mob - a small thumbnail (not the large full-width
-// `image`, which is what made the first version feel like a wall of
-// kitchen-sink detail) and just the handling tip as the description.
-// Abilities are deliberately left out here - that's reference detail for
-// the raid manager itself, not what the raid needs mid-fight; confirmed
-// live this was too much for a Discord post even though it's exactly
-// right for the in-app trash guide panel. Several of these post together
-// in one message (Discord allows up to 10 embeds/message), each still
-// stacking as its own compact card.
-function buildTrashMobEmbed(mob) {
-  const embed = {
-    title: mob.name || 'Mob',
-    description: mob.tip || '—',
-    color: 0xC9A227,
-  };
-  if (mob.image) embed.thumbnail = { url: mob.image.startsWith('http') ? mob.image : `${SITE_ORIGIN}/${mob.image}` };
-  return embed;
+// Two embeds per mob - an image card, immediately followed by a plain-text
+// notes card - so the image reads BEFORE the handling notes. Discord has
+// no "small image above the text" layout inside a single embed: a
+// thumbnail floats beside the title/description (not above it), and the
+// only field that renders an image above anything is the full-width
+// `image`, which sits below title/description within its OWN embed - so
+// getting a literal image-then-text reading order costs the "small
+// thumbnail" sizing from the previous version; this renders a bit larger.
+// Abilities are still left out entirely here - that's reference detail
+// for the in-app trash guide panel, not what the raid needs mid-fight.
+function buildTrashMobEmbeds(mob) {
+  const imageEmbed = { title: mob.name || 'Mob', color: 0xC9A227 };
+  if (mob.image) imageEmbed.image = { url: mob.image.startsWith('http') ? mob.image : `${SITE_ORIGIN}/${mob.image}` };
+  const embeds = [imageEmbed];
+  if (mob.tip) embeds.push({ description: mob.tip, color: 0xC9A227 });
+  return embeds;
 }
 
 // The wave-by-wave table as its own embed (or several, if it ever runs
@@ -558,8 +557,12 @@ async function handlePostTrashGuide(request, env) {
       await new Promise(r => setTimeout(r, 350));
     };
 
-    if (mobs.length) {
-      await postEmbeds(mobs.map(buildTrashMobEmbed));
+    // Each mob is now 2 embeds (image, then notes - see
+    // buildTrashMobEmbeds), so batch at 5 mobs (10 embeds) per message,
+    // Discord's hard cap. Only matters once the bestiary has enough
+    // "important" mobs left in it to cross that line.
+    for (let i = 0; i < mobs.length; i += 5) {
+      await postEmbeds(mobs.slice(i, i + 5).flatMap(buildTrashMobEmbeds));
     }
     await postEmbeds(buildTrashWaveEmbeds(guide));
 
