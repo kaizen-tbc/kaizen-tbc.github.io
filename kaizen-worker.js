@@ -56,6 +56,13 @@ export default {
       return handlePostStrat(request, env);
     }
 
+    // ── Post a trash guide (mob reference cards, then the wave
+    // breakdown) to Discord, clearing the channel first ──
+    // /post-trash-guide
+    if (url.pathname === '/post-trash-guide' && request.method === 'POST') {
+      return handlePostTrashGuide(request, env);
+    }
+
     // ── Latest Warcraft Logs report, for the raid manager's attendance
     // review UI ── /logs/latest
     if (url.pathname === '/logs/latest' && request.method === 'GET') {
@@ -442,6 +449,117 @@ async function handlePostStrat(request, env) {
     await postEmbed(buildStratAssignsEmbed(strat, data.roster || [], allGuildies, allPugs));
 
     return corsResponse(JSON.stringify({ ok: true }), 200);
+  } catch (err) {
+    return corsResponse(JSON.stringify({ error: err.message }), 500);
+  }
+}
+
+// ── Trash guides ──────────────────────────────────────────────
+// Same "count + name" parsing as the frontend's mobNamesFromWaveText - a
+// wave's "mobs" text like "6 Ghoul | 2 Crypt Fiend" names mobs without any
+// stable id, so this strips the leading count to get just the name.
+function mobNamesFromWaveText(text) {
+  return (text || '')
+    .split('|')
+    .map(part => part.trim())
+    .filter(Boolean)
+    .map(part => (part.match(/^\d+\s*x?\s*(.+)$/i) || [null, part])[1].trim());
+}
+
+// Substring match in both directions, same as the frontend's
+// bestiaryMobForName - the source guide this was built from isn't even
+// internally consistent about mob names (its own Overview sheet calls one
+// "Fel Hound", its Wave Breakdown calls the same mob "Fel Stalker"), so
+// exact-equality would silently drop cards that should match.
+function bestiaryMobForName(bestiaryForRaid, name) {
+  const n = name.toLowerCase();
+  return bestiaryForRaid.find(m => m.name.toLowerCase() === n)
+    || bestiaryForRaid.find(m => n.includes(m.name.toLowerCase()) || m.name.toLowerCase().includes(n));
+}
+
+// One embed per mob - full portrait image, one field per ability, a final
+// field for the handling tip. Several of these post together in a single
+// message (Discord allows up to 10 embeds/message), each still rendering
+// its own full image.
+function buildTrashMobEmbed(mob) {
+  const fields = (mob.abilities || [])
+    .filter(a => a.title || a.desc)
+    .map(a => ({ name: a.title || 'Ability', value: (a.desc || '—').slice(0, 1024), inline: false }));
+  if (mob.tip) fields.push({ name: '💡 Handling', value: mob.tip.slice(0, 1024), inline: false });
+  const embed = { title: mob.name || 'Mob', color: 0xC9A227 };
+  if (mob.image) embed.image = { url: mob.image.startsWith('http') ? mob.image : `${SITE_ORIGIN}/${mob.image}` };
+  if (fields.length) embed.fields = fields;
+  return embed;
+}
+
+// The wave-by-wave table as its own embed (or several, if it ever runs
+// long enough to need packFieldsIntoEmbeds' overflow handling) - full-
+// width fields, not paired inline, since a wave's mob list can run long
+// enough that two side by side would wrap awkwardly.
+function buildTrashWaveEmbeds(guide) {
+  const fields = (guide.waves || []).map(w => ({
+    name: `Wave ${w.wave ?? '?'}`,
+    value: ((w.mobs || '—') + (w.notes ? `\n_${w.notes}_` : '')).slice(0, 1024),
+    inline: false,
+  }));
+  const baseEmbed = {
+    title: `🧟 Trash Before ${guide.beforeBoss || 'the Next Boss'}`,
+    color: 0xC9A227,
+    footer: { text: 'Kaizen Raid Manager' },
+    timestamp: new Date().toISOString(),
+  };
+  return packFieldsIntoEmbeds(baseEmbed, fields);
+}
+
+// Two separate posts on purpose - mob reference cards first (what you
+// need to know), then the wave breakdown (what actually shows up when) -
+// easier to read as two focused messages than one long combined one.
+// Same "clear the channel first" behavior as handlePostStrat, and same
+// requirement that content be saved/published first (mob images need a
+// real public URL, same as a strat's image).
+async function handlePostTrashGuide(request, env) {
+  try {
+    const { trashGuideId, channelId } = await request.json();
+    if (!channelId) throw new Error('No channel ID provided.');
+    if (trashGuideId == null) throw new Error('No trash guide selected.');
+
+    const dataRes = await fetch(`${SITE_ORIGIN}/kaizen_data.json?v=${Date.now()}`);
+    if (!dataRes.ok) throw new Error('Could not load raid data.');
+    const data = await dataRes.json();
+
+    const guide = (data.trashGuides || []).find(g => g.id === trashGuideId);
+    if (!guide) throw new Error("Trash guide not found — make sure it's been saved to GitHub first.");
+
+    const bestiaryForRaid = (data.trashBestiary || []).filter(m => m.raid === guide.raid);
+    const seen = new Set();
+    const mobs = [];
+    for (const w of guide.waves || []) {
+      for (const name of mobNamesFromWaveText(w.mobs)) {
+        const mob = bestiaryMobForName(bestiaryForRaid, name);
+        if (mob && !seen.has(mob.id)) { seen.add(mob.id); mobs.push(mob); }
+      }
+    }
+
+    await clearChannelMessages(env, channelId, null);
+
+    const headers = { 'Authorization': `Bot ${env.DISCORD_BOT_TOKEN}`, 'Content-Type': 'application/json' };
+    const postEmbeds = async (embeds) => {
+      const res = await fetch(`${DISCORD_API}/channels/${channelId}/messages`, {
+        method: 'POST', headers, body: JSON.stringify({ embeds }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || `Post failed: ${res.status}`);
+      }
+      await new Promise(r => setTimeout(r, 350));
+    };
+
+    if (mobs.length) {
+      await postEmbeds(mobs.map(buildTrashMobEmbed));
+    }
+    await postEmbeds(buildTrashWaveEmbeds(guide));
+
+    return corsResponse(JSON.stringify({ ok: true, mobCount: mobs.length, waveCount: (guide.waves || []).length }), 200);
   } catch (err) {
     return corsResponse(JSON.stringify({ error: err.message }), 500);
   }

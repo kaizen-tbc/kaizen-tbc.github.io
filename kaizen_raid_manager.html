@@ -1967,7 +1967,7 @@ a[href] > div > div[style*="line-height:1.6"] {
       <button class="btn btn-small" onclick="openPugModal()">+ Pug</button>
       <button class="btn btn-small" onclick="openAddTrashGuideModal()" title="A wave-by-wave trash breakdown, shown as its own tab before whichever boss it precedes">🧟 + Trash Guide</button>
       <button class="btn btn-gold" onclick="openStratUpload()">+ Add Strat</button>
-      <button class="btn" style="white-space:nowrap;background:#5865F2;border-color:#4752c4;color:#fff;font-weight:700;" onclick="confirmPostStrat()">🚀 Post Strat to Discord</button>
+      <button class="btn" style="white-space:nowrap;background:#5865F2;border-color:#4752c4;color:#fff;font-weight:700;" onclick="confirmPostActiveTab()">🚀 Post to Discord</button>
     </div>
   </div>
 
@@ -7003,6 +7003,15 @@ function updateStratsChannelId(value) {
 // caused a stale/empty post live - edited assignments, forgot to save,
 // posted whatever was still published from before). See postStratToDiscord
 // for the wait built in after the save.
+// Dispatches the one "Post to Discord" button in the Strats header to
+// whichever kind of tab is actually active - a trash guide posts
+// completely differently (mob cards + wave breakdown, no image/
+// assignments) than a regular boss strat.
+function confirmPostActiveTab() {
+  if (activeTabKind === 'trash') confirmPostTrashGuide();
+  else confirmPostStrat();
+}
+
 function confirmPostStrat() {
   const strat = strats.find(s => s.id === activeStratId);
   if (!strat) { showToast('Pick a strat first.', true); return; }
@@ -7019,35 +7028,55 @@ function confirmPostStrat() {
   document.getElementById('confirm-overlay').classList.add('open');
 }
 
+function confirmPostTrashGuide() {
+  const guide = trashGuides.find(g => g.id === activeTrashId);
+  if (!guide) { showToast('Pick a trash guide first.', true); return; }
+  if (!stratsChannelId) { showToast('Set the strats channel first (⚙ Strats Settings).', true); return; }
+
+  document.getElementById('confirm-text').textContent =
+    `Publish the trash guide before "${guide.beforeBoss || '(no boss set)'}" to the strats channel? This saves to GitHub automatically, waits ~${Math.round(STRAT_POST_WAIT_MS / 1000)}s for the site to catch up, then clears whatever's currently posted there and posts mob reference cards + the wave breakdown as two separate messages - this can't be undone.`;
+  const existingCheck = document.getElementById('confirm-notify-wrap');
+  if (existingCheck) existingCheck.remove();
+  document.getElementById('confirm-ok').onclick = () => {
+    closeConfirm();
+    postTrashGuideToDiscord(guide.id);
+  };
+  document.getElementById('confirm-overlay').classList.add('open');
+}
+
 // How long to let GitHub Pages actually start serving the file just
 // pushed before asking the Worker to post from it - the Worker reads the
 // published site, not GitHub's API response, so posting immediately after
 // a successful save can still pick up the previous version. GitHub's own
 // save toast estimates ~60s; 45s is a middle ground between "long enough
-// in practice" and not making every post feel sluggish.
+// in practice" and not making every post feel sluggish. Shared by every
+// "save then post" flow (strats, trash guides).
 const STRAT_POST_WAIT_MS = 45000;
 let _stratPostInFlight = false;
 
+async function saveAndWaitForGitHubPages(savingLabel) {
+  showToast(`⬆ ${savingLabel}`);
+  const saved = await saveToGitHub();
+  if (!saved) return false;
+
+  // Countdown toast so a 45s wait reads as "working", not "stalled".
+  const totalSeconds = Math.round(STRAT_POST_WAIT_MS / 1000);
+  let remaining = totalSeconds;
+  while (remaining > 0) {
+    showToast(`⏳ Waiting ${remaining}s for GitHub Pages to update before posting...`);
+    const step = Math.min(5, remaining);
+    await new Promise(r => setTimeout(r, step * 1000));
+    remaining -= step;
+  }
+  return true;
+}
+
 async function postStratToDiscord(stratId) {
-  if (_stratPostInFlight) { showToast('Already publishing a strat - hang on.', true); return; }
+  if (_stratPostInFlight) { showToast('Already publishing - hang on.', true); return; }
   _stratPostInFlight = true;
   try {
-    showToast('⬆ Saving latest assignments to GitHub...');
-    const saved = await saveToGitHub();
-    if (!saved) {
-      showToast('✗ Strat not posted — GitHub save failed, fix that first.', true);
-      return;
-    }
-
-    // Countdown toast so a 45s wait reads as "working", not "stalled".
-    const totalSeconds = Math.round(STRAT_POST_WAIT_MS / 1000);
-    let remaining = totalSeconds;
-    while (remaining > 0) {
-      showToast(`⏳ Waiting ${remaining}s for GitHub Pages to update before posting...`);
-      const step = Math.min(5, remaining);
-      await new Promise(r => setTimeout(r, step * 1000));
-      remaining -= step;
-    }
+    const saved = await saveAndWaitForGitHubPages('Saving latest assignments to GitHub...');
+    if (!saved) { showToast('✗ Strat not posted — GitHub save failed, fix that first.', true); return; }
 
     showToast('🚀 Publishing strat to Discord...');
     const res = await fetch(`${RH_WORKER}/post-strat`, {
@@ -7058,6 +7087,29 @@ async function postStratToDiscord(stratId) {
     const data = await res.json();
     if (!res.ok || data.error) throw new Error(data.error || `Worker returned ${res.status}`);
     showToast('✓ Strat published to Discord!');
+  } catch (err) {
+    showToast(`✗ Failed: ${err.message}`, true);
+  } finally {
+    _stratPostInFlight = false;
+  }
+}
+
+async function postTrashGuideToDiscord(guideId) {
+  if (_stratPostInFlight) { showToast('Already publishing - hang on.', true); return; }
+  _stratPostInFlight = true;
+  try {
+    const saved = await saveAndWaitForGitHubPages('Saving latest trash guide to GitHub...');
+    if (!saved) { showToast('✗ Trash guide not posted — GitHub save failed, fix that first.', true); return; }
+
+    showToast('🚀 Publishing trash guide to Discord...');
+    const res = await fetch(`${RH_WORKER}/post-trash-guide`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ trashGuideId: guideId, channelId: stratsChannelId }),
+    });
+    const data = await res.json();
+    if (!res.ok || data.error) throw new Error(data.error || `Worker returned ${res.status}`);
+    showToast(`✓ Trash guide published! (${data.mobCount} mob card${data.mobCount === 1 ? '' : 's'}, ${data.waveCount} wave${data.waveCount === 1 ? '' : 's'})`);
   } catch (err) {
     showToast(`✗ Failed: ${err.message}`, true);
   } finally {
