@@ -79,6 +79,12 @@ export default {
       return handleFalloutReport(request, env);
     }
 
+    // ── On-demand personal report for one player, every fight this raid -
+    // /logs/personal-report
+    if (url.pathname === '/logs/personal-report' && request.method === 'POST') {
+      return handlePersonalReport(request, env);
+    }
+
     // ── Post arbitrary pre-generated text (the fallout report) as its own
     // message, separate from the rankings post ── /post-text-message
     if (url.pathname === '/post-text-message' && request.method === 'POST') {
@@ -1119,6 +1125,40 @@ function classifyLowParses(rankingsRaw, roleKey, deaths) {
   return [...byPlayer.values()].sort((a, b) => a.rankPercent - b.rankPercent);
 }
 
+// The personal-report equivalent of classifyLowParses: instead of only the
+// single worst grey-tier pull, every fight a specific named player appears
+// in for this role, kills and wipes alike, good or bad - the whole night,
+// not just their worst moment. Same raidSharePct computation as the other
+// role-parse functions.
+function extractAllParsesForPlayer(rankingsRaw, roleKey, playerName, deaths) {
+  const deathSet = new Set(deaths.map(d => `${d.name}|${d.fightID}`));
+  const fights = rankingsRaw?.data || [];
+  const fightTotals = new Map();
+  for (const fight of fights) {
+    const chars = fight?.roles?.[roleKey]?.characters || [];
+    let total = 0;
+    for (const c of chars) total += (typeof c.amount === 'number' ? c.amount : 0);
+    fightTotals.set(fight?.fightID, total);
+  }
+  const results = [];
+  for (const fight of fights) {
+    const chars = fight?.roles?.[roleKey]?.characters || [];
+    const c = chars.find(x => x?.name === playerName);
+    if (!c || typeof c.rankPercent !== 'number') continue;
+    const fightID = fight?.fightID;
+    const fightTotal = fightTotals.get(fightID) || 0;
+    const raidSharePct = fightTotal > 0 && typeof c.amount === 'number'
+      ? Math.round((c.amount / fightTotal) * 1000) / 10
+      : null;
+    results.push({
+      name: c.name, class: c.class, spec: c.spec, rankPercent: c.rankPercent,
+      encounter: fight?.encounter?.name || 'Unknown', fightID, totalParses: c.totalParses,
+      raidSharePct, died: deathSet.has(`${c.name}|${fightID}`),
+    });
+  }
+  return results;
+}
+
 // Below this share of the role's total output that fight, a percentile
 // stops being trustworthy evidence of real contribution - a thin/off-meta
 // comparison pool can make someone look like a world-beater while they're
@@ -1754,6 +1794,24 @@ function gatherRelevantStratNotes(strats, dpsSurvivedBad, healersSurvivedBad, de
   return lines.join('\n\n');
 }
 
+// Shared across buildFalloutPrompt AND buildPersonalReportPrompt (the
+// per-person deep-dive) so both prompts stay consistent - a fix to one
+// (the TBC version-lock, or the DPS/healer reasoning rules) applies to
+// both instead of two copies silently drifting apart.
+const TBC_VERSION_LOCK = `CRITICAL - this is specifically The Burning Crusade Classic (patch 2.4.3 era, character level 70), NOT retail WoW and NOT any other expansion. Do not reference abilities, talents, resources, or mechanics from Wrath of the Lich King, Cataclysm, Mists of Pandaria, Warlords of Draenor, Legion, Battle for Azeroth, Shadowlands, Dragonflight, or current retail - even if they're iconic for that class today. Concretely, as commonly-made mistakes to avoid: Elemental Shaman has NO Lava Burst (added in Wrath); Shadow Priest has NO Insanity resource bar (added in Legion) - TBC Shadow Priest is just Mind Flay/SW:P/VT/Mind Blast on a global cooldown, no special resource; Enhancement Shaman has NO Maelstrom Weapon proc (added in Wrath); Feral Druid has NO Energy-and-Combo-Point-only kit changes from later redesigns. If you are not fully confident an ability or mechanic existed at level 70 in TBC, do NOT name it specifically - give generic advice instead (e.g. "keep your damage-over-time spells refreshed" rather than naming a spell you're unsure of, "use your cooldowns during burn windows" rather than naming a specific one). Generic-but-correct beats specific-but-wrong.`;
+
+const DPS_COACHING_RULES = `FOR DPS:
+   - If "active time" is given, use it as your primary evidence: low active time (well under what's typical, ~85%+ for most specs when nothing's gone wrong) means real downtime - reference the actual number and reason about why (repositioning, movement off the boss, dying partway and this being their only surviving pull data, etc.) rather than just saying "stay in melee range."
+   - "top sources" is much easier to misread than active time - an ability dominating the damage breakdown is NOT reliably a sign of bad play. Concrete trap to avoid: an Arms Warrior with a slow two-handed weapon getting a large share of damage from Slam is CORRECT, high-skill play (timing Slam around the weapon's swing timer, "Slam weaving") - not a rotation problem, even though it looks like one ability is "dominating." Ability-mix patterns like this vary by spec/weapon/talents in ways you may not be fully certain of. So: only call out an ability-mix pattern as a problem when you are genuinely confident that specific mix is wrong for that spec/weapon at level 70 TBC - otherwise just note the top sources as a factual, neutral observation without diagnosing it as good or bad, and lean on active time (or gear/consumables/execution in general) as the actual explanation instead.
+   - Only fall back to generic advice (no specific ability/number cited) for someone with no active-time data available.`;
+
+const HEALER_COACHING_RULES = `FOR HEALERS: you do NOT have ability-mix data for healers and must not guess at or invent which spell someone should be casting - which heal is "correct" varies by class/spec/fight in ways that are easy to get backwards (a real example that happened here: assuming Earth Shield always belongs on the tank, when this guild specifically self-casts it on one encounter for pushback reasons - a wrong guess a coaching message would have gotten backwards). Reason ONLY from active time, overheal %, and raid healing share - and their MEANING depends on class, so apply this class-specific context rather than treating either number as universally good or bad:
+   - HoT-based healers (Druids especially, also Holy Paladin/Priest leaning on HoTs or PW:S) naturally run HIGH overheal even when playing well, since a rolling HoT keeps ticking on a target that's already topped and can't be "paused" - do not flag high overheal alone as a problem for these classes. What DOES matter for them is active time: low active time means HoTs aren't being reapplied/refreshed consistently, which is the real issue.
+   - Smart-targeting heals (Chain Heal for Resto Shaman especially, also Prayer of Healing/Circle of Healing) already aim at whoever's actually damaged, so LOW overheal is normal and expected for these classes - it is not evidence of extra skill, just how the spell works, so don't praise it as if it were. HIGH overheal on one of these classes is more worth a mention, since it suggests casting into groups that don't need it.
+   - Low active time for ANY healer, regardless of class, means real downtime - not casting, which is never fine no matter how efficient the casts that did happen were.
+   - Raid healing share is the harder-to-game number: a low percentile paired with a reasonable share of the raid's total healing that fight suggests the encounter made healing hard for everyone, not just this person - say so rather than treating the percentile as damning on its own. A low percentile AND a tiny share together is the real problem worth naming plainly.
+   - Only fall back to generic advice (no specific number cited) for someone with no active-time/overheal/share data available.`;
+
 // A 0% parse from dying tells you nothing you don't already know ("don't
 // die"). The real red flag is a grey-tier parse (WCL's own 0-24 tier) from
 // someone who SURVIVED the whole fight - that's an actual rotation/gear/
@@ -1805,7 +1863,7 @@ function buildFalloutPrompt(report, dpsSurvivedBad, healersSurvivedBad, deaths, 
 
   return `You are writing content for a Discord message ("fallout report") for a World of Warcraft: TBC Classic raid guild, following up on last night's raid ("${report?.title || 'Raid'}"). This message's whole purpose is teaching a lesson and calling out what needs work - it runs separately from a plain rankings post that already covered the numbers matter-of-factly, so don't repeat those, don't mention top performers here. Tone: constructive and factual, never confrontational or shaming - the goal is to spark conversation, not chastise anyone. This is its own standalone post with the rankings post being the only other content in this channel, so you have real room to explain the "why," not just a one-liner - go deep on the actual analysis below.
 
-CRITICAL - this is specifically The Burning Crusade Classic (patch 2.4.3 era, character level 70), NOT retail WoW and NOT any other expansion. Do not reference abilities, talents, resources, or mechanics from Wrath of the Lich King, Cataclysm, Mists of Pandaria, Warlords of Draenor, Legion, Battle for Azeroth, Shadowlands, Dragonflight, or current retail - even if they're iconic for that class today. Concretely, as commonly-made mistakes to avoid: Elemental Shaman has NO Lava Burst (added in Wrath); Shadow Priest has NO Insanity resource bar (added in Legion) - TBC Shadow Priest is just Mind Flay/SW:P/VT/Mind Blast on a global cooldown, no special resource; Enhancement Shaman has NO Maelstrom Weapon proc (added in Wrath); Feral Druid has NO Energy-and-Combo-Point-only kit changes from later redesigns. If you are not fully confident an ability or mechanic existed at level 70 in TBC, do NOT name it specifically - give generic advice instead (e.g. "keep your damage-over-time spells refreshed" rather than naming a spell you're unsure of, "use your cooldowns during burn windows" rather than naming a specific one). Generic-but-correct beats specific-but-wrong.
+${TBC_VERSION_LOCK}
 
 DEATHS this raid (context only - "don't die" isn't useful coaching by itself, don't dwell here):
 ${deathsSummary}
@@ -1826,23 +1884,59 @@ Return three things:
 1. generalNotes - 2-3 sentences on any pattern worth flagging raid-wide (e.g. several people struggling on the same encounter suggests a mechanic/positioning issue, not an individual one). Use the death breakdown's real per-encounter counts as evidence: if deaths cluster heavily on one or two encounters, name them and take a concrete guess at what's going wrong mechanically (positioning, a specific ability/phase, an add that needs to be handled) based on TBC Classic knowledge of that encounter - "we're getting sloppy on X's mechanic" is far more useful than "there were some deaths." Don't just restate the raw counts back - explain what they mean. If deaths are spread thin with no real cluster, say so briefly and move on - don't force a pattern that isn't there.
 2. needsWork - up to 6-8 entries, one per person from the grey-tier-survived lists above. Each entry's "name" must be copied EXACTLY as given above (used elsewhere to attach their class icon and the encounter - don't restate their name, class, spec, or encounter inside "tip", just the coaching itself). "tip" is 1-2 sentences of TBC Classic-accurate (level 70, patch 2.4.3 - see the version constraint above) coaching, grounded in whatever hard numbers are given for that person, not generic advice. DPS and Healers need different reasoning - do not mix these up:
 
-   FOR DPS:
-   - If "active time" is given, use it as your primary evidence: low active time (well under what's typical, ~85%+ for most specs when nothing's gone wrong) means real downtime - reference the actual number and reason about why (repositioning, movement off the boss, dying partway and this being their only surviving pull data, etc.) rather than just saying "stay in melee range."
-   - "top sources" is much easier to misread than active time - an ability dominating the damage breakdown is NOT reliably a sign of bad play. Concrete trap to avoid: an Arms Warrior with a slow two-handed weapon getting a large share of damage from Slam is CORRECT, high-skill play (timing Slam around the weapon's swing timer, "Slam weaving") - not a rotation problem, even though it looks like one ability is "dominating." Ability-mix patterns like this vary by spec/weapon/talents in ways you may not be fully certain of. So: only call out an ability-mix pattern as a problem when you are genuinely confident that specific mix is wrong for that spec/weapon at level 70 TBC - otherwise just note the top sources as a factual, neutral observation without diagnosing it as good or bad, and lean on active time (or gear/consumables/execution in general) as the actual explanation instead.
-   - Only fall back to generic advice (no specific ability/number cited) for someone with no active-time data available - and say something different for each person, don't reuse the same boilerplate line across multiple entries.
+   ${DPS_COACHING_RULES}
+   (also: say something different for each DPS person, don't reuse the same boilerplate line across multiple entries.)
 
-   FOR HEALERS: you do NOT have ability-mix data for healers and must not guess at or invent which spell someone should be casting - which heal is "correct" varies by class/spec/fight in ways that are easy to get backwards (a real example that happened here: assuming Earth Shield always belongs on the tank, when this guild specifically self-casts it on one encounter for pushback reasons - a wrong guess a coaching message would have gotten backwards). Reason ONLY from active time, overheal %, and raid healing share - and their MEANING depends on class, so apply this class-specific context rather than treating either number as universally good or bad:
-   - HoT-based healers (Druids especially, also Holy Paladin/Priest leaning on HoTs or PW:S) naturally run HIGH overheal even when playing well, since a rolling HoT keeps ticking on a target that's already topped and can't be "paused" - do not flag high overheal alone as a problem for these classes. What DOES matter for them is active time: low active time means HoTs aren't being reapplied/refreshed consistently, which is the real issue.
-   - Smart-targeting heals (Chain Heal for Resto Shaman especially, also Prayer of Healing/Circle of Healing) already aim at whoever's actually damaged, so LOW overheal is normal and expected for these classes - it is not evidence of extra skill, just how the spell works, so don't praise it as if it were. HIGH overheal on one of these classes is more worth a mention, since it suggests casting into groups that don't need it.
-   - Low active time for ANY healer, regardless of class, means real downtime - not casting, which is never fine no matter how efficient the casts that did happen were.
-   - Raid healing share is the harder-to-game number: a low percentile paired with a reasonable share of the raid's total healing that fight suggests the encounter made healing hard for everyone, not just this person - say so rather than treating the percentile as damning on its own. A low percentile AND a tiny share together is the real problem worth naming plainly.
-   - Only fall back to generic advice (no specific number cited) for someone with no active-time/overheal/share data available - and say something different for each person, don't reuse the same boilerplate line across multiple entries.
+   ${HEALER_COACHING_RULES}
+   (also: say something different for each healer, don't reuse the same boilerplate line across multiple entries.)
 
    FOR BOTH: if an entry is flagged as a rare spec/role combo with few logged parses, say so plainly (e.g. "not many logged parses for this spec/role to compare against, so take this percentile with a grain of salt") instead of coaching the number as if it were a reliable signal.
    If both lists above are empty, return an empty array - don't invent entries that aren't there.
 3. interruptsNote - 1-2 sentences: note who's carrying the interrupt load this raid. Only flag a specific class/spec as under-contributing if you're genuinely confident that spec has an interrupt and this encounter needed it - don't guess at specs you're unsure of.
 
 Be direct, no fluffy intro or conclusion - just the substance for each of the three fields.`;
+}
+
+// The on-demand, per-person deep-dive: every fight one specific named
+// player was tracked in this raid (not just their single worst pull),
+// covering the whole night rather than one moment. Sent as a private DM,
+// never posted - see handlePersonalReport. Plain text response, not
+// structured JSON output like buildFalloutPrompt - this is a freeform
+// written report, not something that needs field-by-field reassembly.
+function buildPersonalReportPrompt(report, playerName, dpsFights, healerFights, stratNotes) {
+  const fmtFight = (f, extra) => {
+    const smallSampleNote = typeof f.totalParses === 'number' && f.totalParses < WCL_SMALL_SAMPLE_THRESHOLD
+      ? ` [rare spec/role combo - only ${f.totalParses} logged parses to compare against, percentile may not be meaningful]`
+      : '';
+    const deathNote = f.died ? ' (died this pull - treat as context, not a rotation/execution problem)' : ' (survived the full fight)';
+    return `${f.encounter}: ${Math.round(f.rankPercent)} percentile${extra}${deathNote}${smallSampleNote}`;
+  };
+  const dpsSection = dpsFights.length ? `DPS - every fight this raid:\n${dpsFights.map(f => {
+    const uptimeNote = f.uptimePct != null ? `, ${f.uptimePct}% active time` : '';
+    const abilityNote = f.topAbilities?.length ? ` | top sources: ${f.topAbilities.map(a => `${a.name} (${a.pct}%)`).join(', ')}` : '';
+    return fmtFight(f, uptimeNote + abilityNote);
+  }).join('\n')}` : '';
+  const healerSection = healerFights.length ? `HEALING - every fight this raid:\n${healerFights.map(f => {
+    const uptimeNote = f.uptimePct != null ? `, ${f.uptimePct}% active time` : '';
+    const overhealNote = f.overhealPct != null ? `, ${f.overhealPct}% overheal` : '';
+    const shareNote = f.raidSharePct != null ? `, ${f.raidSharePct}% of raid healing that fight` : '';
+    return fmtFight(f, uptimeNote + overhealNote + shareNote);
+  }).join('\n')}` : '';
+
+  return `You are writing a personal, one-on-one coaching report for ONE specific player, ${playerName}, from last night's raid ("${report?.title || 'Raid'}") in a World of Warcraft: TBC Classic guild. This is a PRIVATE message sent directly to them, not a public post - be direct and specific, and cover every fight listed below, not just their best or worst moment. Tone: the same as a good 1-on-1 coaching conversation - factual, genuinely encouraging where it's earned, honest where it's not, never shaming.
+
+${TBC_VERSION_LOCK}
+
+${dpsSection}
+${healerSection}
+
+${dpsFights.length ? DPS_COACHING_RULES : ''}
+${healerFights.length ? HEALER_COACHING_RULES : ''}
+
+KNOWN GUILD TACTICS for the encounters above (this guild's own strategy notes, not generic textbook knowledge) - treat these as ground truth for THIS guild's actual play, and let them override your own generic-convention assumptions when they conflict:
+${stratNotes || '(no strategy notes on file for these encounters)'}
+
+Write the report as: (1) one sentence summarizing their night overall, (2) a short note on each fight that actually stands out either way - genuinely strong pulls worth naming, and pulls that need work - don't manufacture a comment for every single fight if most were unremarkable, (3) one or two concrete things to focus on next raid, grounded in the real numbers above, not generic advice. Address them directly as "you", not in the third person. No fluffy intro or sign-off, just the substance - this is a private message, not a public announcement.`;
 }
 
 // Strict-mode JSON schema (OpenAI Structured Outputs, /v1/responses) - every
@@ -2021,6 +2115,73 @@ async function handleFalloutReport(request, env) {
     const { dpsText, healersText, dmTargets } = buildFalloutMarkdowns(parsed, dpsSurvivedBad, healersSurvivedBad);
 
     return corsResponse(JSON.stringify({ dpsText, healersText, dmTargets }), 200);
+  } catch (err) {
+    return corsResponse(JSON.stringify({ error: err.message }), 500);
+  }
+}
+
+// On-demand personal report for one specific player, covering every fight
+// they were tracked in this raid rather than just their single worst pull.
+// Built for someone who doesn't show up in the regular fallout report's
+// "needs work" list at all but still wants a look, or an officer wants to
+// send a fuller write-up proactively. reportCode is reused (not re-fetched)
+// via getReportFightsAndStats' own KV cache - this costs zero WCL calls if
+// the report's already been looked at this session, same as everywhere
+// else that fetch is used.
+async function handlePersonalReport(request, env) {
+  try {
+    if (!env.OPENAI_API_KEY) throw new Error('OpenAI API key not configured.');
+    const { reportCode, playerName } = await request.json();
+    if (!reportCode) throw new Error('No report code provided.');
+    if (!playerName) throw new Error('No player selected.');
+
+    const details = await getReportFightsAndStats(env, reportCode);
+    if (!details.report?.title) throw new Error(`Report ${reportCode} not found.`);
+
+    const deaths = extractDeaths(details.deathsRaw);
+    const fightDurationById = new Map(details.fights.map(f => [f.id, f.endTime - f.startTime]));
+
+    let dpsFights = extractAllParsesForPlayer(details.rankingsRawDps, 'dps', playerName, deaths);
+    let healerFights = extractAllParsesForPlayer(details.rankingsRawHealers, 'healers', playerName, deaths);
+
+    if (!dpsFights.length && !healerFights.length) {
+      throw new Error(`No parse data found for "${playerName}" in this report - check the name matches exactly.`);
+    }
+
+    // Best-effort enrichment, same as the regular fallout report - a
+    // failure here just means plainer fight entries, not a broken report.
+    try {
+      if (dpsFights.length) dpsFights = await enrichWithFightBreakdown(env, reportCode, dpsFights, 'DamageDone', fightDurationById);
+      if (healerFights.length) healerFights = await enrichWithFightBreakdown(env, reportCode, healerFights, 'Healing', fightDurationById);
+    } catch (err) {
+      console.warn('Personal report enrichment failed:', err.message);
+    }
+
+    // Best-effort strat notes for whatever encounters this person actually
+    // played, same "known guild tactics override generic assumptions"
+    // mechanism as the regular fallout report.
+    let stratNotes = '';
+    try {
+      const dataRes = await fetch(`https://kaizen-tbc.github.io/kaizen_data.json?v=${Date.now()}`);
+      const guildData = dataRes.ok ? await dataRes.json() : null;
+      if (guildData?.strats) {
+        stratNotes = gatherRelevantStratNotes(guildData.strats, dpsFights, healerFights, { byEncounter: [] });
+      }
+    } catch { /* fine, prompt just runs without guild-specific tactics */ }
+
+    const res = await callOpenAIWithRetry({
+      model: OPENAI_MODEL,
+      input: buildPersonalReportPrompt(details.report, playerName, dpsFights, healerFights, stratNotes),
+      // Plain text response deliberately, not structured JSON output like
+      // the fallout report - this is one freeform written report, not
+      // several fields that need separate reassembly.
+    }, env);
+
+    const data = await res.json();
+    const text = extractOpenAIText(data);
+    if (!text) throw new Error('OpenAI returned no text output.');
+
+    return corsResponse(JSON.stringify({ text, dpsFightCount: dpsFights.length, healerFightCount: healerFights.length }), 200);
   } catch (err) {
     return corsResponse(JSON.stringify({ error: err.message }), 500);
   }

@@ -2041,6 +2041,7 @@ a[href] > div > div[style*="line-height:1.6"] {
         <option value="">Latest (most complete)</option>
       </select>
       <button class="btn btn-gold" style="white-space:nowrap;flex-shrink:0;padding:9px 16px;display:flex;align-items:center;gap:6px;" onclick="fetchSelectedLog()">⬇ Fetch</button>
+      <button class="btn" style="white-space:nowrap;flex-shrink:0;padding:9px 12px;" onclick="openPersonalReportPicker()" title="Generate a full personal report for one person, every fight this raid, sent as a private DM">✉ Personal Report</button>
       <button class="btn" id="post-report-btn" style="white-space:nowrap;flex-shrink:0;padding:9px 16px;background:#5865F2;border-color:#4752c4;color:#fff;font-weight:700;" onclick="confirmPostFullReport()">🚀 Post Report to Discord</button>
     </div>
   </div>
@@ -2069,6 +2070,49 @@ a[href] > div > div[style*="line-height:1.6"] {
     <div class="modal-footer">
       <button class="btn" onclick="closeOtherReportModal()">Cancel</button>
       <button class="btn btn-gold" onclick="confirmFetchOtherReport()">⬇ Fetch</button>
+    </div>
+  </div>
+</div>
+
+<!-- Personal Report - Step 1: pick who from this report -->
+<div class="modal-overlay" id="personal-report-picker-overlay" onclick="if(event.target===this)closePersonalReportPicker()">
+  <div class="modal" style="width:440px;">
+    <div class="modal-header">
+      <div class="modal-title">Personal Report — Pick Someone</div>
+      <button class="modal-close" onclick="closePersonalReportPicker()">&#x2715;</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:12px;color:var(--text-dim);margin:0 0 10px;">Everyone WCL tracked in this report — not just the ones flagged in the regular fallout report. Covers every fight they were in, good or bad.</p>
+      <input type="text" class="form-input" id="personal-report-search" placeholder="Search name..." oninput="renderPersonalReportPickerList()" style="margin-bottom:10px;">
+      <div id="personal-report-picker-list" style="max-height:320px;overflow-y:auto;border:1px solid var(--border);border-radius:4px;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closePersonalReportPicker()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Personal Report - Step 2: review the AI draft, set Discord ID, send -->
+<div class="modal-overlay" id="personal-report-preview-overlay" onclick="if(event.target===this)closePersonalReportPreview()">
+  <div class="modal" style="width:560px;">
+    <div class="modal-header">
+      <div class="modal-title" id="personal-report-preview-title">Personal Report</div>
+      <button class="modal-close" onclick="closePersonalReportPreview()">&#x2715;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Report (review/edit before sending — this is AI-generated)</label>
+        <textarea class="form-input" id="personal-report-text" rows="14" style="font-family:inherit;resize:vertical;"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Discord ID</label>
+        <input type="text" class="form-input" id="personal-report-discordid" placeholder="Paste their Discord user ID">
+        <div style="font-size:11px;color:var(--text-dim);margin-top:5px;" id="personal-report-id-note"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closePersonalReportPreview()">Cancel</button>
+      <button class="btn btn-gold" onclick="sendPersonalReport()">✉ Send Privately</button>
     </div>
   </div>
 </div>
@@ -3513,6 +3557,115 @@ async function postFullReportToDiscord() {
     }
   } catch (err) {
     showToast(`✗ Failed: ${err.message}`, true);
+  }
+}
+
+// ── Personal Report — full on-demand coaching report for ONE specific
+// person, every fight they were in this raid (not just their flagged worst
+// pull if any). Anyone WCL tracked in this report is eligible, not only
+// names that show up in the regular fallout report. Reviewed/edited here
+// before being sent as a private DM, same as the fallout-report coaching
+// DMs (reuses /send-dms), and persists their Discord ID onto the roster on
+// send exactly like the RH-import and fallout-DM flows already do.
+let _personalReportNames = []; // [{name, roles:['dps','healer']}] for this report
+let _personalReportSelectedName = null;
+
+function openPersonalReportPicker() {
+  if (!_lastLogFetch) { showToast('Fetch a log first.', true); return; }
+  const byName = new Map();
+  for (const p of _lastLogFetch.dps || []) {
+    if (!byName.has(p.name)) byName.set(p.name, { name: p.name, roles: [] });
+    byName.get(p.name).roles.push('dps');
+  }
+  for (const p of _lastLogFetch.healers || []) {
+    if (!byName.has(p.name)) byName.set(p.name, { name: p.name, roles: [] });
+    byName.get(p.name).roles.push('healer');
+  }
+  _personalReportNames = [...byName.values()].sort((a, b) => a.name.localeCompare(b.name));
+  document.getElementById('personal-report-search').value = '';
+  renderPersonalReportPickerList();
+  document.getElementById('personal-report-picker-overlay').classList.add('open');
+}
+
+function closePersonalReportPicker() {
+  document.getElementById('personal-report-picker-overlay').classList.remove('open');
+}
+
+function renderPersonalReportPickerList() {
+  const q = (document.getElementById('personal-report-search').value || '').toLowerCase();
+  const list = document.getElementById('personal-report-picker-list');
+  const rows = _personalReportNames.filter(p => p.name.toLowerCase().includes(q));
+  if (!rows.length) {
+    list.innerHTML = `<div style="padding:14px;text-align:center;color:var(--text-dim);font-size:12px;">No match.</div>`;
+    return;
+  }
+  list.innerHTML = rows.map(p => {
+    const roleLabel = p.roles.includes('dps') && p.roles.includes('healer') ? 'DPS + Healer' : p.roles.includes('healer') ? 'Healer' : 'DPS';
+    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid var(--border);cursor:pointer;" onclick="selectPersonalReportPlayer('${p.name.replace(/'/g, "\\'")}')" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background=''">
+      <span>${p.name}</span>
+      <span style="font-size:11px;color:var(--text-dim);">${roleLabel}</span>
+    </div>`;
+  }).join('');
+}
+
+async function selectPersonalReportPlayer(name) {
+  _personalReportSelectedName = name;
+  closePersonalReportPicker();
+  const p = roster.find(r => r.name === name);
+  document.getElementById('personal-report-preview-title').textContent = `Personal Report — ${name}`;
+  document.getElementById('personal-report-text').value = 'Generating...';
+  document.getElementById('personal-report-discordid').value = p?.discordUserId || '';
+  document.getElementById('personal-report-id-note').textContent = p
+    ? (p.discordUserId ? 'On file from the roster — sending will keep it up to date if you change it.' : 'No Discord ID on file for this roster member yet — sending will save whatever you enter here.')
+    : 'Not on the roster (pug?) — enter their Discord ID to DM them, or leave blank to just review the text.';
+  document.getElementById('personal-report-preview-overlay').classList.add('open');
+
+  try {
+    const res = await fetch(`${RH_WORKER}/logs/personal-report`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reportCode: _lastLogFetch?.report?.code || null, playerName: name }),
+    });
+    const data = await res.json();
+    if (!res.ok || data.error) throw new Error(data.error || `Worker returned ${res.status}`);
+    document.getElementById('personal-report-text').value = data.text;
+  } catch (err) {
+    document.getElementById('personal-report-text').value = `Couldn't generate: ${err.message}`;
+  }
+}
+
+function closePersonalReportPreview() {
+  document.getElementById('personal-report-preview-overlay').classList.remove('open');
+}
+
+async function sendPersonalReport() {
+  const name = _personalReportSelectedName;
+  if (!name) return;
+  const text = document.getElementById('personal-report-text').value.trim();
+  const discordUserId = document.getElementById('personal-report-discordid').value.trim();
+  if (!text) { showToast('Nothing to send.', true); return; }
+  if (!discordUserId) { showToast('Enter a Discord ID first.', true); return; }
+
+  // Persist the ID onto the roster the same way the RH-import and
+  // fallout-DM flows already do, so it doesn't need re-entering next time.
+  const p = roster.find(r => r.name === name);
+  if (p && p.discordUserId !== discordUserId) p.discordUserId = discordUserId;
+
+  try {
+    showToast(`✉ Sending report to ${name}...`);
+    const res = await fetch(`${RH_WORKER}/send-dms`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: [{ userId: discordUserId, name, content: text }] }),
+    });
+    const data = await res.json();
+    if (!res.ok || data.error) throw new Error(data.error || `Worker returned ${res.status}`);
+    const failed = (data.results || []).filter(r => !r.ok);
+    if (failed.length) throw new Error(failed[0].error || 'DMs closed?');
+    showToast(`✓ Sent to ${name}.`);
+    closePersonalReportPreview();
+  } catch (err) {
+    showToast(`✗ Failed to send: ${err.message}`, true);
   }
 }
 
