@@ -10859,5 +10859,385 @@
   },
   "logsChannelId": "1528630952111374418",
   "archiveChannelId": "1540891396515307640",
-  "stratsChannelId": "1539366128898285629"
+  "stratsChannelId": "1539366128898285629",
+  "trashBestiary": [
+    {
+      "id": 1,
+      "raid": "Battle for Mount Hyjal",
+      "name": "Ghoul",
+      "image": "trash/mobs/ghoul.png",
+      "abilities": [
+        {
+          "title": "Cannibalize (ID: 17895)",
+          "desc": "At low health, runs to nearest corpse and eats it, restoring 8% HP every 2 seconds over 12 seconds."
+        },
+        {
+          "title": "Enrage (ID: 31549)",
+          "desc": "Effect: 150% melee attack speed // 20% size increase. Can be dispelled with Tranq Shot."
+        }
+      ],
+      "tip": "Enrage isn't that big of a deal; just kill."
+    },
+    {
+      "id": 2,
+      "raid": "Battle for Mount Hyjal",
+      "name": "Crypt Fiend",
+      "image": "trash/mobs/crypt-fiend.png",
+      "abilities": [
+        {
+          "title": "Web (ID: 28991)",
+          "desc": "Roots target for 10 seconds."
+        },
+        {
+          "title": "Crypt Scarabs (ID: 31591)",
+          "desc": "Summons 3 scarabs for 10 seconds. Spams this ability if not in melee range of primary threat target."
+        }
+      ],
+      "tip": "Nothing to worry about. If you're LoSing properly, these will never cause issues."
+    },
+    {
+      "id": 3,
+      "raid": "Battle for Mount Hyjal",
+      "name": "Shadowy Necromancer",
+      "image": "trash/mobs/shadowy-necromancer.png",
+      "abilities": [
+        {
+          "title": "Shadow Bolt (ID: 31627)",
+          "desc": "2435-2975 Shadow damage. Interruptable."
+        },
+        {
+          "title": "Unholy Frenzy (ID: 31626)",
+          "desc": "Increases target's attack speed by 100% for 20 sec. Inflicts 250 Nature damage per second. Lasts 20 seconds. Dispellable. Works on MC."
+        },
+        {
+          "title": "Cripple (ID: 33787)",
+          "desc": "Increases time between attacks by 100%; slows by 50%; reduces strength by 15%. 15 second duration. Interruptable; Dispellable."
+        },
+        {
+          "title": "Raise Dead (ID: 31617, 31624, 31625)",
+          "desc": "Summons 1 of 3 combinations of skeleton allies."
+        }
+      ],
+      "tip": "Kill first. Stagger the casts to avoid your tank being hit too hard. Stuns and interrupts all work. Grounding totem is very helpful here!"
+    },
+    {
+      "id": 4,
+      "raid": "Battle for Mount Hyjal",
+      "name": "Abomination",
+      "image": "trash/mobs/abomination.png",
+      "abilities": [
+        {
+          "title": "Disease Cloud (ID: 31607)",
+          "desc": "Deals 694 Nature damage every 3 seconds to enemies within 3 yds."
+        },
+        {
+          "title": "Knockdown (ID: 31610)",
+          "desc": "Stuns primary target for 2 seconds; 4000 physical damage."
+        }
+      ],
+      "tip": "Have off-tanks pick 1-2 up and everything should be fine. Tanks should use Ironshield Potions for extra armor OR use Free Action Potions to avoid the stun."
+    },
+    {
+      "id": 5,
+      "raid": "Battle for Mount Hyjal",
+      "name": "Banshee",
+      "image": "trash/mobs/banshee.png",
+      "abilities": [
+        {
+          "title": "Banshee Curse (ID: 17905)",
+          "desc": "Reduces melee & ranged hit chance by 66% for 5 minutes. Can be decursed."
+        },
+        {
+          "title": "Anti-Magic Shell (ID: 31662)",
+          "desc": "Absorbs 200,000 magic damage. Lasts 30 seconds."
+        },
+        {
+          "title": "Banshee Wail (ID: 38183)",
+          "desc": "2475-3025 Shadow damage to an enemy. Interruptable."
+        }
+      ],
+      "tip": "Keep decurses going. Interrupt if possible, but it's not a huge deal. Always save interrupts for Necromancers. Melee kill through AMS after Necromancers are dead."
+    },
+    {
+      "id": 6,
+      "raid": "Battle for Mount Hyjal",
+      "name": "Gargoyle",
+      "image": "trash/mobs/gargoyle.png",
+      "abilities": [
+        {
+          "title": "Gargoyle Strike (ID: 31664)",
+          "desc": "850-1150 Nature damage to an enemy."
+        }
+      ],
+      "tip": "Get aggro and pull to the ground. LoS helps a lot - check the wave notes below for specific strategies on certain waves."
+    },
+    {
+      "id": 7,
+      "raid": "Battle for Mount Hyjal",
+      "name": "Frost Wyrm",
+      "image": "trash/mobs/frost-wyrm.png",
+      "abilities": [
+        {
+          "title": "Frost Breath (ID: 31688)",
+          "desc": "Slows and deals 2550-3450 Frost damage to target & any enemies within 8 yds of target. Slow can be dispelled."
+        }
+      ],
+      "tip": "Get aggro and pull to the ground. Ranged focus; melee can hit when they get close to the ground."
+    },
+    {
+      "id": 8,
+      "raid": "Battle for Mount Hyjal",
+      "name": "Infernal",
+      "image": "trash/mobs/infernal.png",
+      "abilities": [
+        {
+          "title": "Flame Buffet (ID: 31724)",
+          "desc": "Increases fire damage taken by 50 for 1 min. Stacks infinitely. Can be dispelled."
+        },
+        {
+          "title": "Immolation (ID: 39007)",
+          "desc": "Deals 414-456 Fire damage to enemies within 15 yds every 2 seconds."
+        }
+      ],
+      "tip": "Can be stunned and banished. Not as scary as they look; let tanks get aggro, then blow them up."
+    },
+    {
+      "id": 9,
+      "raid": "Battle for Mount Hyjal",
+      "name": "Fel Stalker",
+      "image": "trash/mobs/fel-hound.png",
+      "abilities": [
+        {
+          "title": "Mana Burn (ID: 31729)",
+          "desc": "Hits an enemy with an anti-mana bolt. Each point of mana drained deals 0.5 points of damage. Interruptable."
+        }
+      ],
+      "tip": "Recommend that you banish these and kill them last. Mana Burn is annoying, but things die quickly enough that it's not a massive detriment. Organize interrupts and stuns if needed."
+    }
+  ],
+  "nextBestiaryId": 10,
+  "trashGuides": [
+    {
+      "id": 1,
+      "raid": "Battle for Mount Hyjal",
+      "beforeBoss": "Rage Winterchill",
+      "waves": [
+        {
+          "id": 1,
+          "wave": 1,
+          "mobs": "10 Ghoul",
+          "notes": ""
+        },
+        {
+          "id": 2,
+          "wave": 2,
+          "mobs": "10 Ghoul | 2 Crypt Fiend",
+          "notes": ""
+        },
+        {
+          "id": 3,
+          "wave": 3,
+          "mobs": "6 Ghoul | 6 Crypt Fiend",
+          "notes": ""
+        },
+        {
+          "id": 4,
+          "wave": 4,
+          "mobs": "6 Ghoul | 4 Crypt Fiend | 2 Shadowy Necromancer",
+          "notes": ""
+        },
+        {
+          "id": 5,
+          "wave": 5,
+          "mobs": "2 Ghoul | 6 Crypt Fiend | 4 Shadowy Necromancer",
+          "notes": ""
+        },
+        {
+          "id": 6,
+          "wave": 6,
+          "mobs": "6 Ghoul | 6 Abomination",
+          "notes": "Tanks pop FAP for Abom stun; OTs pull 1-2 off of MT."
+        },
+        {
+          "id": 7,
+          "wave": 7,
+          "mobs": "4 Ghoul | 4 Shadowy Necromancer | 4 Abomination",
+          "notes": ""
+        },
+        {
+          "id": 8,
+          "wave": 8,
+          "mobs": "6 Ghoul | 4 Crypt Fiend | 2 Abomination | 2 Shadowy Necromancer",
+          "notes": ""
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "raid": "Battle for Mount Hyjal",
+      "beforeBoss": "Anetheron",
+      "waves": [
+        {
+          "id": 9,
+          "wave": 1,
+          "mobs": "10 Ghoul",
+          "notes": ""
+        },
+        {
+          "id": 10,
+          "wave": 2,
+          "mobs": "8 Ghoul | 4 Abomination",
+          "notes": "OTs help with Aboms."
+        },
+        {
+          "id": 11,
+          "wave": 3,
+          "mobs": "4 Ghoul | 4 Crypt Fiend | 4 Shadowy Necromancer",
+          "notes": ""
+        },
+        {
+          "id": 12,
+          "wave": 4,
+          "mobs": "4 Shadowy Necromancer | 6 Crypt Fiend | 2 Banshee",
+          "notes": ""
+        },
+        {
+          "id": 13,
+          "wave": 5,
+          "mobs": "6 Ghoul | 2 Shadowy Necromancer | 4 Banshee",
+          "notes": ""
+        },
+        {
+          "id": 14,
+          "wave": 6,
+          "mobs": "6 Ghoul | 2 Abomination | 4 Shadowy Necromancer",
+          "notes": ""
+        },
+        {
+          "id": 15,
+          "wave": 7,
+          "mobs": "2 Ghoul | 4 Crypt Fiend | 4 Abomination | 4 Banshee",
+          "notes": ""
+        },
+        {
+          "id": 16,
+          "wave": 8,
+          "mobs": "3 Ghoul | 3 Crypt Fiend | 2 Shadowy Necromancer | 4 Abomination | 2 Banshee",
+          "notes": ""
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "raid": "Battle for Mount Hyjal",
+      "beforeBoss": "Kaz'rogal",
+      "waves": [
+        {
+          "id": 17,
+          "wave": 1,
+          "mobs": "4 Ghoul | 2 Shadowy Necromancer | 4 Abomination | 2 Banshee",
+          "notes": ""
+        },
+        {
+          "id": 18,
+          "wave": 2,
+          "mobs": "4 Ghoul | 10 Gargoyle",
+          "notes": "Pull to tall tauren tent."
+        },
+        {
+          "id": 19,
+          "wave": 3,
+          "mobs": "6 Ghoul | 6 Crypt Fiend | 2 Shadowy Necromancer",
+          "notes": ""
+        },
+        {
+          "id": 20,
+          "wave": 4,
+          "mobs": "6 Crypt Fiend | 2 Shadowy Necromancer | 6 Gargoyle",
+          "notes": "Gargoyles in back (check by Thrall)."
+        },
+        {
+          "id": 21,
+          "wave": 5,
+          "mobs": "4 Ghoul | 4 Shadowy Necromancer | 6 Abomination",
+          "notes": "Big stuns/interrupts."
+        },
+        {
+          "id": 22,
+          "wave": 6,
+          "mobs": "8 Gargoyle | 1 Frost Wyrm",
+          "notes": "LoS into Orc Bunker."
+        },
+        {
+          "id": 23,
+          "wave": 7,
+          "mobs": "6 Ghoul | 4 Abomination | 1 Frost Wyrm",
+          "notes": "Kill ghouls & aboms quickly. Be ready to burn Wyrm."
+        },
+        {
+          "id": 24,
+          "wave": 8,
+          "mobs": "6 Ghoul | 2 Crypt Fiend | 2 Shadowy Necromancer | 4 Abomination | 2 Banshee",
+          "notes": ""
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "raid": "Battle for Mount Hyjal",
+      "beforeBoss": "Azgalor",
+      "waves": [
+        {
+          "id": 25,
+          "wave": 1,
+          "mobs": "6 Shadowy Necromancer | 6 Abomination",
+          "notes": "DPS wait in bunker. Pally get aggro & run back. OTs hit necros."
+        },
+        {
+          "id": 26,
+          "wave": 2,
+          "mobs": "5 Ghoul | 8 Gargoyle | 1 Frost Wyrm",
+          "notes": "LoS in hut; run out & spread when Wyrm spawns."
+        },
+        {
+          "id": 27,
+          "wave": 3,
+          "mobs": "6 Ghoul | 8 Giant Infernal",
+          "notes": "Meet in middle."
+        },
+        {
+          "id": 28,
+          "wave": 4,
+          "mobs": "8 Giant Infernal | 6 Fel Stalker",
+          "notes": "Banish stalkers if needed."
+        },
+        {
+          "id": 29,
+          "wave": 5,
+          "mobs": "4 Shadowy Necromancer | 6 Fel Stalker | 4 Abomination",
+          "notes": "Stagger necromancers' casts."
+        },
+        {
+          "id": 30,
+          "wave": 6,
+          "mobs": "6 Shadowy Necromancer | 6 Banshee",
+          "notes": "Stagger necromancers' casts."
+        },
+        {
+          "id": 31,
+          "wave": 7,
+          "mobs": "2 Ghoul | 2 Crypt Fiend | 8 Giant Infernal | 2 Fel Stalker",
+          "notes": ""
+        },
+        {
+          "id": 32,
+          "wave": 8,
+          "mobs": "4 Crypt Fiend | 2 Shadowy Necromancer | 4 Abomination | 4 Banshee | 2 Fel Stalker",
+          "notes": ""
+        }
+      ]
+    }
+  ],
+  "nextTrashGuideId": 5,
+  "nextWaveId": 33
 }
