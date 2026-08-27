@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-08-27T19:03:36.405Z",
+  "savedAt": "2026-08-27T19:44:09.016Z",
   "roster": [
     {
       "id": 1,
@@ -24,7 +24,8 @@
       "status": "Main",
       "altOf": "",
       "level": 70,
-      "notes": "Kdingaling"
+      "notes": "Kdingaling",
+      "discordUserId": "510158141388750849"
     },
     {
       "id": 3,
@@ -48,7 +49,8 @@
       "status": "Main",
       "altOf": "",
       "level": 70,
-      "notes": "ALCH/JC"
+      "notes": "ALCH/JC",
+      "discordUserId": "890614705901670490"
     },
     {
       "id": 5,
@@ -60,7 +62,8 @@
       "status": "Main",
       "altOf": "",
       "level": 70,
-      "notes": "Depew's Alt"
+      "notes": "Depew's Alt",
+      "discordUserId": "227110510972108810"
     },
     {
       "id": 6,
@@ -120,7 +123,8 @@
       "status": "Main",
       "altOf": "",
       "level": 70,
-      "notes": "Brad's alt"
+      "notes": "Brad's alt",
+      "discordUserId": "185994214352486400"
     },
     {
       "id": 11,
@@ -132,7 +136,8 @@
       "status": "Alt",
       "altOf": "",
       "level": 70,
-      "notes": "Eng/LW"
+      "notes": "Eng/LW",
+      "discordUserId": "473718939679981581"
     },
     {
       "id": 12,
@@ -144,7 +149,8 @@
       "status": "Main",
       "altOf": "",
       "level": 70,
-      "notes": ""
+      "notes": "",
+      "discordUserId": "595869887952322561"
     },
     {
       "id": 13,
@@ -168,7 +174,8 @@
       "status": "Main",
       "altOf": "",
       "level": 70,
-      "notes": ""
+      "notes": "",
+      "discordUserId": "458021620251099147"
     },
     {
       "id": 15,
@@ -204,7 +211,8 @@
       "status": "Main",
       "altOf": "",
       "level": 70,
-      "notes": ""
+      "notes": "",
+      "discordUserId": "534211155854360606"
     },
     {
       "id": 18,
@@ -228,7 +236,8 @@
       "status": "Main",
       "altOf": "",
       "level": 70,
-      "notes": ""
+      "notes": "",
+      "discordUserId": "106863642942709760"
     },
     {
       "id": 20,
@@ -264,7 +273,8 @@
       "status": "Alt",
       "altOf": "",
       "level": 70,
-      "notes": "Dartht Alt"
+      "notes": "Dartht Alt",
+      "discordUserId": "1441257818404688026"
     },
     {
       "id": 23,
@@ -300,7 +310,8 @@
       "status": "Main",
       "altOf": "",
       "level": 70,
-      "notes": ""
+      "notes": "",
+      "discordUserId": "1419686849307345079"
     },
     {
       "id": 26,
@@ -312,7 +323,8 @@
       "status": "Main",
       "altOf": "",
       "level": 70,
-      "notes": ""
+      "notes": "",
+      "discordUserId": "222421662082007040"
     },
     {
       "id": 27,
@@ -324,7 +336,8 @@
       "status": "Main",
       "altOf": "",
       "level": 70,
-      "notes": ""
+      "notes": "",
+      "discordUserId": "1435080844967542785"
     },
     {
       "id": 28,
@@ -336,7 +349,8 @@
       "status": "Main",
       "altOf": "",
       "level": 70,
-      "notes": ""
+      "notes": "",
+      "discordUserId": "487364533879308317"
     },
     {
       "id": 29,
@@ -348,7 +362,8 @@
       "status": "Main",
       "altOf": "",
       "level": 70,
-      "notes": "LW"
+      "notes": "LW",
+      "discordUserId": "425115846843826218"
     },
     {
       "id": 30,
@@ -372,7 +387,8 @@
       "status": "Main",
       "altOf": "",
       "level": 70,
-      "notes": ""
+      "notes": "",
+      "discordUserId": "273635685297029133"
     },
     {
       "id": 32,
@@ -396,7 +412,8 @@
       "status": "Main",
       "altOf": "",
       "level": 70,
-      "notes": ""
+      "notes": "",
+      "discordUserId": "356427338373791746"
     },
     {
       "id": 34,
@@ -420,7 +437,8 @@
       "status": "Main",
       "altOf": "",
       "level": 70,
-      "notes": ""
+      "notes": "",
+      "discordUserId": "660029197481148418"
     },
     {
       "id": 36,
@@ -432,7 +450,8 @@
       "status": "Main",
       "altOf": "",
       "level": 70,
-      "notes": ""
+      "notes": "",
+      "discordUserId": "179449409518567424"
     },
     {
       "id": 37,
@@ -444,7 +463,8 @@
       "status": "Main",
       "altOf": "",
       "level": 70,
-      "notes": ""
+      "notes": "",
+      "discordUserId": "384157825603207179"
     },
     {
       "id": 38,
@@ -468,7 +488,8 @@
       "status": "Main",
       "altOf": "",
       "level": 70,
-      "notes": ""
+      "notes": "",
+      "discordUserId": "368979837467099139"
     },
     {
       "id": 40,
@@ -480,7 +501,8 @@
       "status": "Main",
       "altOf": "",
       "level": 70,
-      "notes": ""
+      "notes": "",
+      "discordUserId": "331204665536544782"
     },
     {
       "id": 41,
@@ -492,7 +514,8 @@
       "status": "Main",
       "altOf": "",
       "level": 70,
-      "notes": ""
+      "notes": "",
+      "discordUserId": "222160767011520523"
     },
     {
       "id": 42,
@@ -552,7 +575,8 @@
       "status": "Casual",
       "altOf": "",
       "level": 70,
-      "notes": "ENH MS - ELE OS"
+      "notes": "ENH MS - ELE OS",
+      "discordUserId": "185217579055448064"
     },
     {
       "id": 47,
@@ -660,7 +684,8 @@
       "status": "Casual",
       "altOf": "",
       "level": 70,
-      "notes": ""
+      "notes": "",
+      "discordUserId": "397962649154879489"
     },
     {
       "id": 56,
@@ -804,7 +829,8 @@
       "status": "Casual",
       "altOf": "",
       "level": 70,
-      "notes": ""
+      "notes": "",
+      "discordUserId": "604808748854149142"
     },
     {
       "id": 68,
@@ -948,7 +974,8 @@
       "status": "Main",
       "altOf": "Oshika",
       "level": 70,
-      "notes": ""
+      "notes": "",
+      "discordUserId": "112831980101443584"
     }
   ],
   "raids": [
@@ -1820,14 +1847,14 @@
           35,
           14,
           5,
-          11
+          27
         ],
         [
+          10,
           17,
           29,
-          79,
-          22,
-          19
+          11,
+          79
         ],
         [
           67,
@@ -1839,13 +1866,14 @@
         [
           33,
           28,
+          37,
           25,
-          36,
           55
         ],
         [
-          27,
-          -1010
+          36,
+          22,
+          19
         ]
       ],
       "groupTitles": [
@@ -1859,6 +1887,7 @@
         "2": "Destruction",
         "4": "Balance",
         "5": "Retribution",
+        "10": "Restoration",
         "11": "Beastmastery",
         "12": "Destruction",
         "14": "Feral",
@@ -1873,17 +1902,18 @@
         "33": "Elemental",
         "35": "Combat",
         "36": "Holy",
+        "37": "Arcane",
         "39": "Destruction",
         "46": "Enhancement",
         "55": "Protection",
         "67": "Elemental",
-        "79": "Feral",
-        "-1010": "Restoration"
+        "79": "Feral"
       },
       "roleOverrides": {
         "2": "Ranged",
         "4": "Ranged",
         "5": "Melee",
+        "10": "Healer",
         "11": "Ranged",
         "12": "Ranged",
         "14": "Tank",
@@ -1898,17 +1928,18 @@
         "33": "Ranged",
         "35": "Melee",
         "36": "Healer",
+        "37": "Ranged",
         "39": "Ranged",
         "46": "Melee",
         "55": "Tank",
         "67": "Ranged",
-        "79": "Melee",
-        "-1010": "Healer"
+        "79": "Melee"
       },
       "userIdMap": {
         "2": "510158141388750849",
         "4": "890614705901670490",
         "5": "227110510972108810",
+        "10": "185994214352486400",
         "11": "473718939679981581",
         "12": "595869887952322561",
         "14": "458021620251099147",
@@ -1935,7 +1966,6 @@
       },
       "bench": [],
       "absent": [
-        37,
         41,
         26,
         40
@@ -1957,6 +1987,7 @@
           "altOf": "",
           "level": 70,
           "notes": "",
+          "discordUserId": "397962649154879489",
           "_rhStatus": "attending",
           "_userId": "397962649154879489",
           "_rhSpec": "Protection",
@@ -1973,6 +2004,7 @@
           "altOf": "",
           "level": 70,
           "notes": "",
+          "discordUserId": "534211155854360606",
           "_rhStatus": "attending",
           "_userId": "534211155854360606",
           "_rhSpec": "Beastmastery",
@@ -1989,6 +2021,7 @@
           "altOf": "",
           "level": 70,
           "notes": "LW",
+          "discordUserId": "425115846843826218",
           "_rhStatus": "attending",
           "_userId": "425115846843826218",
           "_rhSpec": "Beastmastery",
@@ -2005,6 +2038,7 @@
           "altOf": "Oshika",
           "level": 70,
           "notes": "",
+          "discordUserId": "112831980101443584",
           "_rhStatus": "attending",
           "_userId": "112831980101443584",
           "_rhSpec": "Feral",
@@ -2021,10 +2055,28 @@
           "altOf": "",
           "level": 70,
           "notes": "Kdingaling",
+          "discordUserId": "510158141388750849",
           "_rhStatus": "attending",
           "_userId": "510158141388750849",
           "_rhSpec": "Destruction",
           "_rhClass": "Warlock"
+        },
+        {
+          "id": 10,
+          "name": "Zabanya",
+          "class": "Shaman",
+          "ms": "Restoration",
+          "os": "",
+          "role": "Healer",
+          "status": "Main",
+          "altOf": "",
+          "level": 70,
+          "notes": "Brad's alt",
+          "discordUserId": "185994214352486400",
+          "_rhStatus": "attending",
+          "_userId": "185994214352486400",
+          "_rhSpec": "Restoration",
+          "_rhClass": "Shaman"
         },
         {
           "id": 46,
@@ -2037,6 +2089,7 @@
           "altOf": "",
           "level": 70,
           "notes": "ENH MS - ELE OS",
+          "discordUserId": "185217579055448064",
           "_rhStatus": "attending",
           "_userId": "185217579055448064",
           "_rhSpec": "Enhancement",
@@ -2053,6 +2106,7 @@
           "altOf": "",
           "level": 70,
           "notes": "",
+          "discordUserId": "604808748854149142",
           "_rhStatus": "attending",
           "_userId": "604808748854149142",
           "_rhSpec": "Elemental",
@@ -2069,6 +2123,7 @@
           "altOf": "",
           "level": 70,
           "notes": "",
+          "discordUserId": "356427338373791746",
           "_rhStatus": "attending",
           "_userId": "356427338373791746",
           "_rhSpec": "Elemental",
@@ -2085,6 +2140,7 @@
           "altOf": "",
           "level": 70,
           "notes": "",
+          "discordUserId": "179449409518567424",
           "_rhStatus": "attending",
           "_userId": "179449409518567424",
           "_rhSpec": "Holy",
@@ -2101,10 +2157,28 @@
           "altOf": "",
           "level": 70,
           "notes": "",
+          "discordUserId": "1435080844967542785",
           "_rhStatus": "attending",
           "_userId": "1435080844967542785",
           "_rhSpec": "Restoration",
           "_rhClass": "Druid"
+        },
+        {
+          "id": 37,
+          "name": "Rodentp",
+          "class": "Mage",
+          "ms": "Arcane",
+          "os": "",
+          "role": "Ranged",
+          "status": "Main",
+          "altOf": "",
+          "level": 70,
+          "notes": "",
+          "discordUserId": "384157825603207179",
+          "_rhStatus": "attending",
+          "_userId": "384157825603207179",
+          "_rhSpec": "Arcane",
+          "_rhClass": "Mage"
         },
         {
           "id": 12,
@@ -2117,6 +2191,7 @@
           "altOf": "",
           "level": 70,
           "notes": "",
+          "discordUserId": "595869887952322561",
           "_rhStatus": "attending",
           "_userId": "595869887952322561",
           "_rhSpec": "Destruction",
@@ -2133,6 +2208,7 @@
           "altOf": "",
           "level": 70,
           "notes": "Dartht Alt",
+          "discordUserId": "1441257818404688026",
           "_rhStatus": "attending",
           "_userId": "1441257818404688026",
           "_rhSpec": "Destruction",
@@ -2149,6 +2225,7 @@
           "altOf": "",
           "level": 70,
           "notes": "",
+          "discordUserId": "1419686849307345079",
           "_rhStatus": "attending",
           "_userId": "1419686849307345079",
           "_rhSpec": "Arcane",
@@ -2165,6 +2242,7 @@
           "altOf": "",
           "level": 70,
           "notes": "",
+          "discordUserId": "106863642942709760",
           "_rhStatus": "attending",
           "_userId": "106863642942709760",
           "_rhSpec": "Holy",
@@ -2181,6 +2259,7 @@
           "altOf": "",
           "level": 70,
           "notes": "",
+          "discordUserId": "660029197481148418",
           "_rhStatus": "attending",
           "_userId": "660029197481148418",
           "_rhSpec": "Combat",
@@ -2197,6 +2276,7 @@
           "altOf": "",
           "level": 70,
           "notes": "ALCH/JC",
+          "discordUserId": "890614705901670490",
           "_rhStatus": "attending",
           "_userId": "890614705901670490",
           "_rhSpec": "Balance",
@@ -2213,6 +2293,7 @@
           "altOf": "",
           "level": 70,
           "notes": "",
+          "discordUserId": "487364533879308317",
           "_rhStatus": "attending",
           "_userId": "487364533879308317",
           "_rhSpec": "Shadow",
@@ -2229,6 +2310,7 @@
           "altOf": "",
           "level": 70,
           "notes": "Depew's Alt",
+          "discordUserId": "227110510972108810",
           "_rhStatus": "attending",
           "_userId": "227110510972108810",
           "_rhSpec": "Retribution",
@@ -2245,6 +2327,7 @@
           "altOf": "",
           "level": 70,
           "notes": "",
+          "discordUserId": "458021620251099147",
           "_rhStatus": "attending",
           "_userId": "458021620251099147",
           "_rhSpec": "Feral",
@@ -2261,6 +2344,7 @@
           "altOf": "",
           "level": 70,
           "notes": "",
+          "discordUserId": "368979837467099139",
           "_rhStatus": "attending",
           "_userId": "368979837467099139",
           "_rhSpec": "Destruction",
@@ -2277,24 +2361,11 @@
           "altOf": "",
           "level": 70,
           "notes": "Eng/LW",
+          "discordUserId": "473718939679981581",
           "_rhStatus": "attending",
           "_userId": "473718939679981581",
           "_rhSpec": "Beastmastery",
           "_rhClass": "Hunter"
-        },
-        {
-          "id": 37,
-          "name": "Rodentp",
-          "class": "Paladin",
-          "ms": "Holy",
-          "os": "",
-          "role": "Healer",
-          "status": "Main",
-          "altOf": "",
-          "level": 70,
-          "notes": "",
-          "_rhStatus": "absence",
-          "_userId": "384157825603207179"
         },
         {
           "id": 41,
@@ -2307,6 +2378,7 @@
           "altOf": "",
           "level": 70,
           "notes": "",
+          "discordUserId": "222160767011520523",
           "_rhStatus": "absence",
           "_userId": "222160767011520523"
         },
@@ -2321,6 +2393,7 @@
           "altOf": "",
           "level": 70,
           "notes": "",
+          "discordUserId": "222421662082007040",
           "_rhStatus": "absence",
           "_userId": "222421662082007040"
         },
@@ -2335,6 +2408,7 @@
           "altOf": "",
           "level": 70,
           "notes": "",
+          "discordUserId": "331204665536544782",
           "_rhStatus": "absence",
           "_userId": "331204665536544782"
         },
@@ -2349,23 +2423,11 @@
           "altOf": "",
           "level": 70,
           "notes": "",
+          "discordUserId": "273635685297029133",
           "_rhStatus": "tentative",
           "_userId": "273635685297029133",
           "_rhSpec": "Fury",
           "_rhClass": "Warrior"
-        },
-        {
-          "id": -1010,
-          "name": "Zabanya",
-          "class": "Shaman",
-          "ms": "Elemental",
-          "os": "",
-          "role": "Ranged",
-          "status": "Main",
-          "altOf": "",
-          "level": 70,
-          "notes": "Brad's alt",
-          "_rosterId": 10
         }
       ],
       "guildies": [
