@@ -1900,9 +1900,32 @@ Be direct, no fluffy intro or conclusion - just the substance for each of the th
 // The on-demand, per-person deep-dive: every fight one specific named
 // player was tracked in this raid (not just their single worst pull),
 // covering the whole night rather than one moment. Sent as a private DM,
-// never posted - see handlePersonalReport. Plain text response, not
-// structured JSON output like buildFalloutPrompt - this is a freeform
-// written report, not something that needs field-by-field reassembly.
+// never posted - see handlePersonalReport. Structured output (same
+// approach as buildFalloutPrompt/FALLOUT_REPORT_SCHEMA), not one freeform
+// blob - the section header and spacing around "Focus for Next Raid" were
+// left to the AI at first and came back inconsistent (no bold header, no
+// blank line between the two focus points) - assembling the final message
+// ourselves from separate fields guarantees that formatting every time.
+const PERSONAL_REPORT_SCHEMA = {
+  type: 'object',
+  properties: {
+    summary: { type: 'string' },
+    fightNotes: { type: 'string' },
+    focusAreas: { type: 'array', items: { type: 'string' } },
+  },
+  required: ['summary', 'fightNotes', 'focusAreas'],
+  additionalProperties: false,
+};
+
+// Assembles the model's structured fields into the final DM text, with the
+// closing section's header and item spacing controlled here rather than
+// by the AI.
+function assemblePersonalReportText(parsed) {
+  const focusList = (parsed.focusAreas || []).map((f, i) => `${i + 1}) ${f}`).join('\n\n');
+  const focusSection = focusList ? `**Focus for Next Raid**\n${focusList}` : '';
+  return [parsed.summary, parsed.fightNotes, focusSection].filter(Boolean).join('\n\n');
+}
+
 function buildPersonalReportPrompt(report, playerName, dpsFights, healerFights, stratNotes) {
   // Pre-built, ready-to-copy label per fight - bold name, the same
   // parse-tier color dot used everywhere else in the app, "Parse" instead
@@ -1943,9 +1966,14 @@ ${healerFights.length ? HEALER_COACHING_RULES : ''}
 KNOWN GUILD TACTICS for the encounters above (this guild's own strategy notes, not generic textbook knowledge) - treat these as ground truth for THIS guild's actual play, and let them override your own generic-convention assumptions when they conflict:
 ${stratNotes || '(no strategy notes on file for these encounters)'}
 
-Write the report as: (1) one sentence summarizing their night overall, (2) a short note on each fight that actually stands out either way - genuinely strong pulls worth naming, and pulls that need work - don't manufacture a comment for every single fight if most were unremarkable, (3) one or two concrete things to focus on next raid, grounded in the real numbers above, not generic advice. Address them directly as "you", not in the third person. No fluffy intro or sign-off, just the substance - this is a private message, not a public announcement.
+Return three things:
+1. summary - ONE sentence on their night overall.
+2. fightNotes - a short note on each fight that actually stands out either way - genuinely strong pulls worth naming, and pulls that need work. Don't manufacture a comment for every single fight if most were unremarkable. Put a blank line between each fight you discuss so it reads as separate short paragraphs, not one dense block.
+3. focusAreas - an array of 1-2 short strings, each one concrete thing to focus on next raid, grounded in the real numbers above, not generic advice. Just the point itself, no numbering or bullet character - that's added separately.
 
-FORMATTING: whenever you mention a specific fight, copy its label EXACTLY as given above (e.g. "**Lady Vashj** 🔵 Parse 71") rather than writing the boss name or number yourself - don't say "percentile", don't leave out the bold or the colored dot, don't recompute the number. Put a blank line between each fight you discuss so the message reads as separate short paragraphs, not one dense block.`;
+Address them directly as "you", not in the third person, throughout. No fluffy intro or sign-off anywhere - just the substance, this is a private message, not a public announcement.
+
+FORMATTING: whenever you mention a specific fight (in fightNotes or focusAreas), copy its label EXACTLY as given above (e.g. "**Lady Vashj** 🔵 Parse 71") rather than writing the boss name or number yourself - don't say "percentile", don't leave out the bold or the colored dot, don't recompute the number.`;
 }
 
 // Strict-mode JSON schema (OpenAI Structured Outputs, /v1/responses) - every
@@ -2181,14 +2209,21 @@ async function handlePersonalReport(request, env) {
     const res = await callOpenAIWithRetry({
       model: OPENAI_MODEL,
       input: buildPersonalReportPrompt(details.report, playerName, dpsFights, healerFights, stratNotes),
-      // Plain text response deliberately, not structured JSON output like
-      // the fallout report - this is one freeform written report, not
-      // several fields that need separate reassembly.
+      text: {
+        format: {
+          type: 'json_schema',
+          name: 'personal_report',
+          strict: true,
+          schema: PERSONAL_REPORT_SCHEMA,
+        },
+      },
     }, env);
 
     const data = await res.json();
-    const text = extractOpenAIText(data);
-    if (!text) throw new Error('OpenAI returned no text output.');
+    const raw = extractOpenAIText(data);
+    if (!raw) throw new Error('OpenAI returned no text output.');
+    const parsed = JSON.parse(raw); // structured output - guaranteed valid JSON matching PERSONAL_REPORT_SCHEMA
+    const text = assemblePersonalReportText(parsed);
 
     return corsResponse(JSON.stringify({ text, dpsFightCount: dpsFights.length, healerFightCount: healerFights.length }), 200);
   } catch (err) {
