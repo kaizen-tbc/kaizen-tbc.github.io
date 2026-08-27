@@ -1901,64 +1901,89 @@ Be direct, no fluffy intro or conclusion - just the substance for each of the th
 // player was tracked in this raid (not just their single worst pull),
 // covering the whole night rather than one moment. Sent as a private DM,
 // never posted - see handlePersonalReport. Structured output (same
-// approach as buildFalloutPrompt/FALLOUT_REPORT_SCHEMA), not one freeform
-// blob - the section header and spacing around "Focus for Next Raid" were
-// left to the AI at first and came back inconsistent (no bold header, no
-// blank line between the two focus points) - assembling the final message
-// ourselves from separate fields guarantees that formatting every time.
+// approach as buildFalloutPrompt/FALLOUT_REPORT_SCHEMA): the model never
+// writes the bold header/stats line itself, only the coaching sentence
+// for whichever fights it picks out as worth a comment - the header line,
+// the italicized stats line under it, and the blank-line spacing are all
+// assembled here from our own data, so that per-fight block always comes
+// out the same shape regardless of what the model does.
 const PERSONAL_REPORT_SCHEMA = {
   type: 'object',
   properties: {
     summary: { type: 'string' },
-    fightNotes: { type: 'string' },
+    fightHighlights: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          fightIndex: { type: 'integer' },
+          tip: { type: 'string' },
+        },
+        required: ['fightIndex', 'tip'],
+        additionalProperties: false,
+      },
+    },
     focusAreas: { type: 'array', items: { type: 'string' } },
   },
-  required: ['summary', 'fightNotes', 'focusAreas'],
+  required: ['summary', 'fightHighlights', 'focusAreas'],
   additionalProperties: false,
 };
 
-// Assembles the model's structured fields into the final DM text, with the
-// closing section's header and item spacing controlled here rather than
-// by the AI.
-function assemblePersonalReportText(parsed) {
-  const focusList = (parsed.focusAreas || []).map((f, i) => `${i + 1}) ${f}`).join('\n\n');
-  const focusSection = focusList ? `**Focus for Next Raid**\n${focusList}` : '';
-  return [parsed.summary, parsed.fightNotes, focusSection].filter(Boolean).join('\n\n');
+// Combines DPS + healer fights into one indexed list so the model can
+// reference a specific fight by a stable integer (fightIndex) rather than
+// by encounter name, which isn't unique when the same boss was pulled more
+// than once in a night (a wipe and a kill on the same encounter would
+// otherwise be indistinguishable). Built once in handlePersonalReport and
+// shared between the prompt and the final assembly so both are looking at
+// exactly the same indices.
+function combineFightsForPersonalReport(dpsFights, healerFights) {
+  return [
+    ...dpsFights.map(f => ({ ...f, role: 'dps' })),
+    ...healerFights.map(f => ({ ...f, role: 'healer' })),
+  ].map((f, index) => ({ ...f, index }));
 }
 
-function buildPersonalReportPrompt(report, playerName, dpsFights, healerFights, stratNotes) {
-  // Pre-built, ready-to-copy label per fight - bold name, the same
-  // parse-tier color dot used everywhere else in the app, "Parse" instead
-  // of "percentile" (matches how the rest of the app phrases it). Handing
-  // the model an exact string to reuse means correct formatting is
-  // guaranteed by us, not left to the AI to reconstruct (which tier a
-  // number falls in, whether to bold, etc.) - it only has to copy it.
-  const fightLabel = f => `**${f.encounter}** ${parseColorEmoji(f.rankPercent)} Parse ${Math.round(f.rankPercent)}`;
-  const fmtFight = (f, extra) => {
-    const smallSampleNote = typeof f.totalParses === 'number' && f.totalParses < WCL_SMALL_SAMPLE_THRESHOLD
-      ? ` [rare spec/role combo - only ${f.totalParses} logged parses to compare against, percentile may not be meaningful]`
-      : '';
-    const deathNote = f.died ? ' (died this pull - treat as context, not a rotation/execution problem)' : ' (survived the full fight)';
-    return `${fightLabel(f)}${extra}${deathNote}${smallSampleNote}`;
-  };
-  const dpsSection = dpsFights.length ? `DPS - every fight this raid:\n${dpsFights.map(f => {
-    const uptimeNote = f.uptimePct != null ? `, ${f.uptimePct}% active time` : '';
-    const abilityNote = f.topAbilities?.length ? ` | top sources: ${f.topAbilities.map(a => `${a.name} (${a.pct}%)`).join(', ')}` : '';
-    return fmtFight(f, uptimeNote + abilityNote);
-  }).join('\n')}` : '';
-  const healerSection = healerFights.length ? `HEALING - every fight this raid:\n${healerFights.map(f => {
-    const uptimeNote = f.uptimePct != null ? `, ${f.uptimePct}% active time` : '';
-    const overhealNote = f.overhealPct != null ? `, ${f.overhealPct}% overheal` : '';
-    const shareNote = f.raidSharePct != null ? `, ${f.raidSharePct}% of raid healing that fight` : '';
-    return fmtFight(f, uptimeNote + overhealNote + shareNote);
-  }).join('\n')}` : '';
+// Bold boss name + the same parse-tier color dot used everywhere else in
+// the app + number-first "NN Parse" - people say "he parsed 66", not
+// "parse 66".
+function fightLabel(f) {
+  return `**${f.encounter}** ${parseColorEmoji(f.rankPercent)} ${Math.round(f.rankPercent)} Parse`;
+}
 
-  return `You are writing a personal, one-on-one coaching report for ONE specific player, ${playerName}, from last night's raid ("${report?.title || 'Raid'}") in a World of Warcraft: TBC Classic guild. This is a PRIVATE message sent directly to them, not a public post - be direct and specific, and cover every fight listed below, not just their best or worst moment. Tone: the same as a good 1-on-1 coaching conversation - factual, genuinely encouraging where it's earned, honest where it's not, never shaming.
+// The italicized stats line under the header - DPS gets top-ability
+// sources, healers get overheal + raid-healing share instead (see
+// HEALER_COACHING_RULES for why those two sets of fields don't mix), then
+// a death/small-sample note common to both.
+function fightStatsLine(f) {
+  const bits = [];
+  if (f.uptimePct != null) bits.push(`${f.uptimePct}% active time`);
+  if (f.role === 'healer') {
+    if (f.overhealPct != null) bits.push(`${f.overhealPct}% overheal`);
+    if (f.raidSharePct != null) bits.push(`${f.raidSharePct}% of raid healing that fight`);
+  } else if (f.topAbilities?.length) {
+    bits.push(`top sources: ${f.topAbilities.map(a => `${a.name} (${a.pct}%)`).join(', ')}`);
+  }
+  const deathNote = f.died ? 'died this pull - treat as context, not a rotation/execution problem' : 'survived the full fight';
+  let line = bits.length ? `${bits.join(', ')} (${deathNote})` : `(${deathNote})`;
+  if (typeof f.totalParses === 'number' && f.totalParses < WCL_SMALL_SAMPLE_THRESHOLD) {
+    line += ` [rare spec/role combo - only ${f.totalParses} logged parses to compare against, percentile may not be meaningful]`;
+  }
+  return line;
+}
+
+function buildPersonalReportPrompt(report, playerName, fights, stratNotes) {
+  const dpsFights = fights.filter(f => f.role === 'dps');
+  const healerFights = fights.filter(f => f.role === 'healer');
+  const fightListText = fights
+    .map(f => `Fight ${f.index} (${f.role === 'healer' ? 'Healing' : 'DPS'}): ${fightLabel(f)}\n${fightStatsLine(f)}`)
+    .join('\n\n');
+
+  return `You are writing a personal, one-on-one coaching report for ONE specific player, ${playerName}, from last night's raid ("${report?.title || 'Raid'}") in a World of Warcraft: TBC Classic guild. This is a PRIVATE message sent directly to them, not a public post. Tone: the same as a good 1-on-1 coaching conversation - factual, genuinely encouraging where it's earned, honest where it's not, never shaming.
 
 ${TBC_VERSION_LOCK}
 
-${dpsSection}
-${healerSection}
+Every fight this raid, numbered - reference these ONLY by their number, never restate the boss name/stats yourself:
+${fightListText}
 
 ${dpsFights.length ? DPS_COACHING_RULES : ''}
 ${healerFights.length ? HEALER_COACHING_RULES : ''}
@@ -1968,12 +1993,29 @@ ${stratNotes || '(no strategy notes on file for these encounters)'}
 
 Return three things:
 1. summary - ONE sentence on their night overall.
-2. fightNotes - a short note on each fight that actually stands out either way - genuinely strong pulls worth naming, and pulls that need work. Don't manufacture a comment for every single fight if most were unremarkable. Put a blank line between each fight you discuss so it reads as separate short paragraphs, not one dense block.
+2. fightHighlights - an array of { fightIndex, tip }, one entry per fight that actually stands out either way - genuinely strong pulls worth naming, and pulls that need work. Don't manufacture an entry for every single fight if most were unremarkable, and don't invent a fightIndex that isn't in the numbered list above. "tip" is ONLY the coaching sentence(s) themselves (1-3 sentences, addressed to them as "you") - never restate the boss name, the parse number, or any of the stats, those are shown separately.
 3. focusAreas - an array of 1-2 short strings, each one concrete thing to focus on next raid, grounded in the real numbers above, not generic advice. Just the point itself, no numbering or bullet character - that's added separately.
 
-Address them directly as "you", not in the third person, throughout. No fluffy intro or sign-off anywhere - just the substance, this is a private message, not a public announcement.
+No fluffy intro or sign-off anywhere - just the substance, this is a private message, not a public announcement.`;
+}
 
-FORMATTING: whenever you mention a specific fight (in fightNotes or focusAreas), copy its label EXACTLY as given above (e.g. "**Lady Vashj** 🔵 Parse 71") rather than writing the boss name or number yourself - don't say "percentile", don't leave out the bold or the colored dot, don't recompute the number.`;
+// Assembles the model's structured fields into the final DM text. Every
+// bit of formatting - the bold "**Boss** dot NN Parse" header, the
+// italicized stats line, the blank-line spacing between blocks, the bold
+// "Focus for Next Raid" header - is built here from our own data, never
+// left to the model to reproduce.
+function assemblePersonalReportText(parsed, fights) {
+  const byIndex = new Map(fights.map(f => [f.index, f]));
+  const fightBlocks = (parsed.fightHighlights || [])
+    .map(h => {
+      const f = byIndex.get(h.fightIndex);
+      if (!f) return null; // model referenced an index that doesn't exist - skip rather than guess which fight it meant
+      return `${fightLabel(f)}\n_${fightStatsLine(f)}_\n\n${h.tip}`;
+    })
+    .filter(Boolean);
+  const focusList = (parsed.focusAreas || []).map((f, i) => `${i + 1}) ${f}`).join('\n\n');
+  const focusSection = focusList ? `**Focus for Next Raid**\n${focusList}` : '';
+  return [parsed.summary, ...fightBlocks, focusSection].filter(Boolean).join('\n\n');
 }
 
 // Strict-mode JSON schema (OpenAI Structured Outputs, /v1/responses) - every
@@ -2206,9 +2248,11 @@ async function handlePersonalReport(request, env) {
       }
     } catch { /* fine, prompt just runs without guild-specific tactics */ }
 
+    const fights = combineFightsForPersonalReport(dpsFights, healerFights);
+
     const res = await callOpenAIWithRetry({
       model: OPENAI_MODEL,
-      input: buildPersonalReportPrompt(details.report, playerName, dpsFights, healerFights, stratNotes),
+      input: buildPersonalReportPrompt(details.report, playerName, fights, stratNotes),
       text: {
         format: {
           type: 'json_schema',
@@ -2223,7 +2267,7 @@ async function handlePersonalReport(request, env) {
     const raw = extractOpenAIText(data);
     if (!raw) throw new Error('OpenAI returned no text output.');
     const parsed = JSON.parse(raw); // structured output - guaranteed valid JSON matching PERSONAL_REPORT_SCHEMA
-    const text = assemblePersonalReportText(parsed);
+    const text = assemblePersonalReportText(parsed, fights);
 
     return corsResponse(JSON.stringify({ text, dpsFightCount: dpsFights.length, healerFightCount: healerFights.length }), 200);
   } catch (err) {
