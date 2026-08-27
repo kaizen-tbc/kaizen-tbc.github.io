@@ -477,18 +477,22 @@ function bestiaryMobForName(bestiaryForRaid, name) {
     || bestiaryForRaid.find(m => n.includes(m.name.toLowerCase()) || m.name.toLowerCase().includes(n));
 }
 
-// One embed per mob - full portrait image, one field per ability, a final
-// field for the handling tip. Several of these post together in a single
-// message (Discord allows up to 10 embeds/message), each still rendering
-// its own full image.
+// One compact embed per mob - a small thumbnail (not the large full-width
+// `image`, which is what made the first version feel like a wall of
+// kitchen-sink detail) and just the handling tip as the description.
+// Abilities are deliberately left out here - that's reference detail for
+// the raid manager itself, not what the raid needs mid-fight; confirmed
+// live this was too much for a Discord post even though it's exactly
+// right for the in-app trash guide panel. Several of these post together
+// in one message (Discord allows up to 10 embeds/message), each still
+// stacking as its own compact card.
 function buildTrashMobEmbed(mob) {
-  const fields = (mob.abilities || [])
-    .filter(a => a.title || a.desc)
-    .map(a => ({ name: a.title || 'Ability', value: (a.desc || '—').slice(0, 1024), inline: false }));
-  if (mob.tip) fields.push({ name: '💡 Handling', value: mob.tip.slice(0, 1024), inline: false });
-  const embed = { title: mob.name || 'Mob', color: 0xC9A227 };
-  if (mob.image) embed.image = { url: mob.image.startsWith('http') ? mob.image : `${SITE_ORIGIN}/${mob.image}` };
-  if (fields.length) embed.fields = fields;
+  const embed = {
+    title: mob.name || 'Mob',
+    description: mob.tip || '—',
+    color: 0xC9A227,
+  };
+  if (mob.image) embed.thumbnail = { url: mob.image.startsWith('http') ? mob.image : `${SITE_ORIGIN}/${mob.image}` };
   return embed;
 }
 
