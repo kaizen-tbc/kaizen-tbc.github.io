@@ -301,17 +301,39 @@ function formatStratRowSide(type, value, roster, guildies, pugs) {
   return value || '';
 }
 
+// A row with no real player in ANY of its player-type slots is just an
+// empty placeholder - kept in the app itself on purpose (a ready slot to
+// drop someone into quickly, without having to rebuild the row structure
+// first), but not worth showing in the Discord post, where "MT —
+// unassigned" or "unassigned → unassigned" reads as noise rather than
+// useful information. A row with no player fields at all (pure text/notes,
+// e.g. Lust/Drums timing) always shows regardless of its content - this
+// only filters rows that are ABOUT an assignment and have none. A row
+// where at least one player slot IS filled still shows even if its
+// counterpart isn't - a partial assignment (one side of a healer-assign
+// pair set, the other still open) is still real information.
+function rowHasRealAssignment(row, roster, guildies, pugs) {
+  const playerSides = [
+    row.typeA === 'player' ? row.valueA : undefined,
+    row.typeB === 'player' ? row.valueB : undefined,
+  ].filter(v => v !== undefined);
+  if (!playerSides.length) return true; // no player fields in this row at all
+  return playerSides.some(v => resolveStratPlayer(v, roster, guildies, pugs));
+}
+
 // Generic across whatever sections/rows a given strat has (Tanks, Healer
 // Assigns, Misdirection, Lust/Drums, Strategy Notes, or any custom ones)
 // since the section/row model itself is freeform, not encounter-specific.
 function formatStratSection(section, roster, guildies, pugs) {
-  const lines = (section.rows || []).map(row => {
-    const a = formatStratRowSide(row.typeA, row.valueA, roster, guildies, pugs);
-    if (!row.typeB) return a; // notes-only row
-    const b = formatStratRowSide(row.typeB, row.valueB, roster, guildies, pugs);
-    if (row.arrow) return `${a} → ${b}`;
-    return row.typeA === 'text' ? `**${a}:** ${b}` : `${a} — ${b}`;
-  });
+  const lines = (section.rows || [])
+    .filter(row => rowHasRealAssignment(row, roster, guildies, pugs))
+    .map(row => {
+      const a = formatStratRowSide(row.typeA, row.valueA, roster, guildies, pugs);
+      if (!row.typeB) return a; // notes-only row
+      const b = formatStratRowSide(row.typeB, row.valueB, roster, guildies, pugs);
+      if (row.arrow) return `${a} → ${b}`;
+      return row.typeA === 'text' ? `**${a}:** ${b}` : `${a} — ${b}`;
+    });
   return lines.join('\n') || '—';
 }
 
