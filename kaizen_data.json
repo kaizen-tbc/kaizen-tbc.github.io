@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-08-27T17:51:38.053Z",
+  "savedAt": "2026-08-27T18:02:37.213Z",
   "roster": [
     {
       "id": 1,
@@ -7344,7 +7344,7 @@
               "valueA": "MT",
               "arrow": false,
               "typeB": "player",
-              "valueB": null
+              "valueB": 14
             },
             {
               "id": 3902,
@@ -7352,7 +7352,7 @@
               "valueA": "OT",
               "arrow": false,
               "typeB": "player",
-              "valueB": null
+              "valueB": 55
             },
             {
               "id": 3903,
@@ -7371,34 +7371,34 @@
             {
               "id": 3904,
               "typeA": "player",
-              "valueA": null,
+              "valueA": 27,
               "arrow": true,
               "typeB": "player",
-              "valueB": null
+              "valueB": 55
             },
             {
               "id": 3905,
               "typeA": "player",
-              "valueA": null,
+              "valueA": 27,
               "arrow": true,
               "typeB": "player",
-              "valueB": null
+              "valueB": 14
             },
             {
-              "id": 3906,
+              "id": 1,
               "typeA": "player",
-              "valueA": null,
+              "valueA": 36,
               "arrow": true,
-              "typeB": "player",
-              "valueB": null
+              "typeB": "text",
+              "valueB": "Ranged Group 2+3"
             },
             {
-              "id": 3907,
+              "id": 2,
               "typeA": "player",
-              "valueA": null,
+              "valueA": 10,
               "arrow": true,
-              "typeB": "player",
-              "valueB": null
+              "typeB": "text",
+              "valueB": "Ranged Group 1+3"
             }
           ]
         },
@@ -7409,18 +7409,26 @@
             {
               "id": 3908,
               "typeA": "player",
-              "valueA": null,
+              "valueA": 11,
               "arrow": true,
               "typeB": "player",
-              "valueB": null
+              "valueB": 55
             },
             {
               "id": 3909,
               "typeA": "player",
-              "valueA": null,
+              "valueA": 17,
               "arrow": true,
               "typeB": "player",
-              "valueB": null
+              "valueB": 55
+            },
+            {
+              "id": 3,
+              "typeA": "player",
+              "valueA": 29,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": 55
             }
           ]
         },
@@ -7453,7 +7461,7 @@
             {
               "id": 3912,
               "typeA": "notes",
-              "valueA": "Spread in a circle, keeping healers apart so Carrion Swarm doesn't hit more than one at a time. The Infernal target moves away from the raid before it lands, then MDs it to the OT - most groups burn the Infernal down fast rather than leave it up.",
+              "valueA": "Spread in a circle, keeping healers apart so Carrion Swarm doesn't hit more than one at a time. The Infernal target moves away from the raid before it lands, then MDs it to the OT - most groups burn the Infernal down fast rather than leave it up.\n\nFirst MD: Zuul > Hasu\nSecond MD: Ako > Hasu\nThird MD: Mike > Hasu",
               "arrow": false,
               "typeB": null,
               "valueB": null
