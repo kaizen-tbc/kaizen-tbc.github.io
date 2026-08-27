@@ -1081,21 +1081,38 @@ function extractInterruptCounts(interruptsRaw) {
 // fightID, to tell "grey because they died" apart from "grey while alive".
 function classifyLowParses(rankingsRaw, roleKey, deaths) {
   const deathSet = new Set(deaths.map(d => `${d.name}|${d.fightID}`));
+  const fights = rankingsRaw?.data || [];
+  // Same raidSharePct computation as extractRoleParses (see its own
+  // comment) - a healer's share of the role's total output that fight is
+  // the harder-to-game number buildFalloutPrompt now leans on for healers
+  // specifically, instead of reasoning about which spell they should have
+  // been casting.
+  const fightTotals = new Map();
+  for (const fight of fights) {
+    const chars = fight?.roles?.[roleKey]?.characters || [];
+    let total = 0;
+    for (const c of chars) total += (typeof c.amount === 'number' ? c.amount : 0);
+    fightTotals.set(fight?.fightID, total);
+  }
   const byPlayer = new Map();
-  for (const fight of rankingsRaw?.data || []) {
+  for (const fight of fights) {
     const chars = fight?.roles?.[roleKey]?.characters || [];
     const encounter = fight?.encounter?.name || 'Unknown';
     const fightID = fight?.fightID;
+    const fightTotal = fightTotals.get(fightID) || 0;
     for (const c of chars) {
       if (!c?.name || typeof c.rankPercent !== 'number') continue;
       if (c.rankPercent >= 25) continue; // only WCL's grey tier is in scope
       if (deathSet.has(`${c.name}|${fightID}`)) continue; // died - not a rotation issue
       const cur = byPlayer.get(c.name);
       if (!cur || c.rankPercent < cur.rankPercent) {
+        const raidSharePct = fightTotal > 0 && typeof c.amount === 'number'
+          ? Math.round((c.amount / fightTotal) * 1000) / 10
+          : null;
         // fightID carried through so a per-fight uptime/ability breakdown
         // can be pulled for exactly this pull, not just the raw percentile.
         // totalParses carried through too - see WCL_SMALL_SAMPLE_THRESHOLD.
-        byPlayer.set(c.name, { name: c.name, class: c.class, spec: c.spec, rankPercent: c.rankPercent, encounter, fightID, totalParses: c.totalParses });
+        byPlayer.set(c.name, { name: c.name, class: c.class, spec: c.spec, rankPercent: c.rankPercent, encounter, fightID, totalParses: c.totalParses, raidSharePct });
       }
     }
   }
@@ -1203,8 +1220,22 @@ function extractActorBreakdown(tableRaw, playerName) {
     const src = entry.damage || entry.healing || entry;
     const abilities = [...(src.abilities || [])].sort((a, b) => (b.total || 0) - (a.total || 0));
     const total = abilities.reduce((sum, a) => sum + (a.total || 0), 0) || src.total || 0;
+    // Overheal: raw amount, field name unconfirmed live (unlike activeTime,
+    // which was verified against a real CSV export) - checked defensively
+    // across the plausible names WCL is known to use rather than assumed.
+    // % is of GROSS output (effective + over), matching how WCL's own site
+    // displays it, not a share of net total alone - only meaningful for
+    // healing tables (a damage entry simply won't have this field).
+    const overhealRaw = typeof src.overheal === 'number' ? src.overheal
+      : typeof src.overHeal === 'number' ? src.overHeal
+      : typeof src.totalOverheal === 'number' ? src.totalOverheal
+      : null;
+    const overhealPct = overhealRaw != null && (total + overhealRaw) > 0
+      ? Math.round((overhealRaw / (total + overhealRaw)) * 100)
+      : null;
     return {
       activeTime: typeof src.activeTime === 'number' ? src.activeTime : null,
+      overhealPct,
       abilities: abilities.slice(0, 4).map(a => ({
         name: a.name,
         pct: total ? Math.round(((a.total || 0) / total) * 100) : null,
@@ -1251,7 +1282,7 @@ async function enrichWithFightBreakdown(env, code, list, dataType, fightDuration
     const uptimePct = breakdown?.activeTime != null && duration
       ? Math.round((breakdown.activeTime / duration) * 100)
       : null;
-    return { ...p, uptimePct, topAbilities: breakdown?.abilities || [] };
+    return { ...p, uptimePct, overhealPct: breakdown?.overhealPct ?? null, topAbilities: breakdown?.abilities || [] };
   });
 }
 
@@ -1731,15 +1762,31 @@ function gatherRelevantStratNotes(strats, dpsSurvivedBad, healersSurvivedBad, de
 // Deaths themselves are still reported, just as brief raid-wide context
 // rather than individual coaching targets.
 function buildFalloutPrompt(report, dpsSurvivedBad, healersSurvivedBad, deaths, interrupts, stratNotes) {
-  const fmtBad = list => (list || []).map(p => {
+  const smallSampleNote = p => typeof p.totalParses === 'number' && p.totalParses < WCL_SMALL_SAMPLE_THRESHOLD
+    ? ` [rare spec/role combo - only ${p.totalParses} logged parses to compare against, percentile may not be meaningful]`
+    : '';
+
+  const fmtDps = list => (list || []).map(p => {
     const uptimeNote = p.uptimePct != null ? `, ${p.uptimePct}% active time` : '';
     const abilityNote = p.topAbilities?.length
       ? ` | top sources: ${p.topAbilities.map(a => `${a.name} (${a.pct}%)`).join(', ')}`
       : '';
-    const smallSampleNote = typeof p.totalParses === 'number' && p.totalParses < WCL_SMALL_SAMPLE_THRESHOLD
-      ? ` [rare spec/role combo - only ${p.totalParses} logged parses to compare against, percentile may not be meaningful]`
-      : '';
-    return `${p.name} (${p.class || '?'} ${p.spec || ''}) — ${Math.round(p.rankPercent)} percentile on ${p.encounter}${uptimeNote} (survived the full fight - this is a real performance issue, not a death)${abilityNote}${smallSampleNote}`;
+    return `${p.name} (${p.class || '?'} ${p.spec || ''}) — ${Math.round(p.rankPercent)} percentile on ${p.encounter}${uptimeNote} (survived the full fight - this is a real performance issue, not a death)${abilityNote}${smallSampleNote(p)}`;
+  }).join('\n') || '(none — no non-death grey-tier parses this raid, nice)';
+
+  // Healers deliberately get NO ability-mix data at all - not just an
+  // instruction to be careful with it, the data itself isn't here to
+  // reason about. Which spell a healer should be leaning on is far more
+  // fight/class-variable than DPS rotation (confirmed live: Void Reaver
+  // Earth Shield placement was guild-specific and the model got it wrong
+  // guessing from general convention), and it would recur constantly for
+  // healers specifically rather than occasionally - active time, overheal
+  // %, and raid healing share are the harder, less guessable evidence.
+  const fmtHealers = list => (list || []).map(p => {
+    const uptimeNote = p.uptimePct != null ? `, ${p.uptimePct}% active time` : '';
+    const overhealNote = p.overhealPct != null ? `, ${p.overhealPct}% overheal` : '';
+    const shareNote = p.raidSharePct != null ? `, ${p.raidSharePct}% of the raid's healing done that fight` : '';
+    return `${p.name} (${p.class || '?'} ${p.spec || ''}) — ${Math.round(p.rankPercent)} percentile on ${p.encounter}${uptimeNote}${overhealNote}${shareNote} (survived the full fight - this is a real performance issue, not a death)${smallSampleNote(p)}`;
   }).join('\n') || '(none — no non-death grey-tier parses this raid, nice)';
 
   // byEncounter is REAL aggregate counts (every death, not a handful of
@@ -1765,9 +1812,9 @@ ${deathsSummary}
 
 GREY-TIER PARSES (0-24th percentile) where the player SURVIVED the entire fight - this is the main event, an actual performance problem, not a death:
 DPS:
-${fmtBad(dpsSurvivedBad)}
+${fmtDps(dpsSurvivedBad)}
 Healers:
-${fmtBad(healersSurvivedBad)}
+${fmtHealers(healersSurvivedBad)}
 
 INTERRUPTS landed this raid, raid-wide total per player (all fights, kills and wipes):
 ${interruptsSummary}
@@ -1777,11 +1824,21 @@ ${stratNotes || '(no strategy notes on file for these encounters)'}
 
 Return three things:
 1. generalNotes - 2-3 sentences on any pattern worth flagging raid-wide (e.g. several people struggling on the same encounter suggests a mechanic/positioning issue, not an individual one). Use the death breakdown's real per-encounter counts as evidence: if deaths cluster heavily on one or two encounters, name them and take a concrete guess at what's going wrong mechanically (positioning, a specific ability/phase, an add that needs to be handled) based on TBC Classic knowledge of that encounter - "we're getting sloppy on X's mechanic" is far more useful than "there were some deaths." Don't just restate the raw counts back - explain what they mean. If deaths are spread thin with no real cluster, say so briefly and move on - don't force a pattern that isn't there.
-2. needsWork - up to 6-8 entries, one per person from the grey-tier-survived lists above. Each entry's "name" must be copied EXACTLY as given above (used elsewhere to attach their class icon and the encounter - don't restate their name, class, spec, or encounter inside "tip", just the coaching itself). "tip" is 1-2 sentences of TBC Classic-accurate (level 70, patch 2.4.3 - see the version constraint above) coaching, grounded in whatever hard numbers are given for that person, not generic advice:
+2. needsWork - up to 6-8 entries, one per person from the grey-tier-survived lists above. Each entry's "name" must be copied EXACTLY as given above (used elsewhere to attach their class icon and the encounter - don't restate their name, class, spec, or encounter inside "tip", just the coaching itself). "tip" is 1-2 sentences of TBC Classic-accurate (level 70, patch 2.4.3 - see the version constraint above) coaching, grounded in whatever hard numbers are given for that person, not generic advice. DPS and Healers need different reasoning - do not mix these up:
+
+   FOR DPS:
    - If "active time" is given, use it as your primary evidence: low active time (well under what's typical, ~85%+ for most specs when nothing's gone wrong) means real downtime - reference the actual number and reason about why (repositioning, movement off the boss, dying partway and this being their only surviving pull data, etc.) rather than just saying "stay in melee range."
-   - "top sources" is much easier to misread than active time - an ability dominating the damage/healing breakdown is NOT reliably a sign of bad play. Concrete trap to avoid: an Arms Warrior with a slow two-handed weapon getting a large share of damage from Slam is CORRECT, high-skill play (timing Slam around the weapon's swing timer, "Slam weaving") - not a rotation problem, even though it looks like one ability is "dominating." Ability-mix patterns like this vary by spec/weapon/talents in ways you may not be fully certain of. So: only call out an ability-mix pattern as a problem when you are genuinely confident that specific mix is wrong for that spec/weapon at level 70 TBC - otherwise just note the top sources as a factual, neutral observation ("most of the damage came from X, Y") without diagnosing it as good or bad, and lean on active time (or gear/consumables/execution in general) as the actual explanation instead.
-   - Only fall back to generic advice (no specific ability/number cited) for someone with no active-time or ability data available - and say something different for each person, don't reuse the same boilerplate line across multiple entries.
-   - If an entry is flagged as a rare spec/role combo with few logged parses, say so plainly (e.g. "not many logged parses for this spec/role to compare against, so take this percentile with a grain of salt") instead of coaching the number as if it were a reliable signal.
+   - "top sources" is much easier to misread than active time - an ability dominating the damage breakdown is NOT reliably a sign of bad play. Concrete trap to avoid: an Arms Warrior with a slow two-handed weapon getting a large share of damage from Slam is CORRECT, high-skill play (timing Slam around the weapon's swing timer, "Slam weaving") - not a rotation problem, even though it looks like one ability is "dominating." Ability-mix patterns like this vary by spec/weapon/talents in ways you may not be fully certain of. So: only call out an ability-mix pattern as a problem when you are genuinely confident that specific mix is wrong for that spec/weapon at level 70 TBC - otherwise just note the top sources as a factual, neutral observation without diagnosing it as good or bad, and lean on active time (or gear/consumables/execution in general) as the actual explanation instead.
+   - Only fall back to generic advice (no specific ability/number cited) for someone with no active-time data available - and say something different for each person, don't reuse the same boilerplate line across multiple entries.
+
+   FOR HEALERS: you do NOT have ability-mix data for healers and must not guess at or invent which spell someone should be casting - which heal is "correct" varies by class/spec/fight in ways that are easy to get backwards (a real example that happened here: assuming Earth Shield always belongs on the tank, when this guild specifically self-casts it on one encounter for pushback reasons - a wrong guess a coaching message would have gotten backwards). Reason ONLY from active time, overheal %, and raid healing share - and their MEANING depends on class, so apply this class-specific context rather than treating either number as universally good or bad:
+   - HoT-based healers (Druids especially, also Holy Paladin/Priest leaning on HoTs or PW:S) naturally run HIGH overheal even when playing well, since a rolling HoT keeps ticking on a target that's already topped and can't be "paused" - do not flag high overheal alone as a problem for these classes. What DOES matter for them is active time: low active time means HoTs aren't being reapplied/refreshed consistently, which is the real issue.
+   - Smart-targeting heals (Chain Heal for Resto Shaman especially, also Prayer of Healing/Circle of Healing) already aim at whoever's actually damaged, so LOW overheal is normal and expected for these classes - it is not evidence of extra skill, just how the spell works, so don't praise it as if it were. HIGH overheal on one of these classes is more worth a mention, since it suggests casting into groups that don't need it.
+   - Low active time for ANY healer, regardless of class, means real downtime - not casting, which is never fine no matter how efficient the casts that did happen were.
+   - Raid healing share is the harder-to-game number: a low percentile paired with a reasonable share of the raid's total healing that fight suggests the encounter made healing hard for everyone, not just this person - say so rather than treating the percentile as damning on its own. A low percentile AND a tiny share together is the real problem worth naming plainly.
+   - Only fall back to generic advice (no specific number cited) for someone with no active-time/overheal/share data available - and say something different for each person, don't reuse the same boilerplate line across multiple entries.
+
+   FOR BOTH: if an entry is flagged as a rare spec/role combo with few logged parses, say so plainly (e.g. "not many logged parses for this spec/role to compare against, so take this percentile with a grain of salt") instead of coaching the number as if it were a reliable signal.
    If both lists above are empty, return an empty array - don't invent entries that aren't there.
 3. interruptsNote - 1-2 sentences: note who's carrying the interrupt load this raid. Only flag a specific class/spec as under-contributing if you're genuinely confident that spec has an interrupt and this encounter needed it - don't guess at specs you're unsure of.
 
@@ -1917,7 +1974,7 @@ async function callOpenAIWithRetry(body, env, maxAttempts = 3) {
 async function handleFalloutReport(request, env) {
   try {
     if (!env.OPENAI_API_KEY) throw new Error('OpenAI API key not configured.');
-    const { report, dpsSurvivedBad, healersSurvivedBad, deaths, interrupts } = await request.json();
+    const { report, dpsSurvivedBad, healersSurvivedBad, deaths, interrupts, noHealingHealers } = await request.json();
 
     // Best-effort - a strat-notes fetch failure shouldn't block the report,
     // it just falls back to generic coaching (today's prior behavior).
@@ -1947,6 +2004,20 @@ async function handleFalloutReport(request, env) {
     const raw = extractOpenAIText(data);
     if (!raw) throw new Error('OpenAI returned no text output.');
     const parsed = JSON.parse(raw); // structured output - guaranteed valid JSON matching FALLOUT_REPORT_SCHEMA
+
+    // "Registered as a healer, produced ~no healing data" is an absolute,
+    // not-up-for-interpretation callout ("if you're rostered as a healer
+    // and did no heals, what are you doing") - deterministic, appended
+    // directly here rather than left to the AI to remember or phrase, so
+    // it's guaranteed to appear exactly and every time it applies, never
+    // dependent on model compliance.
+    if (noHealingHealers?.length) {
+      const names = noHealingHealers.join(', ');
+      const isSingle = noHealingHealers.length === 1;
+      const note = `⚠ ${names} ${isSingle ? 'was' : 'were'} rostered as a healer but ${isSingle ? 'shows' : 'show'} no meaningful healing data for this raid. Worth a direct check-in, not a data quirk to assume away.`;
+      parsed.generalNotes = parsed.generalNotes ? `${parsed.generalNotes}\n\n${note}` : note;
+    }
+
     const { dpsText, healersText, dmTargets } = buildFalloutMarkdowns(parsed, dpsSurvivedBad, healersSurvivedBad);
 
     return corsResponse(JSON.stringify({ dpsText, healersText, dmTargets }), 200);

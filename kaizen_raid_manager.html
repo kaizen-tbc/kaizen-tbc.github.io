@@ -3304,6 +3304,19 @@ async function generateFalloutReport() {
   const area = document.getElementById('fallout-report-area');
   area.innerHTML = `<div style="padding:16px;text-align:center;color:var(--text-dim);">✨ Generating fallout report...</div>`;
   try {
+    // Absolute, not-up-for-interpretation check: rostered as a healer, but
+    // produced no meaningful healing data at all this raid. Computed here
+    // (not server-side) since the worker doesn't have roster role data -
+    // this app does, live. _lastLogFetch.healers is the FULL role-parses
+    // list (every fight, not just the grey-tier "needs work" one), so
+    // anyone truly absent from it never generated a single ranked healing
+    // pull despite attending and being tagged Healer.
+    const healedThisRaid = new Set((_lastLogFetch.healers || []).map(p => p.name));
+    const attendedThisRaid = new Set(_lastLogFetch.participants || []);
+    const noHealingHealers = roster
+      .filter(p => p.role === 'Healer' && attendedThisRaid.has(p.name) && !healedThisRaid.has(p.name))
+      .map(p => p.name);
+
     const res = await fetch(`${RH_WORKER}/logs/fallout-report`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -3316,6 +3329,7 @@ async function generateFalloutReport() {
         healersSurvivedBad: _lastLogFetch.healersSurvivedBad || [],
         deaths: _lastLogFetch.deaths || { count: 0, notable: [] },
         interrupts: _lastLogFetch.interrupts || [],
+        noHealingHealers,
       }),
     });
     const data = await res.json();
