@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-08-27T19:02:33.101Z",
+  "savedAt": "2026-08-27T19:03:36.405Z",
   "roster": [
     {
       "id": 1,
@@ -7852,7 +7852,7 @@
               "valueA": "Timing",
               "arrow": false,
               "typeB": "text",
-              "valueB": ""
+              "valueB": "Off the rip!"
             },
             {
               "id": 4211,
