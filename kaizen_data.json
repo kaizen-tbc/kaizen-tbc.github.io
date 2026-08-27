@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-08-27T18:07:22.357Z",
+  "savedAt": "2026-08-27T18:13:14.357Z",
   "roster": [
     {
       "id": 1,
@@ -7628,7 +7628,7 @@
               "valueA": "MT",
               "arrow": false,
               "typeB": "player",
-              "valueB": null
+              "valueB": 14
             },
             {
               "id": 4102,
@@ -7636,7 +7636,7 @@
               "valueA": "OT",
               "arrow": false,
               "typeB": "player",
-              "valueB": null
+              "valueB": 55
             },
             {
               "id": 4103,
@@ -7655,10 +7655,10 @@
             {
               "id": 4104,
               "typeA": "player",
-              "valueA": null,
+              "valueA": 27,
               "arrow": true,
               "typeB": "player",
-              "valueB": null
+              "valueB": 55
             },
             {
               "id": 4105,
@@ -7693,10 +7693,10 @@
             {
               "id": 4108,
               "typeA": "player",
-              "valueA": null,
+              "valueA": 11,
               "arrow": true,
               "typeB": "player",
-              "valueB": null
+              "valueB": 14
             },
             {
               "id": 4109,
@@ -7762,7 +7762,7 @@
               "valueA": "MT",
               "arrow": false,
               "typeB": "player",
-              "valueB": null
+              "valueB": 14
             },
             {
               "id": 4202,
@@ -7789,10 +7789,10 @@
             {
               "id": 4204,
               "typeA": "player",
-              "valueA": null,
+              "valueA": 55,
               "arrow": true,
               "typeB": "player",
-              "valueB": null
+              "valueB": 14
             },
             {
               "id": 4205,
@@ -7827,10 +7827,10 @@
             {
               "id": 4208,
               "typeA": "player",
-              "valueA": null,
+              "valueA": 11,
               "arrow": true,
               "typeB": "player",
-              "valueB": null
+              "valueB": 14
             },
             {
               "id": 4209,
