@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-08-26T21:08:32.606Z",
+  "savedAt": "2026-08-27T15:59:29.839Z",
   "roster": [
     {
       "id": 1,
@@ -7226,23 +7226,7 @@
               "valueA": "MT",
               "arrow": false,
               "typeB": "player",
-              "valueB": null
-            },
-            {
-              "id": 3802,
-              "typeA": "text",
-              "valueA": "OT",
-              "arrow": false,
-              "typeB": "player",
-              "valueB": null
-            },
-            {
-              "id": 3803,
-              "typeA": "text",
-              "valueA": "OT2",
-              "arrow": false,
-              "typeB": "player",
-              "valueB": null
+              "valueB": 14
             }
           ]
         },
@@ -7253,10 +7237,10 @@
             {
               "id": 3804,
               "typeA": "player",
-              "valueA": null,
+              "valueA": 27,
               "arrow": true,
               "typeB": "player",
-              "valueB": null
+              "valueB": 14
             },
             {
               "id": 3805,
@@ -7291,10 +7275,10 @@
             {
               "id": 3808,
               "typeA": "player",
-              "valueA": null,
+              "valueA": 11,
               "arrow": true,
               "typeB": "player",
-              "valueB": null
+              "valueB": 14
             },
             {
               "id": 3809,
@@ -7316,7 +7300,7 @@
               "valueA": "Timing",
               "arrow": false,
               "typeB": "text",
-              "valueB": ""
+              "valueB": "Off the rip"
             },
             {
               "id": 3811,
@@ -7335,7 +7319,7 @@
             {
               "id": 3812,
               "typeA": "notes",
-              "valueA": "Stack in a circle around him. Use stun-breaks (or PvP trinkets) to get out of Icebolt fast, with healers focused on whoever gets stunned. Move out of Death and Decay - a big red circle that can be easy to miss, so watch your feet.",
+              "valueA": "Stack in a circle around him. Use stun-breaks (or PvP trinkets) to get out of Icebolt fast. Melee can use Living Action Potion when boss has frost armor with healers focused on whoever gets stunned. Move out of Death and Decay - a big red circle that can be easy to miss, so watch your feet.\n\nUse NPCs to help with the fight.",
               "arrow": false,
               "typeB": null,
               "valueB": null
@@ -10875,5 +10859,5 @@
   },
   "logsChannelId": "1528630952111374418",
   "archiveChannelId": "1540891396515307640",
-  "stratsChannelId": ""
+  "stratsChannelId": "1539366128898285629"
 }
