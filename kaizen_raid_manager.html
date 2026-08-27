@@ -4392,8 +4392,12 @@ async function publishRosterToDiscord(notify = true) {
     // attendance import can find both later: don't dock the benched, and
     // flag anyone slotted-but-missing from the log for a human look.
     recordRosterSnapshot();
-    // Save current state to GitHub first so Worker has latest data
-    await saveToGitHub();
+    // Save current state to GitHub first so Worker has latest data - bail
+    // rather than post if the save itself failed, since the Worker would
+    // otherwise silently post whatever was published before (stale, not
+    // "nothing"), which is worse than just stopping here.
+    const saved = await saveToGitHub();
+    if (!saved) { showToast('✗ Roster not published — GitHub save failed, fix that first.', true); return; }
 
     // Ask Worker to post the roster
     const res = await fetch(`${RH_WORKER}/post-roster`, {
@@ -6905,16 +6909,19 @@ function updateStratsChannelId(value) {
   stratsChannelId = value.trim();
 }
 
-// Requires the strat to be saved/published first - the bot reads the
-// public kaizen_data.json + the image's public URL, same as the existing
-// roster-post flow, rather than uploading unsaved local state.
+// Assignments on a pug-heavy week can change right up until posting time,
+// so this now saves to GitHub itself rather than requiring a separate
+// manual "Save to GitHub" click first (that extra step is exactly what
+// caused a stale/empty post live - edited assignments, forgot to save,
+// posted whatever was still published from before). See postStratToDiscord
+// for the wait built in after the save.
 function confirmPostStrat() {
   const strat = strats.find(s => s.id === activeStratId);
   if (!strat) { showToast('Pick a strat first.', true); return; }
   if (!stratsChannelId) { showToast('Set the strats channel first (⚙ Strats Settings).', true); return; }
 
   document.getElementById('confirm-text').textContent =
-    `Publish "${strat.name}" to the strats channel? This clears whatever's currently posted there first and cannot be undone. Make sure you've hit "Save to GitHub" first — the bot posts from what's published, not what's on screen right now.`;
+    `Publish "${strat.name}" to the strats channel? This saves to GitHub automatically, waits ~${Math.round(STRAT_POST_WAIT_MS / 1000)}s for the site to catch up, then clears whatever's currently posted there and posts the fresh version - this can't be undone.`;
   const existingCheck = document.getElementById('confirm-notify-wrap');
   if (existingCheck) existingCheck.remove();
   document.getElementById('confirm-ok').onclick = () => {
@@ -6924,9 +6931,37 @@ function confirmPostStrat() {
   document.getElementById('confirm-overlay').classList.add('open');
 }
 
+// How long to let GitHub Pages actually start serving the file just
+// pushed before asking the Worker to post from it - the Worker reads the
+// published site, not GitHub's API response, so posting immediately after
+// a successful save can still pick up the previous version. GitHub's own
+// save toast estimates ~60s; 45s is a middle ground between "long enough
+// in practice" and not making every post feel sluggish.
+const STRAT_POST_WAIT_MS = 45000;
+let _stratPostInFlight = false;
+
 async function postStratToDiscord(stratId) {
-  showToast('🚀 Publishing strat to Discord...');
+  if (_stratPostInFlight) { showToast('Already publishing a strat - hang on.', true); return; }
+  _stratPostInFlight = true;
   try {
+    showToast('⬆ Saving latest assignments to GitHub...');
+    const saved = await saveToGitHub();
+    if (!saved) {
+      showToast('✗ Strat not posted — GitHub save failed, fix that first.', true);
+      return;
+    }
+
+    // Countdown toast so a 45s wait reads as "working", not "stalled".
+    const totalSeconds = Math.round(STRAT_POST_WAIT_MS / 1000);
+    let remaining = totalSeconds;
+    while (remaining > 0) {
+      showToast(`⏳ Waiting ${remaining}s for GitHub Pages to update before posting...`);
+      const step = Math.min(5, remaining);
+      await new Promise(r => setTimeout(r, step * 1000));
+      remaining -= step;
+    }
+
+    showToast('🚀 Publishing strat to Discord...');
     const res = await fetch(`${RH_WORKER}/post-strat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -6937,6 +6972,8 @@ async function postStratToDiscord(stratId) {
     showToast('✓ Strat published to Discord!');
   } catch (err) {
     showToast(`✗ Failed: ${err.message}`, true);
+  } finally {
+    _stratPostInFlight = false;
   }
 }
 
@@ -7570,7 +7607,7 @@ async function saveToGitHub() {
   if (!cfg.token) {
     openGitHubSettings();
     showToast('Enter your GitHub token first.', true);
-    return;
+    return false;
   }
 
   showToast('⬆ Pushing to GitHub...');
@@ -7632,9 +7669,11 @@ async function saveToGitHub() {
 
     showToast('✓ Saved to GitHub! Site updates in ~60 seconds.');
     updateVersionFooter(new Date().toISOString());
+    return true;
   } catch (err) {
     console.error('GitHub save error:', err);
     showToast(`✗ GitHub save failed: ${err.message}`, true);
+    return false;
   }
 }
 
