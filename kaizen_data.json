@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-08-28T01:48:38.213Z",
+  "savedAt": "2026-08-28T02:05:39.491Z",
   "roster": [
     {
       "id": 1,
@@ -7611,6 +7611,22 @@
               "arrow": true,
               "typeB": "text",
               "valueB": "Warlocks"
+            },
+            {
+              "id": 6,
+              "typeA": "player",
+              "valueA": 9,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": 14
+            },
+            {
+              "id": 8,
+              "typeA": "player",
+              "valueA": 4,
+              "arrow": true,
+              "typeB": "text",
+              "valueB": "Raid"
             }
           ]
         },
