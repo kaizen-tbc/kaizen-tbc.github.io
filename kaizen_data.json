@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-08-27T19:44:09.016Z",
+  "savedAt": "2026-08-28T00:15:45.567Z",
   "roster": [
     {
       "id": 1,
@@ -11283,5 +11283,5 @@
   },
   "logsChannelId": "1528630952111374418",
   "archiveChannelId": "1540891396515307640",
-  "stratsChannelId": "1539366128898285629"
+  "stratsChannelId": "1542679465358925936"
 }
