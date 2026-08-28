@@ -499,22 +499,23 @@ function bestiaryMobForName(bestiaryForRaid, name) {
     || bestiaryForRaid.find(m => n.includes(m.name.toLowerCase()) || m.name.toLowerCase().includes(n));
 }
 
-// Two embeds per mob - an image card, immediately followed by a plain-text
-// notes card - so the image reads BEFORE the handling notes. Discord has
-// no "small image above the text" layout inside a single embed: a
-// thumbnail floats beside the title/description (not above it), and the
-// only field that renders an image above anything is the full-width
-// `image`, which sits below title/description within its OWN embed - so
-// getting a literal image-then-text reading order costs the "small
-// thumbnail" sizing from the previous version; this renders a bit larger.
-// Abilities are still left out entirely here - that's reference detail
-// for the in-app trash guide panel, not what the raid needs mid-fight.
+// One compact embed per mob - small thumbnail beside the title/tip text,
+// not a separate image-then-text pair. Tried the literal "image before
+// notes" ordering (two adjacent embeds) first, but that's not actually
+// what was wanted - reverted back to this columns-style layout, which is
+// the closest Discord's embed model gets to image-and-text side by side
+// in one card (thumbnail always renders top-right, no way to move it to
+// the left). Abilities are deliberately left out - that's reference
+// detail for the in-app trash guide panel, not what the raid needs
+// mid-fight.
 function buildTrashMobEmbeds(mob) {
-  const imageEmbed = { title: mob.name || 'Mob', color: 0xC9A227 };
-  if (mob.image) imageEmbed.image = { url: mob.image.startsWith('http') ? mob.image : `${SITE_ORIGIN}/${mob.image}` };
-  const embeds = [imageEmbed];
-  if (mob.tip) embeds.push({ description: mob.tip, color: 0xC9A227 });
-  return embeds;
+  const embed = {
+    title: mob.name || 'Mob',
+    description: mob.tip || '—',
+    color: 0xC9A227,
+  };
+  if (mob.image) embed.thumbnail = { url: mob.image.startsWith('http') ? mob.image : `${SITE_ORIGIN}/${mob.image}` };
+  return [embed];
 }
 
 // The wave-by-wave table as its own embed (or several, if it ever runs
