@@ -3436,10 +3436,22 @@ async function generateFalloutReport() {
     // list (every fight, not just the grey-tier "needs work" one), so
     // anyone truly absent from it never generated a single ranked healing
     // pull despite attending and being tagged Healer.
+    //
+    // roster.role is someone's DEFAULT/usual role, not proof of what they
+    // actually played THIS raid - a healer can respec DPS for the night,
+    // or fill in as an off-tank, without that ever being updated on their
+    // roster entry. Confirmed live: three "no healing data" false
+    // positives in one report were actually two DPS respecs and one
+    // off-tank, all still tagged Healer on the roster. So this only flags
+    // someone who ALSO has zero ranked data in dps or tanks that raid -
+    // a real no-show, not just a night spent in a different role.
     const healedThisRaid = new Set((_lastLogFetch.healers || []).map(p => p.name));
+    const dpsedThisRaid = new Set((_lastLogFetch.dps || []).map(p => p.name));
+    const tankedThisRaid = new Set((_lastLogFetch.tanks || []).map(p => p.name));
     const attendedThisRaid = new Set(_lastLogFetch.participants || []);
     const noHealingHealers = roster
-      .filter(p => p.role === 'Healer' && attendedThisRaid.has(p.name) && !healedThisRaid.has(p.name))
+      .filter(p => p.role === 'Healer' && attendedThisRaid.has(p.name)
+        && !healedThisRaid.has(p.name) && !dpsedThisRaid.has(p.name) && !tankedThisRaid.has(p.name))
       .map(p => p.name);
 
     const res = await fetch(`${RH_WORKER}/logs/fallout-report`, {

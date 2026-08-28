@@ -1205,16 +1205,24 @@ function extractInterruptCounts(interruptsRaw) {
   try {
     const counts = new Map();
     // One extra nesting level vs. what the shape looks like at a glance:
-    // data.entries[] wraps ANOTHER entries[] array (confirmed live 2026-08-22)
-    // - the per-ability objects with .details are at data.entries[*].entries[],
-    // not data.entries[] directly.
+    // data.entries[] wraps ANOTHER entries[] array - the per-ability
+    // objects with .details are at data.entries[*].entries[], not
+    // data.entries[] directly.
+    //
+    // Inverted from what this used to assume (confirmed live against a
+    // real report that came back with zero interrupts despite the raid
+    // clearly landing plenty - a "no data" false negative, opposite
+    // direction from the usual worry): detail.name/.type IS the player who
+    // performed the interrupt, and detail.total is their count for that
+    // ability. detail.actors[] is the OPPOSITE end - the NPC(s) whose cast
+    // got interrupted (e.g. "Gargoyle 3", type "NPC") - never a player, so
+    // the old code's `PLAYER_CLASSES.has(actor.type)` check was always
+    // false and silently zeroed out every report.
     for (const wrapper of interruptsRaw?.data?.entries || []) {
       for (const entry of wrapper?.entries || []) {
         for (const detail of entry?.details || []) {
-          for (const actor of detail?.actors || []) {
-            if (!actor?.name || !PLAYER_CLASSES.has(actor.type)) continue;
-            counts.set(actor.name, (counts.get(actor.name) || 0) + (actor.total || 0));
-          }
+          if (!detail?.name || !PLAYER_CLASSES.has(detail.type)) continue;
+          counts.set(detail.name, (counts.get(detail.name) || 0) + (detail.total || 0));
         }
       }
     }
@@ -1768,6 +1776,14 @@ async function handleLatestLogsData(request, env) {
     const deaths = extractDeaths(details.deathsRaw);
     const dps = extractRoleParses(details.rankingsRawDps, 'dps', deaths);
     const healers = extractRoleParses(details.rankingsRawHealers, 'healers', deaths);
+    // Tanks are their own WCL role bucket (roles.tanks), separate from
+    // dps/healers - see combineFightsForPersonalReport's own comment for
+    // the full story. Exposed here too so the frontend's "registered as a
+    // healer but produced no healing data" check can tell a genuine no-show
+    // apart from someone who just tanked or DPS'd that specific raid
+    // instead of their usual healing slot (confirmed live: two false
+    // positives were actually DPS respecs, one was tanking that night).
+    const tanks = extractRoleParses(details.rankingsRawDps, 'tanks', deaths);
 
     const fightNameById = new Map(details.fights.map(f => [f.id, f.name]));
     const fightDurationById = new Map(details.fights.map(f => [f.id, f.endTime - f.startTime]));
@@ -1792,6 +1808,7 @@ async function handleLatestLogsData(request, env) {
       participants,
       dps,
       healers,
+      tanks,
       // Death-adjusted grey-tier (0-24 percentile) lists - the real
       // coaching target, since a 0% from dying just means "don't die"
       // which isn't useful feedback on its own.
