@@ -3459,7 +3459,16 @@ async function generateFalloutReport() {
     });
     const data = await res.json();
     if (!res.ok || data.error) throw new Error(data.error || `Worker returned ${res.status}`);
-    _pendingFalloutDMs = data.dmTargets || [];
+    // Each target starts pre-filled from whatever's already on the roster,
+    // but is fully editable in the preview below (Discord ID, and a
+    // checkbox to include/exclude them from this batch) - `send` defaults
+    // to on only when there's already a real ID, but can be flipped either
+    // way regardless of ID before actually sending.
+    _pendingFalloutDMs = (data.dmTargets || []).map(t => {
+      const p = roster.find(r => r.name === t.name);
+      const discordUserId = p?.discordUserId || '';
+      return { ...t, discordUserId, send: !!discordUserId };
+    });
     renderFalloutReportPreview(data.dpsText, data.healersText);
   } catch (err) {
     _pendingFalloutDMs = [];
@@ -3470,20 +3479,11 @@ async function generateFalloutReport() {
 // Two separate boxes/posts (DPS, then Healers + interrupts) - keeps each
 // message shorter and easier to actually read than one combined wall.
 // The named "needs work" coaching no longer posts publicly at all - it's
-// listed here read-only underneath, showing exactly who's about to get a
-// DM (and flagging anyone with no Discord ID on file, who'll be silently
-// skipped) so nothing about who's being contacted is a surprise.
+// listed here as its own editable panel (renderFalloutDmRows) so exactly
+// who gets a DM, and with what Discord ID, is fully under control right
+// before sending - not just a read-only report of what's already on file.
 function renderFalloutReportPreview(dpsText, healersText) {
   const area = document.getElementById('fallout-report-area');
-  const dmRows = _pendingFalloutDMs.map(t => {
-    const p = roster.find(r => r.name === t.name);
-    const hasId = !!p?.discordUserId;
-    return `<div style="display:flex;align-items:center;gap:8px;padding:4px 0;font-size:12px;">
-      <span style="flex:1;">${t.icon || ''} <strong>${t.name}</strong> <span style="color:var(--text-dim);">(${t.role})</span></span>
-      <span style="color:${hasId ? 'var(--teal)' : 'var(--gold)'};font-size:11px;">${hasId ? '✓ will DM' : '⚠ no Discord ID — skipped'}</span>
-    </div>`;
-  }).join('');
-
   area.innerHTML = `
     <div class="card" style="padding:16px 18px;margin-bottom:16px;">
       <div class="section-title" style="font-size:14px;margin-bottom:8px;">✨ Fallout Report — DPS <span style="font-weight:400;font-size:11px;color:var(--text-dim);">— review/edit before posting, this is AI-generated. Posts as its own message.</span></div>
@@ -3495,10 +3495,44 @@ function renderFalloutReportPreview(dpsText, healersText) {
     </div>
     ${_pendingFalloutDMs.length ? `
     <div class="card" style="padding:16px 18px;margin-bottom:16px;">
-      <div class="section-title" style="font-size:14px;margin-bottom:8px;">✉ Individual Coaching (sent as private DMs, not posted)</div>
-      ${dmRows}
+      <div class="section-title" style="font-size:14px;margin-bottom:8px;">✉ Individual Coaching <span style="font-weight:400;font-size:11px;color:var(--text-dim);">— sent as private DMs, not posted. Add/fix a Discord ID and check who to include before posting.</span></div>
+      <div id="fallout-dm-rows"></div>
     </div>` : ''}
   `;
+  renderFalloutDmRows();
+}
+
+// Its own container/render function (not folded into
+// renderFalloutReportPreview) specifically so editing a checkbox or a
+// Discord ID here never re-renders - and so never discards - whatever's
+// currently typed in the DPS/Healers textareas above.
+function renderFalloutDmRows() {
+  const container = document.getElementById('fallout-dm-rows');
+  if (!container) return;
+  container.innerHTML = _pendingFalloutDMs.map(t => {
+    const escName = t.name.replace(/'/g, "\\'");
+    const hasId = !!(t.discordUserId && t.discordUserId.trim());
+    let statusColor, statusText;
+    if (t.send && hasId) { statusColor = 'var(--teal)'; statusText = '✓ will send'; }
+    else if (t.send && !hasId) { statusColor = 'var(--gold)'; statusText = '⚠ needs an ID'; }
+    else { statusColor = 'var(--text-dim)'; statusText = '— skipped'; }
+    return `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;font-size:12px;border-bottom:1px solid var(--border);">
+      <input type="checkbox" ${t.send ? 'checked' : ''} title="Include in this batch send"
+        onchange="updateFalloutDmField('${escName}','send',this.checked)">
+      <span style="flex:1;min-width:0;">${t.icon || ''} <strong>${t.name}</strong> <span style="color:var(--text-dim);">(${t.role})</span></span>
+      <input type="text" class="form-input" style="width:170px;padding:5px 8px;font-size:11px;"
+        value="${(t.discordUserId || '').replace(/"/g,'&quot;')}" placeholder="Discord ID"
+        onchange="updateFalloutDmField('${escName}','discordUserId',this.value.trim())">
+      <span style="color:${statusColor};font-size:11px;white-space:nowrap;width:90px;text-align:right;">${statusText}</span>
+    </div>`;
+  }).join('');
+}
+
+function updateFalloutDmField(name, field, value) {
+  const t = _pendingFalloutDMs.find(x => x.name === name);
+  if (!t) return;
+  t[field] = value;
+  renderFalloutDmRows();
 }
 
 // The one button: archives+clears whatever the bot posted last time (if an
@@ -3602,16 +3636,21 @@ async function postFullReportToDiscord() {
     }
 
     // Individual coaching goes out as private DMs, not posted publicly -
-    // see buildFalloutMarkdowns' dmTargets. Anyone with no Discord ID on
-    // file (never signed up via RH, or a pug) is silently skipped - never
-    // called out publicly for lacking one either.
+    // see buildFalloutMarkdowns' dmTargets. Only sends to someone whose
+    // checkbox is checked in the preview AND who has a Discord ID typed
+    // in (whatever's currently in that row, not just what was already on
+    // the roster) - unchecked, or checked with no ID, are both skipped.
+    // A newly-entered/edited ID is persisted onto the roster right here so
+    // it doesn't need re-entering next time, same pattern as everywhere
+    // else an ID gets captured (RH import, Personal Report send).
     if (_pendingFalloutDMs.length) {
       const messages = _pendingFalloutDMs
         .map(t => {
+          if (!t.send || !t.discordUserId) return null;
           const p = roster.find(r => r.name === t.name);
-          if (!p?.discordUserId) return null;
+          if (p && p.discordUserId !== t.discordUserId) p.discordUserId = t.discordUserId;
           const content = `Hey ${t.name} — following up on last night's raid${raidTitle ? ` (${raidTitle})` : ''}, wanted to share this privately:\n\n${t.tip}\n\nThis is meant as a starting point for the conversation, not a final word — happy to talk through it anytime.`;
-          return { userId: p.discordUserId, name: t.name, content };
+          return { userId: t.discordUserId, name: t.name, content };
         })
         .filter(Boolean);
 
