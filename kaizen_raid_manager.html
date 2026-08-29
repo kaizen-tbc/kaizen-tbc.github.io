@@ -3502,7 +3502,7 @@ function renderFalloutReportPreview(dpsText, healersText) {
       <textarea id="fallout-report-dps-text" rows="9" style="width:100%;box-sizing:border-box;background:var(--bg-deep);border:1px solid var(--border);color:var(--text-mid);border-radius:4px;padding:10px;font-size:13px;font-family:inherit;">${dpsText}</textarea>
     </div>
     <div class="card" style="padding:16px 18px;margin-bottom:16px;">
-      <div class="section-title" style="font-size:14px;margin-bottom:8px;">✨ Fallout Report — Healers <span style="font-weight:400;font-size:11px;color:var(--text-dim);">— posts right after the DPS message above.</span></div>
+      <div class="section-title" style="font-size:14px;margin-bottom:8px;">✨ Fallout Report — Interrupts <span style="font-weight:400;font-size:11px;color:var(--text-dim);">— raid-wide, not healer-specific; posts right after the DPS message above.</span></div>
       <textarea id="fallout-report-healers-text" rows="9" style="width:100%;box-sizing:border-box;background:var(--bg-deep);border:1px solid var(--border);color:var(--text-mid);border-radius:4px;padding:10px;font-size:13px;font-family:inherit;">${healersText}</textarea>
     </div>
     ${_pendingFalloutDMs.length ? `
@@ -3632,8 +3632,12 @@ async function postFullReportToDiscord() {
       posted++;
     }
     if (healersText) {
-      showToast('✨ Posting Healers fallout report...');
-      await postFallout(`✨ Fallout Report — Healers — ${raidTitle}`, healersText);
+      // Titled "Interrupts", not "Healers" - the content here is purely
+      // raid-wide interrupt notes (individual healer coaching goes out as
+      // private DMs, never in this public post), so labeling the whole
+      // message "Healers" misattributed it to the wrong section.
+      showToast('✨ Posting interrupts fallout report...');
+      await postFallout(`✨ Fallout Report — Interrupts — ${raidTitle}`, healersText);
       posted++;
     }
 
