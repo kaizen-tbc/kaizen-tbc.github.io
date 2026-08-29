@@ -2549,11 +2549,12 @@ async function handleEditMessage(request, env) {
   try {
     const { channelId, messageId: givenId, title, text, plain, fields } = await request.json();
     if (!channelId) throw new Error('No channel ID provided.');
-    if (!text && !(fields && fields.length)) throw new Error('No text to post.');
 
     const headers = { 'Authorization': `Bot ${env.DISCORD_BOT_TOKEN}` };
 
     let messageId = givenId;
+    let foundMessage = null; // kept when found via the lookup below, so a
+    // title-only fix (see below) doesn't need a second fetch for it.
     if (!messageId) {
       const meRes = await fetch(`${DISCORD_API}/users/@me`, { headers });
       if (!meRes.ok) throw new Error('Could not identify the bot itself to find its last message.');
@@ -2568,20 +2569,42 @@ async function handleEditMessage(request, env) {
       const mine = messages.find(m => m.author?.id === me.id);
       if (!mine) throw new Error("Couldn't find a recent message from the bot in that channel to edit.");
       messageId = mine.id;
+      foundMessage = mine;
     }
+
+    // Title-only fix (text/fields both omitted): a mislabeled title
+    // shouldn't require retyping the whole body just to correct it - pull
+    // whatever's already there and keep it as-is, only swapping the title.
+    // Only supports the embed case (this app never edits a plain-content
+    // message by title alone) - a plain-content original throws rather
+    // than guessing how to reinsert a title into raw content.
+    let effectiveText = text, effectiveFields = fields;
+    if (title != null && text === undefined && fields === undefined) {
+      if (!foundMessage) {
+        const getRes = await fetch(`${DISCORD_API}/channels/${channelId}/messages/${messageId}`, { headers });
+        if (!getRes.ok) throw new Error(`Could not fetch the current message to preserve its content: ${getRes.status}`);
+        foundMessage = await getRes.json();
+      }
+      const existingEmbed = foundMessage.embeds?.[0];
+      if (!existingEmbed) throw new Error("The current message isn't an embed - pass text explicitly to rename it.");
+      effectiveText = existingEmbed.description || '';
+      effectiveFields = existingEmbed.fields || [];
+    }
+
+    if (!effectiveText && !(effectiveFields && effectiveFields.length)) throw new Error('No text to post.');
 
     let body;
     if (plain) {
-      const combined = title ? `# ${title}\n\n${text}` : text;
+      const combined = title ? `# ${title}\n\n${effectiveText}` : effectiveText;
       const content = combined.length > 2000 ? combined.slice(0, 1985) + '\n\n_(truncated)_' : combined;
       body = { content };
     } else {
       const safeTitle = (title || '').slice(0, 256);
-      const safeText = (text || '').length > 4000 ? text.slice(0, 3985) + '\n\n_(truncated)_' : (text || '');
+      const safeText = (effectiveText || '').length > 4000 ? effectiveText.slice(0, 3985) + '\n\n_(truncated)_' : (effectiveText || '');
       // Same fields support as /post-text-message - an edit needs to be
       // able to reproduce whatever the original post used, fields
       // included, not just title/description.
-      const safeFields = (fields || []).slice(0, 25).map(f => ({
+      const safeFields = (effectiveFields || []).slice(0, 25).map(f => ({
         name: (f.name || '').slice(0, 256),
         value: (f.value || '').length > 1024 ? f.value.slice(0, 1009) + '\n_(truncated)_' : (f.value || ''),
         inline: !!f.inline,
