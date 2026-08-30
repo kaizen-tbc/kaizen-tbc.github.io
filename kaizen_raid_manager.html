@@ -187,14 +187,21 @@ nav { display: flex; gap: 2px; flex: 1; }
   .section-header > div { flex-wrap: wrap; row-gap: 8px; }
 }
 
-/* The Weekly Roster group builder (drag-and-drop group assignment) is a
-   wide multi-column layout that isn't being redesigned for touch right
-   now - but it shouldn't be allowed to blow out the WHOLE page's
-   horizontal scroll either. Contained to a local horizontal scroll on
-   just this tab instead - drag-and-drop itself is untouched, still a
-   desktop-oriented task, just no longer drags the nav/header along with it. */
+/* The Weekly Roster group builder's own mobile stacking isn't a CSS rule
+   at all - see renderBuilder()'s JS, which sets gridTemplateColumns
+   inline on every render (an inline style beats any stylesheet rule,
+   media query or not). Noted here since this is the natural place to
+   have looked for it. */
+
+/* Same stacking principle for a strat's content: image above, the
+   assignment panel below, instead of side by side. .assigns-panel's own
+   min-width:300px (needed so it doesn't get squeezed too narrow to read
+   next to the image at desktop widths) is exactly why this pair could
+   still overflow a phone-width row - full-width removes the floor
+   entirely once it's stacked instead of squeezed. */
 @media (max-width: 850px) {
-  #tab-builder { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .strat-content-wrap { flex-direction: column; }
+  .assigns-panel { min-width: 0; max-width: 100%; width: 100%; }
 }
 
 /* ===== MOBILE HEADER =====
@@ -1413,6 +1420,11 @@ a[href] > div > div[style*="line-height:1.6"] {
 @media (max-width: 1300px) {
   .groups-container { grid-template-columns: repeat(3, 1fr); }
 }
+/* No mobile override here - renderBuilder() sets gridTemplateColumns as
+   an inline style on every render (see that function), and an inline
+   style always wins over any stylesheet rule regardless of media query
+   or specificity. The actual mobile single-column stacking lives there,
+   not here - a CSS-only attempt at this rule silently had zero effect. */
 
 .group-box {
   background: var(--bg-card);
@@ -1858,7 +1870,7 @@ a[href] > div > div[style*="line-height:1.6"] {
       <button class="btn btn-small" onclick="clearGroupsToPool()">Clear</button>
       <button class="btn btn-small btn-gold" onclick="autoFillGroups()">Auto-Fill</button>
     </div>
-    <div id="role-count-strip" style="display:flex;gap:8px;align-items:center;"></div>
+    <div id="role-count-strip" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;"></div>
   </div>
 
   <div class="groups-container" id="groups-container"></div>
@@ -5895,7 +5907,16 @@ function renderBuilder() {
 
   // Render groups
   container.innerHTML = '';
-  container.style.gridTemplateColumns = `repeat(${groupCount}, 1fr)`;
+  // Set directly via JS (not just left to the .groups-container CSS
+  // rules), which means an inline style always wins regardless of any
+  // stylesheet media query - this is why the CSS-only mobile stacking
+  // attempt had no effect at all until this line itself became
+  // viewport-aware. One column on a phone-width screen, matching the
+  // "stack vertically, never scroll sideways" rule applied everywhere
+  // else on mobile this pass.
+  container.style.gridTemplateColumns = window.matchMedia('(max-width: 850px)').matches
+    ? '1fr'
+    : `repeat(${groupCount}, 1fr)`;
 
   for (let g = 0; g < groupCount; g++) {
     const members = groups[g] || [];
