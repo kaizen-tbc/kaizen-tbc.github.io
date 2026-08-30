@@ -159,6 +159,80 @@ nav { display: flex; gap: 2px; flex: 1; }
   border-radius: 2px;
 }
 
+/* Was an inline style with plain `1fr` columns, which - like a flex
+   item's default min-width:auto - won't shrink a grid track below its
+   content's intrinsic width. minmax(0,1fr) lets each card actually
+   shrink; the mobile media query below drops to one column outright
+   since a progression card's header row (name + image button + kill
+   counter) needs real width to stay legible at all. */
+.ov-progression-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+@media (max-width: 850px) {
+  .ov-progression-grid { grid-template-columns: 1fr; }
+}
+
+/* .section-header pairs a title block with a button-group div (Strats,
+   Guild Logs, and others all follow this exact shape) - the button group
+   is nowrap by default and, like the nav bar, never shrinks below its
+   buttons' combined width. Wrapping the header itself lets the button row
+   drop below the title, and wrapping its direct-child divs too (a no-op
+   for non-flex children, but exactly what's needed for the flex button
+   groups) lets the buttons themselves wrap onto multiple lines instead of
+   forcing the page wider. */
+@media (max-width: 850px) {
+  .section-header { flex-wrap: wrap; row-gap: 10px; }
+  .section-header > div { flex-wrap: wrap; row-gap: 8px; }
+}
+
+/* The Weekly Roster group builder (drag-and-drop group assignment) is a
+   wide multi-column layout that isn't being redesigned for touch right
+   now - but it shouldn't be allowed to blow out the WHOLE page's
+   horizontal scroll either. Contained to a local horizontal scroll on
+   just this tab instead - drag-and-drop itself is untouched, still a
+   desktop-oriented task, just no longer drags the nav/header along with it. */
+@media (max-width: 850px) {
+  #tab-builder { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+}
+
+/* ===== MOBILE HEADER =====
+   The 5 nav buttons never shrink below their combined intrinsic width
+   (a classic flex-item min-width:auto issue) and neither does the rest of
+   the header, so below tablet width the whole page was forced wide and
+   scrolled horizontally. Wrapping nav onto its own row and letting THAT
+   row scroll horizontally keeps every tab reachable (a swipe, not a
+   hidden hamburger menu) without touching any tab's actual content/logic. */
+@media (max-width: 850px) {
+  header {
+    flex-wrap: wrap;
+    height: auto;
+    min-height: 56px;
+    padding: 10px 14px;
+    row-gap: 8px;
+  }
+  .guild-brand {
+    padding-right: 14px;
+    margin-right: 14px;
+  }
+  nav {
+    flex: 1 1 100%;
+    order: 3;
+    height: auto;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .nav-btn {
+    height: 40px;
+    padding: 0 12px;
+    font-size: 12px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .header-right { margin-left: 0; }
+}
+
 /* ===== MAIN LAYOUT ===== */
 main {
   position: relative;
@@ -1623,7 +1697,7 @@ a[href] > div > div[style*="line-height:1.6"] {
       <div class="cms-section-label">Progression</div>
       <div class="cms-section-hint">Click numbers to update kill counts</div>
     </div>
-    <div id="ov-progression" style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;"></div>
+    <div id="ov-progression" class="ov-progression-grid"></div>
   </div>
 
   <!-- SECTION: RAID SCHEDULE -->
