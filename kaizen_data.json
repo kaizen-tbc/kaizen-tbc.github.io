@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-08-30T16:58:58.975Z",
+  "savedAt": "2026-08-31T17:30:59.909Z",
   "roster": [
     {
       "id": 1,
@@ -988,37 +988,39 @@
       "discordChannelId": "1498198665045737492",
       "groups": [
         [
+          46,
           31,
           35,
           14,
-          46,
-          11
+          5
         ],
         [
+          40,
+          17,
           29,
-          22,
-          -2
+          11,
+          41
         ],
         [
           67,
           4,
-          12,
           2,
-          39
+          39,
+          22
         ],
         [
           33,
           28,
-          19,
           66,
-          25
+          25,
+          19
         ],
         [
-          27,
-          -1,
-          36,
+          10,
           55,
-          -4
+          -2,
+          27,
+          36
         ]
       ],
       "groupTitles": [
@@ -1031,9 +1033,11 @@
       "specOverrides": {
         "2": "Destruction",
         "4": "Balance",
+        "5": "Retribution",
+        "10": "Restoration",
         "11": "Beastmastery",
-        "12": "Destruction",
         "14": "Feral",
+        "17": "Beastmastery",
         "19": "Holy",
         "22": "Destruction",
         "25": "Arcane",
@@ -1046,6 +1050,7 @@
         "36": "Holy",
         "39": "Destruction",
         "40": "Enhancement",
+        "41": "Holy",
         "46": "Enhancement",
         "55": "Protection",
         "66": "Arcane",
@@ -1054,9 +1059,11 @@
       "roleOverrides": {
         "2": "Ranged",
         "4": "Ranged",
+        "5": "Melee",
+        "10": "Healer",
         "11": "Ranged",
-        "12": "Ranged",
         "14": "Tank",
+        "17": "Ranged",
         "19": "Ranged",
         "22": "Ranged",
         "25": "Ranged",
@@ -1077,9 +1084,11 @@
       "userIdMap": {
         "2": "510158141388750849",
         "4": "137777201792811008",
+        "5": "227110510972108810",
+        "10": "185994214352486400",
         "11": "473718939679981581",
-        "12": "595869887952322561",
         "14": "458021620251099147",
+        "17": "534211155854360606",
         "19": "106863642942709760",
         "22": "1441257818404688026",
         "25": "1419686849307345079",
@@ -1092,12 +1101,13 @@
         "36": "179449409518567424",
         "39": "368979837467099139",
         "40": "331204665536544782",
+        "41": "222160767011520523",
         "46": "185217579055448064",
         "55": "397962649154879489",
         "66": "384157825603207179",
         "67": "604808748854149142",
-        "-1": "227110510972108810",
-        "-2": "420003745649262596",
+        "-1": "420003745649262596",
+        "-2": "595869887952322561",
         "-3": "112831980101443584"
       },
       "bench": [],
@@ -1108,21 +1118,6 @@
       "pugs": [
         {
           "id": -1,
-          "name": "Depew/Kiricolo",
-          "class": "Priest",
-          "ms": "Holy",
-          "os": "",
-          "role": "Healer",
-          "status": "Pug",
-          "altOf": "",
-          "notes": "Via Raid Helper",
-          "_rhStatus": "attending",
-          "_rhSpec": "Holy",
-          "_rhClass": "Priest",
-          "_userId": "227110510972108810"
-        },
-        {
-          "id": -2,
           "name": "Mac/Eye",
           "class": "Mage",
           "ms": "Arcane",
@@ -1135,6 +1130,21 @@
           "_rhSpec": "Arcane",
           "_rhClass": "Mage",
           "_userId": "420003745649262596"
+        },
+        {
+          "id": -2,
+          "name": "Clutch",
+          "class": "Paladin",
+          "ms": "Holy",
+          "os": "",
+          "role": "Healer",
+          "status": "Pug",
+          "altOf": "",
+          "notes": "Via Raid Helper",
+          "_rhStatus": "attending",
+          "_rhSpec": "Holy",
+          "_rhClass": "Paladin",
+          "_userId": "595869887952322561"
         },
         {
           "id": -3,
@@ -1150,20 +1160,9 @@
           "_rhSpec": "",
           "_rhClass": "Absence",
           "_userId": "112831980101443584"
-        },
-        {
-          "id": -4,
-          "name": "zabanya",
-          "class": "Shaman",
-          "ms": "Restoration",
-          "os": "",
-          "role": "Healer",
-          "status": "Main",
-          "altOf": "",
-          "notes": "PUG"
         }
       ],
-      "nextPugId": -5,
+      "nextPugId": -4,
       "signUpPool": [
         {
           "id": 28,
@@ -1200,22 +1199,24 @@
           "_rhClass": "Druid"
         },
         {
-          "id": -1,
-          "name": "Depew/Kiricolo",
-          "class": "Priest",
-          "ms": "Holy",
+          "id": 17,
+          "name": "Akohre",
+          "class": "Hunter",
+          "ms": "Beastmastery",
           "os": "",
-          "role": "Healer",
-          "status": "Pug",
+          "role": "Ranged",
+          "status": "Main",
           "altOf": "",
-          "notes": "Via Raid Helper",
+          "level": 70,
+          "notes": "",
+          "discordUserId": "534211155854360606",
           "_rhStatus": "attending",
-          "_rhSpec": "Holy",
-          "_rhClass": "Priest",
-          "_userId": "227110510972108810"
+          "_userId": "534211155854360606",
+          "_rhSpec": "Beastmastery",
+          "_rhClass": "Hunter"
         },
         {
-          "id": -2,
+          "id": -1,
           "name": "Mac/Eye",
           "class": "Mage",
           "ms": "Arcane",
@@ -1264,23 +1265,6 @@
           "_rhClass": "Rogue"
         },
         {
-          "id": 12,
-          "name": "Clutchløck",
-          "class": "Warlock",
-          "ms": "Destruction",
-          "os": "",
-          "role": "Ranged",
-          "status": "Main",
-          "altOf": "",
-          "level": 70,
-          "notes": "",
-          "discordUserId": "595869887952322561",
-          "_rhStatus": "attending",
-          "_userId": "595869887952322561",
-          "_rhSpec": "Destruction",
-          "_rhClass": "Warlock"
-        },
-        {
           "id": 66,
           "name": "Rodentmage",
           "class": "Mage",
@@ -1296,6 +1280,23 @@
           "_userId": "384157825603207179",
           "_rhSpec": "Arcane",
           "_rhClass": "Mage"
+        },
+        {
+          "id": 10,
+          "name": "Zabanya",
+          "class": "Shaman",
+          "ms": "Restoration",
+          "os": "",
+          "role": "Healer",
+          "status": "Main",
+          "altOf": "",
+          "level": 70,
+          "notes": "Brad's alt",
+          "discordUserId": "185994214352486400",
+          "_rhStatus": "attending",
+          "_userId": "185994214352486400",
+          "_rhSpec": "Restoration",
+          "_rhClass": "Shaman"
         },
         {
           "id": 2,
@@ -1417,6 +1418,23 @@
           "_rhClass": "Priest"
         },
         {
+          "id": 41,
+          "name": "Velogis",
+          "class": "Priest",
+          "ms": "Shadow",
+          "os": "",
+          "role": "Ranged",
+          "status": "Main",
+          "altOf": "",
+          "level": 70,
+          "notes": "",
+          "discordUserId": "222160767011520523",
+          "_rhStatus": "attending",
+          "_userId": "222160767011520523",
+          "_rhSpec": "Shadow",
+          "_rhClass": "Priest"
+        },
+        {
           "id": 67,
           "name": "Shamanitis",
           "class": "Shaman",
@@ -1519,6 +1537,23 @@
           "_rhClass": "Hunter"
         },
         {
+          "id": 5,
+          "name": "Kiricolo",
+          "class": "Paladin",
+          "ms": "Retribution",
+          "os": "",
+          "role": "Melee",
+          "status": "Main",
+          "altOf": "",
+          "level": 70,
+          "notes": "Depew's Alt",
+          "discordUserId": "227110510972108810",
+          "_rhStatus": "attending",
+          "_userId": "227110510972108810",
+          "_rhSpec": "Retribution",
+          "_rhClass": "Paladin"
+        },
+        {
           "id": 55,
           "name": "Hasu",
           "class": "Paladin",
@@ -1553,6 +1588,21 @@
           "_rhClass": "Shaman"
         },
         {
+          "id": -2,
+          "name": "Clutch",
+          "class": "Paladin",
+          "ms": "Holy",
+          "os": "",
+          "role": "Healer",
+          "status": "Pug",
+          "altOf": "",
+          "notes": "Via Raid Helper",
+          "_rhStatus": "attending",
+          "_rhSpec": "Holy",
+          "_rhClass": "Paladin",
+          "_userId": "595869887952322561"
+        },
+        {
           "id": -3,
           "name": "Oshika/Lakito",
           "class": "Absence",
@@ -1566,17 +1616,6 @@
           "_rhSpec": "",
           "_rhClass": "Absence",
           "_userId": "112831980101443584"
-        },
-        {
-          "id": -4,
-          "name": "zabanya",
-          "class": "Shaman",
-          "ms": "Restoration",
-          "os": "",
-          "role": "Healer",
-          "status": "Main",
-          "altOf": "",
-          "notes": "PUG"
         }
       ],
       "rhEventTitle": "Mount hyjal",
