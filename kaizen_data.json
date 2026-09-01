@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-08-31T17:30:59.909Z",
+  "savedAt": "2026-09-01T20:38:40.846Z",
   "roster": [
     {
       "id": 1,
@@ -992,14 +992,14 @@
           31,
           35,
           14,
-          5
+          11
         ],
         [
           40,
           17,
           29,
-          11,
-          41
+          41,
+          -4
         ],
         [
           67,
@@ -1050,7 +1050,7 @@
         "36": "Holy",
         "39": "Destruction",
         "40": "Enhancement",
-        "41": "Holy",
+        "41": "Shadow",
         "46": "Enhancement",
         "55": "Protection",
         "66": "Arcane",
@@ -1076,6 +1076,7 @@
         "36": "Healer",
         "39": "Ranged",
         "40": "Melee",
+        "41": "Ranged",
         "46": "Melee",
         "55": "Tank",
         "66": "Ranged",
@@ -1160,9 +1161,20 @@
           "_rhSpec": "",
           "_rhClass": "Absence",
           "_userId": "112831980101443584"
+        },
+        {
+          "id": -4,
+          "name": "vest",
+          "class": "Priest",
+          "ms": "Holy",
+          "os": "",
+          "role": "Healer",
+          "status": "Main",
+          "altOf": "",
+          "notes": "PUG"
         }
       ],
-      "nextPugId": -4,
+      "nextPugId": -5,
       "signUpPool": [
         {
           "id": 28,
@@ -1616,6 +1628,17 @@
           "_rhSpec": "",
           "_rhClass": "Absence",
           "_userId": "112831980101443584"
+        },
+        {
+          "id": -4,
+          "name": "vest",
+          "class": "Priest",
+          "ms": "Holy",
+          "os": "",
+          "role": "Healer",
+          "status": "Main",
+          "altOf": "",
+          "notes": "PUG"
         }
       ],
       "rhEventTitle": "Mount hyjal",
