@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-09-01T22:47:19.580Z",
+  "savedAt": "2026-09-02T02:37:19.097Z",
   "roster": [
     {
       "id": 1,
@@ -7736,31 +7736,31 @@
               "valueA": 27,
               "arrow": true,
               "typeB": "player",
-              "valueB": 55
+              "valueB": 14
             },
             {
               "id": 4105,
               "typeA": "player",
-              "valueA": null,
+              "valueA": 4,
               "arrow": true,
               "typeB": "player",
-              "valueB": null
+              "valueB": 55
             },
             {
               "id": 4106,
               "typeA": "player",
-              "valueA": null,
+              "valueA": 20,
               "arrow": true,
               "typeB": "player",
-              "valueB": null
+              "valueB": 14
             },
             {
               "id": 4107,
               "typeA": "player",
-              "valueA": null,
+              "valueA": 41,
               "arrow": true,
               "typeB": "player",
-              "valueB": null
+              "valueB": 55
             }
           ]
         },
@@ -7875,10 +7875,10 @@
             {
               "id": 4205,
               "typeA": "player",
-              "valueA": null,
+              "valueA": 20,
               "arrow": true,
               "typeB": "player",
-              "valueB": null
+              "valueB": 14
             },
             {
               "id": 4206,
