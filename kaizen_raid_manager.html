@@ -948,6 +948,12 @@ tr:last-child td { border-bottom: none; }
 .section-btn { background:none;border:1px solid var(--border-bright);color:var(--text-dim);font-size:10px;cursor:pointer;padding:2px 6px;border-radius:2px;font-family:'Inter',sans-serif;transition:all 0.12s; }
 .section-btn:hover { color:var(--text-bright);border-color:var(--gold-dim); }
 .section-btn.danger:hover { color:var(--red-bright);border-color:var(--red); }
+/* Reorder replaced drag-and-drop (unreliable live, and once dropped a
+   whole section) with these - always visible, not just on hover, since
+   there's no other affordance hinting a section can be reordered at all. */
+.section-reorder-btns { display:flex;flex-direction:column;gap:1px; }
+.section-reorder-btns .section-btn { padding:0 4px;line-height:1.4;font-size:9px; }
+.section-reorder-btns .section-btn:disabled { opacity:0.25;cursor:default;pointer-events:none; }
 .row-rm-btn { background:none;border:none;color:transparent;font-size:11px;cursor:pointer;padding:0 3px;flex-shrink:0;transition:color 0.12s; }
 .assigns-row-wrap:hover .row-rm-btn { color:var(--red-bright); }
 .add-section-btn { width:100%;padding:8px;background:none;border:1px dashed var(--border-bright);border-radius:4px;color:var(--text-dim);font-family:'Inter',sans-serif;font-size:12px;cursor:pointer;transition:all 0.15s; }
@@ -2380,6 +2386,20 @@ a[href] > div > div[style*="line-height:1.6"] {
   </div>
 </div>
 
+<!-- ==================== SECTION TEMPLATE PICKER ==================== -->
+<div class="modal-overlay" id="section-template-modal-overlay" onclick="if(event.target===this)closeSectionTemplateModal()">
+  <div class="modal" style="width:360px;">
+    <div class="modal-header">
+      <div class="modal-title">Add Section</div>
+      <button class="modal-close" onclick="closeSectionTemplateModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:12px;color:var(--text-dim);margin-bottom:10px;">Pick a ready-made section, or build a fully custom one.</div>
+      <div id="section-template-list"></div>
+    </div>
+  </div>
+</div>
+
 <!-- ==================== ROW / SECTION MODAL ==================== -->
 <div class="modal-overlay" id="row-modal-overlay" onclick="if(event.target===this)closeRowModal()">
   <div class="modal" style="width:420px;">
@@ -2639,6 +2659,31 @@ let _nextRowId = 1;
 function _sid() { return _nextSecId++; }
 function _rid() { return _nextRowId++; }
 
+// _nextSecId/_nextRowId always start at 1 on page load regardless of what
+// ids the loaded strats already contain - harmless as long as ids only
+// ever grew organically and monotonically, but a real collision risk
+// after any bulk rebuild where a strat's sections independently restart
+// counting from 1 again (confirmed live: a freshly-added section landed
+// on the same id as that strat's very first one, and every lookup by id -
+// remove, reorder, row edits - silently acted on the wrong section
+// instead). Recomputing from the actual loaded data's own max id, once
+// right after strats loads, guarantees a newly-added section/row can
+// never collide with one already there, no matter how the source data
+// happened to number things.
+function recalcSectionRowIdCounters() {
+  let maxSec = 0, maxRow = 0;
+  for (const s of strats) {
+    for (const sec of s.sections || []) {
+      if (typeof sec.id === 'number' && sec.id > maxSec) maxSec = sec.id;
+      for (const row of sec.rows || []) {
+        if (typeof row.id === 'number' && row.id > maxRow) maxRow = row.id;
+      }
+    }
+  }
+  if (maxSec >= _nextSecId) _nextSecId = maxSec + 1;
+  if (maxRow >= _nextRowId) _nextRowId = maxRow + 1;
+}
+
 // Trash guides sit in the same per-raid tab strip as regular boss strats,
 // one inserted immediately before whichever boss's trash it covers (see
 // renderStrats' mergeStratsAndTrashGuides). Two separate pieces, matching
@@ -2685,6 +2730,230 @@ function defaultSections() {
     ]},
   ];
 }
+
+// ── Section templates ("cookie cutter" presets) ─────────────────
+// Small row builders mirroring the exact shapes defaultSections() already
+// used - reused both by the "+ Add Section" template picker below and by
+// BOSS_DEFAULT_SECTIONS' per-encounter templates (see resetStratTemplate).
+function _tankRow(label, value = null) {
+  return { id: _rid(), typeA: 'text', valueA: label, arrow: false, typeB: 'player', valueB: value };
+}
+function _pairRow(a = null, b = null) {
+  return { id: _rid(), typeA: 'player', valueA: a, arrow: true, typeB: 'player', valueB: b };
+}
+function _labeledTextRow(label, value = '') {
+  return { id: _rid(), typeA: 'text', valueA: label, arrow: false, typeB: 'text', valueB: value };
+}
+function _notesRow(text = '') {
+  return { id: _rid(), typeA: 'notes', valueA: text, arrow: false, typeB: null, valueB: null };
+}
+
+// Offered when clicking "+ Add Section" - each is exactly the shape
+// defaultSections() already builds for that role, so re-adding e.g.
+// Misdirection after removing it means picking it from this list, not
+// hand-configuring a player<->player arrow row from the raw type picker
+// (confirmed live: that raw picker is where a freshly-added Misdirection
+// row ended up with no visible player slot, because the type combination
+// has to be set exactly right by hand). "Fully Custom" still falls
+// through to that raw picker for anything that doesn't fit one of these.
+const SECTION_TEMPLATES = [
+  { key: 'tanks', label: '🛡 Tanks', build: () => [_tankRow('MT'), _tankRow('OT'), _tankRow('OT2')] },
+  { key: 'heals', label: '✚ Healer Assigns', build: () => [_pairRow(), _pairRow(), _pairRow(), _pairRow()] },
+  { key: 'md', label: '🏹 Misdirection', build: () => [_pairRow(), _pairRow()] },
+  { key: 'lust', label: '🔊 Lust / Drums', build: () => [_labeledTextRow('Timing', ''), _labeledTextRow('Notes', '')] },
+  { key: 'interrupts', label: '🎯 Interrupts / Dispels', build: () => [_tankRow('Interrupt')] },
+  { key: 'notes', label: '📋 Strategy Notes', build: () => [_notesRow('')] },
+];
+
+// Per-encounter default templates, keyed by exact strat name - lets
+// resetStratTemplate put a strat back to a known-good state after the
+// section reorder bug (now fixed - see moveSectionUp/Down) or any other
+// accidental edit, without needing real undo/version history. Right now
+// this only covers the 16 Black Temple strats (built from Cosmophile's
+// Black Temple Guide - see the commit that added them), since those are
+// the only ones tailored beyond the generic defaultSections() shape.
+// Anything not listed here falls back to defaultSections() itself.
+const BOSS_DEFAULT_SECTIONS = {
+  "Naj'entus": () => [
+    { id: _sid(), label: '🛡 Tanks', rows: [_tankRow('MT')] },
+    { id: _sid(), label: '✚ Healer Assigns', rows: [_pairRow(), _pairRow()] },
+    { id: _sid(), label: '🔊 Lust / Drums', rows: [_labeledTextRow('Timing', 'On pull')] },
+    { id: _sid(), label: '📋 Strategy Notes', rows: [_notesRow(
+      "Spread 6 yards - Needle Spine hits anyone within 6yds of target.\n\n" +
+      "Buddy system: pair everyone up so each has a partner responsible for pulling their Impaling Spine.\n\n" +
+      "Don't pop Tidal Shield with the spine until EVERYONE is above 8,500 HP - he only regens 1% HP/sec, so there's no rush.\n\n" +
+      "8 minute enrage - you won't hit it. Play clean."
+    )] },
+  ],
+  'Supremus': () => [
+    { id: _sid(), label: '🛡 Tanks', rows: [_tankRow('MT'), _tankRow('OT (Hateful Strike soak)')] },
+    { id: _sid(), label: '✚ Healer Assigns', rows: [_pairRow(), _pairRow(), _pairRow()] },
+    { id: _sid(), label: '📋 Strategy Notes', rows: [_notesRow(
+      "Each phase lasts 60 seconds, alternating.\n\n" +
+      "PHASE 1: OT stays in melee range, 2nd/3rd on threat, kept topped off - Hateful Strike should always land on the OT, not a DPS. At ~5s left in phase (55s mark), everyone (melee included) spreads for the P2 transition.\n\n" +
+      "PHASE 2: Stay within 5-40 yards of the boss. Fixate targets are RANDOM - if he targets you, run (you can use the ramp to kite, just don't range your healers off it). Dodge Molten Flame and Volcanic Geysers. Threat drops when he returns to P1, so stop DPS right before the transition back."
+    )] },
+  ],
+  'Shade of Akama': () => [
+    { id: _sid(), label: '🛡 Tanks', rows: [
+      _tankRow('Door Tank 1'), _tankRow('Door Tank 2'), _tankRow('Door Tank 3'), _tankRow('Door Tank 4'),
+      _tankRow('Shade of Akama (P2)'),
+    ] },
+    { id: _sid(), label: '🎯 Interrupts / Dispels', rows: [
+      _tankRow('Interrupt (Spiritbinder - Chain Heal)'),
+      _tankRow('Purge (Spiritbinder - Spirit Mend)'),
+      _tankRow('Decurse (Rogue - Debilitating Poison)'),
+    ] },
+    { id: _sid(), label: '✚ Healer Assigns', rows: [_pairRow(), _pairRow()] },
+    { id: _sid(), label: '🔊 Lust / Drums', rows: [_labeledTextRow('Timing', 'Phase 2 (60s DPS check on the Shade)')] },
+    { id: _sid(), label: '📋 Strategy Notes', rows: [_notesRow(
+      "PHASE 1: Kill the 6 Channelers surrounding the Shade first - consider keeping a trash add alive in the middle as a Seed of Corruption target. " +
+      "One tank per doorway to pick up spawning adds: a Sorcerer/Elementalist/Rogue spawns every ~35s, a Defender every ~60s. " +
+      "Casters/healers stay 5yds from Defenders to avoid Shield Bash interrupts. Sorcerers can't be tanked, just kill them.\n\n" +
+      "PHASE 2: Tanks hold adds, healers keep tanks alive. You have 60 seconds to kill the Shade of Akama or he kills Akama."
+    )] },
+  ],
+  'Teron Gorefiend': () => [
+    { id: _sid(), label: '🛡 Tanks', rows: [_tankRow('MT')] },
+    { id: _sid(), label: '✚ Healer Assigns', rows: [_pairRow(), _pairRow()] },
+    { id: _sid(), label: '🎯 Interrupts / Dispels', rows: [_tankRow('Dispel (Incinerate) - IMMEDIATELY')] },
+    { id: _sid(), label: '🔊 Lust / Drums', rows: [_labeledTextRow('Timing', 'On pull')] },
+    { id: _sid(), label: '📋 Strategy Notes', rows: [_notesRow(
+      "Tank and spank - Shadow of Death marks a target who dies after 55s and becomes a Vengeful Spirit (4 Shadowy Constructs spawn with them). " +
+      "Make sure your pet bar is active before pull (non-pet classes: Steam Tonk Controller). " +
+      "As a Spirit, construct-kill rotation is 5, 4, 3, 3, 3, 3 - tab targets between the 3's. Once your constructs are down, use ability 1 on the boss, and help other Spirits kill theirs.\n\n" +
+      "Doom Blossoms are a soft enrage - boss should be dead before they matter."
+    )] },
+  ],
+  'Bloodboil - P1': () => [
+    { id: _sid(), label: '🛡 Tanks', rows: [_tankRow('MT (holds Bloodboil, faces away)'), _tankRow('OT (tank swap)')] },
+    { id: _sid(), label: '🏹 Misdirection', rows: [_pairRow(), _pairRow()] },
+    { id: _sid(), label: '✚ Healer Assigns', rows: [_pairRow(), _pairRow()] },
+    { id: _sid(), label: '📋 Strategy Notes', rows: [_notesRow(
+      "Lasts 60s before Phase 2 (then recurs after 30s of P2). Melee form two groups on the boss's feet.\n\n" +
+      "Blood Boil hits the 5 furthest players - split the rest of the raid into 3 groups of 5 (exclude healers/melee if possible) and rotate every 10 seconds: two groups stack together, the third crosses to soak, then rotates back.\n\n" +
+      "All DPS stay below all tanks on threat - rotate MDs as needed. Bewildering Strike forces a tank swap; the active tank should also slow threat if Acidic Wound stacks get to 7-10."
+    )] },
+  ],
+  'Bloodboil - P2': () => [
+    { id: _sid(), label: '✚ Healer Assigns', rows: [_pairRow(), _pairRow()] },
+    { id: _sid(), label: '📋 Strategy Notes', rows: [_notesRow(
+      "Starts after 60s of P1, lasts 30s. Fel Rage targets a RANDOM player (+15k armor/30k HP/100% healing/300% dmg/100% size on them) - spam heals on them, use defensives (shields, evasion), do NOT feign or ice block. Paladins should run a BoP rotation for the Fel Rage target.\n\n" +
+      "Spread for Fel Geyser (18yd knockback around the Fel Rage target), but be ready to collapse back to P1 positions.\n\n" +
+      "THIS IS NOT A THREAT WIPE - Insignificance only snapshots threat at P1's end; when P2 ends he returns to whoever tanked him at the END of P1. Pop Bloodlust/Heroism once stable and nuke."
+    )] },
+  ],
+  'Reliquary of Souls - P1': () => [
+    { id: _sid(), label: '🛡 Tank Rotation', rows: [_tankRow('Rotation 1'), _tankRow('Rotation 2'), _tankRow('Rotation 3'), _tankRow('Rotation 4')] },
+    { id: _sid(), label: '🎯 Support', rows: [_tankRow('BoP Rotation'), _tankRow('Shield Priest (PW:S on tanking target)')] },
+    { id: _sid(), label: '📋 Strategy Notes', rows: [_notesRow(
+      "No threat table - boss attacks whoever's closest, so the tank rotation needs to move in/out as they get low (DPS players can fill in too). Run a BoP rotation; Rogues can Evasion-tank the Enrage (every 45s, 15s duration).\n\n" +
+      "NO healing is possible this phase (Aura of Suffering) - all other healers should DPS the boss, though Power Word: Shield still works, so keep a priest on shield duty for whoever's tanking.\n\n" +
+      "Don't be afraid to use all your mana - the Intermission between phases fully refills HP and mana. Dispel Soul Drain immediately."
+    )] },
+  ],
+  'Reliquary of Souls - P2': () => [
+    { id: _sid(), label: '🎯 Interrupts / Dispels', rows: [
+      _tankRow('Spellsteal (Rune Shield) - Mage'),
+      _tankRow('Spell Reflect (Deaden) - Warrior Tank'),
+      _tankRow('Interrupt Rotation (Spirit Shock) 1'),
+      _tankRow('Interrupt Rotation (Spirit Shock) 2'),
+      _tankRow('Interrupt Rotation - Backup'),
+    ] },
+    { id: _sid(), label: '📋 Strategy Notes', rows: [_notesRow(
+      "Aura of Desire reflects 50% of your damage done back to you (and doubles healing done) - play clean, don't overnuke yourself.\n\n" +
+      "Mage spellsteals Rune Shield immediately (50k absorb + interrupt immunity + attack speed). Warrior tank MUST Spell Reflect Deaden (100% increased damage taken debuff). " +
+      "Spirit Shock must be interrupted every cast - run a rotation with backups (Rogues with PvP gloves can solo it, but have backups ready regardless).\n\n" +
+      "After 160s everyone hits 0 mana - this phase is about clean execution and communication, don't rush it."
+    )] },
+  ],
+  'Reliquary of Souls - P3': () => [
+    { id: _sid(), label: '🛡 Tanks', rows: [_tankRow('OT (initiates pull)'), _tankRow('MT (taunts immediately after)')] },
+    { id: _sid(), label: '🏹 Misdirection', rows: [_pairRow()] },
+    { id: _sid(), label: '✚ Healer Assigns', rows: [_pairRow(), _pairRow()] },
+    { id: _sid(), label: '🔊 Lust / Drums', rows: [_labeledTextRow('Timing', 'Right after MT taunt + threat buff')] },
+    { id: _sid(), label: '📋 Strategy Notes', rows: [_notesRow(
+      "OT initiates the pull; MT taunts immediately after and builds threat off the 200% threat buff (Seethe). Hunters can MD the MT and start attacking right away; rest of DPS waits a few seconds before joining. Pop cooldowns + Bloodlust once MT has aggro.\n\n" +
+      "Spite targets 3 random players (7500 dmg after a 2s immunity window) - healers focus heals on whoever's hit.\n\n" +
+      "Warrior MT: watch the Soul Scream timer and stance-dance right before it casts to drop rage and minimize the damage taken from the frontal cone."
+    )] },
+  ],
+  'Mother Shahraz': () => [
+    { id: _sid(), label: '🛡 Tanks', rows: [_tankRow('MT'), _tankRow('OT'), _tankRow('OT2')] },
+    { id: _sid(), label: '✚ Healer Assigns', rows: [_pairRow(), _pairRow(), _pairRow()] },
+    { id: _sid(), label: '📋 Strategy Notes', rows: [_notesRow(
+      "Shadow resistance is close to mandatory - aim for 174+ unbuffed on everyone. Tanks don't need SR, gear for HP/mitigation/avoidance instead (can't be crushed, so a bear tank is fine) - all 3 stack together in front of the boss, keep Ironshields up.\n\n" +
+      "FATAL ATTRACTION: as soon as you're teleported and linked with 2 others, immediately run away from each other to break the link.\n\n" +
+      "BEAMS (Sinful/Vile/Sinister/Wicked): just heal through them, stack tightly to make it simpler on healers."
+    )] },
+  ],
+  'Illidari Council': () => [
+    { id: _sid(), label: '🛡 Tanks', rows: [
+      _tankRow('MT (Gathios)'), _tankRow('Mage Tank (Zerevor)'), _tankRow('OT (Veras - repicks up after each vanish)'),
+    ] },
+    { id: _sid(), label: '🎯 Interrupts / Dispels', rows: [
+      _tankRow('Interrupt (Zerevor - Arcane Bolt)'),
+      _tankRow('Interrupt (Malande - Circle of Healing) - melee'),
+      _tankRow('Interrupt (Malande - Circle of Healing) - ranged backup'),
+      _tankRow('Dispel (Gathios - Hand of Judgement stun)'),
+    ] },
+    { id: _sid(), label: '✚ Healer Assigns', rows: [
+      _tankRow("Zerevor's dedicated healer"),
+      _tankRow("Priest - shield Veras' poison targets ASAP"),
+    ] },
+    { id: _sid(), label: '📋 Strategy Notes', rows: [_notesRow(
+      "GATHIOS (DPS focus target): MT moves him out of his own Consecration - melee don't wait for the tank, move the moment you see it. Spell Reflect Seal of Command's Judgement if possible. Dispel Hand of Judgement (random stun) ASAP.\n\n" +
+      "ZEREVOR: must be tanked by a Mage, who spellsteals Dampen Magic and needs a dedicated healer. Casts Arcane Explosion if anyone's in melee range - stay out. Interrupt Arcane Bolt as much as possible (ranged rotation). Move immediately out of Blizzard/Flame Strike.\n\n" +
+      "MALANDE: needs melee + ranged interrupters on Circle of Healing (mandatory interrupt) - if she's immune to physical, ranged has to cover it alone. Can be kited next to Gathios/Veras for cleave damage on faster kills.\n\n" +
+      "VERAS: vanishes and reappears on a random target with Deadly Poison + Envenom - OT must repick him up quickly, priests shield the poison target ASAP. Once picked up, bring him near Gathios to get cleaved."
+    )] },
+  ],
+  'Illidan Stormrage - P1': () => [
+    { id: _sid(), label: '🛡 Tanks', rows: [_tankRow('MT')] },
+    { id: _sid(), label: '✚ Healer Assigns', rows: [_pairRow(), _pairRow()] },
+    { id: _sid(), label: '📋 Strategy Notes', rows: [_notesRow(
+      "Ranged and healers stack. MT uses Shield Block/Holy Shield to block Shear (reduces max HP by 60% for 7s, cannot miss). Move Illidan slightly after each Flame Crash.\n\n" +
+      "Melee: stay out from in front of Illidan so Draw Soul (heals him 100k) doesn't land on anyone extra.\n\n" +
+      "Parasitic Shadowfiend target runs away from the raid - kill the 2 adds immediately when they spawn (consider slow traps)."
+    )] },
+  ],
+  'Illidan Stormrage - P2': () => [
+    { id: _sid(), label: '🛡 Tanks', rows: [_tankRow('Flame Tank 1 (Fire Resist)'), _tankRow('Flame Tank 2 (Fire Resist)')] },
+    { id: _sid(), label: '✚ Healer Assigns', rows: [
+      _tankRow('Flame Tank 1 healer(s)'), _tankRow('Flame Tank 2 healer(s)'), _tankRow('Dark Barrage focus healer'),
+    ] },
+    { id: _sid(), label: '📋 Strategy Notes', rows: [_notesRow(
+      "2 Fire Resist tanks kite the Flames of Azzinoth along the planned paths - never let a Flame breathe on the raid, and keep the Flame within 25yds of its glaive (Uncaged Wrath enrage = wipe if not).\n\n" +
+      "Dodge Eye Blast's blue fire trail as it lands (stays 1 min, 2k/sec if stood in) - tanks CAN walk through it after it's landed if needed, just call it out.\n\n" +
+      "Ranged + healers split into 3 marked groups between the elementals to spread Fireball damage - communicate if a group needs to move for an Eye Blast trail. Focus one Flame down fully before swapping to the other. Melee: don't stand in fire for extra DPS."
+    )] },
+  ],
+  'Illidan Stormrage - P3': () => [
+    { id: _sid(), label: '🛡 Tanks', rows: [_tankRow('MT')] },
+    { id: _sid(), label: '✚ Healer Assigns', rows: [_pairRow(), _pairRow()] },
+    { id: _sid(), label: '📋 Strategy Notes', rows: [_notesRow(
+      "Repeat Phase 1's strat exactly, except everyone now spreads 5 yards for Agonizing Flames (5yd AoE + heavy DoT on whoever it hits).\n\n" +
+      "Designate a spot (or spots) ahead of time for Parasitic Shadowfiends to be dropped, slowed, and killed."
+    )] },
+  ],
+  'Illidan Stormrage - P4': () => [
+    { id: _sid(), label: '🛡 Tanks', rows: [_tankRow('Warlock Tank (Shadow Resist)')] },
+    { id: _sid(), label: '📋 Strategy Notes', rows: [_notesRow(
+      "Entire raid spreads out. A Warlock with Shadow Resistance gear tanks Illidan this phase, standing ~20yds away from everyone else - Shadow Blast hits highest threat + anyone within 20yds.\n\n" +
+      "Flame Burst hits the whole raid (spread 5yds to soften it). Kill Summoned Shadow Demons immediately - they fixate, stun, and kill on contact.\n\n" +
+      "Many guilds push to skip most of this phase - Illidan transitions to Phase 5 at 30%, so if your DPS supports it, lust in Phase 3 to get him there fast."
+    )] },
+  ],
+  'Illidan Stormrage - P5': () => [
+    { id: _sid(), label: '🛡 Tanks', rows: [_tankRow('MT')] },
+    { id: _sid(), label: '✚ Healer Assigns', rows: [_pairRow(), _pairRow()] },
+    { id: _sid(), label: '📋 Strategy Notes', rows: [_notesRow(
+      "Repeat Phase 3's strat. Watch Illidan's Enrage (40s in - +30% attack speed/+50% damage) - healers and MT need to be ready, save cooldowns/potions for this stretch.\n\n" +
+      "Maiev drops traps on the platform during this phase - consider numbering/naming regions ahead of time so the raid can call out trap locations fast. MT kites Illidan into a trap to strip the enrage and increase damage taken.\n\n" +
+      "If you reach Phase 5, you can kill the boss. Glaives are MT loot priority."
+    )] },
+  ],
+};
 
 const RAID_INSTANCES = [
   'Karazhan',
@@ -7000,7 +7269,7 @@ function loadData(event) {
           nextPugId = Math.min(...pugs.map(p => p.id)) - 1;
         }
       }
-      if (data.strats) strats = data.strats;
+      if (data.strats) { strats = data.strats; recalcSectionRowIdCounters(); }
       if (data.nextStratId) nextStratId = data.nextStratId;
       if (data.trashBestiary) trashBestiary = data.trashBestiary;
       if (data.nextBestiaryId) nextBestiaryId = data.nextBestiaryId;
@@ -7176,6 +7445,29 @@ function confirmAutoAssign() {
 
 function updateAutoAssignRaid(raidIdStr) {
   autoAssignRaidId = Number(raidIdStr);
+}
+
+// Discards whatever's currently on the strat and rebuilds its sections
+// from BOSS_DEFAULT_SECTIONS (falling back to the generic defaultSections()
+// for anything not in that registry) - the closest thing to an undo,
+// since there's no real edit history. Confirmed destructive/irreversible,
+// so it goes through the same confirm dialog as every other action in
+// that category.
+function confirmResetStratTemplate(stratId) {
+  const strat = strats.find(s => s.id === stratId);
+  if (!strat) return;
+  document.getElementById('confirm-text').textContent =
+    `Reset "${strat.name}"'s sections back to its default template? This discards any sections/edits you've made here - can't be undone.`;
+  const existingCheck = document.getElementById('confirm-notify-wrap');
+  if (existingCheck) existingCheck.remove();
+  document.getElementById('confirm-ok').onclick = () => {
+    closeConfirm();
+    const builder = BOSS_DEFAULT_SECTIONS[strat.name] || defaultSections;
+    strat.sections = builder();
+    renderStrats();
+    showToast('✓ Reset to default template.');
+  };
+  document.getElementById('confirm-overlay').classList.add('open');
 }
 
 function confirmPostStrat() {
@@ -8805,16 +9097,22 @@ function renderRowHtml(sid, secId, row) {
 // ── Section rendering ──────────────────────────────────────────
 let _dragSecInfo = null;
 
-function renderSectionHtml(sid, sec) {
+// Up/down buttons instead of drag-and-drop - confirmed live that section
+// drag-reorder wasn't working reliably (and once dropped a section
+// entirely rather than just reordering it). A button either moves a
+// section by exactly one slot or does nothing at all - there's no
+// ambiguous drop target to miss, and greying out at the top/bottom makes
+// the boundary obvious instead of letting a drop silently fail there.
+function renderSectionHtml(sid, sec, index, total) {
   const rowsHtml = (sec.rows || []).map(r => renderRowHtml(sid, sec.id, r)).join('');
-  return `<div class="assigns-section"
-    draggable="true"
-    ondragstart="onSecDragStart(event,${sid},${sec.id})"
-    ondragover="event.preventDefault();event.stopPropagation();this.classList.add('drag-over-section')"
-    ondragleave="this.classList.remove('drag-over-section')"
-    ondrop="event.stopPropagation();this.classList.remove('drag-over-section');onSecDrop(event,${sid},${sec.id})">
+  const atTop = index === 0;
+  const atBottom = index === total - 1;
+  return `<div class="assigns-section">
     <div class="assigns-section-header" style="cursor:default;">
-      <span class="section-drag-handle">⠿</span>
+      <div class="section-reorder-btns">
+        <button class="section-btn" onclick="moveSectionUp(${sid},${sec.id})" ${atTop ? 'disabled' : ''} title="Move up">▲</button>
+        <button class="section-btn" onclick="moveSectionDown(${sid},${sec.id})" ${atBottom ? 'disabled' : ''} title="Move down">▼</button>
+      </div>
       <input class="section-label-input" value="${(sec.label||'').replace(/"/g,'&quot;')}"
         onchange="updateSecLabel(${sid},${sec.id},this.value)"
         onclick="event.stopPropagation()">
@@ -8827,24 +9125,24 @@ function renderSectionHtml(sid, sec) {
   </div>`;
 }
 
-function onSecDragStart(e, sid, secId) {
-  _dragSecInfo = { sid, secId };
-  e.dataTransfer.effectAllowed = 'move';
-  setTimeout(() => e.currentTarget.style.opacity = '0.4', 0);
-}
-
-function onSecDrop(e, sid, targetSecId) {
-  if (!_dragSecInfo || _dragSecInfo.sid !== sid) { _dragSecInfo = null; return; }
+function moveSectionUp(sid, secId) {
   const s = getStrat(sid);
   if (!s) return;
-  const from = s.sections.findIndex(sec => sec.id === _dragSecInfo.secId);
-  const to = s.sections.findIndex(sec => sec.id === targetSecId);
-  if (from >= 0 && to >= 0 && from !== to) {
-    const [moved] = s.sections.splice(from, 1);
-    s.sections.splice(to, 0, moved);
+  const i = s.sections.findIndex(sec => sec.id === secId);
+  if (i > 0) {
+    [s.sections[i - 1], s.sections[i]] = [s.sections[i], s.sections[i - 1]];
     renderStrats();
   }
-  _dragSecInfo = null;
+}
+
+function moveSectionDown(sid, secId) {
+  const s = getStrat(sid);
+  if (!s) return;
+  const i = s.sections.findIndex(sec => sec.id === secId);
+  if (i >= 0 && i < s.sections.length - 1) {
+    [s.sections[i + 1], s.sections[i]] = [s.sections[i], s.sections[i + 1]];
+    renderStrats();
+  }
 }
 
 // ── Auto-assign from this week's grouped roster ─────────────────
@@ -8978,7 +9276,7 @@ function buildAssignsPanel(strat) {
   const sid = strat.id;
   const allPlayers = [...getActiveRaiders(), ...guildies, ...pugs];
 
-  const sectionsHtml = strat.sections.map(sec => renderSectionHtml(sid, sec)).join('');
+  const sectionsHtml = strat.sections.map((sec, i) => renderSectionHtml(sid, sec, i, strat.sections.length)).join('');
 
   const poolHtml = allPlayers.map(p => {
     const cc = classColor(p.class);
@@ -9000,6 +9298,7 @@ function buildAssignsPanel(strat) {
   const autoAssignHtml = `<div style="display:flex;gap:6px;">
     <select id="auto-assign-raid-select" class="form-select" style="flex:1;min-width:0;padding:8px 10px;font-size:12px;" onchange="updateAutoAssignRaid(this.value)" title="Which raid's this-week roster Auto-Assign pulls from - remembered for next time"></select>
     <button class="btn btn-small" style="flex-shrink:0;white-space:nowrap;" onclick="confirmAutoAssign()" title="Fill empty Tank/Healer/Misdirection slots from this week's grouped roster - never overwrites an existing assignment">🪄 Auto-Assign</button>
+    <button class="btn btn-small" style="flex-shrink:0;" onclick="confirmResetStratTemplate(${sid})" title="Reset this strat's sections back to its default template - discards any edits made here">↺</button>
   </div>`;
 
   return `<div class="assigns-panel" style="min-width:300px;max-width:340px;flex-shrink:0;display:flex;flex-direction:column;gap:10px;">
@@ -9075,7 +9374,39 @@ function addSection(sid, label, typeA, arrow, typeB) {
 // ── Section/Row modal ──────────────────────────────────────────
 let _modalSid = null, _modalSecId = null;
 
+// "+ Add Section" now opens the template picker first (see
+// SECTION_TEMPLATES) instead of going straight to the raw type-picker
+// modal - confirmed live that hand-configuring e.g. Misdirection from
+// scratch there was error-prone (a wrong type combination silently left
+// a row with no visible player slot). "Fully Custom" still opens that
+// same raw modal, renamed openCustomSectionModal, for anything that
+// doesn't fit one of the presets.
 function openSectionModal(sid) {
+  _modalSid = sid;
+  const list = document.getElementById('section-template-list');
+  list.innerHTML = SECTION_TEMPLATES.map(t =>
+    `<button class="btn" style="width:100%;text-align:left;margin-bottom:6px;" onclick="addSectionFromTemplate(${sid},'${t.key}')">${t.label}</button>`
+  ).join('') + `<button class="btn btn-gold" style="width:100%;margin-top:4px;" onclick="openCustomSectionModal(${sid})">➕ Fully Custom...</button>`;
+  document.getElementById('section-template-modal-overlay').classList.add('open');
+}
+
+function closeSectionTemplateModal() {
+  document.getElementById('section-template-modal-overlay').classList.remove('open');
+}
+
+function addSectionFromTemplate(sid, templateKey) {
+  const s = getStrat(sid);
+  if (!s) return;
+  const tpl = SECTION_TEMPLATES.find(t => t.key === templateKey);
+  if (!tpl) return;
+  if (!s.sections) s.sections = [];
+  s.sections.push({ id: _sid(), label: tpl.label, rows: tpl.build() });
+  closeSectionTemplateModal();
+  renderStrats();
+}
+
+function openCustomSectionModal(sid) {
+  closeSectionTemplateModal();
   _modalSid = sid; _modalSecId = null;
   document.getElementById('row-modal-title').textContent = 'Add Section';
   document.getElementById('section-title-wrap').style.display = 'block';
@@ -9235,7 +9566,7 @@ async function initFromJson() {
     if (data.attendance) attendance = data.attendance;
     if (data.nextId) nextId = data.nextId;
     if (data.guildInfo) guildInfo = { ...guildInfo, ...data.guildInfo };
-    if (data.strats) strats = data.strats;
+    if (data.strats) { strats = data.strats; recalcSectionRowIdCounters(); }
     if (data.nextStratId) nextStratId = data.nextStratId;
     if (data.trashBestiary) trashBestiary = data.trashBestiary;
     if (data.nextBestiaryId) nextBestiaryId = data.nextBestiaryId;
