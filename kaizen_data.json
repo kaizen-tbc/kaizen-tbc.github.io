@@ -5228,41 +5228,25 @@
       "image": "strats/bt-najentus.png",
       "sections": [
         {
-          "id": 2101,
+          "id": 1,
           "label": "🛡 Tanks",
           "rows": [
             {
-              "id": 2201,
+              "id": 1,
               "typeA": "text",
               "valueA": "MT",
               "arrow": false,
               "typeB": "player",
               "valueB": null
-            },
-            {
-              "id": 2202,
-              "typeA": "text",
-              "valueA": "OT",
-              "arrow": false,
-              "typeB": "player",
-              "valueB": null
-            },
-            {
-              "id": 2203,
-              "typeA": "text",
-              "valueA": "OT2",
-              "arrow": false,
-              "typeB": "player",
-              "valueB": null
             }
           ]
         },
         {
-          "id": 2102,
+          "id": 2,
           "label": "✚ Healer Assigns",
           "rows": [
             {
-              "id": 2204,
+              "id": 2,
               "typeA": "player",
               "valueA": null,
               "arrow": true,
@@ -5270,23 +5254,7 @@
               "valueB": null
             },
             {
-              "id": 2205,
-              "typeA": "player",
-              "valueA": null,
-              "arrow": true,
-              "typeB": "player",
-              "valueB": null
-            },
-            {
-              "id": 2206,
-              "typeA": "player",
-              "valueA": null,
-              "arrow": true,
-              "typeB": "player",
-              "valueB": null
-            },
-            {
-              "id": 2207,
+              "id": 3,
               "typeA": "player",
               "valueA": null,
               "arrow": true,
@@ -5296,57 +5264,27 @@
           ]
         },
         {
-          "id": 2103,
-          "label": "🏹 Misdirection",
-          "rows": [
-            {
-              "id": 2208,
-              "typeA": "player",
-              "valueA": null,
-              "arrow": true,
-              "typeB": "player",
-              "valueB": null
-            },
-            {
-              "id": 2209,
-              "typeA": "player",
-              "valueA": null,
-              "arrow": true,
-              "typeB": "player",
-              "valueB": null
-            }
-          ]
-        },
-        {
-          "id": 2104,
+          "id": 3,
           "label": "🔊 Lust / Drums",
           "rows": [
             {
-              "id": 2210,
+              "id": 4,
               "typeA": "text",
               "valueA": "Timing",
               "arrow": false,
               "typeB": "text",
-              "valueB": ""
-            },
-            {
-              "id": 2211,
-              "typeA": "text",
-              "valueA": "Notes",
-              "arrow": false,
-              "typeB": "text",
-              "valueB": ""
+              "valueB": "On pull"
             }
           ]
         },
         {
-          "id": 2105,
+          "id": 4,
           "label": "📋 Strategy Notes",
           "rows": [
             {
-              "id": 2212,
+              "id": 5,
               "typeA": "notes",
-              "valueA": "Spread 6 yards with a buddy system to pull Impaling Spines. Lust on pull. Before popping Tidal Shield with a spine, make sure everyone is above ~8,500 HP - he only regens 1% per second, so there's no need to rush it.",
+              "valueA": "Spread 6 yards - Needle Spine hits anyone within 6yds of target.\n\nBuddy system: pair everyone up so each has a partner responsible for pulling their Impaling Spine.\n\nDon't pop Tidal Shield with the spine until EVERYONE is above 8,500 HP - he only regens 1% HP/sec, so there's no rush.\n\n8 minute enrage - you won't hit it. Play clean.",
               "arrow": false,
               "typeB": null,
               "valueB": null
@@ -5362,11 +5300,11 @@
       "image": "strats/bt-supremus.png",
       "sections": [
         {
-          "id": 2201,
+          "id": 1,
           "label": "🛡 Tanks",
           "rows": [
             {
-              "id": 2301,
+              "id": 1,
               "typeA": "text",
               "valueA": "MT",
               "arrow": false,
@@ -5374,17 +5312,9 @@
               "valueB": null
             },
             {
-              "id": 2302,
+              "id": 2,
               "typeA": "text",
-              "valueA": "OT",
-              "arrow": false,
-              "typeB": "player",
-              "valueB": null
-            },
-            {
-              "id": 2303,
-              "typeA": "text",
-              "valueA": "OT2",
+              "valueA": "OT (Hateful Strike soak)",
               "arrow": false,
               "typeB": "player",
               "valueB": null
@@ -5392,11 +5322,11 @@
           ]
         },
         {
-          "id": 2202,
+          "id": 2,
           "label": "✚ Healer Assigns",
           "rows": [
             {
-              "id": 2304,
+              "id": 3,
               "typeA": "player",
               "valueA": null,
               "arrow": true,
@@ -5404,7 +5334,7 @@
               "valueB": null
             },
             {
-              "id": 2305,
+              "id": 4,
               "typeA": "player",
               "valueA": null,
               "arrow": true,
@@ -5412,15 +5342,7 @@
               "valueB": null
             },
             {
-              "id": 2306,
-              "typeA": "player",
-              "valueA": null,
-              "arrow": true,
-              "typeB": "player",
-              "valueB": null
-            },
-            {
-              "id": 2307,
+              "id": 5,
               "typeA": "player",
               "valueA": null,
               "arrow": true,
@@ -5430,57 +5352,13 @@
           ]
         },
         {
-          "id": 2203,
-          "label": "🏹 Misdirection",
-          "rows": [
-            {
-              "id": 2308,
-              "typeA": "player",
-              "valueA": null,
-              "arrow": true,
-              "typeB": "player",
-              "valueB": null
-            },
-            {
-              "id": 2309,
-              "typeA": "player",
-              "valueA": null,
-              "arrow": true,
-              "typeB": "player",
-              "valueB": null
-            }
-          ]
-        },
-        {
-          "id": 2204,
-          "label": "🔊 Lust / Drums",
-          "rows": [
-            {
-              "id": 2310,
-              "typeA": "text",
-              "valueA": "Timing",
-              "arrow": false,
-              "typeB": "text",
-              "valueB": ""
-            },
-            {
-              "id": 2311,
-              "typeA": "text",
-              "valueA": "Notes",
-              "arrow": false,
-              "typeB": "text",
-              "valueB": ""
-            }
-          ]
-        },
-        {
-          "id": 2205,
+          "id": 3,
           "label": "📋 Strategy Notes",
           "rows": [
             {
-              "id": 2312,
+              "id": 6,
               "typeA": "notes",
-              "valueA": "60-second phases. Phase 1: OT stays in melee range and topped off so DPS don't soak Hateful Strike; everyone spreads (melee included) right before the Phase 2 transition. Phase 2: stay 5-40 yards, run if targeted (the ramp works for kiting), dodge fire/volcanoes, and hold DPS just before he flips back to Phase 1.",
+              "valueA": "Each phase lasts 60 seconds, alternating.\n\nPHASE 1: OT stays in melee range, 2nd/3rd on threat, kept topped off - Hateful Strike should always land on the OT, not a DPS. At ~5s left in phase (55s mark), everyone (melee included) spreads for the P2 transition.\n\nPHASE 2: Stay within 5-40 yards of the boss. Fixate targets are RANDOM - if he targets you, run (you can use the ramp to kite, just don't range your healers off it). Dodge Molten Flame and Volcanic Geysers. Threat drops when he returns to P1, so stop DPS right before the transition back.",
               "arrow": false,
               "typeB": null,
               "valueB": null
@@ -5496,29 +5374,45 @@
       "image": "strats/bt-akama.png",
       "sections": [
         {
-          "id": 2301,
+          "id": 1,
           "label": "🛡 Tanks",
           "rows": [
             {
-              "id": 2401,
+              "id": 1,
               "typeA": "text",
-              "valueA": "MT",
+              "valueA": "Door Tank 1",
               "arrow": false,
               "typeB": "player",
               "valueB": null
             },
             {
-              "id": 2402,
+              "id": 2,
               "typeA": "text",
-              "valueA": "OT",
+              "valueA": "Door Tank 2",
               "arrow": false,
               "typeB": "player",
               "valueB": null
             },
             {
-              "id": 2403,
+              "id": 3,
               "typeA": "text",
-              "valueA": "OT2",
+              "valueA": "Door Tank 3",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 4,
+              "typeA": "text",
+              "valueA": "Door Tank 4",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 5,
+              "typeA": "text",
+              "valueA": "Shade of Akama (P2)",
               "arrow": false,
               "typeB": "player",
               "valueB": null
@@ -5526,11 +5420,41 @@
           ]
         },
         {
-          "id": 2302,
+          "id": 2,
+          "label": "🎯 Interrupts / Dispels",
+          "rows": [
+            {
+              "id": 6,
+              "typeA": "text",
+              "valueA": "Interrupt (Spiritbinder - Chain Heal)",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 7,
+              "typeA": "text",
+              "valueA": "Purge (Spiritbinder - Spirit Mend)",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 8,
+              "typeA": "text",
+              "valueA": "Decurse (Rogue - Debilitating Poison)",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 3,
           "label": "✚ Healer Assigns",
           "rows": [
             {
-              "id": 2404,
+              "id": 9,
               "typeA": "player",
               "valueA": null,
               "arrow": true,
@@ -5538,23 +5462,7 @@
               "valueB": null
             },
             {
-              "id": 2405,
-              "typeA": "player",
-              "valueA": null,
-              "arrow": true,
-              "typeB": "player",
-              "valueB": null
-            },
-            {
-              "id": 2406,
-              "typeA": "player",
-              "valueA": null,
-              "arrow": true,
-              "typeB": "player",
-              "valueB": null
-            },
-            {
-              "id": 2407,
+              "id": 10,
               "typeA": "player",
               "valueA": null,
               "arrow": true,
@@ -5564,57 +5472,27 @@
           ]
         },
         {
-          "id": 2303,
-          "label": "🏹 Misdirection",
-          "rows": [
-            {
-              "id": 2408,
-              "typeA": "player",
-              "valueA": null,
-              "arrow": true,
-              "typeB": "player",
-              "valueB": null
-            },
-            {
-              "id": 2409,
-              "typeA": "player",
-              "valueA": null,
-              "arrow": true,
-              "typeB": "player",
-              "valueB": null
-            }
-          ]
-        },
-        {
-          "id": 2304,
+          "id": 4,
           "label": "🔊 Lust / Drums",
           "rows": [
             {
-              "id": 2410,
+              "id": 11,
               "typeA": "text",
               "valueA": "Timing",
               "arrow": false,
               "typeB": "text",
-              "valueB": ""
-            },
-            {
-              "id": 2411,
-              "typeA": "text",
-              "valueA": "Notes",
-              "arrow": false,
-              "typeB": "text",
-              "valueB": ""
+              "valueB": "Phase 2 (60s DPS check on the Shade)"
             }
           ]
         },
         {
-          "id": 2305,
+          "id": 5,
           "label": "📋 Strategy Notes",
           "rows": [
             {
-              "id": 2412,
+              "id": 12,
               "typeA": "notes",
-              "valueA": "Phase 1: kill the 6 channelers - tanks cover the spawn doorways, feed a spare add into the middle as a Seed of Corruption target. Phase 2: tanks hold adds, healers keep them up, lust and burn Akama - you have 60 seconds before he loses to the boss instead.",
+              "valueA": "PHASE 1: Kill the 6 Channelers surrounding the Shade first - consider keeping a trash add alive in the middle as a Seed of Corruption target. One tank per doorway to pick up spawning adds: a Sorcerer/Elementalist/Rogue spawns every ~35s, a Defender every ~60s. Casters/healers stay 5yds from Defenders to avoid Shield Bash interrupts. Sorcerers can't be tanked, just kill them.\n\nPHASE 2: Tanks hold adds, healers keep tanks alive. You have 60 seconds to kill the Shade of Akama or he kills Akama.",
               "arrow": false,
               "typeB": null,
               "valueB": null
@@ -5630,41 +5508,25 @@
       "image": "strats/bt-gorefiend.png",
       "sections": [
         {
-          "id": 2401,
+          "id": 1,
           "label": "🛡 Tanks",
           "rows": [
             {
-              "id": 2501,
+              "id": 1,
               "typeA": "text",
               "valueA": "MT",
               "arrow": false,
               "typeB": "player",
               "valueB": null
-            },
-            {
-              "id": 2502,
-              "typeA": "text",
-              "valueA": "OT",
-              "arrow": false,
-              "typeB": "player",
-              "valueB": null
-            },
-            {
-              "id": 2503,
-              "typeA": "text",
-              "valueA": "OT2",
-              "arrow": false,
-              "typeB": "player",
-              "valueB": null
             }
           ]
         },
         {
-          "id": 2402,
+          "id": 2,
           "label": "✚ Healer Assigns",
           "rows": [
             {
-              "id": 2504,
+              "id": 2,
               "typeA": "player",
               "valueA": null,
               "arrow": true,
@@ -5672,23 +5534,7 @@
               "valueB": null
             },
             {
-              "id": 2505,
-              "typeA": "player",
-              "valueA": null,
-              "arrow": true,
-              "typeB": "player",
-              "valueB": null
-            },
-            {
-              "id": 2506,
-              "typeA": "player",
-              "valueA": null,
-              "arrow": true,
-              "typeB": "player",
-              "valueB": null
-            },
-            {
-              "id": 2507,
+              "id": 3,
               "typeA": "player",
               "valueA": null,
               "arrow": true,
@@ -5698,57 +5544,41 @@
           ]
         },
         {
-          "id": 2403,
-          "label": "🏹 Misdirection",
+          "id": 3,
+          "label": "🎯 Interrupts / Dispels",
           "rows": [
             {
-              "id": 2508,
-              "typeA": "player",
-              "valueA": null,
-              "arrow": true,
-              "typeB": "player",
-              "valueB": null
-            },
-            {
-              "id": 2509,
-              "typeA": "player",
-              "valueA": null,
-              "arrow": true,
+              "id": 4,
+              "typeA": "text",
+              "valueA": "Dispel (Incinerate) - IMMEDIATELY",
+              "arrow": false,
               "typeB": "player",
               "valueB": null
             }
           ]
         },
         {
-          "id": 2404,
+          "id": 4,
           "label": "🔊 Lust / Drums",
           "rows": [
             {
-              "id": 2510,
+              "id": 5,
               "typeA": "text",
               "valueA": "Timing",
               "arrow": false,
               "typeB": "text",
-              "valueB": ""
-            },
-            {
-              "id": 2511,
-              "typeA": "text",
-              "valueA": "Notes",
-              "arrow": false,
-              "typeB": "text",
-              "valueB": ""
+              "valueB": "On pull"
             }
           ]
         },
         {
-          "id": 2405,
+          "id": 5,
           "label": "📋 Strategy Notes",
           "rows": [
             {
-              "id": 2512,
+              "id": 6,
               "typeA": "notes",
-              "valueA": "Tank and spank, lust on pull. When Shadow of Death triggers, that player becomes a Spirit and solos 4 Shadowy Constructs using the 5-4-3-3-3-3 ability rotation (tab between the 3s) - help other Spirits once yours are down. Dispel Crushing Shadow immediately.",
+              "valueA": "Tank and spank - Shadow of Death marks a target who dies after 55s and becomes a Vengeful Spirit (4 Shadowy Constructs spawn with them). Make sure your pet bar is active before pull (non-pet classes: Steam Tonk Controller). As a Spirit, construct-kill rotation is 5, 4, 3, 3, 3, 3 - tab targets between the 3's. Once your constructs are down, use ability 1 on the boss, and help other Spirits kill theirs.\n\nDoom Blossoms are a soft enrage - boss should be dead before they matter.",
               "arrow": false,
               "typeB": null,
               "valueB": null
@@ -5764,29 +5594,21 @@
       "image": "strats/bt-bloodboil-p1.png",
       "sections": [
         {
-          "id": 2501,
+          "id": 1,
           "label": "🛡 Tanks",
           "rows": [
             {
-              "id": 2601,
+              "id": 1,
               "typeA": "text",
-              "valueA": "MT",
+              "valueA": "MT (holds Bloodboil, faces away)",
               "arrow": false,
               "typeB": "player",
               "valueB": null
             },
             {
-              "id": 2602,
+              "id": 2,
               "typeA": "text",
-              "valueA": "OT",
-              "arrow": false,
-              "typeB": "player",
-              "valueB": null
-            },
-            {
-              "id": 2603,
-              "typeA": "text",
-              "valueA": "OT2",
+              "valueA": "OT (tank swap)",
               "arrow": false,
               "typeB": "player",
               "valueB": null
@@ -5794,49 +5616,11 @@
           ]
         },
         {
-          "id": 2502,
-          "label": "✚ Healer Assigns",
-          "rows": [
-            {
-              "id": 2604,
-              "typeA": "player",
-              "valueA": null,
-              "arrow": true,
-              "typeB": "player",
-              "valueB": null
-            },
-            {
-              "id": 2605,
-              "typeA": "player",
-              "valueA": null,
-              "arrow": true,
-              "typeB": "player",
-              "valueB": null
-            },
-            {
-              "id": 2606,
-              "typeA": "player",
-              "valueA": null,
-              "arrow": true,
-              "typeB": "player",
-              "valueB": null
-            },
-            {
-              "id": 2607,
-              "typeA": "player",
-              "valueA": null,
-              "arrow": true,
-              "typeB": "player",
-              "valueB": null
-            }
-          ]
-        },
-        {
-          "id": 2503,
+          "id": 2,
           "label": "🏹 Misdirection",
           "rows": [
             {
-              "id": 2608,
+              "id": 3,
               "typeA": "player",
               "valueA": null,
               "arrow": true,
@@ -5844,7 +5628,7 @@
               "valueB": null
             },
             {
-              "id": 2609,
+              "id": 4,
               "typeA": "player",
               "valueA": null,
               "arrow": true,
@@ -5854,35 +5638,35 @@
           ]
         },
         {
-          "id": 2504,
-          "label": "🔊 Lust / Drums",
+          "id": 3,
+          "label": "✚ Healer Assigns",
           "rows": [
             {
-              "id": 2610,
-              "typeA": "text",
-              "valueA": "Timing",
-              "arrow": false,
-              "typeB": "text",
-              "valueB": ""
+              "id": 5,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
             },
             {
-              "id": 2611,
-              "typeA": "text",
-              "valueA": "Notes",
-              "arrow": false,
-              "typeB": "text",
-              "valueB": ""
+              "id": 6,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
             }
           ]
         },
         {
-          "id": 2505,
+          "id": 4,
           "label": "📋 Strategy Notes",
           "rows": [
             {
-              "id": 2612,
+              "id": 7,
               "typeA": "notes",
-              "valueA": "First tank holds him facing away from the raid; melee stacks on his feet. Raid splits into 3 groups of 5 (exclude healers if possible), rotating through the soak zone every ~10s. Keep all DPS below all tanks on threat - Bewildering Strike will force a swap.",
+              "valueA": "Lasts 60s before Phase 2 (then recurs after 30s of P2). Melee form two groups on the boss's feet.\n\nBlood Boil hits the 5 furthest players - split the rest of the raid into 3 groups of 5 (exclude healers/melee if possible) and rotate every 10 seconds: two groups stack together, the third crosses to soak, then rotates back.\n\nAll DPS stay below all tanks on threat - rotate MDs as needed. Bewildering Strike forces a tank swap; the active tank should also slow threat if Acidic Wound stacks get to 7-10.",
               "arrow": false,
               "typeB": null,
               "valueB": null
@@ -5898,41 +5682,11 @@
       "image": "strats/bt-bloodboil-p2.png",
       "sections": [
         {
-          "id": 2601,
-          "label": "🛡 Tanks",
-          "rows": [
-            {
-              "id": 2701,
-              "typeA": "text",
-              "valueA": "MT",
-              "arrow": false,
-              "typeB": "player",
-              "valueB": null
-            },
-            {
-              "id": 2702,
-              "typeA": "text",
-              "valueA": "OT",
-              "arrow": false,
-              "typeB": "player",
-              "valueB": null
-            },
-            {
-              "id": 2703,
-              "typeA": "text",
-              "valueA": "OT2",
-              "arrow": false,
-              "typeB": "player",
-              "valueB": null
-            }
-          ]
-        },
-        {
-          "id": 2602,
+          "id": 1,
           "label": "✚ Healer Assigns",
           "rows": [
             {
-              "id": 2704,
+              "id": 1,
               "typeA": "player",
               "valueA": null,
               "arrow": true,
@@ -5940,23 +5694,7 @@
               "valueB": null
             },
             {
-              "id": 2705,
-              "typeA": "player",
-              "valueA": null,
-              "arrow": true,
-              "typeB": "player",
-              "valueB": null
-            },
-            {
-              "id": 2706,
-              "typeA": "player",
-              "valueA": null,
-              "arrow": true,
-              "typeB": "player",
-              "valueB": null
-            },
-            {
-              "id": 2707,
+              "id": 2,
               "typeA": "player",
               "valueA": null,
               "arrow": true,
@@ -5966,57 +5704,13 @@
           ]
         },
         {
-          "id": 2603,
-          "label": "🏹 Misdirection",
-          "rows": [
-            {
-              "id": 2708,
-              "typeA": "player",
-              "valueA": null,
-              "arrow": true,
-              "typeB": "player",
-              "valueB": null
-            },
-            {
-              "id": 2709,
-              "typeA": "player",
-              "valueA": null,
-              "arrow": true,
-              "typeB": "player",
-              "valueB": null
-            }
-          ]
-        },
-        {
-          "id": 2604,
-          "label": "🔊 Lust / Drums",
-          "rows": [
-            {
-              "id": 2710,
-              "typeA": "text",
-              "valueA": "Timing",
-              "arrow": false,
-              "typeB": "text",
-              "valueB": ""
-            },
-            {
-              "id": 2711,
-              "typeA": "text",
-              "valueA": "Notes",
-              "arrow": false,
-              "typeB": "text",
-              "valueB": ""
-            }
-          ]
-        },
-        {
-          "id": 2605,
+          "id": 2,
           "label": "📋 Strategy Notes",
           "rows": [
             {
-              "id": 2712,
+              "id": 3,
               "typeA": "notes",
-              "valueA": "Starts once the 5th Blood Boil stack goes out - spread immediately for Fel Rage. Pour heals and defensive cooldowns into the Fel Rage target (paladins can run a BoP rotation on them). Not a threat wipe - with ~5s left, get back to your Phase 1 spot, since he returns to whoever tanked him at the end of P1.",
+              "valueA": "Starts after 60s of P1, lasts 30s. Fel Rage targets a RANDOM player (+15k armor/30k HP/100% healing/300% dmg/100% size on them) - spam heals on them, use defensives (shields, evasion), do NOT feign or ice block. Paladins should run a BoP rotation for the Fel Rage target.\n\nSpread for Fel Geyser (18yd knockback around the Fel Rage target), but be ready to collapse back to P1 positions.\n\nTHIS IS NOT A THREAT WIPE - Insignificance only snapshots threat at P1's end; when P2 ends he returns to whoever tanked him at the END of P1. Pop Bloodlust/Heroism once stable and nuke.",
               "arrow": false,
               "typeB": null,
               "valueB": null
@@ -6032,29 +5726,37 @@
       "image": "strats/bt-reliquary-p1.png",
       "sections": [
         {
-          "id": 2701,
-          "label": "🛡 Tanks",
+          "id": 1,
+          "label": "🛡 Tank Rotation",
           "rows": [
             {
-              "id": 2801,
+              "id": 1,
               "typeA": "text",
-              "valueA": "MT",
+              "valueA": "Rotation 1",
               "arrow": false,
               "typeB": "player",
               "valueB": null
             },
             {
-              "id": 2802,
+              "id": 2,
               "typeA": "text",
-              "valueA": "OT",
+              "valueA": "Rotation 2",
               "arrow": false,
               "typeB": "player",
               "valueB": null
             },
             {
-              "id": 2803,
+              "id": 3,
               "typeA": "text",
-              "valueA": "OT2",
+              "valueA": "Rotation 3",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 4,
+              "typeA": "text",
+              "valueA": "Rotation 4",
               "arrow": false,
               "typeB": "player",
               "valueB": null
@@ -6062,95 +5764,35 @@
           ]
         },
         {
-          "id": 2702,
-          "label": "✚ Healer Assigns",
+          "id": 2,
+          "label": "🎯 Support",
           "rows": [
             {
-              "id": 2804,
-              "typeA": "player",
-              "valueA": null,
-              "arrow": true,
-              "typeB": "player",
-              "valueB": null
-            },
-            {
-              "id": 2805,
-              "typeA": "player",
-              "valueA": null,
-              "arrow": true,
-              "typeB": "player",
-              "valueB": null
-            },
-            {
-              "id": 2806,
-              "typeA": "player",
-              "valueA": null,
-              "arrow": true,
-              "typeB": "player",
-              "valueB": null
-            },
-            {
-              "id": 2807,
-              "typeA": "player",
-              "valueA": null,
-              "arrow": true,
-              "typeB": "player",
-              "valueB": null
-            }
-          ]
-        },
-        {
-          "id": 2703,
-          "label": "🏹 Misdirection",
-          "rows": [
-            {
-              "id": 2808,
-              "typeA": "player",
-              "valueA": null,
-              "arrow": true,
-              "typeB": "player",
-              "valueB": null
-            },
-            {
-              "id": 2809,
-              "typeA": "player",
-              "valueA": null,
-              "arrow": true,
-              "typeB": "player",
-              "valueB": null
-            }
-          ]
-        },
-        {
-          "id": 2704,
-          "label": "🔊 Lust / Drums",
-          "rows": [
-            {
-              "id": 2810,
+              "id": 5,
               "typeA": "text",
-              "valueA": "Timing",
+              "valueA": "BoP Rotation",
               "arrow": false,
-              "typeB": "text",
-              "valueB": ""
+              "typeB": "player",
+              "valueB": null
             },
             {
-              "id": 2811,
+              "id": 6,
               "typeA": "text",
-              "valueA": "Notes",
+              "valueA": "Shield Priest (PW:S on tanking target)",
               "arrow": false,
-              "typeB": "text",
-              "valueB": ""
+              "typeB": "player",
+              "valueB": null
             }
           ]
         },
         {
-          "id": 2705,
+          "id": 3,
           "label": "📋 Strategy Notes",
           "rows": [
             {
-              "id": 2812,
+              "id": 7,
               "typeA": "notes",
-              "valueA": "Essence of Suffering - no threat table, she attacks whoever's closest, so run a tank rotation (rogues can evasion-tank, warriors can shield up) with a BoP rotation to survive. No healing works this phase - healers DPS instead, priests keep shields on whoever's tanking. Dispel the drain immediately.",
+              "valueA": "No threat table - boss attacks whoever's closest, so the tank rotation needs to move in/out as they get low (DPS players can fill in too). Run a BoP rotation; Rogues can Evasion-tank the Enrage (every 45s, 15s duration).\n\nNO healing is possible this phase (Aura of Suffering) - all other healers should DPS the boss, though Power Word: Shield still works, so keep a priest on shield duty for whoever's tanking.\n\nDon't be afraid to use all your mana - the Intermission between phases fully refills HP and mana. Dispel Soul Drain immediately.",
               "arrow": false,
               "typeB": null,
               "valueB": null
@@ -6166,29 +5808,45 @@
       "image": "strats/bt-reliquary-p2.png",
       "sections": [
         {
-          "id": 2801,
-          "label": "🛡 Tanks",
+          "id": 1,
+          "label": "🎯 Interrupts / Dispels",
           "rows": [
             {
-              "id": 2901,
+              "id": 1,
               "typeA": "text",
-              "valueA": "MT",
+              "valueA": "Spellsteal (Rune Shield) - Mage",
               "arrow": false,
               "typeB": "player",
               "valueB": null
             },
             {
-              "id": 2902,
+              "id": 2,
               "typeA": "text",
-              "valueA": "OT",
+              "valueA": "Spell Reflect (Deaden) - Warrior Tank",
               "arrow": false,
               "typeB": "player",
               "valueB": null
             },
             {
-              "id": 2903,
+              "id": 3,
               "typeA": "text",
-              "valueA": "OT2",
+              "valueA": "Interrupt Rotation (Spirit Shock) 1",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 4,
+              "typeA": "text",
+              "valueA": "Interrupt Rotation (Spirit Shock) 2",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 5,
+              "typeA": "text",
+              "valueA": "Interrupt Rotation - Backup",
               "arrow": false,
               "typeB": "player",
               "valueB": null
@@ -6196,95 +5854,13 @@
           ]
         },
         {
-          "id": 2802,
-          "label": "✚ Healer Assigns",
-          "rows": [
-            {
-              "id": 2904,
-              "typeA": "player",
-              "valueA": null,
-              "arrow": true,
-              "typeB": "player",
-              "valueB": null
-            },
-            {
-              "id": 2905,
-              "typeA": "player",
-              "valueA": null,
-              "arrow": true,
-              "typeB": "player",
-              "valueB": null
-            },
-            {
-              "id": 2906,
-              "typeA": "player",
-              "valueA": null,
-              "arrow": true,
-              "typeB": "player",
-              "valueB": null
-            },
-            {
-              "id": 2907,
-              "typeA": "player",
-              "valueA": null,
-              "arrow": true,
-              "typeB": "player",
-              "valueB": null
-            }
-          ]
-        },
-        {
-          "id": 2803,
-          "label": "🏹 Misdirection",
-          "rows": [
-            {
-              "id": 2908,
-              "typeA": "player",
-              "valueA": null,
-              "arrow": true,
-              "typeB": "player",
-              "valueB": null
-            },
-            {
-              "id": 2909,
-              "typeA": "player",
-              "valueA": null,
-              "arrow": true,
-              "typeB": "player",
-              "valueB": null
-            }
-          ]
-        },
-        {
-          "id": 2804,
-          "label": "🔊 Lust / Drums",
-          "rows": [
-            {
-              "id": 2910,
-              "typeA": "text",
-              "valueA": "Timing",
-              "arrow": false,
-              "typeB": "text",
-              "valueB": ""
-            },
-            {
-              "id": 2911,
-              "typeA": "text",
-              "valueA": "Notes",
-              "arrow": false,
-              "typeB": "text",
-              "valueB": ""
-            }
-          ]
-        },
-        {
-          "id": 2805,
+          "id": 2,
           "label": "📋 Strategy Notes",
           "rows": [
             {
-              "id": 2912,
+              "id": 6,
               "typeA": "notes",
-              "valueA": "Essence of Desire - your own damage gets reflected back, don't overnuke yourself. Mages spellsteal Rune Shield on sight. Run an interrupt rotation on Spirit Shock (it cannot land) and have the warrior tank Spell Reflect Deaden. Play it slow and clean.",
+              "valueA": "Aura of Desire reflects 50% of your damage done back to you (and doubles healing done) - play clean, don't overnuke yourself.\n\nMage spellsteals Rune Shield immediately (50k absorb + interrupt immunity + attack speed). Warrior tank MUST Spell Reflect Deaden (100% increased damage taken debuff). Spirit Shock must be interrupted every cast - run a rotation with backups (Rogues with PvP gloves can solo it, but have backups ready regardless).\n\nAfter 160s everyone hits 0 mana - this phase is about clean execution and communication, don't rush it.",
               "arrow": false,
               "typeB": null,
               "valueB": null
@@ -6300,29 +5876,21 @@
       "image": "strats/bt-reliquary-p3.png",
       "sections": [
         {
-          "id": 2901,
+          "id": 1,
           "label": "🛡 Tanks",
           "rows": [
             {
-              "id": 3001,
+              "id": 1,
               "typeA": "text",
-              "valueA": "MT",
+              "valueA": "OT (initiates pull)",
               "arrow": false,
               "typeB": "player",
               "valueB": null
             },
             {
-              "id": 3002,
+              "id": 2,
               "typeA": "text",
-              "valueA": "OT",
-              "arrow": false,
-              "typeB": "player",
-              "valueB": null
-            },
-            {
-              "id": 3003,
-              "typeA": "text",
-              "valueA": "OT2",
+              "valueA": "MT (taunts immediately after)",
               "arrow": false,
               "typeB": "player",
               "valueB": null
@@ -6330,57 +5898,11 @@
           ]
         },
         {
-          "id": 2902,
-          "label": "✚ Healer Assigns",
-          "rows": [
-            {
-              "id": 3004,
-              "typeA": "player",
-              "valueA": null,
-              "arrow": true,
-              "typeB": "player",
-              "valueB": null
-            },
-            {
-              "id": 3005,
-              "typeA": "player",
-              "valueA": null,
-              "arrow": true,
-              "typeB": "player",
-              "valueB": null
-            },
-            {
-              "id": 3006,
-              "typeA": "player",
-              "valueA": null,
-              "arrow": true,
-              "typeB": "player",
-              "valueB": null
-            },
-            {
-              "id": 3007,
-              "typeA": "player",
-              "valueA": null,
-              "arrow": true,
-              "typeB": "player",
-              "valueB": null
-            }
-          ]
-        },
-        {
-          "id": 2903,
+          "id": 2,
           "label": "🏹 Misdirection",
           "rows": [
             {
-              "id": 3008,
-              "typeA": "player",
-              "valueA": null,
-              "arrow": true,
-              "typeB": "player",
-              "valueB": null
-            },
-            {
-              "id": 3009,
+              "id": 3,
               "typeA": "player",
               "valueA": null,
               "arrow": true,
@@ -6390,35 +5912,49 @@
           ]
         },
         {
-          "id": 2904,
+          "id": 3,
+          "label": "✚ Healer Assigns",
+          "rows": [
+            {
+              "id": 4,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 5,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 4,
           "label": "🔊 Lust / Drums",
           "rows": [
             {
-              "id": 3010,
+              "id": 6,
               "typeA": "text",
               "valueA": "Timing",
               "arrow": false,
               "typeB": "text",
-              "valueB": ""
-            },
-            {
-              "id": 3011,
-              "typeA": "text",
-              "valueA": "Notes",
-              "arrow": false,
-              "typeB": "text",
-              "valueB": ""
+              "valueB": "Right after MT taunt + threat buff"
             }
           ]
         },
         {
-          "id": 2905,
+          "id": 5,
           "label": "📋 Strategy Notes",
           "rows": [
             {
-              "id": 3012,
+              "id": 7,
               "typeA": "notes",
-              "valueA": "Essence of Anger - OT initiates and taunts immediately once MT has aggro (using the 200% threat buff) before DPS pile on. Healers focus whoever's hit by Spite. Warrior MT should stance-dance right before Soul Scream to dump rage and reduce the damage taken.",
+              "valueA": "OT initiates the pull; MT taunts immediately after and builds threat off the 200% threat buff (Seethe). Hunters can MD the MT and start attacking right away; rest of DPS waits a few seconds before joining. Pop cooldowns + Bloodlust once MT has aggro.\n\nSpite targets 3 random players (7500 dmg after a 2s immunity window) - healers focus heals on whoever's hit.\n\nWarrior MT: watch the Soul Scream timer and stance-dance right before it casts to drop rage and minimize the damage taken from the frontal cone.",
               "arrow": false,
               "typeB": null,
               "valueB": null
@@ -6434,11 +5970,11 @@
       "image": "strats/bt-mother.png",
       "sections": [
         {
-          "id": 3001,
+          "id": 1,
           "label": "🛡 Tanks",
           "rows": [
             {
-              "id": 3101,
+              "id": 1,
               "typeA": "text",
               "valueA": "MT",
               "arrow": false,
@@ -6446,7 +5982,7 @@
               "valueB": null
             },
             {
-              "id": 3102,
+              "id": 2,
               "typeA": "text",
               "valueA": "OT",
               "arrow": false,
@@ -6454,7 +5990,7 @@
               "valueB": null
             },
             {
-              "id": 3103,
+              "id": 3,
               "typeA": "text",
               "valueA": "OT2",
               "arrow": false,
@@ -6464,11 +6000,11 @@
           ]
         },
         {
-          "id": 3002,
+          "id": 2,
           "label": "✚ Healer Assigns",
           "rows": [
             {
-              "id": 3104,
+              "id": 4,
               "typeA": "player",
               "valueA": null,
               "arrow": true,
@@ -6476,7 +6012,7 @@
               "valueB": null
             },
             {
-              "id": 3105,
+              "id": 5,
               "typeA": "player",
               "valueA": null,
               "arrow": true,
@@ -6484,15 +6020,7 @@
               "valueB": null
             },
             {
-              "id": 3106,
-              "typeA": "player",
-              "valueA": null,
-              "arrow": true,
-              "typeB": "player",
-              "valueB": null
-            },
-            {
-              "id": 3107,
+              "id": 6,
               "typeA": "player",
               "valueA": null,
               "arrow": true,
@@ -6502,57 +6030,13 @@
           ]
         },
         {
-          "id": 3003,
-          "label": "🏹 Misdirection",
-          "rows": [
-            {
-              "id": 3108,
-              "typeA": "player",
-              "valueA": null,
-              "arrow": true,
-              "typeB": "player",
-              "valueB": null
-            },
-            {
-              "id": 3109,
-              "typeA": "player",
-              "valueA": null,
-              "arrow": true,
-              "typeB": "player",
-              "valueB": null
-            }
-          ]
-        },
-        {
-          "id": 3004,
-          "label": "🔊 Lust / Drums",
-          "rows": [
-            {
-              "id": 3110,
-              "typeA": "text",
-              "valueA": "Timing",
-              "arrow": false,
-              "typeB": "text",
-              "valueB": ""
-            },
-            {
-              "id": 3111,
-              "typeA": "text",
-              "valueA": "Notes",
-              "arrow": false,
-              "typeB": "text",
-              "valueB": ""
-            }
-          ]
-        },
-        {
-          "id": 3005,
+          "id": 3,
           "label": "📋 Strategy Notes",
           "rows": [
             {
-              "id": 3112,
+              "id": 7,
               "typeA": "notes",
-              "valueA": "Shadow resistance matters a lot (~174+ unbuffed recommended for most of the raid) - tanks don't need it, gear them for HP/mitigation instead, and stack all 3 in front of her. The instant Fatal Attraction teleports you, run away from the other linked players immediately. Stack tight through the beam phases and heal through it.",
+              "valueA": "Shadow resistance is close to mandatory - aim for 174+ unbuffed on everyone. Tanks don't need SR, gear for HP/mitigation/avoidance instead (can't be crushed, so a bear tank is fine) - all 3 stack together in front of the boss, keep Ironshields up.\n\nFATAL ATTRACTION: as soon as you're teleported and linked with 2 others, immediately run away from each other to break the link.\n\nBEAMS (Sinful/Vile/Sinister/Wicked): just heal through them, stack tightly to make it simpler on healers.",
               "arrow": false,
               "typeB": null,
               "valueB": null
@@ -6568,29 +6052,29 @@
       "image": "strats/bt-council.png",
       "sections": [
         {
-          "id": 3101,
+          "id": 1,
           "label": "🛡 Tanks",
           "rows": [
             {
-              "id": 3201,
+              "id": 1,
               "typeA": "text",
-              "valueA": "MT",
+              "valueA": "MT (Gathios)",
               "arrow": false,
               "typeB": "player",
               "valueB": null
             },
             {
-              "id": 3202,
+              "id": 2,
               "typeA": "text",
-              "valueA": "OT",
+              "valueA": "Mage Tank (Zerevor)",
               "arrow": false,
               "typeB": "player",
               "valueB": null
             },
             {
-              "id": 3203,
+              "id": 3,
               "typeA": "text",
-              "valueA": "OT2",
+              "valueA": "OT (Veras - repicks up after each vanish)",
               "arrow": false,
               "typeB": "player",
               "valueB": null
@@ -6598,95 +6082,73 @@
           ]
         },
         {
-          "id": 3102,
+          "id": 2,
+          "label": "🎯 Interrupts / Dispels",
+          "rows": [
+            {
+              "id": 4,
+              "typeA": "text",
+              "valueA": "Interrupt (Zerevor - Arcane Bolt)",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 5,
+              "typeA": "text",
+              "valueA": "Interrupt (Malande - Circle of Healing) - melee",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 6,
+              "typeA": "text",
+              "valueA": "Interrupt (Malande - Circle of Healing) - ranged backup",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 7,
+              "typeA": "text",
+              "valueA": "Dispel (Gathios - Hand of Judgement stun)",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 3,
           "label": "✚ Healer Assigns",
           "rows": [
             {
-              "id": 3204,
-              "typeA": "player",
-              "valueA": null,
-              "arrow": true,
-              "typeB": "player",
-              "valueB": null
-            },
-            {
-              "id": 3205,
-              "typeA": "player",
-              "valueA": null,
-              "arrow": true,
-              "typeB": "player",
-              "valueB": null
-            },
-            {
-              "id": 3206,
-              "typeA": "player",
-              "valueA": null,
-              "arrow": true,
-              "typeB": "player",
-              "valueB": null
-            },
-            {
-              "id": 3207,
-              "typeA": "player",
-              "valueA": null,
-              "arrow": true,
-              "typeB": "player",
-              "valueB": null
-            }
-          ]
-        },
-        {
-          "id": 3103,
-          "label": "🏹 Misdirection",
-          "rows": [
-            {
-              "id": 3208,
-              "typeA": "player",
-              "valueA": null,
-              "arrow": true,
-              "typeB": "player",
-              "valueB": null
-            },
-            {
-              "id": 3209,
-              "typeA": "player",
-              "valueA": null,
-              "arrow": true,
-              "typeB": "player",
-              "valueB": null
-            }
-          ]
-        },
-        {
-          "id": 3104,
-          "label": "🔊 Lust / Drums",
-          "rows": [
-            {
-              "id": 3210,
+              "id": 8,
               "typeA": "text",
-              "valueA": "Timing",
+              "valueA": "Zerevor's dedicated healer",
               "arrow": false,
-              "typeB": "text",
-              "valueB": ""
+              "typeB": "player",
+              "valueB": null
             },
             {
-              "id": 3211,
+              "id": 9,
               "typeA": "text",
-              "valueA": "Notes",
+              "valueA": "Priest - shield Veras' poison targets ASAP",
               "arrow": false,
-              "typeB": "text",
-              "valueB": ""
+              "typeB": "player",
+              "valueB": null
             }
           ]
         },
         {
-          "id": 3105,
+          "id": 4,
           "label": "📋 Strategy Notes",
           "rows": [
             {
-              "id": 3212,
+              "id": 10,
               "typeA": "notes",
-              "valueA": "Four casters, each needs a plan: Gathios (DPS focus - dispel his stun fast, move out of Consecration), Zerevor (mage-tank only - spellsteal Dampen Magic, interrupt Arcane Bolt), Malande (needs a melee+ranged interrupt rotation on Circle of Healing), Veras (vanishes/reappears - OT re-picks him up fast, then bring him to Gathios to get cleaved). Keep Curse of Tongues up throughout.",
+              "valueA": "GATHIOS (DPS focus target): MT moves him out of his own Consecration - melee don't wait for the tank, move the moment you see it. Spell Reflect Seal of Command's Judgement if possible. Dispel Hand of Judgement (random stun) ASAP.\n\nZEREVOR: must be tanked by a Mage, who spellsteals Dampen Magic and needs a dedicated healer. Casts Arcane Explosion if anyone's in melee range - stay out. Interrupt Arcane Bolt as much as possible (ranged rotation). Move immediately out of Blizzard/Flame Strike.\n\nMALANDE: needs melee + ranged interrupters on Circle of Healing (mandatory interrupt) - if she's immune to physical, ranged has to cover it alone. Can be kited next to Gathios/Veras for cleave damage on faster kills.\n\nVERAS: vanishes and reappears on a random target with Deadly Poison + Envenom - OT must repick him up quickly, priests shield the poison target ASAP. Once picked up, bring him near Gathios to get cleaved.",
               "arrow": false,
               "typeB": null,
               "valueB": null
@@ -6702,41 +6164,25 @@
       "image": "strats/bt-illidan-p1.png",
       "sections": [
         {
-          "id": 3201,
+          "id": 1,
           "label": "🛡 Tanks",
           "rows": [
             {
-              "id": 3301,
+              "id": 1,
               "typeA": "text",
               "valueA": "MT",
               "arrow": false,
               "typeB": "player",
               "valueB": null
-            },
-            {
-              "id": 3302,
-              "typeA": "text",
-              "valueA": "OT",
-              "arrow": false,
-              "typeB": "player",
-              "valueB": null
-            },
-            {
-              "id": 3303,
-              "typeA": "text",
-              "valueA": "OT2",
-              "arrow": false,
-              "typeB": "player",
-              "valueB": null
             }
           ]
         },
         {
-          "id": 3202,
+          "id": 2,
           "label": "✚ Healer Assigns",
           "rows": [
             {
-              "id": 3304,
+              "id": 2,
               "typeA": "player",
               "valueA": null,
               "arrow": true,
@@ -6744,23 +6190,7 @@
               "valueB": null
             },
             {
-              "id": 3305,
-              "typeA": "player",
-              "valueA": null,
-              "arrow": true,
-              "typeB": "player",
-              "valueB": null
-            },
-            {
-              "id": 3306,
-              "typeA": "player",
-              "valueA": null,
-              "arrow": true,
-              "typeB": "player",
-              "valueB": null
-            },
-            {
-              "id": 3307,
+              "id": 3,
               "typeA": "player",
               "valueA": null,
               "arrow": true,
@@ -6770,57 +6200,13 @@
           ]
         },
         {
-          "id": 3203,
-          "label": "🏹 Misdirection",
-          "rows": [
-            {
-              "id": 3308,
-              "typeA": "player",
-              "valueA": null,
-              "arrow": true,
-              "typeB": "player",
-              "valueB": null
-            },
-            {
-              "id": 3309,
-              "typeA": "player",
-              "valueA": null,
-              "arrow": true,
-              "typeB": "player",
-              "valueB": null
-            }
-          ]
-        },
-        {
-          "id": 3204,
-          "label": "🔊 Lust / Drums",
-          "rows": [
-            {
-              "id": 3310,
-              "typeA": "text",
-              "valueA": "Timing",
-              "arrow": false,
-              "typeB": "text",
-              "valueB": ""
-            },
-            {
-              "id": 3311,
-              "typeA": "text",
-              "valueA": "Notes",
-              "arrow": false,
-              "typeB": "text",
-              "valueB": ""
-            }
-          ]
-        },
-        {
-          "id": 3205,
+          "id": 3,
           "label": "📋 Strategy Notes",
           "rows": [
             {
-              "id": 3312,
+              "id": 4,
               "typeA": "notes",
-              "valueA": "Ranged/healers stack; the Parasitic Shadowfiend target runs away from the raid, and the adds get focused down fast once they spawn (slow traps help). MT saves Shield Block/Holy Shield for Shear and repositions Illidan after every Flame Crash.",
+              "valueA": "Ranged and healers stack. MT uses Shield Block/Holy Shield to block Shear (reduces max HP by 60% for 7s, cannot miss). Move Illidan slightly after each Flame Crash.\n\nMelee: stay out from in front of Illidan so Draw Soul (heals him 100k) doesn't land on anyone extra.\n\nParasitic Shadowfiend target runs away from the raid - kill the 2 adds immediately when they spawn (consider slow traps).",
               "arrow": false,
               "typeB": null,
               "valueB": null
@@ -6836,29 +6222,21 @@
       "image": "strats/bt-illidan-p2.png",
       "sections": [
         {
-          "id": 3301,
+          "id": 1,
           "label": "🛡 Tanks",
           "rows": [
             {
-              "id": 3401,
+              "id": 1,
               "typeA": "text",
-              "valueA": "MT",
+              "valueA": "Flame Tank 1 (Fire Resist)",
               "arrow": false,
               "typeB": "player",
               "valueB": null
             },
             {
-              "id": 3402,
+              "id": 2,
               "typeA": "text",
-              "valueA": "OT",
-              "arrow": false,
-              "typeB": "player",
-              "valueB": null
-            },
-            {
-              "id": 3403,
-              "typeA": "text",
-              "valueA": "OT2",
+              "valueA": "Flame Tank 2 (Fire Resist)",
               "arrow": false,
               "typeB": "player",
               "valueB": null
@@ -6866,95 +6244,43 @@
           ]
         },
         {
-          "id": 3302,
+          "id": 2,
           "label": "✚ Healer Assigns",
           "rows": [
             {
-              "id": 3404,
-              "typeA": "player",
-              "valueA": null,
-              "arrow": true,
-              "typeB": "player",
-              "valueB": null
-            },
-            {
-              "id": 3405,
-              "typeA": "player",
-              "valueA": null,
-              "arrow": true,
-              "typeB": "player",
-              "valueB": null
-            },
-            {
-              "id": 3406,
-              "typeA": "player",
-              "valueA": null,
-              "arrow": true,
-              "typeB": "player",
-              "valueB": null
-            },
-            {
-              "id": 3407,
-              "typeA": "player",
-              "valueA": null,
-              "arrow": true,
-              "typeB": "player",
-              "valueB": null
-            }
-          ]
-        },
-        {
-          "id": 3303,
-          "label": "🏹 Misdirection",
-          "rows": [
-            {
-              "id": 3408,
-              "typeA": "player",
-              "valueA": null,
-              "arrow": true,
-              "typeB": "player",
-              "valueB": null
-            },
-            {
-              "id": 3409,
-              "typeA": "player",
-              "valueA": null,
-              "arrow": true,
-              "typeB": "player",
-              "valueB": null
-            }
-          ]
-        },
-        {
-          "id": 3304,
-          "label": "🔊 Lust / Drums",
-          "rows": [
-            {
-              "id": 3410,
+              "id": 3,
               "typeA": "text",
-              "valueA": "Timing",
+              "valueA": "Flame Tank 1 healer(s)",
               "arrow": false,
-              "typeB": "text",
-              "valueB": ""
+              "typeB": "player",
+              "valueB": null
             },
             {
-              "id": 3411,
+              "id": 4,
               "typeA": "text",
-              "valueA": "Notes",
+              "valueA": "Flame Tank 2 healer(s)",
               "arrow": false,
-              "typeB": "text",
-              "valueB": ""
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 5,
+              "typeA": "text",
+              "valueA": "Dark Barrage focus healer",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
             }
           ]
         },
         {
-          "id": 3305,
+          "id": 3,
           "label": "📋 Strategy Notes",
           "rows": [
             {
-              "id": 3412,
+              "id": 6,
               "typeA": "notes",
-              "valueA": "Flames of Azzinoth - two fire-resist tanks kite the Flame adds along a set path so their breath never crosses the raid; melee focus one Flame down before swapping to the other. Ranged/healers split into 3 groups to spread Fireball damage and dodge the Eye Blast trail as it lands.",
+              "valueA": "2 Fire Resist tanks kite the Flames of Azzinoth along the planned paths - never let a Flame breathe on the raid, and keep the Flame within 25yds of its glaive (Uncaged Wrath enrage = wipe if not).\n\nDodge Eye Blast's blue fire trail as it lands (stays 1 min, 2k/sec if stood in) - tanks CAN walk through it after it's landed if needed, just call it out.\n\nRanged + healers split into 3 marked groups between the elementals to spread Fireball damage - communicate if a group needs to move for an Eye Blast trail. Focus one Flame down fully before swapping to the other. Melee: don't stand in fire for extra DPS.",
               "arrow": false,
               "typeB": null,
               "valueB": null
@@ -6970,41 +6296,25 @@
       "image": "strats/bt-illidan-p3.png",
       "sections": [
         {
-          "id": 3401,
+          "id": 1,
           "label": "🛡 Tanks",
           "rows": [
             {
-              "id": 3501,
+              "id": 1,
               "typeA": "text",
               "valueA": "MT",
               "arrow": false,
               "typeB": "player",
               "valueB": null
-            },
-            {
-              "id": 3502,
-              "typeA": "text",
-              "valueA": "OT",
-              "arrow": false,
-              "typeB": "player",
-              "valueB": null
-            },
-            {
-              "id": 3503,
-              "typeA": "text",
-              "valueA": "OT2",
-              "arrow": false,
-              "typeB": "player",
-              "valueB": null
             }
           ]
         },
         {
-          "id": 3402,
+          "id": 2,
           "label": "✚ Healer Assigns",
           "rows": [
             {
-              "id": 3504,
+              "id": 2,
               "typeA": "player",
               "valueA": null,
               "arrow": true,
@@ -7012,23 +6322,7 @@
               "valueB": null
             },
             {
-              "id": 3505,
-              "typeA": "player",
-              "valueA": null,
-              "arrow": true,
-              "typeB": "player",
-              "valueB": null
-            },
-            {
-              "id": 3506,
-              "typeA": "player",
-              "valueA": null,
-              "arrow": true,
-              "typeB": "player",
-              "valueB": null
-            },
-            {
-              "id": 3507,
+              "id": 3,
               "typeA": "player",
               "valueA": null,
               "arrow": true,
@@ -7038,57 +6332,13 @@
           ]
         },
         {
-          "id": 3403,
-          "label": "🏹 Misdirection",
-          "rows": [
-            {
-              "id": 3508,
-              "typeA": "player",
-              "valueA": null,
-              "arrow": true,
-              "typeB": "player",
-              "valueB": null
-            },
-            {
-              "id": 3509,
-              "typeA": "player",
-              "valueA": null,
-              "arrow": true,
-              "typeB": "player",
-              "valueB": null
-            }
-          ]
-        },
-        {
-          "id": 3404,
-          "label": "🔊 Lust / Drums",
-          "rows": [
-            {
-              "id": 3510,
-              "typeA": "text",
-              "valueA": "Timing",
-              "arrow": false,
-              "typeB": "text",
-              "valueB": ""
-            },
-            {
-              "id": 3511,
-              "typeA": "text",
-              "valueA": "Notes",
-              "arrow": false,
-              "typeB": "text",
-              "valueB": ""
-            }
-          ]
-        },
-        {
-          "id": 3405,
+          "id": 3,
           "label": "📋 Strategy Notes",
           "rows": [
             {
-              "id": 3512,
+              "id": 4,
               "typeA": "notes",
-              "valueA": "Repeats Phase 1's mechanics, but everyone now spreads 5 yards for Agonizing Flames. Designate a spot to drop/slow/kill Parasitic Shadowfiends.",
+              "valueA": "Repeat Phase 1's strat exactly, except everyone now spreads 5 yards for Agonizing Flames (5yd AoE + heavy DoT on whoever it hits).\n\nDesignate a spot (or spots) ahead of time for Parasitic Shadowfiends to be dropped, slowed, and killed.",
               "arrow": false,
               "typeB": null,
               "valueB": null
@@ -7104,29 +6354,13 @@
       "image": "strats/bt-illidan-p4.png",
       "sections": [
         {
-          "id": 3501,
+          "id": 1,
           "label": "🛡 Tanks",
           "rows": [
             {
-              "id": 3601,
+              "id": 1,
               "typeA": "text",
-              "valueA": "MT",
-              "arrow": false,
-              "typeB": "player",
-              "valueB": null
-            },
-            {
-              "id": 3602,
-              "typeA": "text",
-              "valueA": "OT",
-              "arrow": false,
-              "typeB": "player",
-              "valueB": null
-            },
-            {
-              "id": 3603,
-              "typeA": "text",
-              "valueA": "OT2",
+              "valueA": "Warlock Tank (Shadow Resist)",
               "arrow": false,
               "typeB": "player",
               "valueB": null
@@ -7134,95 +6368,13 @@
           ]
         },
         {
-          "id": 3502,
-          "label": "✚ Healer Assigns",
-          "rows": [
-            {
-              "id": 3604,
-              "typeA": "player",
-              "valueA": null,
-              "arrow": true,
-              "typeB": "player",
-              "valueB": null
-            },
-            {
-              "id": 3605,
-              "typeA": "player",
-              "valueA": null,
-              "arrow": true,
-              "typeB": "player",
-              "valueB": null
-            },
-            {
-              "id": 3606,
-              "typeA": "player",
-              "valueA": null,
-              "arrow": true,
-              "typeB": "player",
-              "valueB": null
-            },
-            {
-              "id": 3607,
-              "typeA": "player",
-              "valueA": null,
-              "arrow": true,
-              "typeB": "player",
-              "valueB": null
-            }
-          ]
-        },
-        {
-          "id": 3503,
-          "label": "🏹 Misdirection",
-          "rows": [
-            {
-              "id": 3608,
-              "typeA": "player",
-              "valueA": null,
-              "arrow": true,
-              "typeB": "player",
-              "valueB": null
-            },
-            {
-              "id": 3609,
-              "typeA": "player",
-              "valueA": null,
-              "arrow": true,
-              "typeB": "player",
-              "valueB": null
-            }
-          ]
-        },
-        {
-          "id": 3504,
-          "label": "🔊 Lust / Drums",
-          "rows": [
-            {
-              "id": 3610,
-              "typeA": "text",
-              "valueA": "Timing",
-              "arrow": false,
-              "typeB": "text",
-              "valueB": ""
-            },
-            {
-              "id": 3611,
-              "typeA": "text",
-              "valueA": "Notes",
-              "arrow": false,
-              "typeB": "text",
-              "valueB": ""
-            }
-          ]
-        },
-        {
-          "id": 3505,
+          "id": 2,
           "label": "📋 Strategy Notes",
           "rows": [
             {
-              "id": 3612,
+              "id": 2,
               "typeA": "notes",
-              "valueA": "Demon Phase - a warlock in shadow resistance gear solo-tanks Illidan, 20 yards from everyone else. Raid spreads for Flame Burst/Shadow Demons and kills the demons the instant they spawn. Most guilds push hard here (lust included) since he drops to Phase 5 at 30%.",
+              "valueA": "Entire raid spreads out. A Warlock with Shadow Resistance gear tanks Illidan this phase, standing ~20yds away from everyone else - Shadow Blast hits highest threat + anyone within 20yds.\n\nFlame Burst hits the whole raid (spread 5yds to soften it). Kill Summoned Shadow Demons immediately - they fixate, stun, and kill on contact.\n\nMany guilds push to skip most of this phase - Illidan transitions to Phase 5 at 30%, so if your DPS supports it, lust in Phase 3 to get him there fast.",
               "arrow": false,
               "typeB": null,
               "valueB": null
@@ -7238,41 +6390,25 @@
       "image": "strats/bt-illidan-p5.png",
       "sections": [
         {
-          "id": 3601,
+          "id": 1,
           "label": "🛡 Tanks",
           "rows": [
             {
-              "id": 3701,
+              "id": 1,
               "typeA": "text",
               "valueA": "MT",
               "arrow": false,
               "typeB": "player",
               "valueB": null
-            },
-            {
-              "id": 3702,
-              "typeA": "text",
-              "valueA": "OT",
-              "arrow": false,
-              "typeB": "player",
-              "valueB": null
-            },
-            {
-              "id": 3703,
-              "typeA": "text",
-              "valueA": "OT2",
-              "arrow": false,
-              "typeB": "player",
-              "valueB": null
             }
           ]
         },
         {
-          "id": 3602,
+          "id": 2,
           "label": "✚ Healer Assigns",
           "rows": [
             {
-              "id": 3704,
+              "id": 2,
               "typeA": "player",
               "valueA": null,
               "arrow": true,
@@ -7280,23 +6416,7 @@
               "valueB": null
             },
             {
-              "id": 3705,
-              "typeA": "player",
-              "valueA": null,
-              "arrow": true,
-              "typeB": "player",
-              "valueB": null
-            },
-            {
-              "id": 3706,
-              "typeA": "player",
-              "valueA": null,
-              "arrow": true,
-              "typeB": "player",
-              "valueB": null
-            },
-            {
-              "id": 3707,
+              "id": 3,
               "typeA": "player",
               "valueA": null,
               "arrow": true,
@@ -7306,57 +6426,13 @@
           ]
         },
         {
-          "id": 3603,
-          "label": "🏹 Misdirection",
-          "rows": [
-            {
-              "id": 3708,
-              "typeA": "player",
-              "valueA": null,
-              "arrow": true,
-              "typeB": "player",
-              "valueB": null
-            },
-            {
-              "id": 3709,
-              "typeA": "player",
-              "valueA": null,
-              "arrow": true,
-              "typeB": "player",
-              "valueB": null
-            }
-          ]
-        },
-        {
-          "id": 3604,
-          "label": "🔊 Lust / Drums",
-          "rows": [
-            {
-              "id": 3710,
-              "typeA": "text",
-              "valueA": "Timing",
-              "arrow": false,
-              "typeB": "text",
-              "valueB": ""
-            },
-            {
-              "id": 3711,
-              "typeA": "text",
-              "valueA": "Notes",
-              "arrow": false,
-              "typeB": "text",
-              "valueB": ""
-            }
-          ]
-        },
-        {
-          "id": 3605,
+          "id": 3,
           "label": "📋 Strategy Notes",
           "rows": [
             {
-              "id": 3712,
+              "id": 4,
               "typeA": "notes",
-              "valueA": "Repeats Phase 3, but watch his enrage timer (+30% attack speed/+50% damage after 40s) - save cooldowns for it. Maiev drops traps around the platform; kite Illidan into one to strip the enrage and boost his damage taken. If you reach this phase, you can finish the kill.",
+              "valueA": "Repeat Phase 3's strat. Watch Illidan's Enrage (40s in - +30% attack speed/+50% damage) - healers and MT need to be ready, save cooldowns/potions for this stretch.\n\nMaiev drops traps on the platform during this phase - consider numbering/naming regions ahead of time so the raid can call out trap locations fast. MT kites Illidan into a trap to strip the enrage and increase damage taken.\n\nIf you reach Phase 5, you can kill the boss. Glaives are MT loot priority.",
               "arrow": false,
               "typeB": null,
               "valueB": null

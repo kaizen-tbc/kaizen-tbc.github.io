@@ -2052,8 +2052,6 @@ a[href] > div > div[style*="line-height:1.6"] {
     <div style="display:flex;gap:8px;align-items:center;">
       <button class="btn btn-small" onclick="openPugModal()">+ Pug</button>
       <button class="btn btn-small" onclick="openAddTrashGuideModal()" title="A wave-by-wave trash breakdown, shown as its own tab before whichever boss it precedes">🧟 + Trash Guide</button>
-      <select id="auto-assign-raid-select" class="form-select" style="width:auto;padding:8px 10px;font-size:12px;" onchange="updateAutoAssignRaid(this.value)" title="Which raid's this-week roster Auto-Assign pulls from - remembered for next time"></select>
-      <button class="btn btn-small" onclick="confirmAutoAssign()" title="Fill empty Tank/Healer/Misdirection slots from this week's grouped roster - never overwrites an existing assignment">🪄 Auto-Assign</button>
       <button class="btn btn-gold" onclick="openStratUpload()">+ Add Strat</button>
       <button class="btn" style="white-space:nowrap;background:#5865F2;border-color:#4752c4;color:#fff;font-weight:700;" onclick="confirmPostActiveTab()">🚀 Post to Discord</button>
     </div>
@@ -7312,22 +7310,6 @@ function renderStrats() {
     });
   }
 
-  // Which raid tab Auto-Assign pulls this week's roster from - refreshed
-  // in full every render (unlike strat-raid-input above) since raids[]
-  // itself changes far more often (added/renamed/removed) than the fixed
-  // RAID_INSTANCES list ever does. Defaults to whichever raid is globally
-  // active the first time, or if the previously-remembered one got
-  // deleted since.
-  const autoAssignSelect = document.getElementById('auto-assign-raid-select');
-  if (autoAssignSelect && raids.length) {
-    if (autoAssignRaidId == null || !raids.some(r => r.id === autoAssignRaidId)) {
-      autoAssignRaidId = activeRaidId;
-    }
-    autoAssignSelect.innerHTML = raids.map(r =>
-      `<option value="${r.id}" ${r.id === autoAssignRaidId ? 'selected' : ''}>${r.name.replace(/</g, '&lt;')}</option>`
-    ).join('');
-  }
-
   if (strats.length === 0 && trashGuides.length === 0) {
     list.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-text">No strats yet. Click "+ Add Strat" to upload your first encounter diagram.</div></div>`;
     return;
@@ -7511,6 +7493,7 @@ function renderStrats() {
           ${assignsPanel}
         `}
       </div>` : ''}`;
+  syncAutoAssignRaidSelect();
 }
 
 function setActiveRaid(raid) {
@@ -9009,10 +8992,37 @@ function buildAssignsPanel(strat) {
     </div>`;
   }).join('');
 
+  // Auto-Assign lives right here - same width as the section cards below
+  // it, directly above them - rather than up in the page header, far from
+  // the Tank/Healer/Misdirection cards it actually fills. The raid-roster
+  // select travels with it since it's the one control that decides what
+  // Auto-Assign actually does.
+  const autoAssignHtml = `<div style="display:flex;gap:6px;">
+    <select id="auto-assign-raid-select" class="form-select" style="flex:1;min-width:0;padding:8px 10px;font-size:12px;" onchange="updateAutoAssignRaid(this.value)" title="Which raid's this-week roster Auto-Assign pulls from - remembered for next time"></select>
+    <button class="btn btn-small" style="flex-shrink:0;white-space:nowrap;" onclick="confirmAutoAssign()" title="Fill empty Tank/Healer/Misdirection slots from this week's grouped roster - never overwrites an existing assignment">🪄 Auto-Assign</button>
+  </div>`;
+
   return `<div class="assigns-panel" style="min-width:300px;max-width:340px;flex-shrink:0;display:flex;flex-direction:column;gap:10px;">
+    ${autoAssignHtml}
     ${sectionsHtml}
     <button class="add-section-btn" onclick="openSectionModal(${sid})">+ Add Section</button>
   </div>`;
+}
+
+// Populates/syncs the raid-roster select that now lives inside
+// buildAssignsPanel - called right after that HTML actually lands in the
+// DOM (the element doesn't exist yet at the point renderStrats builds the
+// rest of the page). Refreshed in full every call since raids[] changes
+// far more often than a one-time populate would keep up with.
+function syncAutoAssignRaidSelect() {
+  const el = document.getElementById('auto-assign-raid-select');
+  if (!el || !raids.length) return;
+  if (autoAssignRaidId == null || !raids.some(r => r.id === autoAssignRaidId)) {
+    autoAssignRaidId = activeRaidId;
+  }
+  el.innerHTML = raids.map(r =>
+    `<option value="${r.id}" ${r.id === autoAssignRaidId ? 'selected' : ''}>${r.name.replace(/</g, '&lt;')}</option>`
+  ).join('');
 }
 
 // ── Section / row data mutations ───────────────────────────────
