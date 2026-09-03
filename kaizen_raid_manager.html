@@ -7324,17 +7324,31 @@ function renderStrats() {
     : trashGuides.some(g => g.id === activeTrashId && g.raid === activeRaid);
   if (!activeTabValid) {
     const first = mergedTabs[0];
-    activeTabKind = first ? first.kind : 'strat';
-    activeStratId = first && first.kind === 'strat' ? first.id : null;
-    activeTrashId = first && first.kind === 'trash' ? first.id : null;
+    const firstTarget = first?.kind === 'group' ? first.members[0] : first;
+    activeTabKind = firstTarget ? firstTarget.kind : 'strat';
+    activeStratId = firstTarget && firstTarget.kind === 'strat' ? firstTarget.id : null;
+    activeTrashId = firstTarget && firstTarget.kind === 'trash' ? firstTarget.id : null;
   }
   const active = activeTabKind === 'strat' ? strats.find(s => s.id === activeStratId) : null;
   const activeGuide = activeTabKind === 'trash' ? trashGuides.find(g => g.id === activeTrashId) : null;
+  const activeGroup = findActiveGroup(mergedTabs);
 
   // Strat tabs are draggable for reordering; trash tabs are NOT - their
   // position is derived automatically from beforeBoss (see
-  // buildMergedRaidTabs), not manually ordered.
+  // buildMergedRaidTabs), not manually ordered. A group tab (multiple
+  // phases and/or a trash guide sharing one boss identity) is neither -
+  // it's one button for the whole group, with the actual phase/guide
+  // picked via the dropdown inside the content pane below, not a
+  // per-phase tab button (so no drag reorder and no remove button here -
+  // see removeActiveGroupMember for how a member gets removed instead).
   const tabs = mergedTabs.map(t => {
+    if (t.kind === 'group') {
+      const isActive = t === activeGroup;
+      return `<button class="strat-tab-btn ${isActive ? 'active' : ''}"
+        onclick="setActiveGroupTabByKey('${t.groupKey.replace(/'/g, "\\'")}')">
+        ${t.name}
+      </button>`;
+    }
     const isActive = t.kind === activeTabKind && (t.kind === 'strat' ? t.id === activeStratId : t.id === activeTrashId);
     if (t.kind === 'strat') {
       return `<button class="strat-tab-btn ${isActive ? 'active' : ''}"
@@ -7432,10 +7446,30 @@ function renderStrats() {
   const trashPanel = activeGuide ? renderTrashGuidePanel(activeGuide) : '';
   const poolSection = '';
 
+  // Only shown when the active tab is a group (multiple phases and/or a
+  // trash guide sharing one boss identity, see buildMergedRaidTabs) - lets
+  // you pick which member is actually showing below. Posting to Discord
+  // needs no awareness of this at all: picking an option just calls the
+  // same setActiveStat/setActiveTrashTab a plain tab click already uses,
+  // so confirmPostActiveTab always posts whatever ends up active either way.
+  const groupSelectorHtml = activeGroup ? `
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
+      <label style="font-size:12px;color:var(--text-dim);">Viewing:</label>
+      <select class="form-select" style="width:auto;padding:6px 10px;" onchange="setGroupMemberSelection('${activeGroup.groupKey.replace(/'/g, "\\'")}', this.value)">
+        ${activeGroup.members.map(m => {
+          const val = `${m.kind}|${m.id}`;
+          const isSel = (m.kind === 'strat' && activeTabKind === 'strat' && m.id === activeStratId) || (m.kind === 'trash' && activeTabKind === 'trash' && m.id === activeTrashId);
+          return `<option value="${val}" ${isSel ? 'selected' : ''}>${m.label.replace(/</g, '&lt;')}</option>`;
+        }).join('')}
+      </select>
+      <button class="btn btn-small" onclick="removeActiveGroupMember()" title="Remove whichever phase/guide is currently selected above">✕ Remove This</button>
+    </div>` : '';
+
   list.innerHTML = `
     <div class="strat-raid-pills">${raidPills}</div>
     ${mergedTabs.length > 0 ? `
       <div class="strat-tabs" id="strat-tabs-container">${tabs}</div>
+      ${groupSelectorHtml}
       <div class="strat-content-wrap">
         ${activeTabKind === 'trash' ? trashPanel : `
           <div style="flex:1;min-width:0;">
@@ -7472,27 +7506,133 @@ function setActiveTrashTab(id) {
 // immediately before whichever boss's trash they cover.
 // ══════════════════════════════════════════════════════════
 
-// Merges a raid's strats and trash guides into one ordered tab list, each
-// trash guide inserted immediately before the strat named in its
-// beforeBoss field (case-insensitive) - literally "a trash tab before that
-// boss". A guide whose beforeBoss doesn't match any current strat name
-// (boss renamed/removed, or a typo) is appended at the end instead of
-// silently disappearing, tagged orphaned so it's visibly flagged rather
-// than just missing.
+// Multi-phase bosses already get named with a consistent " - P<n>" suffix
+// (Illidan Stormrage - P1..P5, Bloodboil - P1/P2, Reliquary of Souls -
+// P1/P2/P3, Magtheridon - P1/P2, ...) - stripping that gives the shared
+// boss identity so every phase, plus any trash guide set to precede one
+// of them, can be grouped under ONE tab automatically. No manual "assign
+// to group" step, no new data field - purely derived from names already
+// in use. A single-phase boss's key is just its own name, so it stays a
+// plain tab with no dropdown until something else actually shares that key.
+function stratGroupKey(name) {
+  return (name || '').replace(/\s*-\s*P\d+\s*$/i, '').trim();
+}
+function stratPhaseNumber(name) {
+  const m = (name || '').match(/-\s*P(\d+)\s*$/i);
+  return m ? parseInt(m[1], 10) : 0;
+}
+
+// Merges a raid's strats and trash guides into one ordered tab list.
+// Anything sharing a group key (see stratGroupKey) collapses into ONE
+// tab - a trash guide before a boss, that boss's own phases, or both
+// together - with a dropdown inside the tab to pick which one is showing
+// (see the group-selector in renderStrats). A key with only one member
+// renders as a perfectly normal single tab, unchanged from before -
+// grouping only ever kicks in once something actually needs it. A trash
+// guide whose beforeBoss doesn't match any current strat (a genuinely
+// general guide with no single target, or a typo/renamed boss) still
+// falls through to its own tab at the end, tagged orphaned only if it
+// looks like a mismatch rather than an intentional standalone guide.
 function buildMergedRaidTabs(raid) {
   const raidStrats = strats.filter(s => s.raid === raid);
   const raidGuides = trashGuides.filter(g => g.raid === raid);
-  const used = new Set();
+  const usedGuides = new Set();
+  const seenGroupKeys = new Set();
   const merged = [];
+
   for (const s of raidStrats) {
-    const guide = raidGuides.find(g => !used.has(g.id) && g.beforeBoss && g.beforeBoss.toLowerCase() === s.name.toLowerCase());
-    if (guide) { used.add(guide.id); merged.push({ kind: 'trash', id: guide.id, name: `🧟 ${guide.beforeBoss}` }); }
-    merged.push({ kind: 'strat', id: s.id, name: s.name });
+    const key = stratGroupKey(s.name);
+    if (seenGroupKeys.has(key)) continue; // already emitted with an earlier phase sharing this key
+    seenGroupKeys.add(key);
+
+    const groupStrats = raidStrats
+      .filter(x => stratGroupKey(x.name) === key)
+      .sort((a, b) => stratPhaseNumber(a.name) - stratPhaseNumber(b.name));
+    const groupGuides = raidGuides.filter(g => !usedGuides.has(g.id) && g.beforeBoss && stratGroupKey(g.beforeBoss) === key);
+    groupGuides.forEach(g => usedGuides.add(g.id));
+
+    const members = [
+      ...groupGuides.map(g => ({ kind: 'trash', id: g.id, label: '🧟 Trash' })),
+      ...groupStrats.map(x => ({ kind: 'strat', id: x.id, label: x.name })),
+    ];
+
+    if (members.length > 1) {
+      merged.push({ kind: 'group', groupKey: key, name: key, members });
+    } else {
+      merged.push({ kind: 'strat', id: s.id, name: s.name });
+    }
   }
+
   for (const g of raidGuides) {
-    if (!used.has(g.id)) merged.push({ kind: 'trash', id: g.id, name: `🧟 ${g.beforeBoss || 'Trash'}`, orphaned: true });
+    if (!usedGuides.has(g.id)) merged.push({ kind: 'trash', id: g.id, name: `🧟 ${g.beforeBoss || 'Trash'}`, orphaned: !!g.beforeBoss });
   }
   return merged;
+}
+
+// Which group (if any) the currently active strat/trash belongs to -
+// used to decide whether to show the in-tab dropdown selector at all.
+function findActiveGroup(mergedTabs) {
+  for (const t of mergedTabs) {
+    if (t.kind !== 'group') continue;
+    const isActiveMember = t.members.some(m =>
+      (m.kind === 'strat' && activeTabKind === 'strat' && m.id === activeStratId) ||
+      (m.kind === 'trash' && activeTabKind === 'trash' && m.id === activeTrashId)
+    );
+    if (isActiveMember) return t;
+  }
+  return null;
+}
+
+// Remembers which member was last viewed per group (keyed by groupKey),
+// so coming back to e.g. "Illidan Stormrage" after checking another tab
+// resumes wherever you left off (P3, say) instead of resetting to P1
+// every time - a raid night runs through phases sequentially, often with
+// other tabs checked in between, so "already active" alone (only true
+// while you never leave the tab) wasn't enough on its own.
+let _lastGroupSelection = {};
+
+// Clicking a group's tab button - prefers a member that's already active
+// (still on this same group), then whatever was last viewed for this
+// specific group, then finally defaults to the first member (trash first
+// if present, else the earliest phase) the very first time it's opened.
+function setActiveGroupTab(members, groupKey) {
+  const alreadyActive = members.find(m =>
+    (m.kind === 'strat' && activeTabKind === 'strat' && m.id === activeStratId) ||
+    (m.kind === 'trash' && activeTabKind === 'trash' && m.id === activeTrashId)
+  );
+  const last = groupKey && _lastGroupSelection[groupKey];
+  const remembered = last ? members.find(m => m.kind === last.kind && m.id === last.id) : null;
+  const target = alreadyActive || remembered || members[0];
+  if (target.kind === 'strat') setActiveStat(target.id);
+  else setActiveTrashTab(target.id);
+  if (groupKey) _lastGroupSelection[groupKey] = { kind: target.kind, id: target.id };
+}
+
+function setActiveGroupTabByKey(groupKey) {
+  const group = buildMergedRaidTabs(activeRaid).find(t => t.kind === 'group' && t.groupKey === groupKey);
+  if (group) setActiveGroupTab(group.members, groupKey);
+}
+
+// The dropdown's own onchange - value is "kind|id" (e.g. "strat|37").
+// Posting to Discord needs no separate handling for a grouped selection
+// at all: this just calls the exact same setActiveStat/setActiveTrashTab
+// every plain tab click already uses, so confirmPostActiveTab keeps
+// posting whatever's currently active regardless of how it got selected.
+function setGroupMemberSelection(groupKey, value) {
+  const [kind, idStr] = value.split('|');
+  const id = Number(idStr);
+  if (kind === 'strat') setActiveStat(id);
+  else setActiveTrashTab(id);
+  _lastGroupSelection[groupKey] = { kind, id };
+}
+
+// Removes whichever member is currently selected in an open group's
+// dropdown - reuses removeStrat/removeTrashGuide exactly as a normal
+// tab's own remove button would, just triggered from the dropdown's
+// row instead of a per-phase tab button (groups don't have one).
+function removeActiveGroupMember() {
+  if (activeTabKind === 'strat' && activeStratId != null) removeStrat(activeStratId);
+  else if (activeTabKind === 'trash' && activeTrashId != null) removeTrashGuide(activeTrashId);
 }
 
 // A wave's "mobs" text is free-form like "6 Ghoul |  2 Crypt Fiend" - pull
