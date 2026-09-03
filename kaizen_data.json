@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-09-03T14:03:15.577Z",
+  "savedAt": "2026-09-03T22:54:57.580Z",
   "roster": [
     {
       "id": 1,
@@ -5237,7 +5237,7 @@
               "valueA": "MT",
               "arrow": false,
               "typeB": "player",
-              "valueB": null
+              "valueB": 55
             }
           ]
         },
@@ -5248,18 +5248,18 @@
             {
               "id": 2,
               "typeA": "player",
-              "valueA": null,
+              "valueA": -2,
               "arrow": true,
               "typeB": "player",
-              "valueB": null
+              "valueB": 55
             },
             {
               "id": 3,
               "typeA": "player",
-              "valueA": null,
+              "valueA": 27,
               "arrow": true,
               "typeB": "player",
-              "valueB": null
+              "valueB": 55
             }
           ]
         },
@@ -5309,7 +5309,7 @@
               "valueA": "MT",
               "arrow": false,
               "typeB": "player",
-              "valueB": null
+              "valueB": 55
             },
             {
               "id": 2,
@@ -5317,7 +5317,7 @@
               "valueA": "OT (Hateful Strike soak)",
               "arrow": false,
               "typeB": "player",
-              "valueB": null
+              "valueB": 1
             }
           ]
         },
@@ -5328,21 +5328,35 @@
             {
               "id": 3,
               "typeA": "player",
-              "valueA": null,
+              "valueA": 20,
               "arrow": true,
               "typeB": "player",
-              "valueB": null
+              "valueB": 55
             },
             {
               "id": 4,
               "typeA": "player",
-              "valueA": null,
+              "valueA": 27,
               "arrow": true,
               "typeB": "player",
-              "valueB": null
+              "valueB": 1
+            }
+          ]
+        },
+        {
+          "id": 6106,
+          "label": "🏹 Misdirection",
+          "rows": [
+            {
+              "id": 6213,
+              "typeA": "player",
+              "valueA": 11,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": 55
             },
             {
-              "id": 5,
+              "id": 6214,
               "typeA": "player",
               "valueA": null,
               "arrow": true,
@@ -5380,42 +5394,34 @@
             {
               "id": 1,
               "typeA": "text",
-              "valueA": "Door Tank 1",
+              "valueA": "Left Tank",
               "arrow": false,
               "typeB": "player",
-              "valueB": null
-            },
-            {
-              "id": 2,
-              "typeA": "text",
-              "valueA": "Door Tank 2",
-              "arrow": false,
-              "typeB": "player",
-              "valueB": null
+              "valueB": 1
             },
             {
               "id": 3,
               "typeA": "text",
-              "valueA": "Door Tank 3",
+              "valueA": "Middle Tank 3",
               "arrow": false,
               "typeB": "player",
-              "valueB": null
+              "valueB": 55
             },
             {
-              "id": 4,
+              "id": 6215,
               "typeA": "text",
-              "valueA": "Door Tank 4",
-              "arrow": false,
-              "typeB": "player",
-              "valueB": null
+              "valueA": "Right Tank",
+              "arrow": true,
+              "typeB": "text",
+              "valueB": "PUG"
             },
             {
-              "id": 5,
+              "id": 6216,
               "typeA": "text",
-              "valueA": "Shade of Akama (P2)",
-              "arrow": false,
+              "valueA": "Shade of Akama P2",
+              "arrow": true,
               "typeB": "player",
-              "valueB": null
+              "valueB": 55
             }
           ]
         },
@@ -5456,18 +5462,18 @@
             {
               "id": 9,
               "typeA": "player",
-              "valueA": null,
+              "valueA": 20,
               "arrow": true,
               "typeB": "player",
-              "valueB": null
+              "valueB": 55
             },
             {
               "id": 10,
               "typeA": "player",
-              "valueA": null,
+              "valueA": 27,
               "arrow": true,
               "typeB": "player",
-              "valueB": null
+              "valueB": 1
             }
           ]
         },
@@ -5517,7 +5523,7 @@
               "valueA": "MT",
               "arrow": false,
               "typeB": "player",
-              "valueB": null
+              "valueB": 55
             }
           ]
         },
@@ -5528,10 +5534,10 @@
             {
               "id": 2,
               "typeA": "player",
-              "valueA": null,
+              "valueA": 20,
               "arrow": true,
               "typeB": "player",
-              "valueB": null
+              "valueB": 55
             },
             {
               "id": 3,
@@ -5603,7 +5609,7 @@
               "valueA": "MT (holds Bloodboil, faces away)",
               "arrow": false,
               "typeB": "player",
-              "valueB": null
+              "valueB": 55
             },
             {
               "id": 2,
@@ -5611,7 +5617,7 @@
               "valueA": "OT (tank swap)",
               "arrow": false,
               "typeB": "player",
-              "valueB": null
+              "valueB": 1
             }
           ]
         },
@@ -5622,18 +5628,18 @@
             {
               "id": 3,
               "typeA": "player",
-              "valueA": null,
+              "valueA": 11,
               "arrow": true,
               "typeB": "player",
-              "valueB": null
+              "valueB": 55
             },
             {
               "id": 4,
               "typeA": "player",
-              "valueA": null,
+              "valueA": 29,
               "arrow": true,
               "typeB": "player",
-              "valueB": null
+              "valueB": 1
             }
           ]
         },
@@ -5644,18 +5650,18 @@
             {
               "id": 5,
               "typeA": "player",
-              "valueA": null,
+              "valueA": 20,
               "arrow": true,
               "typeB": "player",
-              "valueB": null
+              "valueB": 55
             },
             {
               "id": 6,
               "typeA": "player",
-              "valueA": null,
+              "valueA": 27,
               "arrow": true,
               "typeB": "player",
-              "valueB": null
+              "valueB": 1
             }
           ]
         },
@@ -5735,7 +5741,7 @@
               "valueA": "Rotation 1",
               "arrow": false,
               "typeB": "player",
-              "valueB": null
+              "valueB": 55
             },
             {
               "id": 2,
@@ -5743,23 +5749,23 @@
               "valueA": "Rotation 2",
               "arrow": false,
               "typeB": "player",
-              "valueB": null
+              "valueB": 1
             },
             {
-              "id": 3,
+              "id": 6218,
               "typeA": "text",
               "valueA": "Rotation 3",
-              "arrow": false,
-              "typeB": "player",
-              "valueB": null
+              "arrow": true,
+              "typeB": "text",
+              "valueB": "PUG"
             },
             {
-              "id": 4,
+              "id": 6219,
               "typeA": "text",
               "valueA": "Rotation 4",
-              "arrow": false,
+              "arrow": true,
               "typeB": "player",
-              "valueB": null
+              "valueB": 35
             }
           ]
         },
@@ -5773,7 +5779,7 @@
               "valueA": "BoP Rotation",
               "arrow": false,
               "typeB": "player",
-              "valueB": null
+              "valueB": 55
             },
             {
               "id": 6,
@@ -5781,7 +5787,7 @@
               "valueA": "Shield Priest (PW:S on tanking target)",
               "arrow": false,
               "typeB": "player",
-              "valueB": null
+              "valueB": 36
             }
           ]
         },
@@ -5808,6 +5814,20 @@
       "image": "strats/bt-reliquary-p2.png",
       "sections": [
         {
+          "id": 6107,
+          "label": "🛡 Tanks",
+          "rows": [
+            {
+              "id": 6220,
+              "typeA": "text",
+              "valueA": "MT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": 1
+            }
+          ]
+        },
+        {
           "id": 1,
           "label": "🎯 Interrupts / Dispels",
           "rows": [
@@ -5817,7 +5837,7 @@
               "valueA": "Spellsteal (Rune Shield) - Mage",
               "arrow": false,
               "typeB": "player",
-              "valueB": null
+              "valueB": 66
             },
             {
               "id": 2,
@@ -5825,7 +5845,7 @@
               "valueA": "Spell Reflect (Deaden) - Warrior Tank",
               "arrow": false,
               "typeB": "player",
-              "valueB": null
+              "valueB": 1
             },
             {
               "id": 3,
@@ -5833,7 +5853,7 @@
               "valueA": "Interrupt Rotation (Spirit Shock) 1",
               "arrow": false,
               "typeB": "player",
-              "valueB": null
+              "valueB": 35
             },
             {
               "id": 4,
@@ -5841,7 +5861,7 @@
               "valueA": "Interrupt Rotation (Spirit Shock) 2",
               "arrow": false,
               "typeB": "player",
-              "valueB": null
+              "valueB": 40
             },
             {
               "id": 5,
@@ -5849,7 +5869,7 @@
               "valueA": "Interrupt Rotation - Backup",
               "arrow": false,
               "typeB": "player",
-              "valueB": null
+              "valueB": 46
             }
           ]
         },
@@ -5979,7 +5999,7 @@
               "valueA": "MT",
               "arrow": false,
               "typeB": "player",
-              "valueB": null
+              "valueB": 55
             },
             {
               "id": 2,
@@ -6006,26 +6026,18 @@
             {
               "id": 4,
               "typeA": "player",
-              "valueA": null,
+              "valueA": -2,
               "arrow": true,
               "typeB": "player",
-              "valueB": null
+              "valueB": 55
             },
             {
               "id": 5,
               "typeA": "player",
-              "valueA": null,
+              "valueA": 27,
               "arrow": true,
               "typeB": "player",
-              "valueB": null
-            },
-            {
-              "id": 6,
-              "typeA": "player",
-              "valueA": null,
-              "arrow": true,
-              "typeB": "player",
-              "valueB": null
+              "valueB": 55
             }
           ]
         },
@@ -10155,6 +10167,7 @@
   ],
   "nextTrashGuideId": 5,
   "nextWaveId": 33,
+  "autoAssignRaidId": 2,
   "attendanceLedger": [
     {
       "id": 6,
