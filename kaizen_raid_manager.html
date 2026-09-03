@@ -2052,6 +2052,8 @@ a[href] > div > div[style*="line-height:1.6"] {
     <div style="display:flex;gap:8px;align-items:center;">
       <button class="btn btn-small" onclick="openPugModal()">+ Pug</button>
       <button class="btn btn-small" onclick="openAddTrashGuideModal()" title="A wave-by-wave trash breakdown, shown as its own tab before whichever boss it precedes">🧟 + Trash Guide</button>
+      <select id="auto-assign-raid-select" class="form-select" style="width:auto;padding:8px 10px;font-size:12px;" onchange="updateAutoAssignRaid(this.value)" title="Which raid's this-week roster Auto-Assign pulls from - remembered for next time"></select>
+      <button class="btn btn-small" onclick="confirmAutoAssign()" title="Fill empty Tank/Healer/Misdirection slots from this week's grouped roster - never overwrites an existing assignment">🪄 Auto-Assign</button>
       <button class="btn btn-gold" onclick="openStratUpload()">+ Add Strat</button>
       <button class="btn" style="white-space:nowrap;background:#5865F2;border-color:#4752c4;color:#fff;font-weight:700;" onclick="confirmPostActiveTab()">🚀 Post to Discord</button>
     </div>
@@ -7007,6 +7009,7 @@ function loadData(event) {
       if (data.trashGuides) trashGuides = data.trashGuides;
       if (data.nextTrashGuideId) nextTrashGuideId = data.nextTrashGuideId;
       if (data.nextWaveId) _nextWaveId = data.nextWaveId;
+      if (data.autoAssignRaidId) autoAssignRaidId = data.autoAssignRaidId;
       if (data.guildies) guildies = data.guildies;
       if (data.attendanceLedger) attendanceLedger = data.attendanceLedger;
       if (data.benchLog) benchLog = data.benchLog;
@@ -7163,6 +7166,20 @@ function confirmPostActiveTab() {
   else confirmPostStrat();
 }
 
+// Auto-Assign only makes sense on a boss strat's own assignment panel -
+// a trash guide has no Tank/Healer/Misdirection slots to fill at all.
+function confirmAutoAssign() {
+  if (activeTabKind !== 'strat' || activeStratId == null) {
+    showToast('Auto-Assign only works on a boss strat tab, not a trash guide.', true);
+    return;
+  }
+  autoAssignStrat(activeStratId);
+}
+
+function updateAutoAssignRaid(raidIdStr) {
+  autoAssignRaidId = Number(raidIdStr);
+}
+
 function confirmPostStrat() {
   const strat = strats.find(s => s.id === activeStratId);
   if (!strat) { showToast('Pick a strat first.', true); return; }
@@ -7293,6 +7310,22 @@ function renderStrats() {
       opt.value = r; opt.textContent = r;
       raidSelect.appendChild(opt);
     });
+  }
+
+  // Which raid tab Auto-Assign pulls this week's roster from - refreshed
+  // in full every render (unlike strat-raid-input above) since raids[]
+  // itself changes far more often (added/renamed/removed) than the fixed
+  // RAID_INSTANCES list ever does. Defaults to whichever raid is globally
+  // active the first time, or if the previously-remembered one got
+  // deleted since.
+  const autoAssignSelect = document.getElementById('auto-assign-raid-select');
+  if (autoAssignSelect && raids.length) {
+    if (autoAssignRaidId == null || !raids.some(r => r.id === autoAssignRaidId)) {
+      autoAssignRaidId = activeRaidId;
+    }
+    autoAssignSelect.innerHTML = raids.map(r =>
+      `<option value="${r.id}" ${r.id === autoAssignRaidId ? 'selected' : ''}>${r.name.replace(/</g, '&lt;')}</option>`
+    ).join('');
   }
 
   if (strats.length === 0 && trashGuides.length === 0) {
@@ -8492,6 +8525,7 @@ async function saveToGitHub() {
     roster, raids, nextRaidId, attendance, nextId, guildInfo, strats, nextStratId,
     trashBestiary, nextBestiaryId, trashGuides, nextTrashGuideId,
     nextWaveId: _nextWaveId,
+    autoAssignRaidId,
     attendanceLedger, nextLedgerId, benchLog,
     nameAliases,
     logsChannelId,
@@ -8830,6 +8864,131 @@ function onSecDrop(e, sid, targetSecId) {
   _dragSecInfo = null;
 }
 
+// ── Auto-assign from this week's grouped roster ─────────────────
+// Class priority for who heals a tank, per the guild's own stated
+// convention rather than generic meta-knowledge - Paladins and Druids
+// first, falling back through Priest then Shaman if none of those signed
+// up this week. Anyone else still gets used (never excluded outright),
+// just ranks last.
+const TANK_HEAL_CLASS_PRIORITY = ['Paladin', 'Druid', 'Priest', 'Shaman'];
+function healPriorityRank(cls) {
+  const i = TANK_HEAL_CLASS_PRIORITY.indexOf(cls);
+  return i === -1 ? TANK_HEAL_CLASS_PRIORITY.length : i;
+}
+
+// Which raid tab's roster Auto-Assign pulls from - a guild can run
+// multiple weekly raids for the same instance (Tuesday BT, Thursday BT),
+// so this can't just be "whatever raid happens to be globally active"
+// elsewhere in the app. Persisted (see saveToGitHub) so the choice sticks
+// across sessions, not just this one.
+let autoAssignRaidId = null;
+
+// resolvePoolPlayer only ever looks at the GLOBAL signUpPool shim, which
+// reflects whichever raid is currently active - no good for pulling a
+// specific OTHER raid's roster. This looks at that raid's own persisted
+// signUpPool directly instead (see syncGroupsToActiveRaid - a non-active
+// raid's .signUpPool/.groups are already correct as of its own last edit,
+// just not mirrored into the live shim vars).
+function resolvePoolPlayerForRaid(raid, id) {
+  return (raid.signUpPool || []).find(p => Number(p.id) === Number(id)) || getPlayerById(Number(id));
+}
+
+// Everyone actually placed into a group in the CHOSEN raid this week (not
+// the full always-on roster, and not sign-ups still sitting unplaced in
+// the pool - bench/tentative/not-yet-sorted) - the only sensible candidate
+// pool for "who's actually raiding tonight."
+function groupedPlayersForRaid(raid) {
+  if (!raid) return [];
+  return (raid.groups || []).flat().filter(id => id != null).map(id => resolvePoolPlayerForRaid(raid, id)).filter(Boolean);
+}
+
+// Fills EMPTY slots only - never overwrites an existing manual
+// assignment, so it's always safe to re-run (e.g. after adding someone to
+// a group) without undoing anyone's prior adjustments. Only acts on a
+// section it can confidently recognize by its label (Tanks / Healer
+// Assigns / Misdirection) - a custom section built from scratch is left
+// completely alone rather than guessed at, since a wrong guess there does
+// more harm than leaving it blank.
+//
+// Two passes on purpose: the first fully resolves every Tank-labeled
+// section's assignments (filling empty ones, but also just reading
+// whatever was ALREADY there manually) into one ordered list of "who's
+// tanking tonight" - the second pass then cycles Healer/Misdirect targets
+// through that complete list, not just whichever tanks got newly filled
+// this run. Filling heal targets before knowing about a pre-existing MT
+// would otherwise silently ignore it.
+function autoAssignStrat(stratId) {
+  const strat = strats.find(s => s.id === stratId);
+  if (!strat || !strat.sections) { showToast('Nothing to auto-assign.', true); return; }
+
+  const sourceRaid = raids.find(r => r.id === autoAssignRaidId) || getActiveRaid();
+  if (!sourceRaid) { showToast('No raid selected to pull a roster from.', true); return; }
+  const roster = groupedPlayersForRaid(sourceRaid);
+  if (!roster.length) { showToast(`No one is placed into "${sourceRaid.name}"'s groups yet - build that roster first.`, true); return; }
+
+  const usedIds = new Set();
+  for (const sec of strat.sections) {
+    for (const row of sec.rows || []) {
+      if (row.typeA === 'player' && typeof row.valueA === 'number') usedIds.add(row.valueA);
+      if (row.typeB === 'player' && typeof row.valueB === 'number') usedIds.add(row.valueB);
+    }
+  }
+  const takeNext = pool => {
+    const p = pool.find(x => !usedIds.has(x.id));
+    if (p) usedIds.add(p.id);
+    return p || null;
+  };
+
+  const tankPool = roster.filter(p => p.role === 'Tank');
+  const healerPool = roster.filter(p => p.role === 'Healer').sort((a, b) => healPriorityRank(a.class) - healPriorityRank(b.class));
+  const hunterPool = roster.filter(p => p.class === 'Hunter');
+
+  let filledCount = 0;
+  const tankTargets = []; // every tank assigned in a Tanks section, pre-existing or new, in row order
+
+  // Pass 1 - Tanks
+  for (const sec of strat.sections) {
+    if (!(sec.label || '').toLowerCase().includes('tank')) continue;
+    for (const row of sec.rows || []) {
+      if (row.typeB !== 'player') continue;
+      if (row.valueB == null) {
+        const p = takeNext(tankPool);
+        if (p) { row.valueB = p.id; filledCount++; }
+      }
+      if (row.valueB != null) tankTargets.push(row.valueB);
+    }
+  }
+
+  // Pass 2 - Healer Assigns / Misdirection, cycling through tankTargets
+  // for whichever side of the pair is the "target" (typeB)
+  let healRowIdx = 0, mdRowIdx = 0;
+  for (const sec of strat.sections) {
+    const label = (sec.label || '').toLowerCase();
+    const isHeal = label.includes('heal');
+    const isMd = label.includes('misdirect') || /\bmd\b/.test(label);
+    if (!isHeal && !isMd) continue;
+
+    for (const row of sec.rows || []) {
+      if (row.typeA !== 'player' || row.typeB !== 'player') continue;
+      let touched = false;
+      if (row.valueA == null) {
+        const p = takeNext(isHeal ? healerPool : hunterPool);
+        if (p) { row.valueA = p.id; touched = true; }
+      }
+      if (row.valueB == null && tankTargets.length) {
+        row.valueB = tankTargets[(isHeal ? healRowIdx : mdRowIdx) % tankTargets.length];
+        touched = true;
+      }
+      if (isHeal) healRowIdx++; else mdRowIdx++;
+      if (touched) filledCount++;
+    }
+  }
+
+  renderStrats();
+  if (filledCount) showToast(`✓ Auto-filled ${filledCount} slot${filledCount === 1 ? '' : 's'} - review before posting.`);
+  else showToast("Nothing to auto-fill - either everything's already assigned, or no Tank/Healer/Hunter signed up this week matches an empty slot.", true);
+}
+
 // ── Build full panel ───────────────────────────────────────────
 function buildAssignsPanel(strat) {
   if (!strat.sections) strat.sections = defaultSections();
@@ -9073,6 +9232,7 @@ async function initFromJson() {
     if (data.trashGuides) trashGuides = data.trashGuides;
     if (data.nextTrashGuideId) nextTrashGuideId = data.nextTrashGuideId;
     if (data.nextWaveId) _nextWaveId = data.nextWaveId;
+    if (data.autoAssignRaidId) autoAssignRaidId = data.autoAssignRaidId;
     if (data.attendanceLedger) attendanceLedger = data.attendanceLedger;
     if (data.nextLedgerId) nextLedgerId = data.nextLedgerId;
     if (data.benchLog) benchLog = data.benchLog;
