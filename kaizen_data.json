@@ -9940,9 +9940,382 @@
         }
       ],
       "tip": "Recommend that you banish these and kill them last. Mana Burn is annoying, but things die quickly enough that it's not a massive detriment. Organize interrupts and stuns if needed."
+    },
+    {
+      "id": 10,
+      "raid": "Black Temple",
+      "name": "Coilskar General",
+      "image": null,
+      "abilities": [
+        {
+          "title": "Free Friend",
+          "desc": "Removes crowd control from a nearby ally. Makes CC unreliable while this mob is alive."
+        },
+        {
+          "title": "Booming Voice",
+          "desc": "Buffs nearby allies with increased melee haste and faster casting."
+        }
+      ],
+      "tip": "The #1 kill priority in any sewer pull it shows up in - left alive, it unravels your CC and buffs everything else."
+    },
+    {
+      "id": 11,
+      "raid": "Black Temple",
+      "name": "Aqueous Spawn",
+      "image": null,
+      "abilities": [
+        {
+          "title": "Sludge Nova",
+          "desc": "Targeted Nature AoE damage plus a poison DoT that also slows movement by 20%."
+        }
+      ],
+      "tip": "Low HP, high AoE output - kill or interrupt it fast rather than letting the nova land."
+    },
+    {
+      "id": 12,
+      "raid": "Black Temple",
+      "name": "Coilskar Sea-Caller",
+      "image": null,
+      "abilities": [
+        {
+          "title": "Forked Lightning",
+          "desc": "Frontal chain-lightning attack. Immune to taunt."
+        }
+      ],
+      "tip": "Can't be tanked normally since it's taunt-immune - just turn it (and the raid) away from the attack."
+    },
+    {
+      "id": 13,
+      "raid": "Black Temple",
+      "name": "Dragon Turtle",
+      "image": null,
+      "abilities": [
+        {
+          "title": "Shell Shield",
+          "desc": "Reflects roughly half of magic damage back at the caster while active."
+        }
+      ],
+      "tip": "Stop casting direct damage into it while shielded and swap to another target until the shield drops."
+    },
+    {
+      "id": 14,
+      "raid": "Black Temple",
+      "name": "Illidari Fearbringer",
+      "image": null,
+      "abilities": [
+        {
+          "title": "War Stomp",
+          "desc": "AoE stun that can't be outranged."
+        }
+      ],
+      "tip": "Pop a Free Action Potion and burst it down on pull; watch for its patrol overlapping with nearby packs."
+    },
+    {
+      "id": 15,
+      "raid": "Black Temple",
+      "name": "Bonechewer Taskmaster",
+      "image": null,
+      "abilities": [
+        {
+          "title": "Enrage (aura)",
+          "desc": "Buffs nearby Bonechewer Workers with an enrage if left alive too long."
+        }
+      ],
+      "tip": "Kill first, before the Workers around it start snowballing."
+    },
+    {
+      "id": 16,
+      "raid": "Black Temple",
+      "name": "Illidari Centurion",
+      "image": null,
+      "abilities": [
+        {
+          "title": "Frontal Cleave",
+          "desc": "Melee cleave hitting everyone in front of it."
+        },
+        {
+          "title": "Sonic Strike",
+          "desc": "A long-duration frontal silence."
+        }
+      ],
+      "tip": "Focus these down first in any mixed Illidari pack and keep them faced away from the raid."
+    },
+    {
+      "id": 17,
+      "raid": "Black Temple",
+      "name": "Illidari Heartseeker",
+      "image": null,
+      "abilities": [
+        {
+          "title": "Rapid Shot",
+          "desc": "Rapid ranged attacks that ordinary stuns do not reliably stop."
+        }
+      ],
+      "tip": "Needs a hard incapacitate (Gouge, Repentance, an engineering grenade) rather than a stun to shut down."
+    },
+    {
+      "id": 18,
+      "raid": "Black Temple",
+      "name": "Ashtongue Mystic",
+      "image": null,
+      "abilities": [
+        {
+          "title": "Chain Heal",
+          "desc": "Standard chain heal - keep it on the interrupt rotation."
+        },
+        {
+          "title": "Bloodlust",
+          "desc": "Casts Bloodlust on nearby allies - offensively dispel it."
+        },
+        {
+          "title": "Windfury Totem",
+          "desc": "Buffs nearby allies with extra attacks."
+        }
+      ],
+      "tip": "Interrupt Chain Heal, dispel Bloodlust off its allies, and destroy any totem it drops the moment you see it."
+    },
+    {
+      "id": 19,
+      "raid": "Black Temple",
+      "name": "Ashtongue Feral Spirit",
+      "image": null,
+      "abilities": [
+        {
+          "title": "Aggro Radius (passive)",
+          "desc": "Unusually large detection range compared to other trash."
+        }
+      ],
+      "tip": "You can't sneak past it by hugging a wall - have a mage pop Invisibility and walk the raid past instead."
+    },
+    {
+      "id": 20,
+      "raid": "Black Temple",
+      "name": "Illidari Nightlord",
+      "image": null,
+      "abilities": [
+        {
+          "title": "Pulsing Hellfire",
+          "desc": "Periodic AoE fire damage around the caster."
+        },
+        {
+          "title": "AoE Fear",
+          "desc": "Fears nearby players, which can chain-pull the next pack if unchecked."
+        }
+      ],
+      "tip": "Tremor totems are mandatory on this pull - a feared player running into the next group is how wipes start."
+    },
+    {
+      "id": 21,
+      "raid": "Black Temple",
+      "name": "Shadowmoon Reaver",
+      "image": null,
+      "abilities": [
+        {
+          "title": "Spell Absorption",
+          "desc": "Stacks a magic damage shield on itself over time."
+        },
+        {
+          "title": "Detonate",
+          "desc": "Explodes for 60,000+ damage to nearby players if still alive roughly 15 seconds after engaging."
+        }
+      ],
+      "tip": "Always the first kill target in any pack it shares - do not let the timer run out."
+    },
+    {
+      "id": 22,
+      "raid": "Black Temple",
+      "name": "Shadowmoon Champion",
+      "image": null,
+      "abilities": [
+        {
+          "title": "Frontal Cone",
+          "desc": "Melee cone attack in front of the mob."
+        },
+        {
+          "title": "Ground Weapons",
+          "desc": "Drops weapons on the ground that Whirlwind on their own."
+        }
+      ],
+      "tip": "Face it away from the raid and keep repositioning off the ground weapon hazards."
+    },
+    {
+      "id": 23,
+      "raid": "Black Temple",
+      "name": "Bonechewer Blood Prophet",
+      "image": null,
+      "abilities": [
+        {
+          "title": "Bloodbolt",
+          "desc": "Shadow bolt-style damage spell."
+        },
+        {
+          "title": "Blood Drain",
+          "desc": "Drains health from a target to heal itself."
+        }
+      ],
+      "tip": "Ordinary stuns and interrupts do not reliably stop its casts - use a hard incapacitate instead."
+    },
+    {
+      "id": 24,
+      "raid": "Black Temple",
+      "name": "Bonechewer Blade Fury",
+      "image": null,
+      "abilities": [
+        {
+          "title": "Whirlwind",
+          "desc": "Melee attack hitting all nearby enemies."
+        }
+      ],
+      "tip": "Priority kill right after the Blood Prophet is controlled - chain-stun it down before it can Whirlwind."
+    },
+    {
+      "id": 25,
+      "raid": "Black Temple",
+      "name": "Bonechewer Shield Disciple",
+      "image": null,
+      "abilities": [
+        {
+          "title": "Shield Wall",
+          "desc": "Activates a heavy damage-reduction shield once it drops to roughly 50% health."
+        }
+      ],
+      "tip": "Silence it (Death Coil or similar) before it reaches 50%, or the pull stalls out on a shielded mob."
+    },
+    {
+      "id": 26,
+      "raid": "Black Temple",
+      "name": "Bonechewer Behemoth",
+      "image": null,
+      "abilities": [
+        {
+          "title": "Meteor / Comet",
+          "desc": "Heavy single-target or ground-targeted damage."
+        }
+      ],
+      "tip": "Fight it alone where possible; stack up on the hit to split the damage across more players."
+    },
+    {
+      "id": 27,
+      "raid": "Black Temple",
+      "name": "Priestess of Torment / Priestess of Delight",
+      "image": null,
+      "abilities": [
+        {
+          "title": "Shared Health Pool",
+          "desc": "The linked pair fights off one combined health total."
+        },
+        {
+          "title": "Reflective Shield (Torment)",
+          "desc": "Torment's shield reflects a portion of damage back at attackers."
+        }
+      ],
+      "tip": "Never split the pair apart. Kill Delight first (either order works, but this is the common approach)."
+    },
+    {
+      "id": 28,
+      "raid": "Black Temple",
+      "name": "Mistress of Dementia",
+      "image": null,
+      "abilities": [
+        {
+          "title": "Disorient",
+          "desc": "Disorients nearby players."
+        },
+        {
+          "title": "Mirror Image (on death)",
+          "desc": "Spawns a temporary image of itself when it dies."
+        }
+      ],
+      "tip": "Call her health % before she dies and pull melee off her immediately so no one eats the death image's hit."
+    },
+    {
+      "id": 29,
+      "raid": "Black Temple",
+      "name": "Mistress of Woe",
+      "image": null,
+      "abilities": [
+        {
+          "title": "Curse of Vitality",
+          "desc": "A dispellable shadow damage-over-time curse."
+        }
+      ],
+      "tip": "Keep it decursed on cooldown - never let it sit on someone at unsafe health."
+    },
+    {
+      "id": 30,
+      "raid": "Black Temple",
+      "name": "Promenade Sentinel",
+      "image": null,
+      "abilities": [
+        {
+          "title": "Arcane Charge",
+          "desc": "Ramps from raid-wide chip damage at low stacks up to a hit equal to the target’s entire max HP at high stacks."
+        }
+      ],
+      "tip": "Pull each one solo at full raid health with a Power Word: Shield ready for whoever gets tagged."
+    },
+    {
+      "id": 31,
+      "raid": "Black Temple",
+      "name": "Illidari Archon",
+      "image": null,
+      "abilities": [
+        {
+          "title": "Smite",
+          "desc": "Standard holy damage bolt."
+        },
+        {
+          "title": "Power Word: Shield",
+          "desc": "Shields itself or an ally, absorbing incoming damage."
+        }
+      ],
+      "tip": "Nothing too dangerous on its own - just don't ignore the shield it puts up."
+    },
+    {
+      "id": 32,
+      "raid": "Black Temple",
+      "name": "Illidari Battle-mage",
+      "image": null,
+      "abilities": [
+        {
+          "title": "Blizzard",
+          "desc": "Ground-targeted AoE frost damage over time."
+        }
+      ],
+      "tip": "Needs a hard incapacitate on the cast, not just an interrupt - assign a dedicated control player."
+    },
+    {
+      "id": 33,
+      "raid": "Black Temple",
+      "name": "Illidari Blood Lord",
+      "image": null,
+      "abilities": [
+        {
+          "title": "Divine Shield",
+          "desc": "Becomes briefly immune to damage."
+        }
+      ],
+      "tip": "Save a Mass Dispel for the shield, or the kill stalls out completely."
+    },
+    {
+      "id": 34,
+      "raid": "Black Temple",
+      "name": "Illidari Assassin",
+      "image": null,
+      "abilities": [
+        {
+          "title": "Vanish / Ambush",
+          "desc": "Vanishes and reappears with a burst opener, often on a healer."
+        },
+        {
+          "title": "Paralyzing Poison",
+          "desc": "Applies a stun on hit."
+        }
+      ],
+      "tip": "Watch for the reappear-plus-stun combo landing on your healers."
     }
   ],
-  "nextBestiaryId": 10,
+  "nextBestiaryId": 35,
   "trashGuides": [
     {
       "id": 1,
@@ -10163,9 +10536,257 @@
           "notes": ""
         }
       ]
+    },
+    {
+      "id": 5,
+      "raid": "Black Temple",
+      "beforeBoss": "Naj'entus",
+      "waves": [
+        {
+          "id": 33,
+          "wave": 1,
+          "mobs": "2 Aqueous Spawn",
+          "notes": "Solo pack, low HP. Kick or arcane-bomb their Sludge Nova volley before it goes off."
+        },
+        {
+          "id": 34,
+          "wave": 2,
+          "mobs": "1 Aqueous Lord | 2 Coilskar Sea-Caller",
+          "notes": "Patrol. Turn everything away from the raid; interrupt any Aqueous Spawn it summons immediately."
+        },
+        {
+          "id": 35,
+          "wave": 3,
+          "mobs": "2 Coilskar Wrangler | 1 Leviathan",
+          "notes": "Wranglers are taunt-immune (Lightning Prod / Electric Spur) - pull them aside or just cleave everything together."
+        },
+        {
+          "id": 36,
+          "wave": 4,
+          "mobs": "2 Coilskar Sea-Caller | 2 Aqueous Surger | 2 Coilskar General",
+          "notes": "Hardest pull in the sewers (sometimes swapped for 2 General | 2 Dragon Turtle | 2 Harpooner). Coilskar Generals are the #1 kill priority - they strip CC and buff nearby allies with Booming Voice. Dragon Turtles reflect magic via Shell Shield, so stop casting into one until the shield drops."
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "raid": "Black Temple",
+      "beforeBoss": "Supremus",
+      "waves": [
+        {
+          "id": 37,
+          "wave": 1,
+          "mobs": "1 Bonechewer Taskmaster | Bonechewer Worker",
+          "notes": "Kill the Taskmaster immediately - it enrages the Workers if left alive."
+        },
+        {
+          "id": 38,
+          "wave": 2,
+          "mobs": "1 Dragonmaw Sky Stalker",
+          "notes": "Patrol. Skippable by hugging the right side near the spikes."
+        },
+        {
+          "id": 39,
+          "wave": 3,
+          "mobs": "1 Illidari Fearbringer",
+          "notes": "War Stomp can't be outranged. Pop a Free Action Potion and burst it down; watch for its patrol overlapping with the Sky Stalkers."
+        },
+        {
+          "id": 40,
+          "wave": 4,
+          "mobs": "1 Dragonmaw Wind Weaver",
+          "notes": "Can't be solo-pulled - it cleaves the 3 closest targets. Have a ranged player pull it alone and Iceblock/Bubble out if it follows."
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "raid": "Black Temple",
+      "beforeBoss": "Shade of Akama",
+      "waves": [
+        {
+          "id": 41,
+          "wave": 1,
+          "mobs": "2 Illidari Centurion | 2 Illidari Defiler | 1 Illidari Bone Slicer | 1 Illidari Heartseeker",
+          "notes": "Two packs. Focus Centurions first (frontal cleave + a long silence). Pull the right-hand pack first and LOS around the corner so you don't chain-pull the patrol."
+        },
+        {
+          "id": 42,
+          "wave": 2,
+          "mobs": "1 Illidari Nightlord",
+          "notes": "Patrol with 2 escorts. Pulsing Hellfire + an AoE Fear. Tremor totems are mandatory or the fear chain-pulls the next group."
+        },
+        {
+          "id": 43,
+          "wave": 3,
+          "mobs": "1 Ashtongue Feral Spirit",
+          "notes": "Absurd aggro radius - you can't just hug the wall past it. Have a mage pop Invisibility and walk the raid in."
+        },
+        {
+          "id": 44,
+          "wave": 4,
+          "mobs": "1 Ashtongue Feral Spirit | 1 Ashtongue Mystic | 1 Ashtongue Primalist | 1 Ashtongue Stormcaller | 1 Ashtongue Battlelord",
+          "notes": "Two packs. Kill Mystics first and destroy any totems the moment they drop - Windfury Totem and Cyclone Totem both need to die on sight."
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "raid": "Black Temple",
+      "beforeBoss": "Teron Gorefiend",
+      "waves": [
+        {
+          "id": 45,
+          "wave": 1,
+          "mobs": "1 Shadowmoon Reaver",
+          "notes": "Always the first kill in any pack it shares - it stacks Spell Absorption on itself, then explodes for 60k+ damage if still alive after ~15 seconds."
+        },
+        {
+          "id": 46,
+          "wave": 2,
+          "mobs": "1 Shadowmoon Champion | Blood Mage | Weapon Master | Deathshaper",
+          "notes": "Champions drop ground weapons that Whirlwind on their own - keep repositioning off them. Face everything away from the raid."
+        },
+        {
+          "id": 47,
+          "wave": 3,
+          "mobs": "War Hound | Soldier",
+          "notes": "Right side of the room, not skippable. Pull and LOS down the stairs to group it up."
+        },
+        {
+          "id": 48,
+          "wave": 4,
+          "mobs": "Deathshaper",
+          "notes": "Channeling a skeleton - fully skippable by walking through the middle of the room."
+        },
+        {
+          "id": 49,
+          "wave": 5,
+          "mobs": "2 Houndmaster | 1 Weapon Master | 7 Soldier",
+          "notes": "Optional pack - the Soldiers are harmless. Pull together or just wait out the patrol first."
+        },
+        {
+          "id": 50,
+          "wave": 6,
+          "mobs": "Shadowmoon (mixed pack) | 1 Grunt",
+          "notes": "Prioritize any Reavers; the Grunt dies almost instantly."
+        },
+        {
+          "id": 51,
+          "wave": 7,
+          "mobs": "1 Wrathbone Flayer | 2 Blood Mage",
+          "notes": "Blood Mages hit a big frontal cone (Blood Siphon). Mind Soothe them to skip the pack entirely, or pull and LOS into Gorefiend’s room."
+        },
+        {
+          "id": 52,
+          "wave": 8,
+          "mobs": "4 Hand of Gorefiend",
+          "notes": "Two pairs. Can't be taunted - just damage through them."
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "raid": "Black Temple",
+      "beforeBoss": "Bloodboil",
+      "waves": [
+        {
+          "id": 53,
+          "wave": 1,
+          "mobs": "1 Bonechewer Behemoth | Bonechewer Blade Fury | Bonechewer Blood Prophet | Bonechewer Shield Disciple | 2 Mutant War Hound",
+          "notes": "Roughly 6 mixed Bonechewers plus 2 War Hounds. Kill Blade Furies first, avoid standing in a War Hound's death poison cloud, and Death Coil (or another silence) a Shield Disciple before it hits 50% and shields up."
+        },
+        {
+          "id": 54,
+          "wave": 2,
+          "mobs": "Bonechewer Brawler | Bonechewer Combatant | 1 Bonechewer Behemoth",
+          "notes": "Stationary pack plus a patrolling Behemoth. Clear the stationary pack first, then the Behemoth, then the second pack - don't let the patrol merge into a live pull."
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "raid": "Black Temple",
+      "beforeBoss": "Reliquary of Souls",
+      "waves": [
+        {
+          "id": 55,
+          "wave": 1,
+          "mobs": "1 Illidari Nightlord",
+          "notes": "Patrol with 2 escorts on the backtrack route from Bloodboil - same as the Akama-wing Nightlord, tremor totems required."
+        },
+        {
+          "id": 56,
+          "wave": 2,
+          "mobs": "1 Bonechewer Behemoth | Bonechewer Blade Fury | Bonechewer Blood Prophet | Bonechewer Shield Disciple | Bonechewer Brawler | Bonechewer Combatant | 1 Mutant War Hound",
+          "notes": "Halls of Anguish. Blood Prophet needs a hard incapacitate - stuns/interrupts alone won't reliably stop its casts. Once it's controlled, chain-stun and kill Blade Fury next."
+        },
+        {
+          "id": 57,
+          "wave": 3,
+          "mobs": "Ghost | Angered Soul Fragment",
+          "notes": "Gauntlet run to the boss ramp - red ghosts are most dangerous, blue/purple are larger but less threatening, Soul Fragments can mostly be ignored. Everything respawns on a ~15 second timer, so keep the whole raid moving together - a fast runner or a lagging healer stretches the pack into a wipe. Stop and AoE at 1/3, 2/3, and again on top of the ramp; kill red ghosts first, then mop up trailing Soul Fragments while still moving."
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "raid": "Black Temple",
+      "beforeBoss": "Mother Shahraz",
+      "waves": [
+        {
+          "id": 58,
+          "wave": 1,
+          "mobs": "1 Illidari Nightlord",
+          "notes": "With escorts. Tremor totems mandatory, same as earlier."
+        },
+        {
+          "id": 59,
+          "wave": 2,
+          "mobs": "2 Illidari Centurion | 2 Illidari Defiler | 1 Illidari Heartseeker | 1 Illidari Bone Slicer",
+          "notes": "Handle the same as the Akama-wing version of this pack."
+        },
+        {
+          "id": 60,
+          "wave": 3,
+          "mobs": "Temple Acolyte",
+          "notes": "~30k HP each. Nothing special - just nuke them down."
+        },
+        {
+          "id": 61,
+          "wave": 4,
+          "mobs": "1 Priestess of Torment | 1 Priestess of Delight",
+          "notes": "Patrol pair - shares one health pool, do not split them apart. Kill Delight first (works either order, but this is the common approach)."
+        },
+        {
+          "id": 62,
+          "wave": 5,
+          "mobs": "1 Mistress of Dementia | 1 Mistress of Woe",
+          "notes": "Keep Curse of Vitality decursed off whoever it lands on. Call Dementia's health % before she dies and pull melee off her immediately - she spawns a mirror image on death."
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "raid": "Black Temple",
+      "beforeBoss": "Illidari Council",
+      "waves": [
+        {
+          "id": 63,
+          "wave": 1,
+          "mobs": "1 Promenade Sentinel",
+          "notes": "Three solo patrols. Arcane Charge ramps from raid-wide chip damage (L1) up to a hit for the target’s entire max HP (L5). Go into every pull at full health with a Power Word: Shield ready to drop on whoever gets tagged."
+        },
+        {
+          "id": 64,
+          "wave": 2,
+          "mobs": "1 Illidari Archon | 1 Illidari Assassin | 1 Illidari Battle-mage | 1 Illidari Blood Lord",
+          "notes": "Two packs. Battle-mage's Blizzard needs a hard incapacitate, not just an interrupt. Save a Mass Dispel for Blood Lord's Divine Shield or the kill stalls out completely."
+        }
+      ]
     }
   ],
-  "nextTrashGuideId": 5,
+  "nextTrashGuideId": 13,
   "nextWaveId": 33,
   "autoAssignRaidId": 2,
   "attendanceLedger": [
