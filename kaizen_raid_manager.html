@@ -1263,6 +1263,81 @@ tr:last-child td { border-bottom: none; }
   object-fit: contain;
 }
 
+/* ===== MAP PINS =====
+   .map-pin-layer wraps ONLY the <img>, sized inline-block so it shrink-
+   wraps to the image's own rendered box - not .strat-image-wrap's padded,
+   flex-centered box, which can be bigger than the image on either axis
+   depending on that image's aspect ratio (object-fit:contain can letterbox
+   it). Pins are positioned as %/% of THIS layer, so they always land on
+   the actual image pixels regardless of aspect ratio or letterboxing. */
+.map-pin-layer { position: relative; display: inline-block; line-height: 0; max-width: 100%; }
+.map-pin-layer img { display: block; }
+
+.map-toolbar {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  background: var(--bg-panel); border: 1px solid var(--border); border-radius: 8px;
+  padding: 8px 10px; margin-bottom: 10px;
+}
+.map-toolbar .divider { width: 1px; align-self: stretch; background: var(--border-bright); margin: 0 2px; }
+.map-role-btn {
+  width: 28px; height: 28px; border-radius: 7px; display: inline-flex;
+  align-items: center; justify-content: center; font-size: 13px;
+  background: var(--bg-card); border: 1.5px solid var(--border-bright); cursor: pointer;
+}
+.map-role-btn:hover { border-color: var(--gold-dim); background: var(--bg-hover); }
+
+.map-pin {
+  position: absolute; transform: translate(-50%, -50%);
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  cursor: grab; touch-action: none; z-index: 1;
+}
+.map-pin:active { cursor: grabbing; }
+.map-pin.focused { z-index: 20; }
+
+.map-pin-badge {
+  width: 36px; height: 36px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700;
+  background: var(--bg-card); border: 2.5px solid var(--text-dim);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+  transition: width .14s ease, height .14s ease, font-size .12s ease, border-width .14s ease, box-shadow .12s, background .12s;
+}
+.map-pin.idle .map-pin-badge { width: 15px; height: 15px; font-size: 0; border-width: 2px; box-shadow: 0 1px 4px rgba(0,0,0,0.5); }
+.map-pin.idle.filled .map-pin-badge { background: var(--pin-fill, var(--bg-card)); }
+.map-pin.idle:hover .map-pin-badge { width: 19px; height: 19px; }
+.map-pin.dragging .map-pin-badge { width: 26px !important; height: 26px !important; box-shadow: 0 0 0 4px rgba(26,175,192,0.25), 0 2px 10px rgba(0,0,0,0.6); }
+.map-pin.focused .map-pin-badge { box-shadow: 0 0 0 3px rgba(240,192,64,0.35), 0 2px 10px rgba(0,0,0,0.6); }
+.map-pin[data-role="Tank"] .map-pin-badge { border-color: var(--gold); color: var(--gold-light); }
+.map-pin[data-role="Healer"] .map-pin-badge { border-color: var(--green-bright); color: var(--green-bright); }
+.map-pin[data-role="Ranged"] .map-pin-badge { border-color: var(--teal); color: var(--teal); }
+.map-pin[data-role="Melee"] .map-pin-badge { border-color: var(--red-bright); color: var(--red-bright); }
+.map-pin[data-kind="text"] .map-pin-badge { border-color: var(--text-dim); color: var(--text-mid); }
+.map-pin[data-kind="role"] .map-pin-badge { background: transparent; }
+
+.map-pin-label {
+  font-size: 10.5px; font-weight: 600; color: var(--text-bright);
+  background: rgba(10,11,13,0.75); padding: 2px 7px; border-radius: 5px;
+  white-space: nowrap; max-width: 150px; overflow: hidden; text-overflow: ellipsis;
+}
+.map-pin.idle .map-pin-label { display: none; }
+.map-pin-label .class-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 5px; }
+
+.map-popover {
+  position: absolute; width: 230px; background: var(--bg-card);
+  border: 1px solid var(--border-bright); border-radius: 9px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.55); padding: 10px; z-index: 50;
+}
+.map-popover-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.map-popover-title { font-size: 11.5px; font-weight: 700; color: var(--text-bright); }
+.map-popover-list { display: flex; flex-direction: column; gap: 2px; max-height: 160px; overflow-y: auto; }
+.map-popover-list-item { font-size: 12px; color: var(--text-mid); padding: 4px 6px; }
+
+.map-needs-job-row {
+  display: flex; align-items: center; gap: 8px; padding: 6px 4px;
+  border-bottom: 1px solid var(--border); font-size: 12px;
+}
+.map-needs-job-row:last-child { border-bottom: none; }
+
 .strat-raid-pills {
   display: flex;
   flex-wrap: wrap;
@@ -2400,6 +2475,23 @@ a[href] > div > div[style*="line-height:1.6"] {
   </div>
 </div>
 
+<!-- ==================== ASSIGN-A-JOB MODAL ====================
+     Opened from the "Needs an assignment" list under the map, not from
+     Sections directly - picks/creates a section by template and drops a
+     new row into it pre-filled with whichever player was clicked. -->
+<div class="modal-overlay" id="job-modal-overlay" onclick="if(event.target===this)closeAssignJobModal()">
+  <div class="modal" style="width:360px;">
+    <div class="modal-header">
+      <div class="modal-title" id="job-modal-title">Assign</div>
+      <button class="modal-close" onclick="closeAssignJobModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:12px;color:var(--text-dim);margin-bottom:10px;">What kind of assignment is this?</div>
+      <div id="job-template-list"></div>
+    </div>
+  </div>
+</div>
+
 <!-- ==================== ROW / SECTION MODAL ==================== -->
 <div class="modal-overlay" id="row-modal-overlay" onclick="if(event.target===this)closeRowModal()">
   <div class="modal" style="width:420px;">
@@ -2764,6 +2856,157 @@ const SECTION_TEMPLATES = [
   { key: 'interrupts', label: '🎯 Interrupts / Dispels', build: () => [_tankRow('Interrupt')] },
   { key: 'notes', label: '📋 Strategy Notes', build: () => [_notesRow('')] },
 ];
+
+// ── Map pins ─────────────────────────────────────────────────────
+// Positioning (where does this person physically stand) and duty (whose
+// problem are they) are deliberately kept as two separate systems that
+// both read off the same underlying roster, rather than one merged model:
+//  - A pin only ever stores {id, kind, x, y, ...}. It never stores a
+//    "job" - see jobsForPlayer below, which reads that live from this
+//    strat's own Sections panel instead. That means Discord posting and
+//    the Sections UI need zero changes: this is a second, purely additive
+//    lens on data that already exists, not a new source of truth for it.
+//  - Three pin kinds: 'player' (a specific person, for precise
+//    positioning - has playerId), 'role' (a generic Tank/Healer/Ranged/
+//    Melee marker with no identity, for "a smattering of ranged stand
+//    here" - see unassignedPlayersInRole), and 'text' (a free label, no
+//    role/assignment semantics at all).
+// mapPins and mapRoleOverride live directly on each strat object (see
+// buildMapPinsHtml) - saveToGitHub already persists `strats` wholesale,
+// so no separate save-site wiring is needed beyond the id counter below.
+let _nextPinId = 1;
+function _pinId() { return _nextPinId++; }
+
+// Same rationale/shape as recalcSectionRowIdCounters - _nextPinId always
+// restarts at 1 on page load, so it has to be recomputed from whatever
+// pin ids are already in the loaded data (see both data.strats restore
+// sites) before anything new gets added, or a fresh pin can collide with
+// one that already exists on a different strat.
+function recalcPinIdCounter() {
+  let maxPin = 0;
+  for (const s of strats) {
+    for (const pin of s.mapPins || []) {
+      if (typeof pin.id === 'number' && pin.id > maxPin) maxPin = pin.id;
+    }
+  }
+  if (maxPin >= _nextPinId) _nextPinId = maxPin + 1;
+}
+
+const MAP_PIN_ROLES = [
+  { key: 'Tank', icon: '🛡', color: 'var(--gold)' },
+  { key: 'Healer', icon: '✚', color: 'var(--green-bright)' },
+  { key: 'Ranged', icon: '🏹', color: 'var(--teal)' },
+  { key: 'Melee', icon: '⚔', color: 'var(--red-bright)' },
+];
+function pinRoleMeta(role) { return MAP_PIN_ROLES.find(r => r.key === role) || MAP_PIN_ROLES[2]; }
+
+// Three-tier fallback for "what role is this person, for map purposes":
+// a per-STRAT override (this fight specifically needs them as DPS, even
+// though they signed up as a tank) beats this week's raid-night
+// roleOverrides (the pre-existing global, keyed per raid not per
+// encounter - see groupedPlayersForRaid), which beats their baseline
+// roster role. Deliberately a narrower, separate tier on top of the
+// existing roleOverrides rather than reusing that name/object - conflating
+// "this week" with "this one encounter" would corrupt Auto-Assign and the
+// Weekly Roster for every OTHER fight the moment someone overrides here.
+function pinRoleForPlayer(strat, playerId) {
+  const override = strat.mapRoleOverride && strat.mapRoleOverride[playerId];
+  if (override) return override;
+  const p = getPlayerById(playerId);
+  return (p && (roleOverrides[playerId] || p.role)) || 'Ranged';
+}
+
+function setPinRoleOverride(sid, playerId, role) {
+  const s = getStrat(sid);
+  if (!s) return;
+  const prevRole = pinRoleForPlayer(s, playerId);
+  if (!s.mapRoleOverride) s.mapRoleOverride = {};
+  if (role) s.mapRoleOverride[playerId] = role; else delete s.mapRoleOverride[playerId];
+  const newRole = pinRoleForPlayer(s, playerId);
+  const p = getPlayerById(playerId);
+  if (p && newRole !== prevRole) showToast(`↔ ${p.name} moved to ${newRole} for this strat.`);
+  renderStrats();
+}
+
+// A "job" is read live from the Sections panel, never stored on the pin -
+// see the block comment above. The actor of a row is whichever side is a
+// player when there's only one player side (a role-slot like MT, or a
+// solo duty like Interrupt); when BOTH sides are players (an arrow'd
+// pair, e.g. Healer -> Tank), the actor is specifically valueA - valueB is
+// just the target, not shown as a job on their own card. This matches
+// exactly how today's Discord posts already read these rows.
+function jobsForPlayer(strat, playerId) {
+  const jobs = [];
+  for (const sec of (strat.sections || [])) {
+    for (const row of (sec.rows || [])) {
+      if (row.arrow && row.typeA === 'player' && Number(row.valueA) === Number(playerId)) {
+        jobs.push({ sectionLabel: sec.label, detail: jobRowTargetLabel(row) });
+      } else if (!row.arrow && row.typeB === 'player' && Number(row.valueB) === Number(playerId)) {
+        jobs.push({ sectionLabel: sec.label, detail: row.typeA === 'text' ? (row.valueA || '') : '' });
+      }
+    }
+  }
+  return jobs;
+}
+function jobRowTargetLabel(row) {
+  if (row.typeB === 'player') { const t = row.valueB ? getPlayerById(row.valueB) : null; return t ? t.name : '(no target yet)'; }
+  if (row.typeB === 'text') return row.valueB || '(no note yet)';
+  return '';
+}
+
+// ── Pin CRUD ─────────────────────────────────────────────────────
+function getPin(sid, pinId) {
+  const s = getStrat(sid);
+  return s ? (s.mapPins || []).find(p => p.id === pinId) : null;
+}
+function addMapPin(sid, kind, extra) {
+  const s = getStrat(sid);
+  if (!s) return null;
+  if (!s.mapPins) s.mapPins = [];
+  const pin = Object.assign({ id: _pinId(), kind, x: 50, y: 50 }, extra || {});
+  s.mapPins.push(pin);
+  return pin;
+}
+function removeMapPin(sid, pinId) {
+  const s = getStrat(sid);
+  if (!s) return;
+  s.mapPins = (s.mapPins || []).filter(p => p.id !== pinId);
+  if (_mapFocusedPinId === pinId) _mapFocusedPinId = null;
+  renderStrats();
+}
+
+// Which raid's this-week roster the map reads from - deliberately the
+// SAME selection Auto-Assign already uses (see autoAssignRaidId), since
+// they sit in the same panel and answer the same underlying question:
+// "who's actually raiding tonight."
+function mapPinsRosterSource() {
+  const sourceRaid = raids.find(r => r.id === autoAssignRaidId) || getActiveRaid();
+  return sourceRaid ? groupedPlayersForRaid(sourceRaid) : [];
+}
+
+// What a generic role pin (kind:'role') actually shows when clicked -
+// live-filtered, never stored, so two Tank pins can't disagree about who's
+// "in" one vs the other; both just show the same current list. That's a
+// known, accepted tradeoff (see conversation) - a generic pin can't
+// partition the roster, only a specific-player pin can.
+function unassignedPlayersInRole(strat, role) {
+  const pinnedIds = new Set((strat.mapPins || [])
+    .filter(p => p.kind === 'player' && p.playerId != null)
+    .map(p => Number(p.playerId)));
+  return mapPinsRosterSource().filter(p => !pinnedIds.has(Number(p.id)) && pinRoleForPlayer(strat, p.id) === role);
+}
+
+// The lightweight "still needs a job" nudge list - anyone with their own
+// specific-player pin who doesn't show up as the actor of any row yet.
+// Deliberately NOT everyone in the raid - someone with no pin at all is a
+// separate, smaller problem (see conversation) left to the roster tab.
+function playersNeedingJobs(strat) {
+  return (strat.mapPins || [])
+    .filter(p => p.kind === 'player' && p.playerId != null)
+    .map(p => getPlayerById(p.playerId))
+    .filter(Boolean)
+    .filter(p => jobsForPlayer(strat, p.id).length === 0);
+}
 
 // Per-encounter default templates, keyed by exact strat name - lets
 // resetStratTemplate put a strat back to a known-good state after the
@@ -7272,7 +7515,7 @@ function loadData(event) {
           nextPugId = Math.min(...pugs.map(p => p.id)) - 1;
         }
       }
-      if (data.strats) { strats = data.strats; recalcSectionRowIdCounters(); }
+      if (data.strats) { strats = data.strats; recalcSectionRowIdCounters(); recalcPinIdCounter(); }
       if (data.nextStratId) nextStratId = data.nextStratId;
       if (data.trashBestiary) trashBestiary = data.trashBestiary;
       if (data.nextBestiaryId) nextBestiaryId = data.nextBestiaryId;
@@ -7741,16 +7984,21 @@ function renderStrats() {
   }
 
   const imageArea = active ? `
+    ${renderMapToolbar(active)}
     <div class="strat-image-wrap" style="position:relative;">
-      <img src="${resolveImg(active.image)}${active.image && !active.image.startsWith('data:') ? '?v=' + Date.now() : ''}" alt="${active.name}" style="max-width:100%;max-height:70vh;border-radius:3px;object-fit:contain;">
-      <div style="position:absolute;top:10px;right:10px;display:flex;gap:6px;">
+      <div class="map-pin-layer" id="map-pin-layer-${active.id}" onpointerdown="onMapLayerPointerDown(${active.id})">
+        <img src="${resolveImg(active.image)}${active.image && !active.image.startsWith('data:') ? '?v=' + Date.now() : ''}" alt="${active.name}" style="max-width:100%;max-height:70vh;border-radius:3px;object-fit:contain;">
+        ${renderMapPins(active)}
+      </div>
+      <div style="position:absolute;top:10px;right:10px;display:flex;gap:6px;z-index:30;">
         <label class="btn btn-small" style="cursor:pointer;font-size:11px;" title="Replace image">
           🔄 Replace Image
           <input type="file" accept="image/png,image/jpeg,image/jpg,image/webp" onchange="replaceStratImage(event, ${active.id})" style="display:none;">
         </label>
         <button class="btn btn-small" onclick="renameStrat(${active.id})" style="font-size:11px;">✏️ Rename</button>
       </div>
-    </div>` : '';
+    </div>
+    ${renderNeedsJobList(active)}` : '';
 
   const assignsPanel = active ? buildAssignsPanel(active) : '';
   const trashPanel = activeGuide ? renderTrashGuidePanel(activeGuide) : '';
@@ -9034,8 +9282,15 @@ function clearSlot(sid, rowId, side) {
 
 // ── Picker for slots ───────────────────────────────────────────
 let _pickerSid = null, _pickerRowId = null, _pickerSide = null;
+// _pickerKind switches what pickAssign actually does with the chosen
+// player - 'row' (default) writes into a section row's slot, same as
+// always; 'pin' fills an EXISTING map pin's playerId; 'new-pin' creates a
+// brand new player pin only once someone's actually chosen, so cancelling
+// the picker never leaves an empty pin behind on the map.
+let _pickerKind = 'row';
 
 function openPickerForSlot(sid, rowId, side) {
+  _pickerKind = 'row';
   _pickerSid = sid; _pickerRowId = rowId; _pickerSide = side;
   document.getElementById('assign-picker-search').value = '';
   document.getElementById('assign-picker-status').value = '';
@@ -9046,14 +9301,47 @@ function openPickerForSlot(sid, rowId, side) {
   setTimeout(() => document.getElementById('assign-picker-search').focus(), 50);
 }
 
+// Same shared modal, redirected at an existing map pin instead of a row.
+function openPickerForPin(sid, pinId) {
+  _pickerKind = 'pin';
+  _pickerSid = sid; _pickerRowId = pinId; _pickerSide = null;
+  document.getElementById('assign-picker-search').value = '';
+  document.getElementById('assign-picker-status').value = '';
+  document.getElementById('assign-picker-role').value = '';
+  document.getElementById('assign-picker-title').textContent = 'Assign Player to Pin';
+  renderAssignPicker();
+  document.getElementById('assign-picker-overlay').classList.add('open');
+  setTimeout(() => document.getElementById('assign-picker-search').focus(), 50);
+}
+
+// Opens the picker to create a brand new player pin (dropped at center
+// once someone's chosen - see pickAssign's 'new-pin' branch).
+function openPickerForNewPin(sid) {
+  _pickerKind = 'new-pin';
+  _pickerSid = sid; _pickerRowId = null; _pickerSide = null;
+  document.getElementById('assign-picker-search').value = '';
+  document.getElementById('assign-picker-status').value = '';
+  document.getElementById('assign-picker-role').value = '';
+  document.getElementById('assign-picker-title').textContent = 'Place a Player on the Map';
+  renderAssignPicker();
+  document.getElementById('assign-picker-overlay').classList.add('open');
+  setTimeout(() => document.getElementById('assign-picker-search').focus(), 50);
+}
+
 function pickAssign(pid) {
-  if (_pickerSid != null) {
+  if (_pickerSid == null) return;
+  if (_pickerKind === 'pin') {
+    const pin = getPin(_pickerSid, _pickerRowId);
+    if (pin) pin.playerId = pid;
+  } else if (_pickerKind === 'new-pin') {
+    addMapPin(_pickerSid, 'player', { playerId: pid });
+  } else {
     const found = findRowAnywhere(_pickerSid, _pickerRowId);
     if (found) { found.row[_pickerSide] = pid; }
-    closeAssignPicker();
-    renderStrats();
-    _pickerSid = null; _pickerRowId = null; _pickerSide = null;
   }
+  closeAssignPicker();
+  renderStrats();
+  _pickerSid = null; _pickerRowId = null; _pickerSide = null; _pickerKind = 'row';
 }
 
 // ── Row rendering ──────────────────────────────────────────────
@@ -9271,6 +9559,261 @@ function autoAssignStrat(stratId) {
   renderStrats();
   if (filledCount) showToast(`✓ Auto-filled ${filledCount} slot${filledCount === 1 ? '' : 's'} - review before posting.`);
   else showToast("Nothing to auto-fill - either everything's already assigned, or no Tank/Healer/Hunter signed up this week matches an empty slot.", true);
+}
+
+// ── Map pin rendering ────────────────────────────────────────────
+// Which pin's expanded/focused right now - one at a time, per strat (not
+// persisted, purely UI state). Focus is exclusive: opening a different
+// pin's editor closes whatever was open, and clicking empty map space
+// closes it too - see onMapLayerPointerDown.
+let _mapFocusedPinId = null;
+
+function renderMapToolbar(strat) {
+  const roleBtns = MAP_PIN_ROLES.map(r =>
+    `<button class="map-role-btn" style="border-color:${r.color};color:${r.color};"
+      title="Drop a generic ${r.key} marker - shows whoever's currently unassigned in that role"
+      onclick="addRoleMapPin(${strat.id},'${r.key}')">${r.icon}</button>`
+  ).join('');
+  return `<div class="map-toolbar">
+    <span style="font-size:11px;color:var(--text-dim);">Generic:</span>
+    ${roleBtns}
+    <div class="divider"></div>
+    <button class="btn btn-small" onclick="openPickerForNewPin(${strat.id})" title="Place a specific person on the map">＋ Player</button>
+    <button class="btn btn-small" onclick="addTextMapPin(${strat.id})" title="Drop a free text label">＋ Text</button>
+  </div>`;
+}
+
+function renderMapPins(strat) {
+  return (strat.mapPins || []).map(pin => renderOneMapPin(strat, pin)).join('');
+}
+
+function renderOneMapPin(strat, pin) {
+  const isFocused = _mapFocusedPinId === pin.id;
+  let role = '', iconHtml = '', labelHtml = '', fillColor = '', filled = false, title = '';
+
+  if (pin.kind === 'player') {
+    const p = pin.playerId ? getPlayerById(pin.playerId) : null;
+    filled = !!p;
+    role = p ? pinRoleForPlayer(strat, p.id) : '';
+    iconHtml = pinRoleMeta(role || 'Ranged').icon;
+    if (p) {
+      fillColor = `var(--${classColor(p.class)})`;
+      labelHtml = `<span class="class-dot" style="background:${fillColor}"></span>${p.name}`;
+      title = `${role}: ${p.name}`;
+    } else {
+      labelHtml = 'Unassigned';
+      title = 'Click to assign a player';
+    }
+  } else if (pin.kind === 'role') {
+    role = pin.role;
+    iconHtml = pinRoleMeta(pin.role).icon;
+    const count = unassignedPlayersInRole(strat, pin.role).length;
+    labelHtml = `${pin.role} (${count})`;
+    title = `${pin.role} - generic marker, ${count} currently unassigned`;
+  } else {
+    iconHtml = '📝';
+    labelHtml = pin.text || 'Label';
+    title = pin.text || 'Text label - click to edit';
+  }
+
+  return `<div class="map-pin ${isFocused ? 'focused' : 'idle'} ${filled ? 'filled' : ''}"
+    data-role="${role}" data-kind="${pin.kind}" data-id="${pin.id}"
+    style="left:${pin.x}%;top:${pin.y}%;${fillColor ? `--pin-fill:${fillColor};` : ''}"
+    title="${title.replace(/"/g, '&quot;')}"
+    onpointerdown="onMapPinPointerDown(event, ${strat.id}, ${pin.id})">
+    <div class="map-pin-badge">${iconHtml}</div>
+    <div class="map-pin-label">${labelHtml}</div>
+  </div>${isFocused ? renderMapPopover(strat, pin) : ''}`;
+}
+
+function renderMapPopover(strat, pin) {
+  let title = 'Edit pin';
+  let body = '';
+
+  if (pin.kind === 'player') {
+    const p = pin.playerId ? getPlayerById(pin.playerId) : null;
+    const role = p ? pinRoleForPlayer(strat, p.id) : null;
+    const roleBtns = MAP_PIN_ROLES.map(r => `<button class="map-role-btn"
+        style="border-color:${r.color};color:${r.color};${role === r.key ? `background:${r.color}33;` : ''}"
+        title="${r.key} for this strat" onclick="setPinRoleOverride(${strat.id},${p ? p.id : 'null'},'${r.key}')">${r.icon}</button>`).join('');
+    const jobs = p ? jobsForPlayer(strat, p.id) : [];
+    title = p ? p.name : 'Unassigned pin';
+    body = `
+      <button class="btn btn-small" style="width:100%;margin-bottom:8px;" onclick="openPickerForPin(${strat.id},${pin.id})">${p ? '🔁 Change player' : '➕ Pick a player'}</button>
+      ${p ? `<div style="font-size:10.5px;color:var(--text-dim);margin-bottom:4px;">Role for this strat</div>
+      <div style="display:flex;gap:5px;margin-bottom:9px;">${roleBtns}</div>` : ''}
+      ${p ? (jobs.length
+        ? `<div style="font-size:10.5px;color:var(--text-dim);margin-bottom:4px;">Assignment${jobs.length > 1 ? 's' : ''}</div>
+           ${jobs.map(j => `<div class="map-popover-list-item">${j.sectionLabel}${j.detail ? ' — ' + j.detail : ''}</div>`).join('')}`
+        : `<div style="font-size:10.5px;color:var(--text-dim);">No assignment yet — see "Needs an assignment" below the map.</div>`) : ''}
+    `;
+  } else if (pin.kind === 'role') {
+    const list = unassignedPlayersInRole(strat, pin.role);
+    title = `${pin.role} — unassigned`;
+    body = `<div class="map-popover-list">
+      ${list.length
+        ? list.map(p => `<button class="map-popover-list-item" style="display:block;width:100%;text-align:left;background:none;border:none;cursor:pointer;border-radius:4px;font:inherit;"
+            onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background='none'"
+            onclick="promoteRolePinToPlayer(${strat.id},${pin.id},${p.id})"
+            title="Give ${p.name} their own specific pin right here">${p.name}</button>`).join('')
+        : `<div class="map-popover-list-item" style="color:var(--text-dim);">Everyone in this role already has a pin.</div>`}
+    </div>`;
+  } else {
+    title = 'Text label';
+    body = `<textarea class="form-input" style="width:100%;min-height:60px;font-size:12px;resize:vertical;"
+      placeholder="Label text..." onchange="setMapPinText(${strat.id},${pin.id},this.value)">${pin.text || ''}</textarea>`;
+  }
+
+  return `<div class="map-popover" style="left:calc(${pin.x}% + 24px);top:calc(${pin.y}% - 10px);" onpointerdown="event.stopPropagation()">
+    <div class="map-popover-head">
+      <span class="map-popover-title">${title}</span>
+      <button style="background:none;border:none;color:var(--red-bright);cursor:pointer;font-size:12px;" onclick="removeMapPin(${strat.id},${pin.id})" title="Delete pin">🗑</button>
+    </div>
+    ${body}
+  </div>`;
+}
+
+function onMapPinPointerDown(e, sid, pinId) {
+  e.preventDefault();
+  e.stopPropagation();
+  const pin = getPin(sid, pinId);
+  const layer = document.getElementById(`map-pin-layer-${sid}`);
+  if (!pin || !layer) return;
+  const rect = layer.getBoundingClientRect();
+  const startX = e.clientX, startY = e.clientY;
+  let moved = false;
+  const pinEl = layer.querySelector(`.map-pin[data-id="${pinId}"]`);
+  if (pinEl) pinEl.classList.add('dragging');
+
+  function onMove(ev) {
+    if (Math.abs(ev.clientX - startX) > 3 || Math.abs(ev.clientY - startY) > 3) moved = true;
+    let x = ((ev.clientX - rect.left) / rect.width) * 100;
+    let y = ((ev.clientY - rect.top) / rect.height) * 100;
+    x = Math.max(1, Math.min(99, x));
+    y = Math.max(1, Math.min(99, y));
+    pin.x = x; pin.y = y;
+    if (pinEl) { pinEl.style.left = x + '%'; pinEl.style.top = y + '%'; }
+    if (_mapFocusedPinId === pinId) {
+      const pop = layer.querySelector('.map-popover');
+      if (pop) { pop.style.left = `calc(${x}% + 24px)`; pop.style.top = `calc(${y}% - 10px)`; }
+    }
+  }
+  function onUp() {
+    window.removeEventListener('pointermove', onMove);
+    window.removeEventListener('pointerup', onUp);
+    if (pinEl) pinEl.classList.remove('dragging');
+    if (!moved) {
+      _mapFocusedPinId = (_mapFocusedPinId === pinId) ? null : pinId;
+      renderStrats();
+    }
+    // A pure drag (moved===true) already mutated pin.x/y live above -
+    // nothing left to commit, and re-rendering here would just be an
+    // expensive no-op mid-gesture (same reason the app's other drag
+    // interactions only re-render on drop, not on every move).
+  }
+  window.addEventListener('pointermove', onMove);
+  window.addEventListener('pointerup', onUp);
+}
+
+// Clicking empty map space (not a pin, not its popover) unfocuses
+// whatever's currently focused - the popover's own pointerdown stops
+// propagation so clicks inside it never reach this.
+function onMapLayerPointerDown(sid) {
+  if (_mapFocusedPinId != null) { _mapFocusedPinId = null; renderStrats(); }
+}
+
+function addRoleMapPin(sid, role) { addMapPin(sid, 'role', { role }); renderStrats(); }
+function addTextMapPin(sid) {
+  const pin = addMapPin(sid, 'text', { text: '' });
+  _mapFocusedPinId = pin ? pin.id : null;
+  renderStrats();
+}
+function setMapPinText(sid, pinId, text) {
+  const pin = getPin(sid, pinId);
+  if (pin) pin.text = text;
+}
+function promoteRolePinToPlayer(sid, pinId, playerId) {
+  const pin = getPin(sid, pinId);
+  if (!pin) return;
+  pin.kind = 'player';
+  pin.playerId = playerId;
+  delete pin.role;
+  renderStrats();
+}
+
+function renderNeedsJobList(strat) {
+  const list = playersNeedingJobs(strat);
+  if (!list.length) return '';
+  return `<div class="card" style="padding:12px 14px;margin-top:10px;">
+    <div style="font-size:10.5px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px;">Needs an assignment</div>
+    ${list.map(p => `<div class="map-needs-job-row">
+      <span class="class-dot" style="background:var(--${classColor(p.class)});width:7px;height:7px;border-radius:50%;flex-shrink:0;"></span>
+      <span class="class-${classColor(p.class)}" style="flex:1;">${p.name}</span>
+      <span style="color:var(--text-dim);font-size:10px;">${p.class}</span>
+      <a href="#" onclick="event.preventDefault();openAssignJobModal(${strat.id},${p.id})" style="color:var(--teal);font-size:11px;font-weight:600;text-decoration:none;">Assign</a>
+    </div>`).join('')}
+  </div>`;
+}
+
+// ── Assign-a-job modal ───────────────────────────────────────────
+// Reuses SECTION_TEMPLATES (the exact same list "+ Add Section" offers)
+// so a job created from a person's card looks identical to one built by
+// hand - just pre-filled with them instead of blank. Deliberately does
+// NOT try to reuse an existing near-empty row (e.g. an open OT slot) -
+// it always adds a fresh row and lets the RL tidy up in Sections below,
+// which is a lot simpler to get right than guessing which existing slot
+// they meant.
+let _jobModalSid = null, _jobModalPlayerId = null;
+
+const JOB_TEMPLATE_ROW_SHAPE = {
+  tanks: pid => ({ id: _rid(), typeA: 'text', valueA: 'Assignment', arrow: false, typeB: 'player', valueB: pid }),
+  heals: pid => ({ id: _rid(), typeA: 'player', valueA: pid, arrow: true, typeB: 'player', valueB: null }),
+  md: pid => ({ id: _rid(), typeA: 'player', valueA: pid, arrow: true, typeB: 'player', valueB: null }),
+  lust: pid => ({ id: _rid(), typeA: 'player', valueA: pid, arrow: true, typeB: 'text', valueB: '' }),
+  interrupts: pid => ({ id: _rid(), typeA: 'text', valueA: 'Assignment', arrow: false, typeB: 'player', valueB: pid }),
+  notes: pid => ({ id: _rid(), typeA: 'player', valueA: pid, arrow: true, typeB: 'text', valueB: '' }),
+};
+
+function openAssignJobModal(sid, playerId) {
+  _jobModalSid = sid; _jobModalPlayerId = playerId;
+  const p = getPlayerById(playerId);
+  document.getElementById('job-modal-title').textContent = `Assign ${p ? p.name : ''}`;
+  document.getElementById('job-template-list').innerHTML = SECTION_TEMPLATES.map(t =>
+    `<button class="btn" style="width:100%;text-align:left;margin-bottom:6px;" onclick="assignPlayerToJobTemplate('${t.key}')">${t.label}</button>`
+  ).join('') + `<button class="btn btn-gold" style="width:100%;margin-top:4px;" onclick="assignPlayerToCustomJob()">➕ Custom...</button>`;
+  document.getElementById('job-modal-overlay').classList.add('open');
+}
+function closeAssignJobModal() {
+  document.getElementById('job-modal-overlay').classList.remove('open');
+  _jobModalSid = null; _jobModalPlayerId = null;
+}
+function findOrCreateSectionByLabel(sid, label) {
+  const s = getStrat(sid);
+  if (!s.sections) s.sections = [];
+  let sec = s.sections.find(sec => sec.label === label);
+  if (!sec) { sec = { id: _sid(), label, rows: [] }; s.sections.push(sec); }
+  return sec;
+}
+function assignPlayerToJobTemplate(templateKey) {
+  if (_jobModalSid == null || _jobModalPlayerId == null) return;
+  const tpl = SECTION_TEMPLATES.find(t => t.key === templateKey);
+  if (!tpl) return;
+  const sec = findOrCreateSectionByLabel(_jobModalSid, tpl.label);
+  const build = JOB_TEMPLATE_ROW_SHAPE[templateKey] || JOB_TEMPLATE_ROW_SHAPE.notes;
+  sec.rows.push(build(_jobModalPlayerId));
+  closeAssignJobModal();
+  renderStrats();
+  showToast('✓ Assignment added — fill in the target/detail in Sections below.');
+}
+// Falls through to the existing raw section builder for anything the
+// presets don't cover - not pre-filled with the player, by design (fully
+// custom means fully custom); the RL assigns them the normal way once
+// the section exists.
+function assignPlayerToCustomJob() {
+  if (_jobModalSid == null) return;
+  const sid = _jobModalSid;
+  closeAssignJobModal();
+  openCustomSectionModal(sid);
 }
 
 // ── Build full panel ───────────────────────────────────────────
@@ -9569,7 +10112,7 @@ async function initFromJson() {
     if (data.attendance) attendance = data.attendance;
     if (data.nextId) nextId = data.nextId;
     if (data.guildInfo) guildInfo = { ...guildInfo, ...data.guildInfo };
-    if (data.strats) { strats = data.strats; recalcSectionRowIdCounters(); }
+    if (data.strats) { strats = data.strats; recalcSectionRowIdCounters(); recalcPinIdCounter(); }
     if (data.nextStratId) nextStratId = data.nextStratId;
     if (data.trashBestiary) trashBestiary = data.trashBestiary;
     if (data.nextBestiaryId) nextBestiaryId = data.nextBestiaryId;
