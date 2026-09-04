@@ -3829,12 +3829,15 @@ async function generateFalloutReport() {
     // Each target starts pre-filled from whatever's already on the roster,
     // but is fully editable in the preview below (Discord ID, and a
     // checkbox to include/exclude them from this batch) - `send` defaults
-    // to on only when there's already a real ID, but can be flipped either
-    // way regardless of ID before actually sending.
+    // to OFF for everyone regardless of whether a real ID is already on
+    // file. People were getting DM'd coaching they didn't ask for just
+    // because their ID happened to be on the roster; this makes every send
+    // a deliberate per-person opt-in, checked manually for whoever actually
+    // requested a report.
     _pendingFalloutDMs = (data.dmTargets || []).map(t => {
       const p = roster.find(r => r.name === t.name);
       const discordUserId = p?.discordUserId || '';
-      return { ...t, discordUserId, send: !!discordUserId };
+      return { ...t, discordUserId, send: false };
     });
     renderFalloutReportPreview(data.dpsText, data.healersText);
   } catch (err) {
