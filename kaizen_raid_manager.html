@@ -5227,6 +5227,18 @@ function applyRHImport() {
   // from ever placing them automatically.
   const allSignUps = [...attendingData, ...benchedData, ...absentData, ...tentativeData];
 
+  // Pure flag, no auto-write to the roster itself: a real signal (someone
+  // self-reported this spec tonight) is exactly what keeps a roster's
+  // spec from going stale between guild-export imports (which have no
+  // spec column at all - see applyGuildRosterMerge), but a single
+  // off-spec night shouldn't silently overwrite anyone's main spec.
+  // Restricted to effectiveClass === p.class specifically because RH
+  // sign-ups can be for a different character/alt than the roster entry
+  // they're matched to (see the effectiveClass comment below) - if the
+  // sign-up's class doesn't match the roster entry's own class, the spec
+  // isn't a trustworthy signal for THIS roster entry at all, alt or not.
+  const specMismatches = [];
+
   for (const su of allSignUps) {
     if (su.matchId) {
       const p = roster.find(r => r.id === su.matchId);
@@ -5272,6 +5284,9 @@ function applyRHImport() {
           poolEntry.role     = rhRole;
           specOverrides[p.id] = translated.spec;
           roleOverrides[p.id] = rhRole;
+          if (effectiveClass === p.class && translated.spec && translated.spec !== p.ms && translated.spec !== p.os) {
+            specMismatches.push({ name: p.name, onFile: p.ms || '(none set)', signedUpAs: translated.spec });
+          }
         }
         signUpPool.push(poolEntry);
       }
@@ -5343,7 +5358,13 @@ function applyRHImport() {
 
   overlay.remove();
   renderBuilder();
-  showToast(`Import complete — ${signUpPool.length} sign-ups in pool. Hit Auto-Fill to assign groups.`);
+  let msg = `Import complete — ${signUpPool.length} sign-ups in pool. Hit Auto-Fill to assign groups.`;
+  if (specMismatches.length) {
+    const list = specMismatches.slice(0, 5).map(m => `${m.name} (on file: ${m.onFile}, signed up: ${m.signedUpAs})`).join('; ')
+      + (specMismatches.length > 5 ? `, +${specMismatches.length - 5} more` : '');
+    msg += ` ⚠ ${specMismatches.length} signed up with a spec that doesn't match their roster entry - update it there if that's their new main: ${list}.`;
+  }
+  showToast(msg);
 }
 
 function openGuildPasteModal() {
@@ -5445,34 +5466,71 @@ function parseGuildRosterCSV(text) {
 
   if (parsed.length === 0) { showToast('No valid rows found — check the format.', true); return; }
 
+  const existingCount = roster.filter(p => parsed.some(row => row.name.toLowerCase() === p.name.toLowerCase())).length;
   document.getElementById('confirm-text').textContent =
-    `Replace the entire roster with ${parsed.length} members from the guild export? Existing specs, roles, and alt designations will be reset.`;
+    `Merge ${parsed.length} members from the guild export? Matches existing roster entries by name and only updates class/level/status - spec, off-spec, role, and alt designations stay exactly as you've set them. ${existingCount} of these already exist and will be updated in place; the rest are added new.`;
   document.getElementById('confirm-ok').onclick = () => {
-    applyFullRosterReplace(parsed);
+    applyGuildRosterMerge(parsed);
     closeConfirm();
   };
   document.getElementById('confirm-overlay').classList.add('open');
 }
 
-function applyFullRosterReplace(parsed) {
-  nextId = 1;
-  roster = parsed.map(p => {
-    const specs = CLASS_SPECS[p.class] || [];
-    return {
-      id: nextId++,
-      name: p.name,
-      class: p.class,
-      ms: specs[0] || '',
-      os: '',
-      role: SPEC_ROLE[specs[0]] || 'Ranged',
-      status: p.status,
-      altOf: '',
-      level: p.level,
-      notes: p.notes || '',
-    };
-  });
+// Merge, never replace - a guild export has no spec/role/alt-of column at
+// all (there's genuinely nothing there to read), so a wholesale
+// roster = parsed.map(...) used to reset every hand-curated field on
+// every player, every time someone ran the lazy full-guild import
+// instead of adding people one at a time. Matched by name (the only
+// reliable join key an export gives you); only class/level/status ever
+// get touched on a match, and notes only if the export actually has one
+// (never blanks out an existing note with an empty column).
+function applyGuildRosterMerge(parsed) {
+  const byName = new Map(roster.map(p => [p.name.toLowerCase(), p]));
+  const seen = new Set();
+  let added = 0, updated = 0;
+
+  for (const row of parsed) {
+    const key = row.name.toLowerCase();
+    seen.add(key);
+    const existing = byName.get(key);
+    if (existing) {
+      existing.class = row.class;
+      existing.level = row.level;
+      existing.status = row.status;
+      if (row.notes) existing.notes = row.notes;
+      updated++;
+    } else {
+      const specs = CLASS_SPECS[row.class] || [];
+      roster.push({
+        id: nextId++,
+        name: row.name,
+        class: row.class,
+        ms: specs[0] || '',
+        os: '',
+        role: SPEC_ROLE[specs[0]] || 'Ranged',
+        status: row.status,
+        altOf: '',
+        level: row.level,
+        notes: row.notes || '',
+      });
+      added++;
+    }
+  }
+
+  // Existing roster members this export didn't mention at all - could
+  // mean they left, or just as easily a name typo/rename - never deleted
+  // automatically, just flagged so an officer can decide with the normal
+  // roster UI (Remove, or leave them - maybe mark Casual) rather than
+  // either silently vanishing them or leaving permanent ghosts forever.
+  const missing = roster.filter(p => !seen.has(p.name.toLowerCase()));
   renderRoster();
-  showToast(`Roster replaced with ${roster.length} members from guild export.`);
+
+  let msg = `✓ Guild roster merged — ${added} added, ${updated} updated.`;
+  if (missing.length) {
+    const names = missing.slice(0, 8).map(p => p.name).join(', ') + (missing.length > 8 ? `, +${missing.length - 8} more` : '');
+    msg += ` ${missing.length} existing member${missing.length === 1 ? '' : 's'} weren't in this export (not removed automatically): ${names}.`;
+  }
+  showToast(msg);
 }
 
 // ======================================================
