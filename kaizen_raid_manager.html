@@ -10042,9 +10042,12 @@ function groupedPlayersForRaid(raid) {
 // Pure - computes what Auto-Assign WOULD do without writing anything, so
 // confirmAutoAssign can show an accurate "will fill N slots" count before
 // anything actually happens (see openAutoAssignConfirm). Returns
-// {ops: [{row,field,playerId}], filledCount, newlyAssignedIds}; applying
+// {ops: [{row,field,value}], filledCount, newlyAssignedIds}; applying
 // is a separate, explicit step (applyAutoAssignPlan) gated behind that
-// modal - this function itself never touches strat.sections.
+// modal - this function itself never touches strat.sections. `field` is
+// whichever row property gets written (valueA/valueB, occasionally typeB
+// too - see the healer-cap fallback below), `value` is whatever gets
+// written there (a player id, or plain text for that fallback).
 function computeAutoAssignPlan(strat, roster) {
   const usedIds = new Set();
   for (const sec of strat.sections) {
@@ -10081,9 +10084,30 @@ function computeAutoAssignPlan(strat, roster) {
       let finalId = row.valueB;
       if (finalId == null) {
         const p = takeNext(tankPool);
-        if (p) { finalId = p.id; ops.push({ row, field: 'valueB', playerId: p.id }); filledCount++; newlyAssignedIds.add(p.id); }
+        if (p) { finalId = p.id; ops.push({ row, field: 'valueB', value: p.id }); filledCount++; newlyAssignedIds.add(p.id); }
       }
       if (finalId != null) tankTargets.push(finalId);
+    }
+  }
+
+  // Per-guild convention (see TANK_HEAL_CLASS_PRIORITY): more than 2
+  // dedicated healers on one tank is unusual, so once a tank already has
+  // 2 (pre-existing manual ones count too - tallied below before Pass 2
+  // touches anything), the next healer who'd otherwise cycle onto that
+  // same tank gets a generic "Raid Healer" text target instead of a 3rd
+  // dedicated pair. Purely a starting point either way - nothing stops
+  // manually re-pointing any of these at a specific tank afterward, and
+  // this cap is Auto-Assign's convenience default, not a hard rule (you
+  // can still manually assign all 5 healers to one tank if a fight
+  // actually calls for it).
+  const HEAL_PER_TANK_CAP = 2;
+  const healersPerTank = new Map();
+  for (const sec of strat.sections) {
+    if (!(sec.label || '').toLowerCase().includes('heal')) continue;
+    for (const row of sec.rows || []) {
+      if (row.typeA === 'player' && row.typeB === 'player' && row.valueB != null) {
+        healersPerTank.set(row.valueB, (healersPerTank.get(row.valueB) || 0) + 1);
+      }
     }
   }
 
@@ -10101,11 +10125,17 @@ function computeAutoAssignPlan(strat, roster) {
       let touched = false;
       if (row.valueA == null) {
         const p = takeNext(isHeal ? healerPool : hunterPool);
-        if (p) { ops.push({ row, field: 'valueA', playerId: p.id }); touched = true; newlyAssignedIds.add(p.id); }
+        if (p) { ops.push({ row, field: 'valueA', value: p.id }); touched = true; newlyAssignedIds.add(p.id); }
       }
       if (row.valueB == null && tankTargets.length) {
         const targetId = tankTargets[(isHeal ? healRowIdx : mdRowIdx) % tankTargets.length];
-        ops.push({ row, field: 'valueB', playerId: targetId });
+        if (isHeal && (healersPerTank.get(targetId) || 0) >= HEAL_PER_TANK_CAP) {
+          ops.push({ row, field: 'typeB', value: 'text' });
+          ops.push({ row, field: 'valueB', value: 'Raid Healer' });
+        } else {
+          ops.push({ row, field: 'valueB', value: targetId });
+          if (isHeal) healersPerTank.set(targetId, (healersPerTank.get(targetId) || 0) + 1);
+        }
         touched = true;
       }
       if (isHeal) healRowIdx++; else mdRowIdx++;
@@ -10150,7 +10180,7 @@ function openAutoAssignConfirm(stratId, plan) {
 function applyAutoAssignPlan(stratId, plan, dropPins) {
   const strat = getStrat(stratId);
   if (!strat) return;
-  for (const op of plan.ops) op.row[op.field] = op.playerId;
+  for (const op of plan.ops) op.row[op.field] = op.value;
   renderStrats();
   showToast(`✓ Auto-filled ${plan.filledCount} slot${plan.filledCount === 1 ? '' : 's'} - review before posting.`);
   if (dropPins && plan.newlyAssignedIds.length) addMapPinsForPlayers(stratId, plan.newlyAssignedIds);
