@@ -2965,7 +2965,11 @@ function setPinRoleOverride(sid, playerId, role) {
   const newRole = pinRoleForPlayer(s, playerId);
   const p = getPlayerById(playerId);
   if (p && newRole !== prevRole) showToast(`↔ ${p.name} moved to ${newRole} for this strat.`);
-  renderStrats();
+  // Only the pins themselves changed (icon/color) - refreshMapPins updates
+  // just that small container instead of the whole Strats panel (see its
+  // definition for why a full renderStrats() here reintroduces the same
+  // flicker that was just fixed for dragging).
+  refreshMapPins(sid);
 }
 
 // A "job" is read live from the Sections panel, never stored on the pin -
@@ -3012,7 +3016,8 @@ function removeMapPin(sid, pinId) {
   if (!s) return;
   s.mapPins = (s.mapPins || []).filter(p => p.id !== pinId);
   if (_mapFocusedPinId === pinId) _mapFocusedPinId = null;
-  renderStrats();
+  refreshMapPins(sid);
+  refreshNeedsJobList(sid); // removing a pin can remove someone from the list too
 }
 
 // Which raid's this-week roster the map reads from - deliberately the
@@ -8028,7 +8033,7 @@ function renderStrats() {
     <div class="strat-image-wrap" style="position:relative;">
       <div class="map-pin-layer" id="map-pin-layer-${active.id}" onpointerdown="onMapLayerPointerDown(${active.id})">
         <img src="${resolveImg(active.image)}${active.image && !active.image.startsWith('data:') && active.imageUpdatedAt ? '?v=' + active.imageUpdatedAt : ''}" alt="${active.name}" style="max-width:100%;max-height:70vh;border-radius:3px;object-fit:contain;">
-        ${renderMapPins(active)}
+        <div id="map-pins-container-${active.id}">${renderMapPins(active)}</div>
       </div>
       <div style="position:absolute;top:10px;right:10px;display:flex;gap:6px;z-index:30;">
         <label class="btn btn-small" style="cursor:pointer;font-size:11px;" title="Replace image">
@@ -8038,7 +8043,7 @@ function renderStrats() {
         <button class="btn btn-small" onclick="renameStrat(${active.id})" style="font-size:11px;">✏️ Rename</button>
       </div>
     </div>
-    ${renderNeedsJobList(active)}` : '';
+    <div id="needs-job-list-${active.id}">${renderNeedsJobList(active)}</div>` : '';
 
   const assignsPanel = active ? buildAssignsPanel(active) : '';
   const trashPanel = activeGuide ? renderTrashGuidePanel(activeGuide) : '';
@@ -9411,18 +9416,19 @@ function buildRaiderRowForSection(sec, pid) {
 function pickAssign(pid) {
   if (_pickerSid == null) return;
   const sid = _pickerSid;
+  const kind = _pickerKind;
   let promptForJob = false;
-  if (_pickerKind === 'pin') {
+  if (kind === 'pin') {
     const pin = getPin(sid, _pickerRowId);
     if (pin) pin.playerId = pid;
-  } else if (_pickerKind === 'new-pin') {
+  } else if (kind === 'new-pin') {
     // Placing a brand-new player pin is exactly the moment the right-hand
     // panel needs to connect to - immediately offer to pick their bucket
     // (see below) rather than leaving them positioned with no job until
     // someone notices them in "Needs an assignment" later.
     addMapPin(sid, 'player', { playerId: pid });
     promptForJob = true;
-  } else if (_pickerKind === 'new-row') {
+  } else if (kind === 'new-row') {
     const sec = getSec(sid, _pickerSecId);
     if (sec) sec.rows.push(buildRaiderRowForSection(sec, pid));
   } else {
@@ -9430,7 +9436,12 @@ function pickAssign(pid) {
     if (found) { found.row[_pickerSide] = pid; }
   }
   closeAssignPicker();
-  renderStrats();
+  // Scoped to whichever side actually changed rather than a full
+  // renderStrats() - see refreshMapPins/refreshAssignsPanel for why (the
+  // image element flickers on every full render regardless of whether its
+  // src string changed).
+  if (kind === 'pin' || kind === 'new-pin') { refreshMapPins(sid); refreshNeedsJobList(sid); }
+  else { refreshAssignsPanel(sid); refreshNeedsJobList(sid); }
   _pickerSid = null; _pickerRowId = null; _pickerSide = null; _pickerSecId = null; _pickerKind = 'row';
   if (promptForJob) openAssignJobModal(sid, pid);
 }
@@ -9500,7 +9511,14 @@ function toggleRowFocus(sid, rowId) {
     const found = findRowAnywhere(sid, rowId);
     _highlightedPlayerId = found ? rowActorId(found.row) : null;
   }
-  renderStrats();
+  // Rebuilding the row itself needs a real refresh (the expanded editor
+  // is real markup, not a class toggle) - but that's scoped to just the
+  // Sections body, never the image, so it can't cause the flicker a full
+  // renderStrats() did. The map side only ever needs a ring toggled on
+  // the matching pin, which applyPinHighlight does directly with no
+  // re-render of the pins at all.
+  refreshAssignsPanel(sid);
+  applyPinHighlight(_highlightedPlayerId);
 }
 
 function renderRowHtml(sid, secId, row, sec) {
@@ -9787,6 +9805,46 @@ function renderMapPins(strat) {
   return (strat.mapPins || []).map(pin => renderOneMapPin(strat, pin)).join('');
 }
 
+// ── Scoped refreshes ─────────────────────────────────────────────
+// A full renderStrats() replaces the entire Strats panel, which includes
+// the boss image - and even with a stable, non-cache-busted src (see the
+// imageArea fix), tearing down and recreating the <img> element itself on
+// every single click is still a visible flash. These update only the one
+// small container that actually changed, so routine interactions
+// (focusing a pin, expanding a row-card) never touch the image at all.
+function refreshMapPins(sid) {
+  const strat = getStrat(sid);
+  const el = document.getElementById(`map-pins-container-${sid}`);
+  if (strat && el) el.innerHTML = renderMapPins(strat);
+}
+function refreshNeedsJobList(sid) {
+  const strat = getStrat(sid);
+  const el = document.getElementById(`needs-job-list-${sid}`);
+  if (strat && el) el.innerHTML = renderNeedsJobList(strat);
+}
+function refreshAssignsPanel(sid) {
+  const strat = getStrat(sid);
+  const el = document.getElementById(`assigns-panel-${sid}`);
+  if (strat && el) { el.innerHTML = assignsPanelBody(strat); syncAutoAssignRaidSelect(); }
+}
+
+// Toggling .linked directly via a matching data attribute, with no
+// re-render at all - used for whichever SIDE didn't just get its own
+// real content rebuilt (see toggleRowFocus/onMapPinPointerDown), so
+// cross-highlighting never costs more than a classList change.
+function applyRowCardHighlight(playerId) {
+  document.querySelectorAll('.assigns-row-card.linked').forEach(el => el.classList.remove('linked'));
+  if (playerId != null) {
+    document.querySelectorAll(`.assigns-row-card[data-actor-id="${playerId}"]`).forEach(el => el.classList.add('linked'));
+  }
+}
+function applyPinHighlight(playerId) {
+  document.querySelectorAll('.map-pin.linked').forEach(el => el.classList.remove('linked'));
+  if (playerId != null) {
+    document.querySelectorAll(`.map-pin[data-player-id="${playerId}"]`).forEach(el => el.classList.add('linked'));
+  }
+}
+
 function renderOneMapPin(strat, pin) {
   const isFocused = _mapFocusedPinId === pin.id;
   const isLinked = pin.kind === 'player' && pin.playerId != null && _highlightedPlayerId != null && Number(pin.playerId) === Number(_highlightedPlayerId);
@@ -9818,7 +9876,7 @@ function renderOneMapPin(strat, pin) {
   }
 
   return `<div class="map-pin ${isFocused ? 'focused' : 'idle'} ${filled ? 'filled' : ''} ${isLinked ? 'linked' : ''}"
-    data-role="${role}" data-kind="${pin.kind}" data-id="${pin.id}"
+    data-role="${role}" data-kind="${pin.kind}" data-id="${pin.id}" ${pin.kind === 'player' && pin.playerId != null ? `data-player-id="${pin.playerId}"` : ''}
     style="left:${pin.x}%;top:${pin.y}%;${fillColor ? `--pin-fill:${fillColor};` : ''}"
     title="${title.replace(/"/g, '&quot;')}"
     onpointerdown="onMapPinPointerDown(event, ${strat.id}, ${pin.id})">
@@ -9881,18 +9939,13 @@ function onMapPinPointerDown(e, sid, pinId) {
   if (!pin) return;
 
   // Highlighting starts the instant you touch a pin - click OR drag - but
-  // WITHOUT a full renderStrats() here: that rebuilds the whole panel,
-  // including a cache-busted <img src> (see imageArea), which reloads the
-  // boss image and visibly flickers right as a drag is starting - and
-  // worse, briefly invalidates the very rect this function is about to
-  // measure, snapping the pin to an edge on the first move. Toggling the
-  // .linked class directly on whatever row-cards already exist in the DOM
-  // is cheap and gives the exact same visual with none of that.
+  // never via a full renderStrats(): even rebuilding just the pins/panel
+  // is more than this needs, and a full page render tears down and
+  // recreates the <img> element, which flickers on every click regardless
+  // of whether its src string changed. applyRowCardHighlight only ever
+  // toggles a class on markup that already exists.
   _highlightedPlayerId = pin.kind === 'player' ? pin.playerId : null;
-  document.querySelectorAll('.assigns-row-card.linked').forEach(el => el.classList.remove('linked'));
-  if (_highlightedPlayerId != null) {
-    document.querySelectorAll(`.assigns-row-card[data-actor-id="${_highlightedPlayerId}"]`).forEach(el => el.classList.add('linked'));
-  }
+  applyRowCardHighlight(_highlightedPlayerId);
 
   const layer = document.getElementById(`map-pin-layer-${sid}`);
   if (!layer) return;
@@ -9923,10 +9976,12 @@ function onMapPinPointerDown(e, sid, pinId) {
       // A plain click toggles full focus (the enlarged badge + editor) -
       // unfocusing also clears the highlight, since nothing's "active"
       // anymore; focusing keeps the highlight that pointerdown already set.
+      // refreshMapPins only rebuilds the small pins container (needed -
+      // the popover is real markup, not a class), never the image.
       const wasFocused = _mapFocusedPinId === pinId;
       _mapFocusedPinId = wasFocused ? null : pinId;
-      if (wasFocused) _highlightedPlayerId = null;
-      renderStrats();
+      if (wasFocused) { _highlightedPlayerId = null; applyRowCardHighlight(null); }
+      refreshMapPins(sid);
     }
     // A pure drag (moved===true) already mutated pin.x/y live above -
     // nothing left to commit, and re-rendering here would just be an
@@ -9941,14 +9996,19 @@ function onMapPinPointerDown(e, sid, pinId) {
 // whatever's currently focused - the popover's own pointerdown stops
 // propagation so clicks inside it never reach this.
 function onMapLayerPointerDown(sid) {
-  if (_mapFocusedPinId != null) { _mapFocusedPinId = null; _highlightedPlayerId = null; renderStrats(); }
+  if (_mapFocusedPinId != null) {
+    _mapFocusedPinId = null;
+    _highlightedPlayerId = null;
+    applyRowCardHighlight(null);
+    refreshMapPins(sid);
+  }
 }
 
-function addRoleMapPin(sid, role) { addMapPin(sid, 'role', { role }); renderStrats(); }
+function addRoleMapPin(sid, role) { addMapPin(sid, 'role', { role }); refreshMapPins(sid); }
 function addTextMapPin(sid) {
   const pin = addMapPin(sid, 'text', { text: '' });
   _mapFocusedPinId = pin ? pin.id : null;
-  renderStrats();
+  refreshMapPins(sid);
 }
 function setMapPinText(sid, pinId, text) {
   const pin = getPin(sid, pinId);
@@ -9964,7 +10024,8 @@ function promoteRolePinToPlayer(sid, pinId, playerId) {
   pin.kind = 'player';
   pin.playerId = playerId;
   delete pin.role;
-  renderStrats();
+  refreshMapPins(sid);
+  refreshNeedsJobList(sid);
   openAssignJobModal(sid, playerId);
 }
 
@@ -10028,8 +10089,10 @@ function assignPlayerToJobTemplate(templateKey) {
   const sec = findOrCreateSectionByLabel(_jobModalSid, tpl.label);
   const build = JOB_TEMPLATE_ROW_SHAPE[templateKey] || JOB_TEMPLATE_ROW_SHAPE.notes;
   sec.rows.push(build(_jobModalPlayerId));
+  const sid = _jobModalSid;
   closeAssignJobModal();
-  renderStrats();
+  refreshAssignsPanel(sid);
+  refreshNeedsJobList(sid);
   showToast('✓ Assignment added — fill in the target/detail in Sections below.');
 }
 // Falls through to the existing raw section builder for anything the
@@ -10044,24 +10107,12 @@ function assignPlayerToCustomJob() {
 }
 
 // ── Build full panel ───────────────────────────────────────────
-function buildAssignsPanel(strat) {
-  if (!strat.sections) strat.sections = defaultSections();
+// Split so a scoped update (see refreshAssignsPanel) can rebuild just
+// this inner content without touching the outer .assigns-panel element
+// itself or anything outside it (the image, the map, the needs-list).
+function assignsPanelBody(strat) {
   const sid = strat.id;
-  const allPlayers = [...getActiveRaiders(), ...guildies, ...pugs];
-
   const sectionsHtml = strat.sections.map((sec, i) => renderSectionHtml(sid, sec, i, strat.sections.length)).join('');
-
-  const poolHtml = allPlayers.map(p => {
-    const cc = classColor(p.class);
-    const isPug = p.id < 0 && !guildies.find(g => g.id === p.id);
-    return `<div class="strat-pool-player class-${cc}"
-      draggable="true"
-      ondragstart="onPoolDragStart(event,${p.id})"
-      title="${p.ms} ${p.class}">
-      <span class="class-dot" style="background:var(--${cc});width:7px;height:7px;"></span>
-      ${p.name}${isPug ? ' <span style="font-size:9px;color:var(--gold);">PUG</span>' : ''}
-    </div>`;
-  }).join('');
 
   // Auto-Assign lives right here - same width as the section cards below
   // it, directly above them - rather than up in the page header, far from
@@ -10074,10 +10125,15 @@ function buildAssignsPanel(strat) {
     <button class="btn btn-small" style="flex-shrink:0;" onclick="confirmResetStratTemplate(${sid})" title="Reset this strat's sections back to its default template - discards any edits made here">↺</button>
   </div>`;
 
-  return `<div class="assigns-panel" style="min-width:300px;max-width:340px;flex-shrink:0;display:flex;flex-direction:column;gap:10px;">
-    ${autoAssignHtml}
+  return `${autoAssignHtml}
     ${sectionsHtml}
-    <button class="add-section-btn" onclick="openSectionModal(${sid})">+ Add Section</button>
+    <button class="add-section-btn" onclick="openSectionModal(${sid})">+ Add Section</button>`;
+}
+
+function buildAssignsPanel(strat) {
+  if (!strat.sections) strat.sections = defaultSections();
+  return `<div class="assigns-panel" id="assigns-panel-${strat.id}" style="min-width:300px;max-width:340px;flex-shrink:0;display:flex;flex-direction:column;gap:10px;">
+    ${assignsPanelBody(strat)}
   </div>`;
 }
 
