@@ -1167,6 +1167,9 @@ tr:last-child td { border-bottom: none; }
 .row-card-blade:hover .row-rm-btn { opacity: 1; color: var(--red-bright); }
 .assigns-row-card.expanded .row-card-blade { background: var(--bg-hover); border-bottom: 1px solid var(--border); }
 .assigns-row-card .row-card-body { padding: 2px 0; }
+/* Cross-highlight from the map (see _highlightedPlayerId) - a ring, not
+   an expand: interacting with a pin should never force this card open. */
+.assigns-row-card.linked .row-card-blade { box-shadow: inset 0 0 0 2px var(--teal); background: rgba(26,175,192,0.07); }
 
 /* Player pool below image */
 .strat-pool-label {
@@ -1346,6 +1349,10 @@ tr:last-child td { border-bottom: none; }
 .map-pin[data-role="Melee"] .map-pin-badge { border-color: var(--red-bright); color: var(--red-bright); }
 .map-pin[data-kind="text"] .map-pin-badge { border-color: var(--text-dim); color: var(--text-mid); }
 .map-pin[data-kind="role"] .map-pin-badge { background: transparent; }
+/* Cross-highlight from the Sections panel (see _highlightedPlayerId) - a
+   ring layered on top of whatever size state the pin is already in
+   (idle/focused/dragging), not a size change of its own. */
+.map-pin.linked .map-pin-badge { box-shadow: 0 0 0 3px var(--teal), 0 2px 10px rgba(0,0,0,0.5); }
 
 .map-pin-label {
   font-size: 10.5px; font-weight: 600; color: var(--text-bright);
@@ -9400,21 +9407,29 @@ function buildRaiderRowForSection(sec, pid) {
 
 function pickAssign(pid) {
   if (_pickerSid == null) return;
+  const sid = _pickerSid;
+  let promptForJob = false;
   if (_pickerKind === 'pin') {
-    const pin = getPin(_pickerSid, _pickerRowId);
+    const pin = getPin(sid, _pickerRowId);
     if (pin) pin.playerId = pid;
   } else if (_pickerKind === 'new-pin') {
-    addMapPin(_pickerSid, 'player', { playerId: pid });
+    // Placing a brand-new player pin is exactly the moment the right-hand
+    // panel needs to connect to - immediately offer to pick their bucket
+    // (see below) rather than leaving them positioned with no job until
+    // someone notices them in "Needs an assignment" later.
+    addMapPin(sid, 'player', { playerId: pid });
+    promptForJob = true;
   } else if (_pickerKind === 'new-row') {
-    const sec = getSec(_pickerSid, _pickerSecId);
+    const sec = getSec(sid, _pickerSecId);
     if (sec) sec.rows.push(buildRaiderRowForSection(sec, pid));
   } else {
-    const found = findRowAnywhere(_pickerSid, _pickerRowId);
+    const found = findRowAnywhere(sid, _pickerRowId);
     if (found) { found.row[_pickerSide] = pid; }
   }
   closeAssignPicker();
   renderStrats();
   _pickerSid = null; _pickerRowId = null; _pickerSide = null; _pickerSecId = null; _pickerKind = 'row';
+  if (promptForJob) openAssignJobModal(sid, pid);
 }
 
 // ── Row rendering ──────────────────────────────────────────────
@@ -9462,8 +9477,26 @@ function rowCardSummary(row) {
 // Which row is expanded right now - one at a time, app-wide (not
 // persisted), same exclusive-focus pattern the map pins already use.
 let _focusedRowId = null;
-function toggleRowFocus(rowId) {
-  _focusedRowId = (_focusedRowId === rowId) ? null : rowId;
+
+// Same convention as jobsForPlayer/rowCardSummary: the "actor" is valueA
+// when there's an arrow (a relationship - the other side is just the
+// target), or whichever side is the player when there's no arrow (a
+// labeled slot like MT).
+function rowActorId(row) {
+  if (row.typeA === 'player') return row.valueA;
+  if (row.typeB === 'player') return row.valueB;
+  return null;
+}
+
+function toggleRowFocus(sid, rowId) {
+  const wasExpanded = _focusedRowId === rowId;
+  _focusedRowId = wasExpanded ? null : rowId;
+  if (wasExpanded) {
+    _highlightedPlayerId = null;
+  } else {
+    const found = findRowAnywhere(sid, rowId);
+    _highlightedPlayerId = found ? rowActorId(found.row) : null;
+  }
   renderStrats();
 }
 
@@ -9510,14 +9543,16 @@ function renderRowHtml(sid, secId, row, sec) {
   }
 
   const expanded = _focusedRowId === id;
+  const actorId = rowActorId(row);
+  const isLinked = actorId != null && _highlightedPlayerId != null && Number(actorId) === Number(_highlightedPlayerId);
   const summary = rowCardSummary(row);
   const icon = rowCardIcon(sec);
   const color = rowCardColor(sec);
   const arrowHtml = arrow ? '<span class="assigns-arrow">→</span>' : '';
   const hasB = typeB != null;
 
-  return `<div class="assigns-row-card ${expanded ? 'expanded' : ''}">
-    <div class="row-card-blade" onclick="toggleRowFocus(${id})">
+  return `<div class="assigns-row-card ${expanded ? 'expanded' : ''} ${isLinked ? 'linked' : ''}">
+    <div class="row-card-blade" onclick="toggleRowFocus(${sid},${id})">
       <span class="row-card-icon" style="background:${color}22;color:${color};">${icon}</span>
       <div class="row-card-text">
         ${summary.label ? `<div class="row-card-label">${summary.label.replace(/</g,'&lt;')}</div>` : ''}
@@ -9721,6 +9756,15 @@ function autoAssignStrat(stratId) {
 // closes it too - see onMapLayerPointerDown.
 let _mapFocusedPinId = null;
 
+// Cross-links the map and the Sections panel WITHOUT forcing either side
+// open - interacting with a pin (click OR drag - see onMapPinPointerDown)
+// highlights that player's row-card on the right; interacting with a
+// row-card (see toggleRowFocus) highlights their pin on the map. Neither
+// direction expands/focuses the other side - focus (full-size pin, open
+// row editor) only ever happens from direct interaction with THAT side,
+// this is purely "here's the same person, over there too."
+let _highlightedPlayerId = null;
+
 function renderMapToolbar(strat) {
   const roleBtns = MAP_PIN_ROLES.map(r =>
     `<button class="map-role-btn" style="border-color:${r.color};color:${r.color};"
@@ -9742,6 +9786,7 @@ function renderMapPins(strat) {
 
 function renderOneMapPin(strat, pin) {
   const isFocused = _mapFocusedPinId === pin.id;
+  const isLinked = pin.kind === 'player' && pin.playerId != null && _highlightedPlayerId != null && Number(pin.playerId) === Number(_highlightedPlayerId);
   let role = '', iconHtml = '', labelHtml = '', fillColor = '', filled = false, title = '';
 
   if (pin.kind === 'player') {
@@ -9769,7 +9814,7 @@ function renderOneMapPin(strat, pin) {
     title = pin.text || 'Text label - click to edit';
   }
 
-  return `<div class="map-pin ${isFocused ? 'focused' : 'idle'} ${filled ? 'filled' : ''}"
+  return `<div class="map-pin ${isFocused ? 'focused' : 'idle'} ${filled ? 'filled' : ''} ${isLinked ? 'linked' : ''}"
     data-role="${role}" data-kind="${pin.kind}" data-id="${pin.id}"
     style="left:${pin.x}%;top:${pin.y}%;${fillColor ? `--pin-fill:${fillColor};` : ''}"
     title="${title.replace(/"/g, '&quot;')}"
@@ -9830,8 +9875,19 @@ function onMapPinPointerDown(e, sid, pinId) {
   e.preventDefault();
   e.stopPropagation();
   const pin = getPin(sid, pinId);
+  if (!pin) return;
+
+  // Highlighting starts the instant you touch a pin - click OR drag -
+  // rather than waiting for the gesture to resolve, so the right-hand
+  // panel visibly lights up while you're still dragging someone into
+  // place, not just after you let go. One render here is cheap (same
+  // cost as any other click in this app); the drag itself below still
+  // avoids re-rendering per-frame.
+  _highlightedPlayerId = pin.kind === 'player' ? pin.playerId : null;
+  renderStrats();
+
   const layer = document.getElementById(`map-pin-layer-${sid}`);
-  if (!pin || !layer) return;
+  if (!layer) return;
   const rect = layer.getBoundingClientRect();
   const startX = e.clientX, startY = e.clientY;
   let moved = false;
@@ -9856,7 +9912,12 @@ function onMapPinPointerDown(e, sid, pinId) {
     window.removeEventListener('pointerup', onUp);
     if (pinEl) pinEl.classList.remove('dragging');
     if (!moved) {
-      _mapFocusedPinId = (_mapFocusedPinId === pinId) ? null : pinId;
+      // A plain click toggles full focus (the enlarged badge + editor) -
+      // unfocusing also clears the highlight, since nothing's "active"
+      // anymore; focusing keeps the highlight that pointerdown already set.
+      const wasFocused = _mapFocusedPinId === pinId;
+      _mapFocusedPinId = wasFocused ? null : pinId;
+      if (wasFocused) _highlightedPlayerId = null;
       renderStrats();
     }
     // A pure drag (moved===true) already mutated pin.x/y live above -
@@ -9872,7 +9933,7 @@ function onMapPinPointerDown(e, sid, pinId) {
 // whatever's currently focused - the popover's own pointerdown stops
 // propagation so clicks inside it never reach this.
 function onMapLayerPointerDown(sid) {
-  if (_mapFocusedPinId != null) { _mapFocusedPinId = null; renderStrats(); }
+  if (_mapFocusedPinId != null) { _mapFocusedPinId = null; _highlightedPlayerId = null; renderStrats(); }
 }
 
 function addRoleMapPin(sid, role) { addMapPin(sid, 'role', { role }); renderStrats(); }
@@ -9885,6 +9946,10 @@ function setMapPinText(sid, pinId, text) {
   const pin = getPin(sid, pinId);
   if (pin) pin.text = text;
 }
+// Promoting a generic role pin to a specific person is the same "the map
+// now has a new player pin" moment as "+ Player" - offer the same
+// bucket-picking follow-up (see openPickerForNewPin/pickAssign) so the
+// person doesn't quietly end up positioned with no job either way.
 function promoteRolePinToPlayer(sid, pinId, playerId) {
   const pin = getPin(sid, pinId);
   if (!pin) return;
@@ -9892,6 +9957,7 @@ function promoteRolePinToPlayer(sid, pinId, playerId) {
   pin.playerId = playerId;
   delete pin.role;
   renderStrats();
+  openAssignJobModal(sid, playerId);
 }
 
 function renderNeedsJobList(strat) {
