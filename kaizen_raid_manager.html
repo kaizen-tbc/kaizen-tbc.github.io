@@ -7963,12 +7963,28 @@ function confirmPostActiveTab() {
 
 // Auto-Assign only makes sense on a boss strat's own assignment panel -
 // a trash guide has no Tank/Healer/Misdirection slots to fill at all.
+// Nothing gets written until the modal below is actually confirmed (see
+// computeAutoAssignPlan/openAutoAssignConfirm) - this only validates
+// there's something worth asking about at all.
 function confirmAutoAssign() {
   if (activeTabKind !== 'strat' || activeStratId == null) {
     showToast('Auto-Assign only works on a boss strat tab, not a trash guide.', true);
     return;
   }
-  autoAssignStrat(activeStratId);
+  const strat = strats.find(s => s.id === activeStratId);
+  if (!strat || !strat.sections) { showToast('Nothing to auto-assign.', true); return; }
+
+  const sourceRaid = raids.find(r => r.id === autoAssignRaidId) || getActiveRaid();
+  if (!sourceRaid) { showToast('No raid selected to pull a roster from.', true); return; }
+  const roster = groupedPlayersForRaid(sourceRaid);
+  if (!roster.length) { showToast(`No one is placed into "${sourceRaid.name}"'s groups yet - build that roster first.`, true); return; }
+
+  const plan = computeAutoAssignPlan(strat, roster);
+  if (!plan.filledCount) {
+    showToast("Nothing to auto-fill - either everything's already assigned, or no Tank/Healer/Hunter signed up this week matches an empty slot.", true);
+    return;
+  }
+  openAutoAssignConfirm(strat.id, plan);
 }
 
 function updateAutoAssignRaid(raidIdStr) {
@@ -7988,12 +8004,26 @@ function confirmResetStratTemplate(stratId) {
     `Reset "${strat.name}"'s sections back to its default template? This discards any sections/edits you've made here - can't be undone.`;
   const existingCheck = document.getElementById('confirm-notify-wrap');
   if (existingCheck) existingCheck.remove();
+  // Sections and map pins are separate systems (see the map-pin design
+  // notes) - resetting one doesn't have to touch the other - but a reset
+  // often means "start this fight over," so offer clearing pins too
+  // rather than leaving them stranded pointing at assignments/roles that
+  // no longer exist. Unchecked by default: still opt-in, since it's the
+  // MORE destructive of the two things this button can now do.
+  const wrap = document.createElement('div');
+  wrap.id = 'confirm-notify-wrap';
+  wrap.style.cssText = 'margin-top:12px;display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-mid);';
+  wrap.innerHTML = `<input type="checkbox" id="confirm-reset-pins-check" style="cursor:pointer;width:14px;height:14px;">
+    <label for="confirm-reset-pins-check" style="cursor:pointer;">Also clear all map pins on this strat</label>`;
+  document.getElementById('confirm-text').after(wrap);
   document.getElementById('confirm-ok').onclick = () => {
+    const clearPins = document.getElementById('confirm-reset-pins-check')?.checked ?? false;
     closeConfirm();
     const builder = BOSS_DEFAULT_SECTIONS[strat.name] || defaultSections;
     strat.sections = builder();
+    if (clearPins) { strat.mapPins = []; _mapFocusedPinId = null; }
     renderStrats();
-    showToast('✓ Reset to default template.');
+    showToast(clearPins ? '✓ Reset to default template - pins cleared.' : '✓ Reset to default template.');
   };
   document.getElementById('confirm-overlay').classList.add('open');
 }
@@ -9671,6 +9701,7 @@ function pickAssign(pid) {
   const sid = _pickerSid;
   const kind = _pickerKind;
   let promptForJob = false;
+  let pinDropped = false;
   if (kind === 'pin') {
     const pin = getPin(sid, _pickerRowId);
     if (pin) pin.playerId = pid;
@@ -9690,10 +9721,10 @@ function pickAssign(pid) {
     promptForJob = !(s && jobsForPlayer(s, pid).length);
   } else if (kind === 'new-row') {
     const sec = getSec(sid, _pickerSecId);
-    if (sec) assignPlayerToSection(sec, pid);
+    if (sec) { assignPlayerToSection(sec, pid); pinDropped = dropPinIfNeeded(sid, pid); }
   } else {
     const found = findRowAnywhere(sid, _pickerRowId);
-    if (found) { found.row[_pickerSide] = pid; }
+    if (found) { found.row[_pickerSide] = pid; pinDropped = dropPinIfNeeded(sid, pid); }
   }
   closeAssignPicker();
   // Scoped to whichever side actually changed rather than a full
@@ -9701,9 +9732,29 @@ function pickAssign(pid) {
   // image element flickers on every full render regardless of whether its
   // src string changed).
   if (kind === 'pin' || kind === 'new-pin') { refreshMapPins(sid); refreshNeedsJobList(sid); }
-  else { refreshAssignsPanel(sid); refreshNeedsJobList(sid); }
+  else {
+    refreshAssignsPanel(sid); refreshNeedsJobList(sid);
+    if (pinDropped) refreshMapPins(sid);
+  }
   _pickerSid = null; _pickerRowId = null; _pickerSide = null; _pickerSecId = null; _pickerKind = 'row';
   if (promptForJob) openAssignJobModal(sid, pid);
+  if (pinDropped) {
+    const p = getPlayerById(pid);
+    showToast(`📍 Also dropped a pin for ${p ? p.name : 'them'} - drag it into position.`);
+  }
+}
+
+// Shared by pickAssign's Sections-side branches ('row'/'new-row') -
+// assigning someone to a section slot directly is just as clear a
+// "track them on the map too" signal as +Player dropping one is, so it
+// shouldn't need a separate manual trip through +Player afterward.
+// Mirrors the new-pin branch's dupe-guard above (that one skips the job
+// modal when they're already assigned; this one skips dropping a SECOND
+// pin when they already have one).
+function dropPinIfNeeded(sid, pid) {
+  if (findPlayerPinId(sid, pid) != null) return false;
+  addMapPin(sid, 'player', { playerId: pid });
+  return true;
 }
 
 // ── Row rendering ──────────────────────────────────────────────
@@ -9988,15 +10039,13 @@ function groupedPlayersForRaid(raid) {
 // through that complete list, not just whichever tanks got newly filled
 // this run. Filling heal targets before knowing about a pre-existing MT
 // would otherwise silently ignore it.
-function autoAssignStrat(stratId) {
-  const strat = strats.find(s => s.id === stratId);
-  if (!strat || !strat.sections) { showToast('Nothing to auto-assign.', true); return; }
-
-  const sourceRaid = raids.find(r => r.id === autoAssignRaidId) || getActiveRaid();
-  if (!sourceRaid) { showToast('No raid selected to pull a roster from.', true); return; }
-  const roster = groupedPlayersForRaid(sourceRaid);
-  if (!roster.length) { showToast(`No one is placed into "${sourceRaid.name}"'s groups yet - build that roster first.`, true); return; }
-
+// Pure - computes what Auto-Assign WOULD do without writing anything, so
+// confirmAutoAssign can show an accurate "will fill N slots" count before
+// anything actually happens (see openAutoAssignConfirm). Returns
+// {ops: [{row,field,playerId}], filledCount, newlyAssignedIds}; applying
+// is a separate, explicit step (applyAutoAssignPlan) gated behind that
+// modal - this function itself never touches strat.sections.
+function computeAutoAssignPlan(strat, roster) {
   const usedIds = new Set();
   for (const sec of strat.sections) {
     for (const row of sec.rows || []) {
@@ -10014,13 +10063,14 @@ function autoAssignStrat(stratId) {
   const healerPool = roster.filter(p => p.role === 'Healer').sort((a, b) => healPriorityRank(a.class) - healPriorityRank(b.class));
   const hunterPool = roster.filter(p => p.class === 'Hunter');
 
+  const ops = [];
   let filledCount = 0;
-  const tankTargets = []; // every tank assigned in a Tanks section, pre-existing or new, in row order
-  // Who actually got a NEW slot this run (the slot's owner, not a pair's
+  const tankTargets = []; // every tank assigned in a Tanks section, pre-existing or planned, in row order
+  // Who would actually get a NEW slot (the slot's owner, not a pair's
   // target reference - see Pass 2's valueB) - this is what the map-pin
-  // prompt below offers to drop pins for, so a tank who was merely
-  // referenced as someone else's heal-assign target doesn't get counted
-  // twice or pinned on that basis alone.
+  // checkbox in the confirm modal offers to drop pins for, so a tank
+  // who's merely referenced as someone else's heal-assign target doesn't
+  // get counted twice or pinned on that basis alone.
   const newlyAssignedIds = new Set();
 
   // Pass 1 - Tanks
@@ -10028,11 +10078,12 @@ function autoAssignStrat(stratId) {
     if (!(sec.label || '').toLowerCase().includes('tank')) continue;
     for (const row of sec.rows || []) {
       if (row.typeB !== 'player') continue;
-      if (row.valueB == null) {
+      let finalId = row.valueB;
+      if (finalId == null) {
         const p = takeNext(tankPool);
-        if (p) { row.valueB = p.id; filledCount++; newlyAssignedIds.add(p.id); }
+        if (p) { finalId = p.id; ops.push({ row, field: 'valueB', playerId: p.id }); filledCount++; newlyAssignedIds.add(p.id); }
       }
-      if (row.valueB != null) tankTargets.push(row.valueB);
+      if (finalId != null) tankTargets.push(finalId);
     }
   }
 
@@ -10050,10 +10101,11 @@ function autoAssignStrat(stratId) {
       let touched = false;
       if (row.valueA == null) {
         const p = takeNext(isHeal ? healerPool : hunterPool);
-        if (p) { row.valueA = p.id; touched = true; newlyAssignedIds.add(p.id); }
+        if (p) { ops.push({ row, field: 'valueA', playerId: p.id }); touched = true; newlyAssignedIds.add(p.id); }
       }
       if (row.valueB == null && tankTargets.length) {
-        row.valueB = tankTargets[(isHeal ? healRowIdx : mdRowIdx) % tankTargets.length];
+        const targetId = tankTargets[(isHeal ? healRowIdx : mdRowIdx) % tankTargets.length];
+        ops.push({ row, field: 'valueB', playerId: targetId });
         touched = true;
       }
       if (isHeal) healRowIdx++; else mdRowIdx++;
@@ -10061,35 +10113,47 @@ function autoAssignStrat(stratId) {
     }
   }
 
-  renderStrats();
-  if (filledCount) {
-    showToast(`✓ Auto-filled ${filledCount} slot${filledCount === 1 ? '' : 's'} - review before posting.`);
-    promptAutoAssignPins(stratId, [...newlyAssignedIds]);
-  } else {
-    showToast("Nothing to auto-fill - either everything's already assigned, or no Tank/Healer/Hunter signed up this week matches an empty slot.", true);
-  }
+  return { ops, filledCount, newlyAssignedIds: [...newlyAssignedIds] };
 }
 
-// Auto-Assign only ever touches Sections rows, deliberately never the
-// map - dropping a pin for every healer/tank it fills would muddy a
-// strat image that's often already busy just from the fight itself.
-// This is the opt-in bridge instead of silence: ask once, right after a
-// fill, whether to also drop a center-map pin for everyone who was
-// actually just newly assigned, so they only need dragging into
-// position rather than adding them one at a time through + Player.
-// Declining (Cancel) leaves things exactly as Auto-Assign already left
-// them - this is purely additive.
-function promptAutoAssignPins(stratId, playerIds) {
-  if (!playerIds.length) return;
+// One decision, not two. This used to run immediately on clicking
+// Auto-Assign (writing every slot right away), THEN show a modal that
+// only asked about pins - so Cancel on that modal looked like it should
+// undo the fill it appeared to be asking about, but it never did (the
+// fill had already happened). Now nothing is written until Confirm here:
+// Cancel (or the X) genuinely means "never mind, don't auto-assign at
+// all," and the checkbox - not a second modal - is what decides whether
+// pins come along with the fill.
+function openAutoAssignConfirm(stratId, plan) {
+  const n = plan.filledCount;
   document.getElementById('confirm-text').textContent =
-    `Also drop a map pin for each of the ${playerIds.length} player${playerIds.length === 1 ? '' : 's'} Auto-Assign just placed? You'll still need to drag each into position - this just saves adding them one at a time through + Player.`;
+    `Auto-Assign will fill ${n} empty slot${n === 1 ? '' : 's'} from this week's roster.`;
   const existingCheck = document.getElementById('confirm-notify-wrap');
   if (existingCheck) existingCheck.remove();
+  const wrap = document.createElement('div');
+  wrap.id = 'confirm-notify-wrap';
+  wrap.style.cssText = 'margin-top:12px;display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-mid);';
+  wrap.innerHTML = `<input type="checkbox" id="confirm-autoassign-pins-check" style="cursor:pointer;width:14px;height:14px;">
+    <label for="confirm-autoassign-pins-check" style="cursor:pointer;">Also drop a map pin for each newly-assigned player</label>`;
+  document.getElementById('confirm-text').after(wrap);
+
   document.getElementById('confirm-ok').onclick = () => {
+    const dropPins = document.getElementById('confirm-autoassign-pins-check')?.checked ?? false;
     closeConfirm();
-    addMapPinsForPlayers(stratId, playerIds);
+    applyAutoAssignPlan(stratId, plan, dropPins);
   };
   document.getElementById('confirm-overlay').classList.add('open');
+}
+
+// The only place that actually writes anything - called exclusively from
+// the Confirm button above, never on its own.
+function applyAutoAssignPlan(stratId, plan, dropPins) {
+  const strat = getStrat(stratId);
+  if (!strat) return;
+  for (const op of plan.ops) op.row[op.field] = op.playerId;
+  renderStrats();
+  showToast(`✓ Auto-filled ${plan.filledCount} slot${plan.filledCount === 1 ? '' : 's'} - review before posting.`);
+  if (dropPins && plan.newlyAssignedIds.length) addMapPinsForPlayers(stratId, plan.newlyAssignedIds);
 }
 
 // Shared by the Auto-Assign pin prompt above - never doubles up a pin
@@ -10130,6 +10194,30 @@ let _mapFocusedPinId = null;
 // this is purely "here's the same person, over there too."
 let _highlightedPlayerId = null;
 
+// Standalone destructive utility (see the toolbar's "Clear all pins"
+// link) - independent of resetting sections, which now has its own
+// opt-in checkbox for the same thing (see confirmResetStratTemplate).
+// Same confirm-overlay pattern as every other irreversible action here.
+function confirmClearAllPins(stratId) {
+  const strat = getStrat(stratId);
+  if (!strat) return;
+  const count = (strat.mapPins || []).length;
+  if (!count) { showToast('No pins to clear.', true); return; }
+  document.getElementById('confirm-text').textContent =
+    `Clear all ${count} pin${count === 1 ? '' : 's'} on this strat's map? Can't be undone.`;
+  const existingCheck = document.getElementById('confirm-notify-wrap');
+  if (existingCheck) existingCheck.remove();
+  document.getElementById('confirm-ok').onclick = () => {
+    closeConfirm();
+    strat.mapPins = [];
+    _mapFocusedPinId = null;
+    refreshMapPins(stratId);
+    refreshNeedsJobList(stratId);
+    showToast('✓ Cleared all pins.');
+  };
+  document.getElementById('confirm-overlay').classList.add('open');
+}
+
 // "Show raider names" toolbar checkbox - a view preference, not strat
 // data, so deliberately not saved/persisted (same category as
 // _mapFocusedPinId above). Global rather than per-strat: this is a
@@ -10159,11 +10247,14 @@ function renderMapToolbar(strat) {
     <div class="divider"></div>
     <button class="btn btn-small" onclick="openPickerForNewPin(${strat.id})" title="Place a specific person on the map">＋ Player</button>
     <button class="btn btn-small" onclick="addTextMapPin(${strat.id})" title="Drop a free text label">＋ Text</button>
-    <label style="margin-left:auto;display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-dim);cursor:pointer;"
-      title="Show every pin's name even when idle, not just when focused - handy for a quick screenshot/Discord preview">
-      <input type="checkbox" ${_showRaiderNames ? 'checked' : ''} onchange="toggleShowRaiderNames(${strat.id},this.checked)">
-      Show raider names
-    </label>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:14px;">
+      <a href="#" class="map-popover-link" onclick="event.preventDefault();confirmClearAllPins(${strat.id})" title="Delete every pin on this strat's map">🗑 Clear all pins</a>
+      <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-dim);cursor:pointer;"
+        title="Show every pin's name even when idle, not just when focused - handy for a quick screenshot/Discord preview">
+        <input type="checkbox" ${_showRaiderNames ? 'checked' : ''} onchange="toggleShowRaiderNames(${strat.id},this.checked)">
+        Show raider names
+      </label>
+    </div>
   </div>`;
 }
 
