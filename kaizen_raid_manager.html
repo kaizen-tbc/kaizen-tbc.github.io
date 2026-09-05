@@ -9890,21 +9890,22 @@ function renderMapPopover(strat, pin) {
   let body = '';
 
   if (pin.kind === 'player') {
+    // Deliberately no assignment/job preview here anymore - focusing this
+    // pin already highlights the matching row-card on the right (see
+    // applyRowCardHighlight), which shows the real, editable thing
+    // instead of a read-only summary of it. This popover only holds what
+    // has no other home: who occupies the position, and their role for
+    // this specific strat.
     const p = pin.playerId ? getPlayerById(pin.playerId) : null;
     const role = p ? pinRoleForPlayer(strat, p.id) : null;
     const roleBtns = MAP_PIN_ROLES.map(r => `<button class="map-role-btn"
         style="border-color:${r.color};color:${r.color};${role === r.key ? `background:${r.color}33;` : ''}"
         title="${r.key} for this strat" onclick="setPinRoleOverride(${strat.id},${p ? p.id : 'null'},'${r.key}')">${r.icon}</button>`).join('');
-    const jobs = p ? jobsForPlayer(strat, p.id) : [];
     title = p ? p.name : 'Unassigned pin';
     body = `
       <button class="btn btn-small" style="width:100%;margin-bottom:8px;" onclick="openPickerForPin(${strat.id},${pin.id})">${p ? '🔁 Change player' : '➕ Pick a player'}</button>
       ${p ? `<div style="font-size:10.5px;color:var(--text-dim);margin-bottom:4px;">Role for this strat</div>
-      <div style="display:flex;gap:5px;margin-bottom:9px;">${roleBtns}</div>` : ''}
-      ${p ? (jobs.length
-        ? `<div style="font-size:10.5px;color:var(--text-dim);margin-bottom:4px;">Assignment${jobs.length > 1 ? 's' : ''}</div>
-           ${jobs.map(j => `<div class="map-popover-list-item">${j.sectionLabel}${j.detail ? ' — ' + j.detail : ''}</div>`).join('')}`
-        : `<div style="font-size:10.5px;color:var(--text-dim);">No assignment yet — see "Needs an assignment" below the map.</div>`) : ''}
+      <div style="display:flex;gap:5px;">${roleBtns}</div>` : ''}
     `;
   } else if (pin.kind === 'role') {
     const list = unassignedPlayersInRole(strat, pin.role);
