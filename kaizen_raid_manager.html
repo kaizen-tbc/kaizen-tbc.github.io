@@ -9658,9 +9658,16 @@ function pickAssign(pid) {
     // Placing a brand-new player pin is exactly the moment the right-hand
     // panel needs to connect to - immediately offer to pick their bucket
     // (see below) rather than leaving them positioned with no job until
-    // someone notices them in "Needs an assignment" later.
+    // someone notices them in "Needs an assignment" later. BUT only when
+    // they genuinely have none yet - someone who's already assigned
+    // (Auto-Assign, or a manual Sections edit) picked here is just
+    // getting a map position for a job they already have; chaining into
+    // the job modal anyway used to create a real second/duplicate
+    // assignment (e.g. Hasu already MT, picked again here, ends up OT
+    // too) rather than recognizing there was nothing left to ask.
     addMapPin(sid, 'player', { playerId: pid });
-    promptForJob = true;
+    const s = getStrat(sid);
+    promptForJob = !(s && jobsForPlayer(s, pid).length);
   } else if (kind === 'new-row') {
     const sec = getSec(sid, _pickerSecId);
     if (sec) assignPlayerToSection(sec, pid);
@@ -9739,6 +9746,21 @@ function rowActorId(row) {
   return null;
 }
 
+// Clicking a card that's already known to be empty (no one in its own
+// slot yet - an unfilled OT2, say) skips straight to the assign picker
+// instead of expanding the card first just so you can click "+ assign"
+// inside it (see playerSlotHtml's empty branch) - the picker already
+// knows exactly which row/side to fill, so there's no section-picking
+// step to skip either. A card whose actor slot IS already filled (even
+// if its pair target isn't) still just expands/highlights as before.
+function rowCardBladeClick(sid, rowId) {
+  const found = findRowAnywhere(sid, rowId);
+  const row = found && found.row;
+  const side = row ? (row.typeA === 'player' ? 'valueA' : (row.typeB === 'player' ? 'valueB' : null)) : null;
+  if (side && row[side] == null) { openPickerForSlot(sid, rowId, side); return; }
+  toggleRowFocus(sid, rowId);
+}
+
 function toggleRowFocus(sid, rowId) {
   const wasExpanded = _focusedRowId === rowId;
   _focusedRowId = wasExpanded ? null : rowId;
@@ -9810,7 +9832,7 @@ function renderRowHtml(sid, secId, row, sec) {
   const hasB = typeB != null;
 
   return `<div class="assigns-row-card ${expanded ? 'expanded' : ''} ${isLinked ? 'linked' : ''}" ${actorId != null ? `data-actor-id="${actorId}"` : ''}>
-    <div class="row-card-blade" onclick="toggleRowFocus(${sid},${id})">
+    <div class="row-card-blade" onclick="rowCardBladeClick(${sid},${id})">
       <span class="row-card-icon" style="background:${color}22;color:${color};">${icon}</span>
       <div class="row-card-text">
         ${summary.label ? `<div class="row-card-label">${summary.label.replace(/</g,'&lt;')}</div>` : ''}
@@ -9963,6 +9985,12 @@ function autoAssignStrat(stratId) {
 
   let filledCount = 0;
   const tankTargets = []; // every tank assigned in a Tanks section, pre-existing or new, in row order
+  // Who actually got a NEW slot this run (the slot's owner, not a pair's
+  // target reference - see Pass 2's valueB) - this is what the map-pin
+  // prompt below offers to drop pins for, so a tank who was merely
+  // referenced as someone else's heal-assign target doesn't get counted
+  // twice or pinned on that basis alone.
+  const newlyAssignedIds = new Set();
 
   // Pass 1 - Tanks
   for (const sec of strat.sections) {
@@ -9971,7 +9999,7 @@ function autoAssignStrat(stratId) {
       if (row.typeB !== 'player') continue;
       if (row.valueB == null) {
         const p = takeNext(tankPool);
-        if (p) { row.valueB = p.id; filledCount++; }
+        if (p) { row.valueB = p.id; filledCount++; newlyAssignedIds.add(p.id); }
       }
       if (row.valueB != null) tankTargets.push(row.valueB);
     }
@@ -9991,7 +10019,7 @@ function autoAssignStrat(stratId) {
       let touched = false;
       if (row.valueA == null) {
         const p = takeNext(isHeal ? healerPool : hunterPool);
-        if (p) { row.valueA = p.id; touched = true; }
+        if (p) { row.valueA = p.id; touched = true; newlyAssignedIds.add(p.id); }
       }
       if (row.valueB == null && tankTargets.length) {
         row.valueB = tankTargets[(isHeal ? healRowIdx : mdRowIdx) % tankTargets.length];
@@ -10003,8 +10031,56 @@ function autoAssignStrat(stratId) {
   }
 
   renderStrats();
-  if (filledCount) showToast(`✓ Auto-filled ${filledCount} slot${filledCount === 1 ? '' : 's'} - review before posting.`);
-  else showToast("Nothing to auto-fill - either everything's already assigned, or no Tank/Healer/Hunter signed up this week matches an empty slot.", true);
+  if (filledCount) {
+    showToast(`✓ Auto-filled ${filledCount} slot${filledCount === 1 ? '' : 's'} - review before posting.`);
+    promptAutoAssignPins(stratId, [...newlyAssignedIds]);
+  } else {
+    showToast("Nothing to auto-fill - either everything's already assigned, or no Tank/Healer/Hunter signed up this week matches an empty slot.", true);
+  }
+}
+
+// Auto-Assign only ever touches Sections rows, deliberately never the
+// map - dropping a pin for every healer/tank it fills would muddy a
+// strat image that's often already busy just from the fight itself.
+// This is the opt-in bridge instead of silence: ask once, right after a
+// fill, whether to also drop a center-map pin for everyone who was
+// actually just newly assigned, so they only need dragging into
+// position rather than adding them one at a time through + Player.
+// Declining (Cancel) leaves things exactly as Auto-Assign already left
+// them - this is purely additive.
+function promptAutoAssignPins(stratId, playerIds) {
+  if (!playerIds.length) return;
+  document.getElementById('confirm-text').textContent =
+    `Also drop a map pin for each of the ${playerIds.length} player${playerIds.length === 1 ? '' : 's'} Auto-Assign just placed? You'll still need to drag each into position - this just saves adding them one at a time through + Player.`;
+  const existingCheck = document.getElementById('confirm-notify-wrap');
+  if (existingCheck) existingCheck.remove();
+  document.getElementById('confirm-ok').onclick = () => {
+    closeConfirm();
+    addMapPinsForPlayers(stratId, playerIds);
+  };
+  document.getElementById('confirm-overlay').classList.add('open');
+}
+
+// Shared by the Auto-Assign pin prompt above - never doubles up a pin
+// for someone who already has one on this strat (e.g. Auto-Assign run
+// twice, or they were already placed manually before this run).
+function addMapPinsForPlayers(stratId, playerIds) {
+  const s = getStrat(stratId);
+  if (!s) return;
+  if (!s.mapPins) s.mapPins = [];
+  const already = new Set(s.mapPins.filter(p => p.kind === 'player' && p.playerId != null).map(p => Number(p.playerId)));
+  let added = 0;
+  for (const pid of playerIds) {
+    if (already.has(Number(pid))) continue;
+    addMapPin(stratId, 'player', { playerId: pid });
+    already.add(Number(pid));
+    added++;
+  }
+  if (added) {
+    refreshMapPins(stratId);
+    refreshNeedsJobList(stratId);
+    showToast(`📍 Dropped ${added} pin${added === 1 ? '' : 's'} in the center - drag each into position.`);
+  }
 }
 
 // ── Map pin rendering ────────────────────────────────────────────
