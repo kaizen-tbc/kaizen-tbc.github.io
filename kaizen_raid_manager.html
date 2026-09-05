@@ -7643,6 +7643,49 @@ function classColor(cls) {
   return map[cls] || 'warrior';
 }
 
+// ── Class/spec icons (map pins + row-card summaries) ──────────────
+// Same wow.zamimg.com CDN already loaded and working for the buff-
+// coverage icons (see TBC_BUFFS/buffIconHtml) - verified each of these
+// slugs live against the actual TBC Classic talent calculator rather
+// than guessed from memory, since a wrong one here is just a broken
+// image. Keyed to match CLASS_SPECS' spec names exactly.
+const CLASS_ICONS = {
+  Druid: 'classicon_druid', Hunter: 'classicon_hunter', Mage: 'classicon_mage',
+  Paladin: 'classicon_paladin', Priest: 'classicon_priest', Rogue: 'classicon_rogue',
+  Shaman: 'classicon_shaman', Warlock: 'classicon_warlock', Warrior: 'classicon_warrior',
+};
+const SPEC_ICONS = {
+  Druid: { Balance: 'spell_nature_starfall', Feral: 'ability_racial_bearform', Restoration: 'spell_nature_healingtouch' },
+  Hunter: { Beastmastery: 'ability_hunter_beasttaming', Marksmanship: 'ability_marksmanship', Survival: 'ability_hunter_swiftstrike' },
+  Mage: { Arcane: 'spell_holy_magicalsentry', Fire: 'spell_fire_firebolt02', Frost: 'spell_frost_frostbolt02' },
+  Paladin: { Holy: 'spell_holy_holybolt', Protection: 'spell_holy_devotionaura', Retribution: 'spell_holy_auraoflight' },
+  Priest: { Discipline: 'spell_holy_wordfortitude', Holy: 'spell_holy_guardianspirit', Shadow: 'spell_shadow_shadowwordpain' },
+  Rogue: { Assassination: 'ability_rogue_eviscerate', Combat: 'ability_backstab', Subtlety: 'ability_stealth' },
+  Shaman: { Elemental: 'spell_nature_lightning', Enhancement: 'spell_nature_lightningshield', Restoration: 'spell_nature_magicimmunity' },
+  Warlock: { Affliction: 'spell_shadow_deathcoil', Demonology: 'spell_shadow_metamorphosis', Destruction: 'spell_shadow_rainoffire' },
+  Warrior: { Arms: 'ability_rogue_eviscerate', Fury: 'ability_warrior_innerrage', Protection: 'inv_shield_06' },
+};
+
+// Same "this week's respec" convention as everywhere else that reads a
+// player's spec (see TBC_BUFFS) - specOverrides (this raid night) beats
+// their stored main spec.
+function classSpecIcon(p) {
+  if (!p) return null;
+  const spec = specOverrides[p.id] || p.ms;
+  return (SPEC_ICONS[p.class] && SPEC_ICONS[p.class][spec]) || CLASS_ICONS[p.class] || null;
+}
+
+// No data-wowhead tooltip attribute here on purpose - unlike the buff
+// icons, this isn't really referencing that spell, it's reusing its art
+// as a spec badge, and a tooltip naming the spell would just be
+// confusing (title attribute with their name/spec is enough).
+function classSpecIconHtml(p, sizePx = 22) {
+  const icon = classSpecIcon(p);
+  if (!icon) return '';
+  return `<img src="https://wow.zamimg.com/images/wow/icons/medium/${icon}.jpg" alt=""
+    style="width:${sizePx}px;height:${sizePx}px;object-fit:cover;border-radius:50%;flex-shrink:0;border:2px solid var(--${classColor(p.class)});">`;
+}
+
 function roleBadge(role) {
   const map = { Tank: 'role-tank', Healer: 'role-healer', Melee: 'role-melee', Ranged: 'role-ranged' };
   return `<span class="role-badge ${map[role] || ''}">${role}</span>`;
@@ -9490,18 +9533,22 @@ function rowCardColor(sec) {
 // label, the pair IS the content.
 function rowCardSummary(row) {
   const nameOf = pid => { const p = pid ? getPlayerById(pid) : null; return p ? p.name : null; };
+  // actorId surfaces separately (not baked into the value string) so the
+  // blade can prepend that person's class/spec icon as real markup
+  // without fighting the HTML-escaping applied to the text part of value.
+  const actorId = rowActorId(row);
   if (row.arrow) {
     const a = row.typeA === 'player' ? nameOf(row.valueA) : (row.valueA || null);
     const bIsPlayer = row.typeB === 'player';
     const b = bIsPlayer ? nameOf(row.valueB) : (row.valueB || null);
-    if (!a) return { label: '', value: 'Not assigned', empty: true };
-    if (!b) return { label: '', value: `${a} → (no ${bIsPlayer ? 'target' : 'note'} yet)`, empty: false };
-    return { label: '', value: `${a} → ${b}`, empty: false };
+    if (!a) return { label: '', value: 'Not assigned', empty: true, actorId: null };
+    if (!b) return { label: '', value: `${a} → (no ${bIsPlayer ? 'target' : 'note'} yet)`, empty: false, actorId };
+    return { label: '', value: `${a} → ${b}`, empty: false, actorId };
   }
   const label = row.typeA === 'text' ? (row.valueA || 'Slot') : '';
   const person = row.typeB === 'player' ? nameOf(row.valueB) : (row.typeA === 'player' ? nameOf(row.valueA) : null);
-  if (!person) return { label, value: 'Not assigned', empty: true };
-  return { label, value: person, empty: false };
+  if (!person) return { label, value: 'Not assigned', empty: true, actorId: null };
+  return { label, value: person, empty: false, actorId };
 }
 
 // Which row is expanded right now - one at a time, app-wide (not
@@ -9593,7 +9640,7 @@ function renderRowHtml(sid, secId, row, sec) {
       <span class="row-card-icon" style="background:${color}22;color:${color};">${icon}</span>
       <div class="row-card-text">
         ${summary.label ? `<div class="row-card-label">${summary.label.replace(/</g,'&lt;')}</div>` : ''}
-        <div class="row-card-value ${summary.empty ? 'empty' : ''}">${summary.value.replace(/</g,'&lt;')}</div>
+        <div class="row-card-value ${summary.empty ? 'empty' : ''}" style="display:flex;align-items:center;gap:6px;">${classSpecIconHtml(summary.actorId ? getPlayerById(summary.actorId) : null, 16)}<span>${summary.value.replace(/</g,'&lt;')}</span></div>
       </div>
       <button class="row-rm-btn" onclick="event.stopPropagation();removeRow(${sid},${secId},${id})">✕</button>
     </div>
@@ -9864,18 +9911,30 @@ function applyPinHighlight(playerId) {
 function renderOneMapPin(strat, pin) {
   const isFocused = _mapFocusedPinId === pin.id;
   const isLinked = pin.kind === 'player' && pin.playerId != null && _highlightedPlayerId != null && Number(pin.playerId) === Number(_highlightedPlayerId);
-  let role = '', iconHtml = '', labelHtml = '', fillColor = '', filled = false, title = '';
+  let role = '', iconHtml = '', labelHtml = '', fillColor = '', filled = false, title = '', badgeStyle = '';
 
   if (pin.kind === 'player') {
     const p = pin.playerId ? getPlayerById(pin.playerId) : null;
     filled = !!p;
     role = p ? pinRoleForPlayer(strat, p.id) : '';
-    iconHtml = pinRoleMeta(role || 'Ranged').icon;
     if (p) {
       fillColor = `var(--${classColor(p.class)})`;
+      // Ring is the player's class color (fixed regardless of spec); the
+      // icon inside is their actual spec (or the plain class icon if we
+      // don't have that spec mapped) - see classSpecIcon. Role still
+      // drives the "Needs an assignment" bucket and the generic role
+      // pins/popover, it's just no longer what a SPECIFIC person's own
+      // pin visually shows - their class/spec is more informative there.
+      // A bare, unbordered <img> here (not classSpecIconHtml) since the
+      // ring is .map-pin-badge's own border (via badgeStyle below),
+      // sized 100% so it fills whatever size idle/focused/dragging is.
+      const specIcon = classSpecIcon(p);
+      iconHtml = specIcon ? `<img src="https://wow.zamimg.com/images/wow/icons/medium/${specIcon}.jpg" alt="" style="width:100%;height:100%;object-fit:cover;">` : pinRoleMeta(role || 'Ranged').icon;
+      badgeStyle = `border-color:${fillColor};padding:0;overflow:hidden;`;
       labelHtml = `<span class="class-dot" style="background:${fillColor}"></span>${p.name}`;
-      title = `${role}: ${p.name}`;
+      title = `${p.ms ? p.ms + ' ' : ''}${p.class} — ${p.name}`;
     } else {
+      iconHtml = pinRoleMeta('Ranged').icon;
       labelHtml = 'Unassigned';
       title = 'Click to assign a player';
     }
@@ -9893,10 +9952,10 @@ function renderOneMapPin(strat, pin) {
 
   return `<div class="map-pin ${isFocused ? 'focused' : 'idle'} ${filled ? 'filled' : ''} ${isLinked ? 'linked' : ''}"
     data-role="${role}" data-kind="${pin.kind}" data-id="${pin.id}" ${pin.kind === 'player' && pin.playerId != null ? `data-player-id="${pin.playerId}"` : ''}
-    style="left:${pin.x}%;top:${pin.y}%;${fillColor ? `--pin-fill:${fillColor};` : ''}"
+    style="left:${pin.x}%;top:${pin.y}%;"
     title="${title.replace(/"/g, '&quot;')}"
     onpointerdown="onMapPinPointerDown(event, ${strat.id}, ${pin.id})">
-    <div class="map-pin-badge">${iconHtml}</div>
+    <div class="map-pin-badge" style="${badgeStyle}">${iconHtml}</div>
     <div class="map-pin-label">${labelHtml}</div>
   </div>${isFocused ? renderMapPopover(strat, pin) : ''}`;
 }
