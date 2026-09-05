@@ -9413,6 +9413,22 @@ function buildRaiderRowForSection(sec, pid) {
   return { id: _rid(), typeA: 'text', valueA: '', arrow: false, typeB: 'player', valueB: pid };
 }
 
+// Putting a raider into a bucket ("assign Depew to Tanks") means: give
+// them their OWN slot in that bucket - fill the next already-existing
+// EMPTY one first (e.g. an open OT), and only add a brand new slot
+// specifically for them if every existing one is already occupied.
+// Never fills in as someone else's PAIR TARGET (an empty valueB on an
+// already-started Healer Assigns row belongs to whoever's meant to be
+// healed, not to a new raider being added to the bucket).
+function assignPlayerToSection(sec, pid) {
+  for (const row of (sec.rows || [])) {
+    if (!rowHasPlayerSide(row)) continue;
+    if (row.typeA === 'player' && row.valueA == null) { row.valueA = pid; return; }
+    if (row.typeB === 'player' && row.valueB == null) { row.valueB = pid; return; }
+  }
+  sec.rows.push(buildRaiderRowForSection(sec, pid));
+}
+
 function pickAssign(pid) {
   if (_pickerSid == null) return;
   const sid = _pickerSid;
@@ -9430,7 +9446,7 @@ function pickAssign(pid) {
     promptForJob = true;
   } else if (kind === 'new-row') {
     const sec = getSec(sid, _pickerSecId);
-    if (sec) sec.rows.push(buildRaiderRowForSection(sec, pid));
+    if (sec) assignPlayerToSection(sec, pid);
   } else {
     const found = findRowAnywhere(sid, _pickerRowId);
     if (found) { found.row[_pickerSide] = pid; }
@@ -10088,8 +10104,11 @@ function assignPlayerToJobTemplate(templateKey) {
   const tpl = SECTION_TEMPLATES.find(t => t.key === templateKey);
   if (!tpl) return;
   const sec = findOrCreateSectionByLabel(_jobModalSid, tpl.label);
-  const build = JOB_TEMPLATE_ROW_SHAPE[templateKey] || JOB_TEMPLATE_ROW_SHAPE.notes;
-  sec.rows.push(build(_jobModalPlayerId));
+  // Same slot-filling logic "+ Add Raider" uses on a section directly -
+  // Depew assigned to Tanks lands in the next open slot (or gets a new
+  // one made just for him if every existing slot is already filled),
+  // not a redundant extra row appended regardless.
+  assignPlayerToSection(sec, _jobModalPlayerId);
   const sid = _jobModalSid;
   closeAssignJobModal();
   refreshAssignsPanel(sid);
@@ -10097,12 +10116,14 @@ function assignPlayerToJobTemplate(templateKey) {
   showToast('✓ Assignment added — fill in the target/detail in Sections below.');
 }
 // Falls through to the existing raw section builder for anything the
-// presets don't cover - not pre-filled with the player, by design (fully
-// custom means fully custom); the RL assigns them the normal way once
-// the section exists.
+// presets don't cover, but still ends up with the player actually placed
+// in the new section - see _customJobPendingPlayerId/confirmRowModal -
+// rather than left for the RL to place manually right after picking them.
+let _customJobPendingPlayerId = null;
 function assignPlayerToCustomJob() {
   if (_jobModalSid == null) return;
   const sid = _jobModalSid;
+  _customJobPendingPlayerId = _jobModalPlayerId;
   closeAssignJobModal();
   openCustomSectionModal(sid);
 }
@@ -10183,22 +10204,24 @@ function removeRow(sid, secId, rowId) {
 
 function addRowToSec(sid, secId, typeA, arrow, typeB) {
   const sec = getSec(sid, secId);
-  if (!sec) return;
+  if (!sec) return null;
   const id = _rid();
   const row = { id, typeA, valueA: typeA === 'player' ? null : '', arrow: !!arrow, typeB: typeB || null, valueB: typeB === 'player' ? null : (typeB === 'text' ? '' : null) };
   sec.rows.push(row);
   renderStrats();
+  return row;
 }
 
 function addSection(sid, label, typeA, arrow, typeB) {
   const s = getStrat(sid);
-  if (!s) return;
+  if (!s) return null;
   if (!s.sections) s.sections = [];
   const secId = _sid();
   const rowId = _rid();
   const row = { id: rowId, typeA, valueA: typeA === 'player' ? null : (typeA === 'notes' ? '' : ''), arrow: !!arrow, typeB: typeB || null, valueB: typeB === 'player' ? null : (typeB === 'text' ? '' : null) };
   s.sections.push({ id: secId, label, rows: [row] });
   renderStrats();
+  return row;
 }
 
 // ── Section/Row modal ──────────────────────────────────────────
@@ -10320,15 +10343,27 @@ function confirmRowModal() {
   const typeA = document.getElementById('row-typeA').value;
   const arrow = document.getElementById('row-arrow').checked;
   const typeB = typeA === 'notes' ? null : document.getElementById('row-typeB').value || null;
+  const pendingPlayerId = _customJobPendingPlayerId;
+  _customJobPendingPlayerId = null;
 
+  let newRow;
   if (_modalSecId != null) {
     // Add row to existing section
-    addRowToSec(_modalSid, _modalSecId, typeA, arrow, typeB);
+    newRow = addRowToSec(_modalSid, _modalSecId, typeA, arrow, typeB);
   } else {
     // Add new section
     const label = document.getElementById('section-title-input').value.trim();
     if (!label) { document.getElementById('section-title-input').focus(); return; }
-    addSection(_modalSid, label, typeA, arrow, typeB);
+    newRow = addSection(_modalSid, label, typeA, arrow, typeB);
+  }
+  // "Assign X" → Custom: drop them into whichever side ended up
+  // configured as Player, rather than leaving the brand new row empty.
+  // addRowToSec/addSection already rendered once (with it still empty),
+  // so this needs its own render to actually show up.
+  if (pendingPlayerId != null && newRow) {
+    if (newRow.typeA === 'player') newRow.valueA = pendingPlayerId;
+    else if (newRow.typeB === 'player') newRow.valueB = pendingPlayerId;
+    renderStrats();
   }
   closeRowModal();
 }
