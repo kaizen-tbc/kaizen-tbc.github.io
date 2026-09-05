@@ -1387,6 +1387,10 @@ tr:last-child td { border-bottom: none; }
   white-space: nowrap; max-width: 150px; overflow: hidden; text-overflow: ellipsis;
 }
 .map-pin.idle .map-pin-label { display: none; }
+/* "Show raider names" toolbar checkbox (see renderMapToolbar) - a plain
+   class toggle on the layer wrapper, no re-render needed, so flipping it
+   can't cause the same image-flicker every other full render here did. */
+.map-pin-layer.show-names .map-pin.idle .map-pin-label { display: block; }
 .map-pin-label .class-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 5px; }
 
 .map-popover {
@@ -8264,7 +8268,7 @@ function renderStrats() {
   const imageArea = active ? `
     ${renderMapToolbar(active)}
     <div class="strat-image-wrap" style="position:relative;">
-      <div class="map-pin-layer" id="map-pin-layer-${active.id}" onpointerdown="onMapLayerPointerDown(${active.id})">
+      <div class="map-pin-layer ${_showRaiderNames ? 'show-names' : ''}" id="map-pin-layer-${active.id}" onpointerdown="onMapLayerPointerDown(${active.id})">
         <img src="${resolveImg(active.image)}${active.image && !active.image.startsWith('data:') && active.imageUpdatedAt ? '?v=' + active.imageUpdatedAt : ''}" alt="${active.name}" style="max-width:100%;max-height:70vh;border-radius:3px;object-fit:contain;">
         <div id="map-pins-container-${active.id}">${renderMapPins(active)}</div>
       </div>
@@ -10126,6 +10130,18 @@ let _mapFocusedPinId = null;
 // this is purely "here's the same person, over there too."
 let _highlightedPlayerId = null;
 
+// "Show raider names" toolbar checkbox - a view preference, not strat
+// data, so deliberately not saved/persisted (same category as
+// _mapFocusedPinId above). Global rather than per-strat: this is a
+// "let me see everyone before I screenshot/post this" utility, not
+// something worth remembering differently fight-to-fight.
+let _showRaiderNames = false;
+function toggleShowRaiderNames(sid, checked) {
+  _showRaiderNames = checked;
+  const layer = document.getElementById(`map-pin-layer-${sid}`);
+  if (layer) layer.classList.toggle('show-names', checked);
+}
+
 function renderMapToolbar(strat) {
   // Solid role-colored fill + a plain white letter, not the border-only
   // dark-bg treatment .map-role-btn (the popover's role-override buttons)
@@ -10143,6 +10159,11 @@ function renderMapToolbar(strat) {
     <div class="divider"></div>
     <button class="btn btn-small" onclick="openPickerForNewPin(${strat.id})" title="Place a specific person on the map">＋ Player</button>
     <button class="btn btn-small" onclick="addTextMapPin(${strat.id})" title="Drop a free text label">＋ Text</button>
+    <label style="margin-left:auto;display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-dim);cursor:pointer;"
+      title="Show every pin's name even when idle, not just when focused - handy for a quick screenshot/Discord preview">
+      <input type="checkbox" ${_showRaiderNames ? 'checked' : ''} onchange="toggleShowRaiderNames(${strat.id},this.checked)">
+      Show raider names
+    </label>
   </div>`;
 }
 
