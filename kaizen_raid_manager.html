@@ -1316,6 +1316,11 @@ tr:last-child td { border-bottom: none; }
   background: var(--bg-card); border: 1.5px solid var(--border-bright); cursor: pointer;
 }
 .map-role-btn:hover { border-color: var(--gold-dim); background: var(--bg-hover); }
+/* "Change player" once a pin's already set up - a small deliberately
+   low-prominence link (see renderMapPopover), not a full button
+   competing with Role-for-this-strat for attention. */
+.map-popover-link { font-size: 12px; color: var(--text-dim); cursor: pointer; text-decoration: none; }
+.map-popover-link:hover { color: var(--text-bright); text-decoration: underline; }
 /* The toolbar's "+ generic role pin" buttons - deliberately a separate
    class from .map-role-btn (the popover's role-OVERRIDE buttons, which
    stay dark-bg/colored-border - that's a small panel, not a busy strat
@@ -3066,6 +3071,17 @@ function jobRowTargetLabel(row) {
 function getPin(sid, pinId) {
   const s = getStrat(sid);
   return s ? (s.mapPins || []).find(p => p.id === pinId) : null;
+}
+// Used by toggleRowFocus to bring a player's own pin into full focus
+// (not just a highlight ring) when their row-card is clicked open - null
+// when they don't have their own pin yet (a generic role pin or none at
+// all), in which case there's nothing on the map to focus.
+function findPlayerPinId(sid, playerId) {
+  if (playerId == null) return null;
+  const s = getStrat(sid);
+  if (!s) return null;
+  const pin = (s.mapPins || []).find(p => p.kind === 'player' && Number(p.playerId) === Number(playerId));
+  return pin ? pin.id : null;
 }
 function addMapPin(sid, kind, extra) {
   const s = getStrat(sid);
@@ -9766,18 +9782,29 @@ function toggleRowFocus(sid, rowId) {
   _focusedRowId = wasExpanded ? null : rowId;
   if (wasExpanded) {
     _highlightedPlayerId = null;
+    // Closing the card closes their pin's popover too - see below, this
+    // is what opened it in the first place.
+    _mapFocusedPinId = null;
   } else {
     const found = findRowAnywhere(sid, rowId);
     _highlightedPlayerId = found ? rowActorId(found.row) : null;
+    // Bring their pin into FULL focus (not just a highlight ring) - if
+    // you're clicking someone in Sections, seeing the pin's own tools
+    // (role for this strat, change player, delete) right there next to
+    // them is more useful than a ring you then have to go find and click
+    // yourself. Map -> Sections deliberately stays highlight-only (see
+    // onMapPinPointerDown) - only this direction was asked for.
+    _mapFocusedPinId = findPlayerPinId(sid, _highlightedPlayerId);
   }
   // Rebuilding the row itself needs a real refresh (the expanded editor
   // is real markup, not a class toggle) - but that's scoped to just the
   // Sections body, never the image, so it can't cause the flicker a full
-  // renderStrats() did. The map side only ever needs a ring toggled on
-  // the matching pin, which applyPinHighlight does directly with no
-  // re-render of the pins at all.
+  // renderStrats() did. The map side needs its own scoped refresh too now
+  // (not just applyPinHighlight's ring toggle) since a pin's popover
+  // open/closed state just changed, which is real markup as well.
   refreshAssignsPanel(sid);
   applyPinHighlight(_highlightedPlayerId);
+  refreshMapPins(sid);
 }
 
 function renderRowHtml(sid, secId, row, sec) {
@@ -10228,14 +10255,30 @@ function renderMapPopover(strat, pin) {
     // this specific strat.
     const p = pin.playerId ? getPlayerById(pin.playerId) : null;
     const role = p ? pinRoleForPlayer(strat, p.id) : null;
-    const roleBtns = MAP_PIN_ROLES.map(r => `<button class="map-role-btn"
-        style="border-color:${r.color};color:${r.color};${role === r.key ? `background:${r.color}33;` : ''}"
-        title="${r.key} for this strat" onclick="setPinRoleOverride(${strat.id},${p ? p.id : 'null'},'${r.key}')">${r.icon}</button>`).join('');
+    // Same hand-drawn white icons as the toolbar/generic pins, not the
+    // old emoji glyphs - the bow/arrow one in particular didn't render
+    // consistently. The currently-active role gets the same solid fill
+    // treatment as those too; the other three stay as subdued outlined
+    // options since they're just choices, not the current state.
+    const roleBtns = MAP_PIN_ROLES.map(r => {
+      const active = role === r.key;
+      return `<button class="map-role-btn"
+        style="border-color:${r.color};color:${active ? '#fff' : r.color};background:${active ? r.color : 'transparent'};"
+        title="${r.key} for this strat" onclick="setPinRoleOverride(${strat.id},${p ? p.id : 'null'},'${r.key}')">${mapRoleIconHtml(r.key, '16')}</button>`;
+    }).join('');
     title = p ? p.name : 'Unassigned pin';
-    body = `
-      <button class="btn btn-small" style="width:100%;margin-bottom:8px;" onclick="openPickerForPin(${strat.id},${pin.id})">${p ? '🔁 Change player' : '➕ Pick a player'}</button>
-      ${p ? `<div style="font-size:10.5px;color:var(--text-dim);margin-bottom:4px;">Role for this strat</div>
-      <div style="display:flex;gap:5px;">${roleBtns}</div>` : ''}
+    // Role-for-this-strat is the thing you actually come here to do once
+    // someone's placed - it leads, centered, not "Change player" (that's
+    // rare enough once a pin's set up that it's demoted to a small link
+    // at the bottom instead of the first/biggest thing in the popover).
+    body = p ? `
+      <div style="font-size:10.5px;color:var(--text-dim);text-align:center;margin-bottom:8px;">Role for this strat</div>
+      <div style="display:flex;gap:8px;justify-content:center;margin-bottom:14px;">${roleBtns}</div>
+      <div style="text-align:center;">
+        <a href="#" class="map-popover-link" onclick="event.preventDefault();openPickerForPin(${strat.id},${pin.id})">🔁 Change player</a>
+      </div>
+    ` : `
+      <button class="btn btn-small" style="width:100%;" onclick="openPickerForPin(${strat.id},${pin.id})">➕ Pick a player</button>
     `;
   } else if (pin.kind === 'role') {
     // Read-only - this is just "who's currently unassigned in this role,"
