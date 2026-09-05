@@ -1391,8 +1391,13 @@ tr:last-child td { border-bottom: none; }
 }
 .map-popover-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
 .map-popover-title { font-size: 11.5px; font-weight: 700; color: var(--text-bright); }
-.map-popover-list { display: flex; flex-direction: column; gap: 2px; max-height: 160px; overflow-y: auto; }
-.map-popover-list-item { font-size: 12px; color: var(--text-mid); padding: 4px 6px; }
+.map-popover-list { display: flex; flex-direction: column; gap: 4px; max-height: 160px; overflow-y: auto; }
+/* Same size as .map-popover-title (11.5px), just not bold - these are
+   read-only names, not a picker (see the 'role' branch of
+   renderMapPopover), so no hover/cursor styling either. line-height
+   explicit because the default was tight enough that a run of names
+   packed one under another visually ran together. */
+.map-popover-list-item { font-size: 11.5px; font-weight: 400; line-height: 1.5; color: var(--text-mid); padding: 2px 6px; }
 
 .map-needs-job-row {
   display: flex; align-items: center; gap: 8px; padding: 6px 4px;
@@ -2976,8 +2981,12 @@ const MAP_ROLE_ICON_SVG = {
     <rect x="10" y="3" width="4" height="18" rx="1"/>
     <rect x="3" y="10" width="18" height="4" rx="1"/>
   </svg>`,
+  // Bow curves AWAY from the string ("D" shape, bulging right, toward the
+  // shot) with the string as the flat left side and the arrow's tail
+  // sticking out past it - the first pass had the curve bulging the same
+  // way as the arrowhead, which read backwards.
   Ranged: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="{S}" height="{S}" style="display:block;">
-    <path d="M8 3 C3 8 3 16 8 21"/>
+    <path d="M8 3 C13 8 13 16 8 21"/>
     <line x1="8" y1="4" x2="8" y2="20"/>
     <line x1="3" y1="12" x2="19" y2="12"/>
     <path d="M14 8 L19 12 L14 16"/>
@@ -7720,11 +7729,16 @@ function showToast(msg, isError = false) {
   if (!toast) {
     toast = document.createElement('div');
     toast.id = 'kaizen-toast';
+    // Global toast style - solid white, not the app's dark panel bg. It
+    // used to match the surrounding dark UI (dark bg, gold/red text),
+    // which meant a toast could pop up over an already-dark screenshot or
+    // panel and barely register. White is the one background guaranteed
+    // to stand out against every other surface in this app.
     toast.style.cssText = `
       position:fixed;bottom:24px;right:24px;z-index:9999;
-      background:var(--bg-panel);border:1px solid var(--border-bright);
+      background:#ffffff;border:1px solid rgba(0,0,0,0.1);
       padding:12px 18px;border-radius:4px;font-size:13px;font-weight:600;
-      box-shadow:0 8px 32px rgba(0,0,0,0.5);
+      box-shadow:0 8px 32px rgba(0,0,0,0.35);
       transition:opacity 0.3s,transform 0.3s;
       font-family:'Inter',sans-serif;
       pointer-events:none;
@@ -7732,8 +7746,9 @@ function showToast(msg, isError = false) {
     document.body.appendChild(toast);
   }
   toast.textContent = msg;
-  toast.style.color = isError ? 'var(--red-bright)' : 'var(--gold)';
-  toast.style.borderColor = isError ? 'var(--red)' : 'var(--border-bright)';
+  // Dark, accessible-on-white text - gold-on-dark's colors don't have
+  // nearly enough contrast against a white background.
+  toast.style.color = isError ? '#b91c1c' : '#111827';
   toast.style.opacity = '1';
   toast.style.transform = 'translateY(0)';
   clearTimeout(toast._timeout);
@@ -10147,14 +10162,15 @@ function renderMapPopover(strat, pin) {
       <div style="display:flex;gap:5px;">${roleBtns}</div>` : ''}
     `;
   } else if (pin.kind === 'role') {
+    // Read-only - this is just "who's currently unassigned in this role,"
+    // not a picker (promoting one to their own pin used to be a click
+    // away here, but it's gone: nothing else in this popover is
+    // click-to-act, and the list was easy to trigger by accident).
     const list = unassignedPlayersInRole(strat, pin.role);
     title = `${pin.role} — unassigned`;
     body = `<div class="map-popover-list">
       ${list.length
-        ? list.map(p => `<button class="map-popover-list-item" style="display:block;width:100%;text-align:left;background:none;border:none;cursor:pointer;border-radius:4px;font:inherit;"
-            onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background='none'"
-            onclick="promoteRolePinToPlayer(${strat.id},${pin.id},${p.id})"
-            title="Give ${p.name} their own specific pin right here">${p.name}</button>`).join('')
+        ? list.map(p => `<div class="map-popover-list-item">${p.name}</div>`).join('')
         : `<div class="map-popover-list-item" style="color:var(--text-dim);">Everyone in this role already has a pin.</div>`}
     </div>`;
   } else {
@@ -10166,7 +10182,7 @@ function renderMapPopover(strat, pin) {
   return `<div class="map-popover" style="left:calc(${pin.x}% + 24px);top:calc(${pin.y}% - 10px);" onpointerdown="event.stopPropagation()">
     <div class="map-popover-head">
       <span class="map-popover-title">${title}</span>
-      <button style="background:none;border:none;color:var(--red-bright);cursor:pointer;font-size:12px;" onclick="removeMapPin(${strat.id},${pin.id})" title="Delete pin">🗑</button>
+      <button style="background:none;border:none;color:var(--red-bright);cursor:pointer;font-size:18px;line-height:1;padding:2px;" onclick="removeMapPin(${strat.id},${pin.id})" title="Delete pin">🗑</button>
     </div>
     ${body}
   </div>`;
@@ -10262,21 +10278,6 @@ function setMapPinText(sid, pinId, text) {
   const pin = getPin(sid, pinId);
   if (pin) pin.text = text;
 }
-// Promoting a generic role pin to a specific person is the same "the map
-// now has a new player pin" moment as "+ Player" - offer the same
-// bucket-picking follow-up (see openPickerForNewPin/pickAssign) so the
-// person doesn't quietly end up positioned with no job either way.
-function promoteRolePinToPlayer(sid, pinId, playerId) {
-  const pin = getPin(sid, pinId);
-  if (!pin) return;
-  pin.kind = 'player';
-  pin.playerId = playerId;
-  delete pin.role;
-  refreshMapPins(sid);
-  refreshNeedsJobList(sid);
-  openAssignJobModal(sid, playerId);
-}
-
 function renderNeedsJobList(strat) {
   const list = playersNeedingJobs(strat);
   if (!list.length) return '';
