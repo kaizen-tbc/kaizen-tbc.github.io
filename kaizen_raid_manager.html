@@ -1414,30 +1414,50 @@ tr:last-child td { border-bottom: none; }
 }
 .map-needs-job-row:last-child { border-bottom: none; }
 
-.strat-raid-pills {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 16px;
+/* ── Strats landing page (raid selection cards) ──────────────────
+   Replaces the old flat .strat-raid-pill row - now the ONLY way into a
+   raid's strats, shown when activeRaid is null (see renderStrats). */
+.raid-select-grid { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 4px; }
+.raid-select-card {
+  position: relative; width: 220px; height: 128px; border-radius: 8px; overflow: hidden;
+  cursor: pointer; border: 1px solid var(--border-bright);
+  background: var(--bg-card) center/cover no-repeat;
+  transition: transform 0.15s ease, border-color 0.15s, box-shadow 0.15s;
 }
-
-.strat-raid-pill {
-  padding: 6px 14px;
-  background: var(--bg-card);
-  border: 1px solid var(--border-bright);
-  border-radius: 3px;
-  color: var(--text-mid);
-  font-family: 'Inter', sans-serif;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.15s;
-  letter-spacing: 0.02em;
+.raid-select-card:hover { transform: translateY(-3px); border-color: var(--gold-dim); box-shadow: 0 10px 26px rgba(0,0,0,0.45); }
+.raid-select-card-overlay {
+  position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: flex-end;
+  padding: 10px 12px;
+  background: linear-gradient(to top, rgba(10,11,13,0.92) 0%, rgba(10,11,13,0.35) 55%, transparent 100%);
 }
+.raid-select-card-name { font-family: 'Cinzel', serif; font-size: 15px; font-weight: 700; color: var(--text-bright); line-height: 1.25; }
+.raid-select-card-count { font-size: 11px; color: var(--gold-light); margin-top: 3px; font-weight: 600; }
 
-.strat-raid-pill:hover:not(:disabled) { color: var(--text-bright); border-color: var(--gold-dim); }
-.strat-raid-pill.active { color: var(--gold); border-color: var(--gold); background: rgba(201,162,39,0.08); }
-.strat-raid-pill.empty { opacity: 0.35; cursor: not-allowed; }
+/* ── Inside a raid: back link + "Get Started" empty state ────────── */
+.strat-back-link {
+  display: inline-flex; align-items: center; gap: 5px; background: none; border: none;
+  color: var(--text-dim); font-size: 12.5px; font-weight: 600; cursor: pointer; padding: 0;
+  margin-bottom: 12px; transition: color 0.15s;
+}
+.strat-back-link:hover { color: var(--gold); }
+.strat-empty-cta { display: flex; gap: 10px; justify-content: center; margin-top: 18px; }
+
+/* ── Tiny "+ add" menus (tab bar's own "+" tab, and a group's "+")──
+   One generic component (see addMenuHtml/toggleAddMenu) reused by both
+   Part 2 (add a strat/trash to this raid) and Part 3 (add a phase/trash
+   to one existing group). */
+.add-menu {
+  position: absolute; top: 100%; left: 0; margin-top: 4px; z-index: 40; display: none;
+  flex-direction: column; min-width: 175px; background: var(--bg-card);
+  border: 1px solid var(--border-bright); border-radius: 6px;
+  box-shadow: 0 10px 26px rgba(0,0,0,0.45); overflow: hidden;
+}
+.add-menu.open { display: flex; }
+.add-menu button {
+  background: none; border: none; text-align: left; padding: 9px 12px;
+  font-size: 12.5px; color: var(--text-bright); cursor: pointer; white-space: nowrap;
+}
+.add-menu button:hover { background: var(--bg-hover); }
 
 /* ===== TOOL CARDS ===== */
 .tool-card {
@@ -2207,9 +2227,13 @@ a[href] > div > div[style*="line-height:1.6"] {
       <div class="section-subtitle">Upload encounter diagrams — they show on the public site automatically</div>
     </div>
     <div style="display:flex;gap:8px;align-items:center;">
-      <button class="btn btn-small" onclick="openPugModal()">+ Pug</button>
-      <button class="btn btn-small" onclick="openAddTrashGuideModal()" title="A wave-by-wave trash breakdown, shown as its own tab before whichever boss it precedes">🧟 + Trash Guide</button>
-      <button class="btn btn-gold" onclick="openStratUpload()">+ Add Strat</button>
+      <!-- + Pug / + Trash Guide / + Add Strat moved into the raid-scoped
+           view itself (see renderStrats' back-link/tabs area and the
+           empty "Get Started" state) - they apply to a specific raid,
+           so they now live where a raid is actually selected instead of
+           always floating here regardless of which raid you're on.
+           + Pug specifically is superseded by the assign-picker's own
+           inline "Custom..." entry. -->
       <button class="btn" style="white-space:nowrap;background:#5865F2;border-color:#4752c4;color:#fff;font-weight:700;" onclick="confirmPostActiveTab()">🚀 Post to Discord</button>
     </div>
   </div>
@@ -3336,6 +3360,26 @@ const RAID_INSTANCES = [
   'Black Temple',
   'Sunwell Plateau',
 ];
+
+// The Strats landing page (see renderRaidSelectGrid) reuses the SAME
+// images already uploaded for the public site's Progression section
+// (guildInfo.progression[i].image) rather than a separate asset set -
+// that array combines SSC+TK and Hyjal+BT into one entry each, so both
+// halves of those pairs point at the same image here.
+const RAID_PROGRESSION_LABEL = {
+  'Karazhan': 'Karazhan',
+  "Gruul's Lair & Magtheridon's Lair": "Gruul's / Magtheridon",
+  'Serpentshrine Cavern': 'SSC / TK',
+  'The Eye': 'SSC / TK',
+  'Battle for Mount Hyjal': 'Black Temple / Hyjal',
+  'Black Temple': 'Black Temple / Hyjal',
+  'Sunwell Plateau': 'Sunwell Plateau',
+};
+function raidCardImage(raid) {
+  const label = RAID_PROGRESSION_LABEL[raid];
+  const entry = (guildInfo.progression || []).find(p => p.label === label);
+  return entry && entry.image ? entry.image : '';
+}
 
 // Short codes used for strat asset filenames (strats/{code}-{encounter}.ext),
 // matching the existing ssc-/tk- naming convention already in the repo.
@@ -8146,6 +8190,54 @@ async function postTrashGuideToDiscord(guideId) {
   }
 }
 
+// Generic tiny "+" dropdown - reused by the tab bar's own "+" (add a
+// strat/trash to the current raid) and a group's "+" (add a phase/trash
+// to that one group). `options` is [{label, onclick}]; onclick strings
+// are raw JS, same convention as everywhere else in this file.
+function addMenuHtml(id, options) {
+  return `<span style="position:relative;display:inline-flex;">
+    <button class="strat-tab-btn" data-add-menu-toggle style="color:var(--text-dim);font-weight:700;"
+      onclick="event.stopPropagation();toggleAddMenu('${id}')" title="Add...">+</button>
+    <div class="add-menu" id="add-menu-${id}">
+      ${options.map(o => `<button onclick="closeAddMenu('${id}');${o.onclick}">${o.label}</button>`).join('')}
+    </div>
+  </span>`;
+}
+function toggleAddMenu(id) {
+  document.querySelectorAll('.add-menu.open').forEach(el => { if (el.id !== `add-menu-${id}`) el.classList.remove('open'); });
+  document.getElementById(`add-menu-${id}`)?.classList.toggle('open');
+}
+function closeAddMenu(id) {
+  document.getElementById(`add-menu-${id}`)?.classList.remove('open');
+}
+// Closes any open add-menu on an outside click - the toggle button
+// itself is excluded so the same click that opens one doesn't
+// immediately close it again on this same bubble.
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.add-menu') && !e.target.closest('[data-add-menu-toggle]')) {
+    document.querySelectorAll('.add-menu.open').forEach(el => el.classList.remove('open'));
+  }
+});
+
+// The Strats landing page - one big card per RAID_INSTANCES entry,
+// always all 7, never disabled (unlike the old raid-pill row this
+// replaces - a raid with nothing in it yet is exactly what the
+// "Get Started" empty state inside it is for, see renderStrats).
+function renderRaidSelectGrid() {
+  const cards = RAID_INSTANCES.map(r => {
+    const count = strats.filter(s => s.raid === r).length + trashGuides.filter(g => g.raid === r).length;
+    const img = raidCardImage(r);
+    return `<div class="raid-select-card" style="${img ? `background-image:url('${img.replace(/'/g, "\\'")}');` : ''}"
+      onclick="setActiveRaid('${r.replace(/'/g, "\\'")}')">
+      <div class="raid-select-card-overlay">
+        <div class="raid-select-card-name">${r}</div>
+        <div class="raid-select-card-count">${count ? `${count} strat${count === 1 ? '' : 's'}/guide${count === 1 ? '' : 's'}` : 'Nothing here yet'}</div>
+      </div>
+    </div>`;
+  }).join('');
+  return `<div class="raid-select-grid">${cards}</div>`;
+}
+
 function renderStrats() {
   const list = document.getElementById('strat-list');
   if (!list) return;
@@ -8160,26 +8252,14 @@ function renderStrats() {
     });
   }
 
-  if (strats.length === 0 && trashGuides.length === 0) {
-    list.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-text">No strats yet. Click "+ Add Strat" to upload your first encounter diagram.</div></div>`;
+  // Landing page - every raid is enterable now (even empty ones show
+  // their own "Get Started" state below), so there's no more "auto-pick
+  // whichever raid has content" fallback; null genuinely just means
+  // "show the card grid" (see renderRaidSelectGrid).
+  if (activeRaid == null) {
+    list.innerHTML = renderRaidSelectGrid();
     return;
   }
-
-  const raidsWithContent = RAID_INSTANCES.filter(r => strats.some(s => s.raid === r) || trashGuides.some(g => g.raid === r));
-  if (!activeRaid || !raidsWithContent.includes(activeRaid)) {
-    activeRaid = raidsWithContent[0] || null;
-  }
-
-  const raidPills = RAID_INSTANCES.map(r => {
-    const hasContent = strats.some(s => s.raid === r) || trashGuides.some(g => g.raid === r);
-    const isActive = r === activeRaid;
-    const count = strats.filter(s => s.raid === r).length + trashGuides.filter(g => g.raid === r).length;
-    return `<button
-      class="strat-raid-pill ${isActive ? 'active' : ''} ${!hasContent ? 'empty' : ''}"
-      onclick="${hasContent ? `setActiveRaid('${r.replace(/'/g, "\\'")}')` : ''}"
-      ${!hasContent ? 'disabled title="No strats uploaded for this raid yet"' : ''}
-    >${r}${hasContent ? ` <span style="font-size:10px;opacity:0.6;">(${count})</span>` : ''}</button>`;
-  }).join('');
 
   const raidStrats = strats.filter(s => s.raid === activeRaid);
   const mergedTabs = buildMergedRaidTabs(activeRaid);
@@ -8333,12 +8413,37 @@ function renderStrats() {
         }).join('')}
       </select>
       <button class="btn btn-small" onclick="removeActiveGroupMember()" title="Remove whichever phase/guide is currently selected above">✕ Remove This</button>
+      ${addMenuHtml('group-add', [
+        { label: '➕ Add Phase', onclick: `addPhaseToGroup('${activeGroup.groupKey.replace(/'/g, "\\'")}')` },
+        { label: '🧟 Add Trash Guide', onclick: `addTrashGuideToGroup('${activeGroup.groupKey.replace(/'/g, "\\'")}')` },
+      ])}
     </div>` : '';
 
+  // "Get Started" is a UI-only pseudo-tab, not a persisted strat/trash -
+  // it just stops appearing the moment this raid has real content (see
+  // mergedTabs.length below). The "+" tab is the ongoing "add more"
+  // mechanism either way; the empty-state's own buttons below are the
+  // first-time version of the exact same two actions.
+  const showGetStarted = mergedTabs.length === 0;
+  const tabsBarHtml = (showGetStarted ? `<button class="strat-tab-btn active" disabled>Get Started</button>` : tabs)
+    + addMenuHtml('raid-tabs', [
+      { label: '➕ Add Strat', onclick: 'openStratUpload()' },
+      { label: '🧟 Add Trash Guide', onclick: 'openAddTrashGuideModal()' },
+    ]);
+
+  const emptyStateHtml = `<div class="empty-state">
+    <div class="empty-state-icon">📋</div>
+    <div class="empty-state-text">Nothing here yet for ${activeRaid}. A strat is one encounter's diagram + assignments; a trash guide covers everything between bosses. Either one walks you through the rest.</div>
+    <div class="strat-empty-cta">
+      <button class="btn btn-gold" onclick="openStratUpload()">➕ Add Strat</button>
+      <button class="btn btn-small" onclick="openAddTrashGuideModal()">🧟 Add Trash Guide</button>
+    </div>
+  </div>`;
+
   list.innerHTML = `
-    <div class="strat-raid-pills">${raidPills}</div>
-    ${mergedTabs.length > 0 ? `
-      <div class="strat-tabs" id="strat-tabs-container">${tabs}</div>
+    <button class="strat-back-link" onclick="setActiveRaid(null)">← All Raids</button>
+    <div class="strat-tabs" id="strat-tabs-container">${tabsBarHtml}</div>
+    ${showGetStarted ? emptyStateHtml : `
       ${groupSelectorHtml}
       <div class="strat-content-wrap">
         ${activeTabKind === 'trash' ? trashPanel : `
@@ -8347,7 +8452,7 @@ function renderStrats() {
           </div>
           ${assignsPanel}
         `}
-      </div>` : ''}`;
+      </div>`}`;
   syncAutoAssignRaidSelect();
 }
 
@@ -8504,6 +8609,35 @@ function setGroupMemberSelection(groupKey, value) {
 function removeActiveGroupMember() {
   if (activeTabKind === 'strat' && activeStratId != null) removeStrat(activeStratId);
   else if (activeTabKind === 'trash' && activeTrashId != null) removeTrashGuide(activeTrashId);
+}
+
+// Adds the next phase to an already-visible group (2+ members sharing a
+// group key - see stratGroupKey/buildMergedRaidTabs). Reuses the normal
+// upload modal/saveStrat() untouched - the new strat joins this group
+// automatically the moment it's saved, purely by matching its name's
+// stripped "- P<n>" suffix against the group key, same as every other
+// phase already does.
+function addPhaseToGroup(groupKey) {
+  const group = buildMergedRaidTabs(activeRaid).find(t => t.kind === 'group' && t.groupKey === groupKey);
+  const nextPhase = 1 + Math.max(0, ...(group ? group.members : [])
+    .filter(m => m.kind === 'strat')
+    .map(m => stratPhaseNumber(strats.find(s => s.id === m.id)?.name)));
+  openStratUpload();
+  document.getElementById('strat-name-input').value = `${groupKey} - P${nextPhase}`;
+}
+
+// Adds a trash guide already set to precede this group's boss - we
+// already know the answer to "precedes which boss?" since you're adding
+// it from inside that exact group, so this just pre-picks it (any one
+// phase's exact name works: beforeBoss gets group-key-matched the same
+// stripped way as everything else, see buildMergedRaidTabs).
+function addTrashGuideToGroup(groupKey) {
+  const group = buildMergedRaidTabs(activeRaid).find(t => t.kind === 'group' && t.groupKey === groupKey);
+  const anchor = group && group.members.find(m => m.kind === 'strat');
+  const anchorName = anchor ? strats.find(s => s.id === anchor.id)?.name : groupKey;
+  openAddTrashGuideModal();
+  const bossSelect = document.getElementById('trash-guide-boss-input');
+  if (bossSelect && anchorName) bossSelect.value = anchorName;
 }
 
 // A wave's "mobs" text is free-form like "6 Ghoul |  2 Crypt Fiend" - pull
