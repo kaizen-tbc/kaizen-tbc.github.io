@@ -1316,6 +1316,18 @@ tr:last-child td { border-bottom: none; }
   background: var(--bg-card); border: 1.5px solid var(--border-bright); cursor: pointer;
 }
 .map-role-btn:hover { border-color: var(--gold-dim); background: var(--bg-hover); }
+/* The toolbar's "+ generic role pin" buttons - deliberately a separate
+   class from .map-role-btn (the popover's role-OVERRIDE buttons, which
+   stay dark-bg/colored-border - that's a small panel, not a busy strat
+   image, so it was never the illegible one). Solid fill + white letter,
+   same treatment as the pin these buttons actually drop (see
+   .map-pin[data-kind="role"] below) so the button previews what you get. */
+.map-role-add-btn {
+  width: 28px; height: 28px; border-radius: 7px; display: inline-flex;
+  align-items: center; justify-content: center; font-size: 13px; font-weight: 800;
+  color: #fff; border: none; cursor: pointer;
+}
+.map-role-add-btn:hover { filter: brightness(1.15); }
 
 .map-pin {
   position: absolute; transform: translate(-50%, -50%);
@@ -1348,7 +1360,17 @@ tr:last-child td { border-bottom: none; }
 .map-pin[data-role="Ranged"] .map-pin-badge { border-color: var(--teal); color: var(--teal); }
 .map-pin[data-role="Melee"] .map-pin-badge { border-color: var(--red-bright); color: var(--red-bright); }
 .map-pin[data-kind="text"] .map-pin-badge { border-color: var(--text-dim); color: var(--text-mid); }
-.map-pin[data-kind="role"] .map-pin-badge { background: transparent; }
+/* Generic role pins (no specific person - a "smattering of ranged stand
+   here" marker, see MAP_PIN_ROLES) have no spec-icon image to fill the
+   badge the way a player pin does, so this used to be `background:
+   transparent` - against a busy strat screenshot that made the pin all
+   but invisible until you already knew where it was. Solid role-colored
+   fill + a plain white letter fixes that; matches .map-role-add-btn. */
+.map-pin[data-kind="role"] .map-pin-badge { color: #fff; font-weight: 800; }
+.map-pin[data-kind="role"][data-role="Tank"] .map-pin-badge { background: var(--gold); }
+.map-pin[data-kind="role"][data-role="Healer"] .map-pin-badge { background: var(--green-bright); }
+.map-pin[data-kind="role"][data-role="Ranged"] .map-pin-badge { background: var(--teal); }
+.map-pin[data-kind="role"][data-role="Melee"] .map-pin-badge { background: var(--red-bright); }
 /* Cross-highlight from the Sections panel (see _highlightedPlayerId) - a
    ring layered on top of whatever size state the pin is already in
    (idle/focused/dragging), not a size change of its own. */
@@ -2933,10 +2955,10 @@ function recalcPinIdCounter() {
 }
 
 const MAP_PIN_ROLES = [
-  { key: 'Tank', icon: '🛡', color: 'var(--gold)' },
-  { key: 'Healer', icon: '✚', color: 'var(--green-bright)' },
-  { key: 'Ranged', icon: '🏹', color: 'var(--teal)' },
-  { key: 'Melee', icon: '⚔', color: 'var(--red-bright)' },
+  { key: 'Tank', icon: '🛡', letter: 'T', color: 'var(--gold)' },
+  { key: 'Healer', icon: '✚', letter: 'H', color: 'var(--green-bright)' },
+  { key: 'Ranged', icon: '🏹', letter: 'R', color: 'var(--teal)' },
+  { key: 'Melee', icon: '⚔', letter: 'M', color: 'var(--red-bright)' },
 ];
 function pinRoleMeta(role) { return MAP_PIN_ROLES.find(r => r.key === role) || MAP_PIN_ROLES[2]; }
 
@@ -9954,10 +9976,15 @@ let _mapFocusedPinId = null;
 let _highlightedPlayerId = null;
 
 function renderMapToolbar(strat) {
+  // Solid role-colored fill + a plain white letter, not the border-only
+  // dark-bg treatment .map-role-btn (the popover's role-override buttons)
+  // uses - a generic pin dropped from here lands with the exact same
+  // look, and both were nearly invisible against a busy strat image
+  // before this (see .map-pin[data-kind="role"] below).
   const roleBtns = MAP_PIN_ROLES.map(r =>
-    `<button class="map-role-btn" style="border-color:${r.color};color:${r.color};"
+    `<button class="map-role-add-btn" style="background:${r.color};"
       title="Drop a generic ${r.key} marker - shows whoever's currently unassigned in that role"
-      onclick="addRoleMapPin(${strat.id},'${r.key}')">${r.icon}</button>`
+      onclick="addRoleMapPin(${strat.id},'${r.key}')">${r.letter}</button>`
   ).join('');
   return `<div class="map-toolbar">
     <span style="font-size:11px;color:var(--text-dim);">Generic:</span>
@@ -10044,7 +10071,7 @@ function renderOneMapPin(strat, pin) {
     }
   } else if (pin.kind === 'role') {
     role = pin.role;
-    iconHtml = pinRoleMeta(pin.role).icon;
+    iconHtml = pinRoleMeta(pin.role).letter;
     const count = unassignedPlayersInRole(strat, pin.role).length;
     labelHtml = `${pin.role} (${count})`;
     title = `${pin.role} - generic marker, ${count} currently unassigned`;
@@ -10184,7 +10211,15 @@ function onMapLayerPointerDown(sid) {
   }
 }
 
-function addRoleMapPin(sid, role) { addMapPin(sid, 'role', { role }); refreshMapPins(sid); }
+// It lands centered (x:50,y:50 - see addMapPin) on top of the strat
+// image, which with the old transparent/tiny badge was easy to drop and
+// never notice - the toast is the only feedback that anything happened
+// until you go looking for a dot in the middle of the image.
+function addRoleMapPin(sid, role) {
+  addMapPin(sid, 'role', { role });
+  refreshMapPins(sid);
+  showToast(`📍 ${role} pin dropped in the center - drag it into position.`);
+}
 function addTextMapPin(sid) {
   const pin = addMapPin(sid, 'text', { text: '' });
   _mapFocusedPinId = pin ? pin.id : null;
