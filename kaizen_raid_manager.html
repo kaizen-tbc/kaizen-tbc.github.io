@@ -9107,6 +9107,43 @@ function closeAssignPicker() {
   document.getElementById('assign-picker-overlay').classList.remove('open');
   _pickerField = null;
   _pickerStratId = null;
+  _pickerCustomOpen = false;
+}
+
+// Whether the picker's inline "Custom..." (one-off PUG) form is
+// expanded - reset in closeAssignPicker so it never carries over open
+// into the next, unrelated time the picker gets opened.
+let _pickerCustomOpen = false;
+function togglePickerCustom() {
+  _pickerCustomOpen = !_pickerCustomOpen;
+  renderAssignPicker();
+  if (_pickerCustomOpen) setTimeout(() => document.getElementById('picker-custom-name')?.focus(), 50);
+}
+function updatePickerCustomSpecs() {
+  const cls = document.getElementById('picker-custom-class').value;
+  const specs = CLASS_SPECS[cls] || [];
+  document.getElementById('picker-custom-spec').innerHTML =
+    ['<option value="">—</option>', ...specs.map(s => `<option>${s}</option>`)].join('');
+}
+// Creates a one-off PUG and assigns them immediately, in one step,
+// wherever the picker was opened for (a row slot, a map pin, a brand
+// new pin/row) - the old separate "+ Pug" modal (removed from the
+// Strats header) required adding them to the pool first, then reopening
+// the picker to actually place them; this does both at once. Same data
+// shape/pool convention as savePug() (the Weekly Roster's own pug
+// flow), just skipping its modal - pushed to signUpPool too so they
+// stay visible there if that builder gets opened afterward.
+function confirmPickerCustom() {
+  const cls = document.getElementById('picker-custom-class').value;
+  if (!cls) { showToast('Pick a class first.', true); return; }
+  const ms = document.getElementById('picker-custom-spec').value;
+  const name = document.getElementById('picker-custom-name').value.trim() || 'PUG';
+  const role = SPEC_ROLE[ms] || 'Ranged';
+  const pug = { id: nextPugId--, name, class: cls, ms, os: '', role, status: 'Main', altOf: '', notes: 'PUG' };
+  pugs.push(pug);
+  signUpPool.push(pug);
+  _pickerCustomOpen = false;
+  pickAssign(pug.id);
 }
 
 function renderAssignPicker() {
@@ -9130,13 +9167,40 @@ function renderAssignPicker() {
   if (roleFilter) players = players.filter(p => p.role === roleFilter);
   if (search) players = players.filter(p => p.name.toLowerCase().includes(search));
 
+  // Always shown, even when a search/filter matches nobody - it's a
+  // fallback action, not one more player in the list.
+  const customRowHtml = _pickerCustomOpen ? `
+    <div style="padding:10px;border:1px dashed var(--border-bright);border-radius:4px;margin-bottom:8px;background:var(--bg-hover);">
+      <div style="display:flex;gap:6px;margin-bottom:6px;">
+        <select class="form-select" id="picker-custom-class" style="flex:1;" onchange="updatePickerCustomSpecs()">
+          <option value="">— Class —</option>
+          <option>Druid</option><option>Hunter</option><option>Mage</option>
+          <option>Paladin</option><option>Priest</option><option>Rogue</option>
+          <option>Shaman</option><option>Warlock</option><option>Warrior</option>
+        </select>
+        <select class="form-select" id="picker-custom-spec" style="flex:1;"><option value="">—</option></select>
+      </div>
+      <div style="display:flex;gap:6px;">
+        <input type="text" class="form-input" id="picker-custom-name" placeholder="PUG" style="flex:1;" onkeydown="if(event.key==='Enter')confirmPickerCustom()">
+        <button class="btn btn-small btn-gold" onclick="confirmPickerCustom()">Add</button>
+        <button class="btn btn-small" onclick="togglePickerCustom()">Cancel</button>
+      </div>
+    </div>` : `
+    <div onclick="togglePickerCustom()"
+      style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:3px;
+             border:1px dashed var(--border-bright);cursor:pointer;color:var(--text-dim);
+             font-size:13px;font-weight:600;margin-bottom:8px;transition:background 0.12s;"
+      onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background='none'">
+      ➕ Custom... <span style="font-weight:400;font-size:11px;">not on the roster? add a quick one-off</span>
+    </div>`;
+
   const list = document.getElementById('assign-picker-list');
   if (players.length === 0) {
-    list.innerHTML = '<div style="color:var(--text-dim);font-size:13px;padding:8px;">No players found.</div>';
+    list.innerHTML = customRowHtml + '<div style="color:var(--text-dim);font-size:13px;padding:8px;">No players found.</div>';
     return;
   }
 
-  list.innerHTML = players.map(p => {
+  list.innerHTML = customRowHtml + players.map(p => {
     const cc = classColor(p.class);
     const statusLabel = p._isPug ? 'PUG' : p.status !== 'Main' ? p.status : '';
     const statusColor = p._isPug ? 'var(--gold)' : p.status === 'Alt' ? 'var(--teal)' : 'var(--text-dim)';
