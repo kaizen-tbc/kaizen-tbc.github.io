@@ -8027,7 +8027,7 @@ function renderStrats() {
     ${renderMapToolbar(active)}
     <div class="strat-image-wrap" style="position:relative;">
       <div class="map-pin-layer" id="map-pin-layer-${active.id}" onpointerdown="onMapLayerPointerDown(${active.id})">
-        <img src="${resolveImg(active.image)}${active.image && !active.image.startsWith('data:') ? '?v=' + Date.now() : ''}" alt="${active.name}" style="max-width:100%;max-height:70vh;border-radius:3px;object-fit:contain;">
+        <img src="${resolveImg(active.image)}${active.image && !active.image.startsWith('data:') && active.imageUpdatedAt ? '?v=' + active.imageUpdatedAt : ''}" alt="${active.name}" style="max-width:100%;max-height:70vh;border-radius:3px;object-fit:contain;">
         ${renderMapPins(active)}
       </div>
       <div style="position:absolute;top:10px;right:10px;display:flex;gap:6px;z-index:30;">
@@ -8928,6 +8928,8 @@ async function replaceStratImage(event, id) {
   const cfg = getGHConfig();
   if (!cfg.token) {
     // No token — fall back to base64
+    // (data: URLs never get a ?v= query param anyway - see imageArea -
+    // so imageUpdatedAt isn't needed on this branch.)
     const reader = new FileReader();
     reader.onload = e => { strat.image = e.target.result; renderStrats(); showToast('Image updated locally.'); };
     reader.readAsDataURL(file);
@@ -8989,6 +8991,7 @@ async function replaceStratImage(event, id) {
     }
 
     strat.image = path;
+    strat.imageUpdatedAt = Date.now();
     renderStrats();
     showToast(`✓ Image uploaded: ${path}`);
   } catch(err) {
