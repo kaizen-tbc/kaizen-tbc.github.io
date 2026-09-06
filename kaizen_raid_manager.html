@@ -1381,6 +1381,26 @@ tr:last-child td { border-bottom: none; }
    (idle/focused/dragging), not a size change of its own. */
 .map-pin.linked .map-pin-badge { box-shadow: 0 0 0 3px var(--teal), 0 2px 10px rgba(0,0,0,0.5); }
 
+/* Mob pin's facing indicator (see onMobFacingHandlePointerDown) - the
+   portrait itself never rotates, only this overlay. A conic-gradient wedge
+   masked down to a ring (not a filled pie slice) reads as an arc on the
+   rim, same idea as raidplan.io's own facing indicator. 0deg = up, matching
+   the handle's resting position. */
+.map-pin-facing { position: absolute; inset: 0; pointer-events: none; transform-origin: 50% 50%; }
+.map-pin-facing-arc {
+  position: absolute; inset: -4px; border-radius: 50%;
+  background: conic-gradient(from -35deg, transparent 0deg, var(--red-bright) 0deg, var(--red-bright) 70deg, transparent 70deg);
+  -webkit-mask: radial-gradient(circle, transparent 60%, black 62%, black 100%);
+  mask: radial-gradient(circle, transparent 60%, black 62%, black 100%);
+}
+.map-pin-facing-handle {
+  position: absolute; top: -5px; left: 50%; transform: translateX(-50%);
+  width: 11px; height: 11px; border-radius: 50%;
+  background: var(--red-bright); border: 2px solid #fff;
+  cursor: grab; pointer-events: auto; box-shadow: 0 1px 4px rgba(0,0,0,0.5);
+}
+.map-pin-facing-handle:active { cursor: grabbing; }
+
 .map-pin-label {
   font-size: 10.5px; font-weight: 600; color: var(--text-bright);
   background: rgba(10,11,13,0.75); padding: 2px 7px; border-radius: 5px;
@@ -2294,6 +2314,40 @@ a[href] > div > div[style*="line-height:1.6"] {
     </div>
     <div class="modal-footer">
       <button class="btn btn-gold" onclick="closeStratsSettings()">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- Mob Pin Custom Icon Modal - shared by "+Mob > Custom..." and a mob
+     pin's own "Change icon" (see openMobCustomModal) -->
+<div class="modal-overlay" id="mob-modal-overlay" onclick="if(event.target===this)closeMobCustomModal()">
+  <div class="modal" style="width:380px;">
+    <div class="modal-header">
+      <div class="modal-title" id="mob-modal-title">Custom Mob</div>
+      <button class="modal-close" onclick="closeMobCustomModal()">&#x2715;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Label</label>
+        <input type="text" class="form-input" id="mob-modal-label" placeholder="e.g. Water Elemental">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Quick picks</label>
+        <div id="mob-modal-quickpicks" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Or paste a wowhead/wow.zamimg.com icon name or URL</label>
+        <input type="text" class="form-input" id="mob-modal-slug-input" placeholder="spell_nature_earthelemental_totem"
+          onchange="updateCustomMobIconFromInput(this.value)">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Preview</label>
+        <div id="mob-modal-preview" style="display:flex;align-items:center;height:52px;"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeMobCustomModal()">Cancel</button>
+      <button class="btn btn-gold" onclick="confirmMobCustomModal()">Save</button>
     </div>
   </div>
 </div>
@@ -3392,6 +3446,158 @@ const RAID_SHORT_CODES = {
   'Black Temple': 'bt',
   'Sunwell Plateau': 'swp',
 };
+
+// Every named NPC portrait available for a mob pin (see the map-pin design
+// notes), keyed by boss/strat name - normalized via stratGroupKey so e.g.
+// "Magtheridon - P1" and "- P2" both resolve to the same entry. Every boss
+// gets at least its own portrait; multi-NPC encounters (a boss + a named
+// pet/mount, lieutenants, a guest pool, sequential forms) list every member -
+// see assets/boss-icons/SPEC.md for the full roster this was built from.
+// Black Temple's keys reuse the exact strings BOSS_DEFAULT_SECTIONS already
+// uses for that raid (its phased fights collapse the same way via
+// stratGroupKey); the other 6 raids use each boss's standard full name.
+const BOSS_MOBS = {
+  'Attumen the Huntsman': [
+    { slug: 'kara-attumen', label: 'Attumen the Huntsman' },
+    { slug: 'kara-midnight', label: 'Midnight' },
+  ],
+  'Moroes': [
+    { slug: 'kara-moroes', label: 'Moroes' },
+    { slug: 'kara-baroness-dorothea-millstipe', label: 'Baroness Dorothea Millstipe' },
+    { slug: 'kara-baron-rafe-dreuger', label: 'Baron Rafe Dreuger' },
+    { slug: 'kara-lady-catriona-vonindi', label: "Lady Catriona von'Indi" },
+    { slug: 'kara-lord-crispin-ference', label: 'Lord Crispin Ference' },
+    { slug: 'kara-lady-keira-berrybuck', label: 'Lady Keira Berrybuck' },
+    { slug: 'kara-lord-robin-daris', label: 'Lord Robin Daris' },
+  ],
+  'Maiden of Virtue': [{ slug: 'kara-maiden', label: 'Maiden of Virtue' }],
+  'The Big Bad Wolf': [{ slug: 'kara-bigbadwolf', label: 'The Big Bad Wolf' }],
+  'Romulo and Julianne': [
+    { slug: 'kara-romulo', label: 'Romulo' },
+    { slug: 'kara-julianne', label: 'Julianne' },
+  ],
+  'Wizard of Oz': [
+    { slug: 'kara-dorothee', label: 'Dorothee' },
+    { slug: 'kara-tito', label: 'Tito' },
+    { slug: 'kara-strawman', label: 'Strawman' },
+    { slug: 'kara-tinhead', label: 'Tinhead' },
+    { slug: 'kara-roar', label: 'Roar' },
+    { slug: 'kara-crone', label: 'The Crone' },
+  ],
+  'The Curator': [{ slug: 'kara-curator', label: 'The Curator' }],
+  'Shade of Aran': [{ slug: 'kara-aran', label: 'Shade of Aran' }],
+  'Terestian Illhoof': [
+    { slug: 'kara-illhoof', label: 'Terestian Illhoof' },
+    { slug: 'kara-kilrek', label: "Kil'rek" },
+  ],
+  'Netherspite': [{ slug: 'kara-netherspite', label: 'Netherspite' }],
+  'Prince Malchezaar': [{ slug: 'kara-malchezaar', label: 'Prince Malchezaar' }],
+  'Nightbane': [{ slug: 'kara-nightbane', label: 'Nightbane' }],
+
+  'High King Maulgar': [
+    { slug: 'gruul-mag-maulgar', label: 'High King Maulgar' },
+    { slug: 'gruul-mag-kiggler-crazed', label: 'Kiggler the Crazed' },
+    { slug: 'gruul-mag-blindeye-seer', label: 'Blindeye the Seer' },
+    { slug: 'gruul-mag-olm-summoner', label: 'Olm the Summoner' },
+    { slug: 'gruul-mag-krosh-firehand', label: 'Krosh Firehand' },
+  ],
+  'Gruul the Dragonkiller': [{ slug: 'gruul-mag-gruul', label: 'Gruul the Dragonkiller' }],
+  'Magtheridon': [{ slug: 'gruul-mag-magtheridon', label: 'Magtheridon' }],
+
+  'Hydross the Unstable': [{ slug: 'ssc-hydross', label: 'Hydross the Unstable' }],
+  'The Lurker Below': [{ slug: 'ssc-lurker', label: 'The Lurker Below' }],
+  'Leotheras the Blind': [{ slug: 'ssc-leotheras', label: 'Leotheras the Blind' }],
+  'Fathom-Lord Karathress': [
+    { slug: 'ssc-karathress', label: 'Fathom-Lord Karathress' },
+    { slug: 'ssc-sharkkis', label: 'Fathom-Guard Sharkkis' },
+    { slug: 'ssc-tidalvess', label: 'Fathom-Guard Tidalvess' },
+    { slug: 'ssc-caribdis', label: 'Fathom-Guard Caribdis' },
+  ],
+  'Morogrim Tidewalker': [{ slug: 'ssc-morogrim', label: 'Morogrim Tidewalker' }],
+  'Lady Vashj': [{ slug: 'ssc-vashj', label: 'Lady Vashj' }],
+
+  "Al'ar": [{ slug: 'tk-alar', label: "Al'ar" }],
+  'Void Reaver': [{ slug: 'tk-voidreaver', label: 'Void Reaver' }],
+  'High Astromancer Solarian': [{ slug: 'tk-solarian', label: 'High Astromancer Solarian' }],
+  "Kael'thas Sunstrider": [
+    { slug: 'tk-kaelthas', label: "Kael'thas Sunstrider" },
+    { slug: 'tk-lord-sanguinar', label: 'Lord Sanguinar' },
+    { slug: 'tk-capernian', label: 'Grand Astromancer Capernian' },
+    { slug: 'tk-thaladred-darkener', label: 'Thaladred the Darkener' },
+    { slug: 'tk-telonicus', label: 'Master Engineer Telonicus' },
+  ],
+
+  'Rage Winterchill': [{ slug: 'hyjal-winterchill', label: 'Rage Winterchill' }],
+  'Anetheron': [{ slug: 'hyjal-anetheron', label: 'Anetheron' }],
+  "Kaz'rogal": [{ slug: 'hyjal-kazrogal', label: "Kaz'rogal" }],
+  'Azgalor': [{ slug: 'hyjal-azgalor', label: 'Azgalor' }],
+  'Archimonde': [{ slug: 'hyjal-archimonde', label: 'Archimonde' }],
+
+  "Naj'entus": [{ slug: 'bt-najentus', label: "High Warlord Naj'entus" }],
+  'Supremus': [{ slug: 'bt-supremus', label: 'Supremus' }],
+  'Shade of Akama': [{ slug: 'bt-akama', label: 'Shade of Akama' }],
+  'Teron Gorefiend': [{ slug: 'bt-gorefiend', label: 'Teron Gorefiend' }],
+  'Bloodboil': [{ slug: 'bt-bloodboil', label: 'Gurtogg Bloodboil' }],
+  'Reliquary of Souls': [
+    { slug: 'bt-essence-suffering', label: 'Essence of Suffering' },
+    { slug: 'bt-essence-desire', label: 'Essence of Desire' },
+    { slug: 'bt-essence-anger', label: 'Essence of Anger' },
+  ],
+  'Mother Shahraz': [{ slug: 'bt-shahraz', label: 'Mother Shahraz' }],
+  'Illidari Council': [
+    { slug: 'bt-gathios', label: 'Gathios the Shatterer' },
+    { slug: 'bt-zerevor', label: 'High Nethermancer Zerevor' },
+    { slug: 'bt-lady-malande', label: 'Lady Malande' },
+    { slug: 'bt-veras-darkshadow', label: 'Veras Darkshadow' },
+  ],
+  'Illidan Stormrage': [{ slug: 'bt-illidan', label: 'Illidan Stormrage' }],
+
+  'Kalecgos': [
+    { slug: 'swp-kalecgos', label: 'Kalecgos' },
+    { slug: 'swp-sathrovarr', label: 'Sathrovarr the Corruptor' },
+  ],
+  'Brutallus': [{ slug: 'swp-brutallus', label: 'Brutallus' }],
+  'Felmyst': [{ slug: 'swp-felmyst', label: 'Felmyst' }],
+  'The Eredar Twins': [
+    { slug: 'swp-sacrolash', label: 'Sacrolash' },
+    { slug: 'swp-alythess', label: 'Alythess' },
+  ],
+  "M'uru": [
+    { slug: 'swp-muru', label: "M'uru" },
+    { slug: 'swp-entropius', label: 'Entropius' },
+  ],
+  "Kil'jaeden": [{ slug: 'swp-kiljaeden', label: "Kil'jaeden" }],
+};
+
+// Tolerant of the strat not being named exactly like a BOSS_MOBS key (a
+// user might type "Attumen" instead of "Attumen the Huntsman") - exact
+// match first, then either-direction substring match.
+function findBossMobs(stratName) {
+  const key = stratGroupKey(stratName || '');
+  if (BOSS_MOBS[key]) return BOSS_MOBS[key];
+  const keyLower = key.toLowerCase();
+  const found = Object.keys(BOSS_MOBS).find(k =>
+    keyLower.includes(k.toLowerCase()) || k.toLowerCase().includes(keyLower));
+  return found ? BOSS_MOBS[found] : [];
+}
+
+// A small curated set of generic creature-type icons for the mob-pin
+// "Custom..." picker (an add that isn't one of BOSS_MOBS's named NPCs, e.g.
+// one of Hydross's elemental spawns) - same wow.zamimg.com spell/item icon
+// CDN already used for buffs/class-spec icons, verified live rather than
+// guessed. The manual slug/URL field next to this covers anything not here.
+const CUSTOM_MOB_ICONS = [
+  { slug: 'spell_fire_elemental_totem', label: 'Fire' },
+  { slug: 'spell_frost_summonwaterelemental_2', label: 'Water' },
+  { slug: 'spell_nature_earthelemental_totem', label: 'Earth' },
+  { slug: 'spell_nature_windfury', label: 'Air' },
+  { slug: 'spell_shadow_metamorphosis', label: 'Demon' },
+  { slug: 'spell_shadow_animatedead', label: 'Undead' },
+  { slug: 'inv_misc_head_dragon_01', label: 'Dragonkin' },
+  { slug: 'trade_engineering', label: 'Mechanical' },
+  { slug: 'ability_hunter_beasttaming', label: 'Beast' },
+  { slug: 'inv_misc_head_human_01', label: 'Humanoid' },
+];
 
 // Builds a deterministic, filesystem-safe base name (no extension) for a
 // strat's image from its raid + encounter name, e.g. "ssc-hydross".
@@ -8194,10 +8400,16 @@ async function postTrashGuideToDiscord(guideId) {
 // strat/trash to the current raid) and a group's "+" (add a phase/trash
 // to that one group). `options` is [{label, onclick}]; onclick strings
 // are raw JS, same convention as everywhere else in this file.
-function addMenuHtml(id, options) {
-  return `<span style="position:relative;display:inline-flex;">
-    <button class="strat-tab-btn" data-add-menu-toggle style="color:var(--text-dim);font-weight:700;"
-      onclick="event.stopPropagation();toggleAddMenu('${id}')" title="Add...">+</button>
+function addMenuHtml(id, options, triggerHtml) {
+  const trigger = triggerHtml || `<button class="strat-tab-btn" data-add-menu-toggle style="color:var(--text-dim);font-weight:700;"
+      onclick="event.stopPropagation();toggleAddMenu('${id}')" title="Add...">+</button>`;
+  // A caller-supplied trigger still needs the toggle wired in - stamp it
+  // onto whatever's passed rather than making every caller repeat this.
+  const wiredTrigger = triggerHtml
+    ? triggerHtml.replace('%TOGGLE%', `event.stopPropagation();toggleAddMenu('${id}')`)
+    : trigger;
+  return `<span style="position:relative;display:inline-flex;" data-add-menu-toggle>
+    ${wiredTrigger}
     <div class="add-menu" id="add-menu-${id}">
       ${options.map(o => `<button onclick="closeAddMenu('${id}');${o.onclick}">${o.label}</button>`).join('')}
     </div>
@@ -10469,12 +10681,26 @@ function renderMapToolbar(strat) {
       title="Drop a generic ${r.key} marker - shows whoever's currently unassigned in that role"
       onclick="addRoleMapPin(${strat.id},'${r.key}')">${mapRoleIconHtml(r.key, '16')}</button>`
   ).join('');
+  // Scoped to this specific strat's actual encounter - the boss + every
+  // named add/lieutenant/guest known for it (see BOSS_MOBS/findBossMobs) -
+  // so the common case is one click, not a search through all 79 portraits.
+  // "Custom..." is always present too, for anything not on that list.
+  const bossMobs = findBossMobs(strat.name);
+  const mobMenuHtml = addMenuHtml('mob', [
+    ...bossMobs.map(m => ({
+      label: `<img src="assets/boss-icons/${m.slug}.png" style="width:16px;height:16px;object-fit:cover;border-radius:50%;vertical-align:middle;margin-right:6px;">${m.label}`,
+      onclick: `addMobMapPin(${strat.id},'${m.slug}','${m.label.replace(/'/g, "\\'")}',false)`,
+    })),
+    { label: '➕ Custom...', onclick: `openMobCustomModal(${strat.id})` },
+  ], `<button class="btn btn-small" onclick="%TOGGLE%" title="Add a mob/NPC portrait">＋ Mob</button>`);
+
   return `<div class="map-toolbar">
     <span style="font-size:11px;color:var(--text-dim);">Generic:</span>
     ${roleBtns}
     <div class="divider"></div>
     <button class="btn btn-small" onclick="openPickerForNewPin(${strat.id})" title="Place a specific person on the map">＋ Player</button>
     <button class="btn btn-small" onclick="addTextMapPin(${strat.id})" title="Drop a free text label">＋ Text</button>
+    ${mobMenuHtml}
     <div style="margin-left:auto;display:flex;align-items:center;gap:14px;">
       <a href="#" class="map-popover-link" onclick="event.preventDefault();confirmClearAllPins(${strat.id})" title="Delete every pin on this strat's map">🗑 Clear all pins</a>
       <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-dim);cursor:pointer;"
@@ -10566,18 +10792,39 @@ function renderOneMapPin(strat, pin) {
     const count = unassignedPlayersInRole(strat, pin.role).length;
     labelHtml = `${pin.role} (${count})`;
     title = `${pin.role} - generic marker, ${count} currently unassigned`;
+  } else if (pin.kind === 'mob') {
+    // No inline overflow:hidden on the badge itself here (unlike player
+    // pins) - the facing handle below needs to poke slightly past the
+    // circle's edge to stay grabbable, so the image gets its OWN circular
+    // clip wrapper instead of relying on the badge to clip it.
+    const src = pin.custom
+      ? `https://wow.zamimg.com/images/wow/icons/medium/${pin.npcSlug}.jpg`
+      : `assets/boss-icons/${pin.npcSlug}.png`;
+    iconHtml = `<div style="width:100%;height:100%;border-radius:50%;overflow:hidden;"><img src="${src}" alt="" style="width:100%;height:100%;object-fit:cover;"></div>`;
+    badgeStyle = `border-color:var(--border-bright);padding:0;`;
+    labelHtml = pin.label || 'Mob';
+    title = pin.label || 'Mob';
   } else {
     iconHtml = '📝';
     labelHtml = pin.text || 'Label';
     title = pin.text || 'Text label - click to edit';
   }
 
+  // The portrait itself never rotates - just this overlay (see
+  // onMobFacingHandlePointerDown) - so it's a sibling of the icon inside
+  // the badge, not wrapping it.
+  const facingHtml = (pin.kind === 'mob' && !pin.hideFacing) ? `
+    <div class="map-pin-facing" style="transform:rotate(${pin.facing || 0}deg);">
+      <div class="map-pin-facing-arc"></div>
+      <div class="map-pin-facing-handle" onpointerdown="onMobFacingHandlePointerDown(event, ${strat.id}, ${pin.id})" title="Drag to set facing"></div>
+    </div>` : '';
+
   return `<div class="map-pin ${isFocused ? 'focused' : 'idle'} ${filled ? 'filled' : ''} ${isLinked ? 'linked' : ''}"
     data-role="${role}" data-kind="${pin.kind}" data-id="${pin.id}" ${pin.kind === 'player' && pin.playerId != null ? `data-player-id="${pin.playerId}"` : ''}
     style="left:${pin.x}%;top:${pin.y}%;"
     title="${title.replace(/"/g, '&quot;')}"
     onpointerdown="onMapPinPointerDown(event, ${strat.id}, ${pin.id})">
-    <div class="map-pin-badge" style="${badgeStyle}">${iconHtml}</div>
+    <div class="map-pin-badge" style="${badgeStyle}">${iconHtml}${facingHtml}</div>
     <div class="map-pin-label">${labelHtml}</div>
   </div>${isFocused ? renderMapPopover(strat, pin) : ''}`;
 }
@@ -10632,6 +10879,22 @@ function renderMapPopover(strat, pin) {
         ? list.map(p => `<div class="map-popover-list-item">${p.name}</div>`).join('')
         : `<div class="map-popover-list-item" style="color:var(--text-dim);">Everyone in this role already has a pin.</div>`}
     </div>`;
+  } else if (pin.kind === 'mob') {
+    // Everything about a mob pin lives here - there's no Sections/
+    // assignment counterpart for an NPC the way there is for a player, so
+    // this popover is the only place any of it can live.
+    title = pin.label || 'Mob';
+    body = `
+      <input type="text" class="form-input" style="width:100%;margin-bottom:10px;" value="${(pin.label || '').replace(/"/g, '&quot;')}"
+        placeholder="Label" onchange="setMobPinLabel(${strat.id},${pin.id},this.value)">
+      <div style="text-align:center;margin-bottom:10px;">
+        <a href="#" class="map-popover-link" onclick="event.preventDefault();openMobCustomModal(${strat.id},${pin.id})">🔁 Change icon</a>
+      </div>
+      <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-mid);cursor:pointer;justify-content:center;">
+        <input type="checkbox" ${pin.hideFacing ? 'checked' : ''} onchange="toggleMobPinFacing(${strat.id},${pin.id},this.checked)">
+        Hide facing indicator
+      </label>
+    `;
   } else {
     title = 'Text label';
     body = `<textarea class="form-input" style="width:100%;min-height:60px;font-size:12px;resize:vertical;"
@@ -10736,6 +10999,126 @@ function addTextMapPin(sid) {
 function setMapPinText(sid, pinId, text) {
   const pin = getPin(sid, pinId);
   if (pin) pin.text = text;
+}
+
+// ── Mob pins ─────────────────────────────────────────────────────
+// A specific NPC's portrait, droppable/positionable like any other pin -
+// see BOSS_MOBS/findBossMobs for the known-NPC quick-picks and
+// CUSTOM_MOB_ICONS/the mob-custom-modal below for anything else. `custom`
+// distinguishes a BOSS_MOBS slug (served from assets/boss-icons/) from a
+// wow.zamimg.com icon slug picked/typed in the custom modal, so rendering
+// never has to guess which CDN a given npcSlug belongs to.
+function addMobMapPin(sid, slug, label, custom) {
+  addMapPin(sid, 'mob', { npcSlug: slug, label, custom: !!custom, facing: 0, hideFacing: false });
+  refreshMapPins(sid);
+  showToast(`📍 ${label} pin dropped in the center - drag it into position.`);
+}
+function setMobPinLabel(sid, pinId, label) {
+  const pin = getPin(sid, pinId);
+  if (pin) pin.label = label;
+}
+function toggleMobPinFacing(sid, pinId, hide) {
+  const pin = getPin(sid, pinId);
+  if (!pin) return;
+  pin.hideFacing = hide;
+  refreshMapPins(sid);
+}
+
+// The custom-icon picker modal - shared by "+Mob > Custom..." (creating a
+// brand new pin, _mobModalPinId null) and a mob pin's own "Change icon"
+// (editing pin.npcSlug/custom/label in place). _mobModalSlug/_mobModalCustom
+// track the currently-previewed pick until Save commits it.
+let _mobModalSid = null, _mobModalPinId = null, _mobModalSlug = null, _mobModalCustom = true;
+
+function openMobCustomModal(sid, pinId) {
+  _mobModalSid = sid;
+  _mobModalPinId = pinId != null ? pinId : null;
+  const pin = pinId != null ? getPin(sid, pinId) : null;
+  _mobModalSlug = pin ? pin.npcSlug : null;
+  _mobModalCustom = pin ? pin.custom : true;
+  document.getElementById('mob-modal-title').textContent = pin ? 'Change Icon' : 'Custom Mob';
+  document.getElementById('mob-modal-label').value = pin ? pin.label : '';
+  document.getElementById('mob-modal-slug-input').value = (pin && pin.custom) ? pin.npcSlug : '';
+  document.getElementById('mob-modal-quickpicks').innerHTML = CUSTOM_MOB_ICONS.map(c => `<button class="btn btn-small" style="padding:6px 8px;" title="${c.label}"
+      onclick="pickCustomMobIcon('${c.slug}')">
+      <img src="https://wow.zamimg.com/images/wow/icons/medium/${c.slug}.jpg" style="width:20px;height:20px;object-fit:cover;border-radius:3px;vertical-align:middle;margin-right:4px;">${c.label}
+    </button>`).join('');
+  renderMobModalPreview();
+  document.getElementById('mob-modal-overlay').classList.add('open');
+}
+function closeMobCustomModal() {
+  document.getElementById('mob-modal-overlay').classList.remove('open');
+  _mobModalSid = null; _mobModalPinId = null; _mobModalSlug = null; _mobModalCustom = true;
+}
+function pickCustomMobIcon(slug) {
+  _mobModalSlug = slug;
+  _mobModalCustom = true;
+  document.getElementById('mob-modal-slug-input').value = slug;
+  renderMobModalPreview();
+}
+// The manual field takes either a bare wow.zamimg.com icon slug or a full
+// URL to it (copy-pasted straight from a browser tab) - either way we only
+// ever store the slug, so rendering stays a single, predictable CDN path.
+function updateCustomMobIconFromInput(value) {
+  const m = String(value || '').trim().match(/([a-z0-9_]+)\.jpg(?:$|\?)/i);
+  _mobModalSlug = m ? m[1] : String(value || '').trim();
+  _mobModalCustom = true;
+  renderMobModalPreview();
+}
+function renderMobModalPreview() {
+  const el = document.getElementById('mob-modal-preview');
+  if (!el) return;
+  if (!_mobModalSlug) { el.innerHTML = '<span style="color:var(--text-dim);font-size:11px;">No icon picked yet</span>'; return; }
+  const src = _mobModalCustom
+    ? `https://wow.zamimg.com/images/wow/icons/medium/${_mobModalSlug}.jpg`
+    : `assets/boss-icons/${_mobModalSlug}.png`;
+  el.innerHTML = `<img src="${src}" style="width:48px;height:48px;object-fit:cover;border-radius:50%;border:2px solid var(--border-bright);">`;
+}
+function confirmMobCustomModal() {
+  if (!_mobModalSlug) { showToast('Pick or enter an icon first.', true); return; }
+  const label = document.getElementById('mob-modal-label').value.trim() || 'Mob';
+  const sid = _mobModalSid;
+  if (_mobModalPinId != null) {
+    const pin = getPin(sid, _mobModalPinId);
+    if (pin) { pin.npcSlug = _mobModalSlug; pin.custom = _mobModalCustom; pin.label = label; }
+    refreshMapPins(sid);
+  } else {
+    addMobMapPin(sid, _mobModalSlug, label, _mobModalCustom);
+  }
+  closeMobCustomModal();
+}
+
+// Rotates the small "facing" indicator around a mob pin's rim - the
+// portrait itself never rotates, just this overlay (see renderOneMapPin).
+// Same live-mutate-style-then-commit-on-drop shape as the pin's own
+// position-drag in onMapPinPointerDown, just an angle instead of an x/y -
+// event.stopPropagation() keeps this from also triggering that drag.
+function onMobFacingHandlePointerDown(e, sid, pinId) {
+  e.preventDefault();
+  e.stopPropagation();
+  const pin = getPin(sid, pinId);
+  if (!pin) return;
+  const badge = e.currentTarget.closest('.map-pin-badge');
+  if (!badge) return;
+
+  function angleFor(ev) {
+    const rect = badge.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2, cy = rect.top + rect.height / 2;
+    return (Math.atan2(ev.clientY - cy, ev.clientX - cx) * 180 / Math.PI + 90 + 360) % 360;
+  }
+  function onMove(ev) {
+    const angle = angleFor(ev);
+    const arc = badge.querySelector('.map-pin-facing');
+    if (arc) arc.style.transform = `rotate(${angle}deg)`;
+    pin._liveAngle = angle;
+  }
+  function onUp() {
+    window.removeEventListener('pointermove', onMove);
+    window.removeEventListener('pointerup', onUp);
+    if (pin._liveAngle != null) { pin.facing = pin._liveAngle; delete pin._liveAngle; }
+  }
+  window.addEventListener('pointermove', onMove);
+  window.addEventListener('pointerup', onUp);
 }
 function renderNeedsJobList(strat) {
   const list = playersNeedingJobs(strat);
