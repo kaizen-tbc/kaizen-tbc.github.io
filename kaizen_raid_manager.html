@@ -9795,6 +9795,12 @@ async function saveStrat() {
   let imagePath = imgEl.src; // fallback to base64 if no token
 
   if (cfg.token && _pendingStratFile) {
+    // See compressImageForUpload above replaceStratImage - same ~1MB
+    // GitHub Contents API cap applies here too.
+    if (_pendingStratFile.size > IMAGE_UPLOAD_MAX_BYTES) {
+      showToast('⬆ Compressing image...');
+      _pendingStratFile = await compressImageForUpload(_pendingStratFile);
+    }
     showToast('⬆ Uploading image...');
     try {
       // Derive a stable name from the raid + encounter name rather than the
@@ -9874,11 +9880,52 @@ function onStratDrop(e, targetId) {
   renderStrats();
 }
 
+// GitHub's Contents API (used by this and every other direct-to-GitHub
+// image upload below) caps a single file's content at ~1MB - a raw
+// screenshot or a photo straight off a phone routinely blows past that
+// without looking especially large. When it does, the PUT below just
+// fails - and from the user's side that reads as "Replace Image did
+// nothing," since the old image is left exactly as it was and the only
+// signal is an error toast that's easy to miss. Downscale/recompress
+// client-side first so a normal screenshot just works instead. Returns
+// the file untouched if it's already small enough; otherwise always
+// returns a re-encoded JPEG (callers that swap the file extension based
+// on what they got back, e.g. replaceStratImage, handle that already).
+const IMAGE_UPLOAD_MAX_BYTES = 900 * 1024;
+async function compressImageForUpload(file, maxBytes = IMAGE_UPLOAD_MAX_BYTES, maxDim = 1920) {
+  if (file.size <= maxBytes) return file;
+  let bitmap;
+  try { bitmap = await createImageBitmap(file); }
+  catch (e) { return file; } // unsupported format - let the normal upload path surface its own error
+  let { width, height } = bitmap;
+  const scale = Math.min(1, maxDim / Math.max(width, height));
+  width = Math.max(1, Math.round(width * scale));
+  height = Math.max(1, Math.round(height * scale));
+  const canvas = document.createElement('canvas');
+  canvas.width = width; canvas.height = height;
+  canvas.getContext('2d').drawImage(bitmap, 0, 0, width, height);
+  if (bitmap.close) bitmap.close();
+
+  let quality = 0.85;
+  let blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', quality));
+  while (blob && blob.size > maxBytes && quality > 0.35) {
+    quality -= 0.1;
+    blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', quality));
+  }
+  if (!blob) return file; // couldn't get under the cap - let the caller try (and fail loudly) with the original
+  return new File([blob], file.name.replace(/\.[^.]+$/, '') + '.jpg', { type: 'image/jpeg' });
+}
+
 async function replaceStratImage(event, id) {
-  const file = event.target.files[0];
+  let file = event.target.files[0];
   if (!file) return;
   const strat = strats.find(s => s.id === id);
   if (!strat) return;
+
+  if (file.size > IMAGE_UPLOAD_MAX_BYTES) {
+    showToast('⬆ Compressing image...');
+    file = await compressImageForUpload(file);
+  }
 
   const cfg = getGHConfig();
   if (!cfg.token) {
