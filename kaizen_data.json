@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-09-05T17:17:21.155Z",
+  "savedAt": "2026-09-06T13:54:56.584Z",
   "roster": [
     {
       "id": 1,
@@ -2776,7 +2776,7 @@
       "id": 2,
       "name": "Hydross",
       "raid": "Serpentshrine Cavern",
-      "image": "strats/ssc-hydross.png",
+      "image": "strats/ssc-hydross.jpg",
       "assigns": {
         "tank1_pid": 3,
         "tank2_pid": 11,
@@ -2933,13 +2933,97 @@
             }
           ]
         }
+      ],
+      "imageUpdatedAt": 1788702896583,
+      "mapPins": [
+        {
+          "id": 1,
+          "kind": "mob",
+          "x": 49.26,
+          "y": 47.9,
+          "npcSlug": "ssc-hydross",
+          "label": "Hydross the Unstable",
+          "custom": false,
+          "facing": 270,
+          "hideFacing": false
+        },
+        {
+          "id": 2,
+          "kind": "text",
+          "x": 40.16,
+          "y": 52.1,
+          "text": "Frost Tank"
+        },
+        {
+          "id": 3,
+          "kind": "text",
+          "x": 49.43,
+          "y": 55.21,
+          "text": "Nature Tank"
+        },
+        {
+          "id": 4,
+          "kind": "text",
+          "x": 41.91,
+          "y": 57.7,
+          "text": "Paladin (Adds)"
+        },
+        {
+          "id": 5,
+          "kind": "role",
+          "x": 51.53,
+          "y": 32.19,
+          "role": "Melee"
+        },
+        {
+          "id": 6,
+          "kind": "role",
+          "x": 58.71,
+          "y": 53.81,
+          "role": "Melee"
+        },
+        {
+          "id": 7,
+          "kind": "role",
+          "x": 62.82,
+          "y": 49.3,
+          "role": "Ranged"
+        },
+        {
+          "id": 8,
+          "kind": "role",
+          "x": 52.14,
+          "y": 49.77,
+          "role": "Ranged"
+        },
+        {
+          "id": 9,
+          "kind": "role",
+          "x": 67.54,
+          "y": 52.41,
+          "role": "Ranged"
+        },
+        {
+          "id": 10,
+          "kind": "role",
+          "x": 54.59,
+          "y": 47.43,
+          "role": "Ranged"
+        },
+        {
+          "id": 11,
+          "kind": "role",
+          "x": 65.09,
+          "y": 45.26,
+          "role": "Ranged"
+        }
       ]
     },
     {
       "id": 4,
       "name": "Lurker",
       "raid": "Serpentshrine Cavern",
-      "image": "strats/ssc-lurker.png",
+      "image": "assets/backgrounds/default/ssc-lurker.jpg",
       "assigns": {
         "tank1_pid": 3,
         "tank2_pid": 11,
@@ -3086,13 +3170,125 @@
             }
           ]
         }
+      ],
+      "imageUpdatedAt": 1788702896583,
+      "mapPins": [
+        {
+          "id": 12,
+          "kind": "mob",
+          "x": 49.26,
+          "y": 47.9,
+          "npcSlug": "ssc-lurker",
+          "label": "The Lurker Below",
+          "custom": false,
+          "facing": 270,
+          "hideFacing": false
+        },
+        {
+          "id": 13,
+          "kind": "text",
+          "x": 40.16,
+          "y": 52.1,
+          "text": "Main Tank"
+        },
+        {
+          "id": 14,
+          "kind": "text",
+          "x": 56.08,
+          "y": 34.06,
+          "text": "Add Tank"
+        },
+        {
+          "id": 15,
+          "kind": "text",
+          "x": 51.09,
+          "y": 71.23,
+          "text": "Add Tank"
+        },
+        {
+          "id": 16,
+          "kind": "role",
+          "x": 32.98,
+          "y": 25.35,
+          "role": "Healer"
+        },
+        {
+          "id": 17,
+          "kind": "role",
+          "x": 43.04,
+          "y": 34.53,
+          "role": "Healer"
+        },
+        {
+          "id": 18,
+          "kind": "role",
+          "x": 60.89,
+          "y": 41.52,
+          "role": "Healer"
+        },
+        {
+          "id": 19,
+          "kind": "role",
+          "x": 46.63,
+          "y": 66.56,
+          "role": "Healer"
+        },
+        {
+          "id": 20,
+          "kind": "role",
+          "x": 67.98,
+          "y": 70.3,
+          "role": "Healer"
+        },
+        {
+          "id": 21,
+          "kind": "role",
+          "x": 51.53,
+          "y": 32.19,
+          "role": "Melee"
+        },
+        {
+          "id": 22,
+          "kind": "role",
+          "x": 58.71,
+          "y": 53.81,
+          "role": "Melee"
+        },
+        {
+          "id": 23,
+          "kind": "role",
+          "x": 62.82,
+          "y": 49.3,
+          "role": "Ranged"
+        },
+        {
+          "id": 24,
+          "kind": "text",
+          "x": 31.32,
+          "y": 9.49,
+          "text": "Platform A"
+        },
+        {
+          "id": 25,
+          "kind": "text",
+          "x": 71.57,
+          "y": 20.06,
+          "text": "Platform B"
+        },
+        {
+          "id": 26,
+          "kind": "text",
+          "x": 74.89,
+          "y": 63.14,
+          "text": "Platform C"
+        }
       ]
     },
     {
       "id": 3,
       "name": "Leotheras",
       "raid": "Serpentshrine Cavern",
-      "image": "strats/ssc-leotheras.png",
+      "image": "assets/backgrounds/default/ssc-leotheras.jpg",
       "assigns": {
         "tank1_pid": 3,
         "tank2_pid": 38,
@@ -3246,13 +3442,108 @@
             }
           ]
         }
+      ],
+      "imageUpdatedAt": 1788702896583,
+      "mapPins": [
+        {
+          "id": 27,
+          "kind": "mob",
+          "x": 21.78,
+          "y": 23.33,
+          "npcSlug": "ssc-leotheras",
+          "label": "Leotheras the Blind",
+          "custom": false,
+          "facing": 0,
+          "hideFacing": true
+        },
+        {
+          "id": 28,
+          "kind": "mob",
+          "x": 30.88,
+          "y": 31.26,
+          "npcSlug": "ssc-leotheras",
+          "label": "Demon Form",
+          "custom": false,
+          "facing": 0,
+          "hideFacing": true
+        },
+        {
+          "id": 29,
+          "kind": "text",
+          "x": 27.12,
+          "y": 19.91,
+          "text": "Main Tank"
+        },
+        {
+          "id": 30,
+          "kind": "text",
+          "x": 19.16,
+          "y": 39.66,
+          "text": "Fire Tank"
+        },
+        {
+          "id": 31,
+          "kind": "role",
+          "x": 34.82,
+          "y": 5.91,
+          "role": "Healer"
+        },
+        {
+          "id": 32,
+          "kind": "role",
+          "x": 44.97,
+          "y": 4.82,
+          "role": "Healer"
+        },
+        {
+          "id": 33,
+          "kind": "role",
+          "x": 53.72,
+          "y": 18.51,
+          "role": "Healer"
+        },
+        {
+          "id": 34,
+          "kind": "role",
+          "x": 38.23,
+          "y": 37.95,
+          "role": "Healer"
+        },
+        {
+          "id": 35,
+          "kind": "role",
+          "x": 39.81,
+          "y": 6.38,
+          "role": "Ranged"
+        },
+        {
+          "id": 36,
+          "kind": "role",
+          "x": 46.19,
+          "y": 13.84,
+          "role": "Ranged"
+        },
+        {
+          "id": 37,
+          "kind": "role",
+          "x": 34.65,
+          "y": 40.28,
+          "role": "Ranged"
+        },
+        {
+          "id": 38,
+          "kind": "text",
+          "x": 48.73,
+          "y": 86.94,
+          "text": "Raid needs to spread"
+        }
       ]
     },
     {
       "id": 1,
       "name": "Fathom Lord",
       "raid": "Serpentshrine Cavern",
-      "image": "strats/ssc-fathom.png",
+      "image": "assets/backgrounds/default/ssc-karathress.jpg",
       "assigns": {
         "tank1_pid": 3,
         "tank2_pid": 11,
@@ -3417,13 +3708,123 @@
             }
           ]
         }
+      ],
+      "imageUpdatedAt": 1788702896583,
+      "mapPins": [
+        {
+          "id": 39,
+          "kind": "mob",
+          "x": 64.22,
+          "y": 85.23,
+          "npcSlug": "ssc-karathress",
+          "label": "Fathom-Lord Karathress",
+          "custom": false,
+          "facing": 180,
+          "hideFacing": false
+        },
+        {
+          "id": 40,
+          "kind": "mob",
+          "x": 54.77,
+          "y": 71.85,
+          "npcSlug": "ssc-tidalvess",
+          "label": "Tidalvess",
+          "custom": false,
+          "facing": 45,
+          "hideFacing": false
+        },
+        {
+          "id": 41,
+          "kind": "mob",
+          "x": 59.41,
+          "y": 87.71,
+          "npcSlug": "ssc-sharkkis",
+          "label": "Sharkkis",
+          "custom": false,
+          "facing": 180,
+          "hideFacing": false
+        },
+        {
+          "id": 42,
+          "kind": "mob",
+          "x": 95.28,
+          "y": 52.57,
+          "npcSlug": "ssc-caribdis",
+          "label": "Caribdis",
+          "custom": false,
+          "facing": 225,
+          "hideFacing": false
+        },
+        {
+          "id": 43,
+          "kind": "text",
+          "x": 53.54,
+          "y": 91.45,
+          "text": "Main Tank"
+        },
+        {
+          "id": 44,
+          "kind": "text",
+          "x": 62.82,
+          "y": 95.33,
+          "text": "Darwin"
+        },
+        {
+          "id": 45,
+          "kind": "text",
+          "x": 75.94,
+          "y": 47.9,
+          "text": "Cardi B CoT"
+        },
+        {
+          "id": 46,
+          "kind": "text",
+          "x": 85.91,
+          "y": 47.9,
+          "text": "Interrupt Healer"
+        },
+        {
+          "id": 47,
+          "kind": "role",
+          "x": 62.12,
+          "y": 19.28,
+          "role": "Healer"
+        },
+        {
+          "id": 48,
+          "kind": "role",
+          "x": 62.9,
+          "y": 41.68,
+          "role": "Healer"
+        },
+        {
+          "id": 49,
+          "kind": "role",
+          "x": 65.79,
+          "y": 64.39,
+          "role": "Healer"
+        },
+        {
+          "id": 50,
+          "kind": "role",
+          "x": 57.57,
+          "y": 20.53,
+          "role": "Ranged"
+        },
+        {
+          "id": 51,
+          "kind": "role",
+          "x": 53.89,
+          "y": 40.75,
+          "role": "Ranged"
+        }
       ]
     },
     {
       "id": 5,
       "name": "Morogrim",
       "raid": "Serpentshrine Cavern",
-      "image": "strats/ssc-morogrim.png",
+      "image": "assets/backgrounds/default/ssc-morogrim.jpg",
       "assigns": {
         "tank1_pid": 3,
         "tank2_pid": 54,
@@ -3531,13 +3932,76 @@
             }
           ]
         }
+      ],
+      "imageUpdatedAt": 1788702896583,
+      "mapPins": [
+        {
+          "id": 52,
+          "kind": "mob",
+          "x": 96.94,
+          "y": 60.96,
+          "npcSlug": "ssc-morogrim",
+          "label": "Sobarjal",
+          "custom": false,
+          "facing": 0,
+          "hideFacing": true
+        },
+        {
+          "id": 53,
+          "kind": "text",
+          "x": 94.4,
+          "y": 17.26,
+          "text": "Pally Tank"
+        },
+        {
+          "id": 54,
+          "kind": "text",
+          "x": 88.1,
+          "y": 26.13,
+          "text": "Prison Healer"
+        },
+        {
+          "id": 55,
+          "kind": "role",
+          "x": 91.25,
+          "y": 13.69,
+          "role": "Healer"
+        },
+        {
+          "id": 56,
+          "kind": "role",
+          "x": 96.15,
+          "y": 10.58,
+          "role": "Healer"
+        },
+        {
+          "id": 57,
+          "kind": "role",
+          "x": 98.25,
+          "y": 10.58,
+          "role": "Healer"
+        },
+        {
+          "id": 58,
+          "kind": "role",
+          "x": 88.1,
+          "y": 23.79,
+          "role": "Healer"
+        },
+        {
+          "id": 59,
+          "kind": "role",
+          "x": 94.66,
+          "y": 54.59,
+          "role": "Melee"
+        }
       ]
     },
     {
       "id": 6,
       "name": "Vashj - P1",
       "raid": "Serpentshrine Cavern",
-      "image": "strats/ssc-vashj1.png",
+      "image": "assets/backgrounds/default/ssc-vashj.jpg",
       "assigns": {
         "heal1a_pid": 4,
         "heal1b_pid": 11,
@@ -3611,13 +4075,69 @@
             }
           ]
         }
+      ],
+      "imageUpdatedAt": 1788702896583,
+      "mapPins": [
+        {
+          "id": 60,
+          "kind": "mob",
+          "x": 34.76,
+          "y": 69,
+          "npcSlug": "ssc-vashj",
+          "label": "Lady Vashj",
+          "custom": false,
+          "facing": 45,
+          "hideFacing": false
+        },
+        {
+          "id": 61,
+          "kind": "text",
+          "x": 33.92,
+          "y": 81.22,
+          "text": "Main Tank"
+        },
+        {
+          "id": 62,
+          "kind": "role",
+          "x": 39.2,
+          "y": 67.96,
+          "role": "Melee"
+        },
+        {
+          "id": 63,
+          "kind": "text",
+          "x": 40.95,
+          "y": 89.42,
+          "text": "Entrance"
+        },
+        {
+          "id": 64,
+          "kind": "text",
+          "x": 53.43,
+          "y": 56.33,
+          "text": "Raid members with static charge need to get away from the raid"
+        },
+        {
+          "id": 65,
+          "kind": "role",
+          "x": 51.17,
+          "y": 82.41,
+          "role": "Ranged"
+        },
+        {
+          "id": 66,
+          "kind": "role",
+          "x": 51.26,
+          "y": 85.39,
+          "role": "Healer"
+        }
       ]
     },
     {
       "id": 17,
       "name": "Vashj - P2",
       "raid": "Serpentshrine Cavern",
-      "image": "strats/ssc-vashj2.png",
+      "image": "assets/backgrounds/default/ssc-vashj.jpg",
       "assigns": {
         "tank1_pid": 11,
         "tank2_pid": 54,
@@ -3762,6 +4282,160 @@
               "valueB": 63
             }
           ]
+        }
+      ],
+      "imageUpdatedAt": 1788702896583,
+      "mapPins": [
+        {
+          "id": 67,
+          "kind": "mob",
+          "x": 49.69,
+          "y": 49.61,
+          "npcSlug": "ssc-vashj",
+          "label": "Lady Vashj",
+          "custom": false,
+          "facing": 270,
+          "hideFacing": false
+        },
+        {
+          "id": 68,
+          "kind": "text",
+          "x": 8.22,
+          "y": 7,
+          "text": "North"
+        },
+        {
+          "id": 69,
+          "kind": "text",
+          "x": 92.48,
+          "y": 8.55,
+          "text": "East"
+        },
+        {
+          "id": 70,
+          "kind": "text",
+          "x": 92.13,
+          "y": 93.93,
+          "text": "South"
+        },
+        {
+          "id": 71,
+          "kind": "text",
+          "x": 8.57,
+          "y": 93.31,
+          "text": "West"
+        },
+        {
+          "id": 72,
+          "kind": "text",
+          "x": 41.12,
+          "y": 21.93,
+          "text": "Off-tank (Adds)"
+        },
+        {
+          "id": 73,
+          "kind": "text",
+          "x": 36.05,
+          "y": 59.41,
+          "text": "MT (Adds)"
+        },
+        {
+          "id": 74,
+          "kind": "text",
+          "x": 39.9,
+          "y": 35.61,
+          "text": "Pylon"
+        },
+        {
+          "id": 75,
+          "kind": "text",
+          "x": 58.97,
+          "y": 35.3,
+          "text": "Pylon"
+        },
+        {
+          "id": 76,
+          "kind": "text",
+          "x": 41.03,
+          "y": 64.85,
+          "text": "Pylon"
+        },
+        {
+          "id": 77,
+          "kind": "text",
+          "x": 58.53,
+          "y": 63.92,
+          "text": "Pylon"
+        },
+        {
+          "id": 78,
+          "kind": "text",
+          "x": 92.48,
+          "y": 52.41,
+          "text": "Kill as many adds before releasing final Pylon"
+        },
+        {
+          "id": 79,
+          "kind": "text",
+          "x": 47.16,
+          "y": 80.25,
+          "text": "Ele Shaman"
+        },
+        {
+          "id": 80,
+          "kind": "role",
+          "x": 34.3,
+          "y": 29.08,
+          "role": "Melee"
+        },
+        {
+          "id": 81,
+          "kind": "role",
+          "x": 66.4,
+          "y": 30.48,
+          "role": "Melee"
+        },
+        {
+          "id": 82,
+          "kind": "role",
+          "x": 39.72,
+          "y": 78.69,
+          "role": "Melee"
+        },
+        {
+          "id": 83,
+          "kind": "role",
+          "x": 66.67,
+          "y": 72.63,
+          "role": "Melee"
+        },
+        {
+          "id": 84,
+          "kind": "role",
+          "x": 31.06,
+          "y": 24.73,
+          "role": "Ranged"
+        },
+        {
+          "id": 85,
+          "kind": "role",
+          "x": 71.39,
+          "y": 27.68,
+          "role": "Ranged"
+        },
+        {
+          "id": 86,
+          "kind": "role",
+          "x": 69.03,
+          "y": 75.27,
+          "role": "Ranged"
+        },
+        {
+          "id": 87,
+          "kind": "role",
+          "x": 36.22,
+          "y": 84.45,
+          "role": "Ranged"
         }
       ]
     },
@@ -4921,7 +5595,7 @@
       "id": 18,
       "name": "Vashj - P3",
       "raid": "Serpentshrine Cavern",
-      "image": "strats/ssc-vashj3.png",
+      "image": "assets/backgrounds/default/ssc-vashj.jpg",
       "assigns": {
         "tank1_pid": 11,
         "tank1_role": "Main Tank",
@@ -5056,6 +5730,83 @@
               "valueB": null
             }
           ]
+        }
+      ],
+      "imageUpdatedAt": 1788702896583,
+      "mapPins": [
+        {
+          "id": 88,
+          "kind": "mob",
+          "x": 49.58,
+          "y": 49.93,
+          "npcSlug": "ssc-vashj",
+          "label": "Lady Vashj",
+          "custom": false,
+          "facing": 270,
+          "hideFacing": false
+        },
+        {
+          "id": 89,
+          "kind": "text",
+          "x": 42.55,
+          "y": 52.61,
+          "text": "Main Tank"
+        },
+        {
+          "id": 90,
+          "kind": "text",
+          "x": 53.69,
+          "y": 61.25,
+          "text": "Zaraiya"
+        },
+        {
+          "id": 91,
+          "kind": "text",
+          "x": 45.48,
+          "y": 62.59,
+          "text": "Grounding at all times"
+        },
+        {
+          "id": 92,
+          "kind": "text",
+          "x": 65.66,
+          "y": 30.7,
+          "text": "Do NOT stand in poison"
+        },
+        {
+          "id": 93,
+          "kind": "text",
+          "x": 67.76,
+          "y": 75.11,
+          "text": "If you have charge, isolate"
+        },
+        {
+          "id": 94,
+          "kind": "role",
+          "x": 54.69,
+          "y": 16.54,
+          "role": "Healer"
+        },
+        {
+          "id": 95,
+          "kind": "role",
+          "x": 32.75,
+          "y": 27.12,
+          "role": "Healer"
+        },
+        {
+          "id": 96,
+          "kind": "role",
+          "x": 69.01,
+          "y": 52.61,
+          "role": "Healer"
+        },
+        {
+          "id": 97,
+          "kind": "role",
+          "x": 47.82,
+          "y": 84.65,
+          "role": "Healer"
         }
       ]
     },
