@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-09-06T14:37:47.052Z",
+  "savedAt": "2026-09-06T14:43:31.189Z",
   "roster": [
     {
       "id": 1,
@@ -6516,30 +6516,6 @@
               "arrow": true,
               "typeB": "player",
               "valueB": 14
-            },
-            {
-              "id": 3805,
-              "typeA": "player",
-              "valueA": null,
-              "arrow": true,
-              "typeB": "player",
-              "valueB": null
-            },
-            {
-              "id": 3806,
-              "typeA": "player",
-              "valueA": null,
-              "arrow": true,
-              "typeB": "player",
-              "valueB": null
-            },
-            {
-              "id": 3807,
-              "typeA": "player",
-              "valueA": null,
-              "arrow": true,
-              "typeB": "player",
-              "valueB": null
             }
           ]
         },
@@ -6554,14 +6530,6 @@
               "arrow": true,
               "typeB": "player",
               "valueB": 14
-            },
-            {
-              "id": 3809,
-              "typeA": "player",
-              "valueA": null,
-              "arrow": true,
-              "typeB": "player",
-              "valueB": null
             }
           ]
         },
@@ -6576,14 +6544,6 @@
               "arrow": false,
               "typeB": "text",
               "valueB": "Off the rip"
-            },
-            {
-              "id": 3811,
-              "typeA": "text",
-              "valueA": "Notes",
-              "arrow": false,
-              "typeB": "text",
-              "valueB": ""
             }
           ]
         },
