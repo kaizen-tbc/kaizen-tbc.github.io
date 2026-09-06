@@ -1380,9 +1380,8 @@ tr:last-child td { border-bottom: none; }
 /* A mob pin's portrait is a real (busy) piece of art, not a simple flat
    icon like the role/class ones - it needs real size to read as anything
    more than a color blob, so these run roughly double the normal pin
-   sizes. The facing indicator/handle scale up to match (see
-   .map-pin-facing-handle) so they stay proportionate, not suddenly tiny
-   against a much bigger badge. */
+   sizes. (See .map-pin-facing-arrow/.map-pin-facing-handle below for the
+   facing indicator, which only ever appears on this pin kind.) */
 .map-pin[data-kind="mob"].idle .map-pin-badge { width: 50px; height: 50px; }
 .map-pin[data-kind="mob"].idle:hover .map-pin-badge { width: 58px; height: 58px; }
 .map-pin[data-kind="mob"].dragging .map-pin-badge { width: 68px !important; height: 68px !important; }
@@ -1415,31 +1414,30 @@ tr:last-child td { border-bottom: none; }
 .map-pin.linked .map-pin-badge { box-shadow: 0 0 0 3px var(--teal), 0 2px 10px rgba(0,0,0,0.5); }
 
 /* Mob pin's facing indicator (see onMobFacingHandlePointerDown) - the
-   portrait itself never rotates, only this overlay. Only rendered at all
-   while the pin is focused (see renderOneMapPin) - idle mob pins show a
-   clean portrait with nothing on top; clicking the pin reveals the pointer
-   to adjust it, and unfocusing hides it again. A stick-and-triangle pointer
-   reads as a direction at a glance better than a bare dot did, and stands
-   clear of the portrait itself rather than sitting right on its rim. 0deg =
-   straight up, matching the pointer's resting position. */
+   portrait itself never rotates, only this overlay. Two separate pieces,
+   matching raidplan.io's own version of this: a small triangle that hugs
+   the badge's rim and always shows (focused or not - "which way is this
+   thing facing" should be readable from a screenshot, not just while
+   editing), plus a round drag handle further out that ONLY exists while
+   the pin is focused (see renderOneMapPin) - that's the grabbable control,
+   not the indicator itself. Both live in the same rotated wrapper so
+   dragging the handle turns the rim triangle together with it. 0deg =
+   straight up. */
 .map-pin-facing { position: absolute; inset: 0; pointer-events: none; transform-origin: 50% 50%; }
-.map-pin-facing-pointer {
-  position: absolute; top: -20px; left: 50%; transform: translateX(-50%);
-  width: 3px; height: 16px; border-radius: 2px;
-  background: var(--red-bright); box-shadow: 0 1px 4px rgba(0,0,0,0.6);
-  cursor: grab; pointer-events: auto;
+.map-pin-facing-arrow {
+  position: absolute; top: -5px; left: 50%; transform: translateX(-50%);
+  width: 0; height: 0;
+  border-left: 7px solid transparent; border-right: 7px solid transparent;
+  border-bottom: 11px solid var(--red-bright);
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.6));
 }
-/* Extends the grabbable area well past the thin stick itself (a 3px-wide
-   hit target is unusable) without widening what's actually drawn. */
-.map-pin-facing-pointer::after {
-  content: ''; position: absolute; inset: -8px -10px;
+.map-pin-facing-handle {
+  position: absolute; top: -24px; left: 50%; transform: translateX(-50%);
+  width: 13px; height: 13px; border-radius: 50%;
+  background: var(--red-bright); border: 2px solid #fff;
+  cursor: grab; pointer-events: auto; box-shadow: 0 1px 4px rgba(0,0,0,0.5);
 }
-.map-pin-facing-pointer::before {
-  content: ''; position: absolute; top: -9px; left: 50%; transform: translateX(-50%);
-  width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent;
-  border-bottom: 9px solid var(--red-bright);
-}
-.map-pin-facing-pointer:active { cursor: grabbing; }
+.map-pin-facing-handle:active { cursor: grabbing; }
 
 .map-pin-label {
   font-size: 10.5px; font-weight: 600; color: var(--text-bright);
@@ -1459,9 +1457,13 @@ tr:last-child td { border-bottom: none; }
 .map-pin-layer.show-names .map-pin:not([data-kind="mob"]).idle .map-pin-label { display: block; }
 .map-pin-label .class-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 5px; }
 /* Mob names run longer on average ("Baroness Dorothea Millstipe") than a
-   player's - a little more width and a touch bigger before it has to
-   ellipsize. */
-.map-pin[data-kind="mob"] .map-pin-label { max-width: 190px; font-size: 11px; }
+   player's, and a widened-but-still-fixed max-width was still clipping
+   them - so, unlike every other pin kind, a mob label just isn't capped:
+   let the pill grow to fit the whole name. Overlapping a neighboring pin's
+   label because of that is a placement/decluttering problem (drag pins
+   apart, or turn one label off via that pin's own "Show name on map"
+   checkbox - see renderMapPopover), not a reason to cut text off. */
+.map-pin[data-kind="mob"] .map-pin-label { max-width: none; overflow: visible; font-size: 11px; }
 
 .map-popover {
   position: absolute; width: 230px; background: var(--bg-card);
@@ -11068,13 +11070,15 @@ function renderOneMapPin(strat, pin) {
 
   // The portrait itself never rotates - just this overlay (see
   // onMobFacingHandlePointerDown) - so it's a sibling of the icon inside
-  // the badge, not wrapping it. Only drawn while focused: a mob pin should
-  // read as a clean portrait at rest, not a target with a red dot glued to
-  // it forever - the pointer only needs to exist while you're actually
-  // looking at (and might want to adjust) that specific pin.
-  const facingHtml = (pin.kind === 'mob' && !pin.hideFacing && isFocused) ? `
+  // the badge, not wrapping it. The rim arrow always shows (so which way a
+  // mob is facing reads even off a static screenshot); the round drag
+  // handle further out is only added while the pin is focused - that's the
+  // control surface, not the indicator, so it doesn't need to sit there
+  // permanently.
+  const facingHtml = (pin.kind === 'mob' && !pin.hideFacing) ? `
     <div class="map-pin-facing" style="transform:rotate(${pin.facing || 0}deg);">
-      <div class="map-pin-facing-pointer" onpointerdown="onMobFacingHandlePointerDown(event, ${strat.id}, ${pin.id})" title="Drag to set facing"></div>
+      <div class="map-pin-facing-arrow"></div>
+      ${isFocused ? `<div class="map-pin-facing-handle" onpointerdown="onMobFacingHandlePointerDown(event, ${strat.id}, ${pin.id})" title="Drag to set facing"></div>` : ''}
     </div>` : '';
 
   // Mob-pin name visibility is entirely its own thing - a per-pin "Show
