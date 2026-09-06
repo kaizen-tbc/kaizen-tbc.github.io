@@ -1574,36 +1574,45 @@ tr:last-child td { border-bottom: none; }
 .raid-select-card-name { font-family: 'Cinzel', serif; font-size: 15px; font-weight: 700; color: var(--text-bright); line-height: 1.25; }
 .raid-select-card-count { font-size: 11px; color: var(--gold-light); margin-top: 3px; font-weight: 600; }
 
-/* ── Inside a raid: boss-select row (one level deeper than the raid
-   grid above, same idea) - see renderBossSelectRow/openBossGroup. Small
-   portrait cards instead of a flat text tab bar, so a boss with a trash
-   guide attached doesn't hide it behind an easy-to-miss in-tab dropdown -
-   every boss is its own clickable card, always visible up front. */
-.boss-select-row { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 4px; margin-bottom: 10px; }
+/* ── Inside a raid: boss-select row ───────────────────────────────
+   Sits permanently on the same line as "← All Raids" (see
+   .strat-header-row/renderStrats) - small, compact portrait cards
+   instead of the old flat text tab bar, so a boss with a trash guide
+   attached doesn't hide it behind an easy-to-miss in-tab dropdown; every
+   boss is its own always-visible card. Sized to actually fit next to the
+   back link rather than the bigger, showcase-style raid-select cards one
+   level up - this is a nav strip, not a landing page. */
+.strat-header-row { display: flex; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 12px; }
+.boss-select-row { display: flex; flex-wrap: wrap; gap: 8px; }
 .boss-select-card {
-  width: 96px; display: flex; flex-direction: column; align-items: center; gap: 6px;
+  width: 58px; display: flex; flex-direction: column; align-items: center; gap: 3px;
   cursor: pointer; position: relative;
 }
 .boss-select-card-portrait {
-  width: 72px; height: 72px; border-radius: 50%; background: var(--bg-card) center/cover no-repeat;
+  width: 44px; height: 44px; border-radius: 50%; background: var(--bg-card) center/cover no-repeat;
   border: 2px solid var(--border-bright); display: flex; align-items: center; justify-content: center;
-  font-size: 26px; transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s;
+  font-size: 18px; transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s;
 }
-.boss-select-card:hover .boss-select-card-portrait { border-color: var(--gold-dim); transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.4); }
-.boss-select-card-name { font-size: 11.5px; font-weight: 600; color: var(--text-mid); text-align: center; line-height: 1.25; }
+.boss-select-card:hover .boss-select-card-portrait { border-color: var(--gold-dim); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
+/* The currently-active boss - a gold ring, same visual language as a
+   focused map pin's own ring, since this is the same idea: "this one is
+   the thing you're looking at right now." */
+.boss-select-card.active .boss-select-card-portrait { border-color: var(--gold); box-shadow: 0 0 0 2px rgba(201,162,39,0.35); }
+.boss-select-card-name { font-size: 9.5px; font-weight: 600; color: var(--text-mid); text-align: center; line-height: 1.2; }
 .boss-select-card:hover .boss-select-card-name { color: var(--text-bright); }
+.boss-select-card.active .boss-select-card-name { color: var(--gold-light); }
 /* How many phases/guides live behind this one card - a small badge, not
    a repeated "(3)" text like the generic map pins used to do, since
    there's already a name label right below it. */
 .boss-select-card-count {
-  position: absolute; top: -4px; right: 8px; min-width: 16px; height: 16px; padding: 0 4px;
-  border-radius: 8px; background: var(--gold); color: #0a0b0d; font-size: 10px; font-weight: 800;
+  position: absolute; top: -3px; right: 3px; min-width: 14px; height: 14px; padding: 0 3px;
+  border-radius: 7px; background: var(--gold); color: #0a0b0d; font-size: 9px; font-weight: 800;
   display: flex; align-items: center; justify-content: center;
 }
 .boss-select-card-add {
-  width: 72px; height: 72px; border-radius: 50%; border: 2px dashed var(--border-bright);
-  display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 800;
-  color: var(--text-dim); transition: all 0.15s; margin-top: 0;
+  width: 44px; height: 44px; border-radius: 50%; border: 2px dashed var(--border-bright);
+  display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 800;
+  color: var(--text-dim); transition: all 0.15s;
 }
 .boss-select-card-add:hover { color: var(--gold); border-color: var(--gold-dim); }
 
@@ -8786,18 +8795,21 @@ function renderRaidSelectGrid() {
   return `<div class="raid-select-grid">${cards}</div>`;
 }
 
-// One level deeper than the raid-select grid, same idea: a row of small
-// boss-portrait cards (see bossPortraitSlug) instead of the old flat text
-// tab bar - clicking one drills into that boss's own tabs (see
-// openBossGroup/renderStrats). A group with no portrait match (an
-// orphaned/standalone trash guide, or a custom boss name that doesn't
-// match RAID_ENCOUNTERS) falls back to a generic icon rather than leaving
-// the card blank.
-function renderBossSelectRow(groups) {
+// Sits permanently on the same line as "← All Raids" (not a separate
+// screen the way the raid-select grid is one level up - see renderStrats)
+// - a row of small boss-portrait cards (see bossPortraitSlug) in place of
+// the old flat text tab bar. Whichever one matches the currently active
+// group gets a gold ring; clicking a different one switches which boss's
+// own sub-tabs (phases/trash guide) show right below (see openBossGroup).
+// A group with no portrait match (an orphaned/standalone trash guide, or
+// a custom boss name that doesn't match RAID_ENCOUNTERS) falls back to a
+// generic icon rather than leaving the card blank.
+function renderBossSelectRow(groups, activeGroupKey) {
   const cards = groups.map(g => {
     const img = g.portraitSlug ? `assets/boss-icons/${g.portraitSlug}.png` : null;
     const count = g.members.length;
-    return `<div class="boss-select-card" onclick="openBossGroup('${g.groupKey.replace(/'/g, "\\'")}')" title="${g.name.replace(/"/g, '&quot;')}">
+    const isActive = g.groupKey === activeGroupKey;
+    return `<div class="boss-select-card ${isActive ? 'active' : ''}" onclick="openBossGroup('${g.groupKey.replace(/'/g, "\\'")}')" title="${g.name.replace(/"/g, '&quot;')}">
       <div class="boss-select-card-portrait" style="${img ? `background-image:url('${img.replace(/'/g, "\\'")}');` : ''}">${img ? '' : '🧟'}</div>
       <div class="boss-select-card-name">${g.name}</div>
       ${count > 1 ? `<div class="boss-select-card-count">${count}</div>` : ''}
@@ -8836,41 +8848,44 @@ function renderStrats() {
   const groups = buildBossGroups(activeRaid);
 
   // Validate the whole drill-down chain together, not just activeStratId/
-  // activeTrashId in isolation - if anything's stale (raid switch, the
-  // active strat got deleted, a phase renamed out from under its group)
-  // drop all the way back to the boss-select row rather than guessing
-  // which boss to auto-open. Landing on the row first is the entire point
-  // of this redesign, not just its first-visit behavior.
-  const activeGroupCheck = groups.find(g => g.groupKey === activeBossGroupKey) || null;
-  const activeTabValid = !!activeGroupCheck && activeGroupCheck.members.some(m =>
+  // activeTrashId in isolation. Unlike a raid's own card grid (where
+  // activeRaid:null is a real, standalone "show the grid" state), the
+  // boss-portrait row is never its own screen - it sits permanently above
+  // whichever boss's content is showing, so an invalid/missing selection
+  // auto-resolves to the first boss (first member: trash first if
+  // present, else the earliest phase) rather than leaving nothing active.
+  let activeGroup = groups.find(g => g.groupKey === activeBossGroupKey) || null;
+  const activeTabValid = !!activeGroup && activeGroup.members.some(m =>
     (m.kind === 'strat' && activeTabKind === 'strat' && m.id === activeStratId) ||
     (m.kind === 'trash' && activeTabKind === 'trash' && m.id === activeTrashId)
   );
-  if (activeBossGroupKey != null && !activeTabValid) {
-    activeBossGroupKey = null; activeStratId = null; activeTrashId = null;
+  if (!activeTabValid) {
+    activeGroup = groups[0] || null;
+    const target = activeGroup ? activeGroup.members[0] : null;
+    activeBossGroupKey = activeGroup ? activeGroup.groupKey : null;
+    activeTabKind = target ? target.kind : 'strat';
+    activeStratId = target && target.kind === 'strat' ? target.id : null;
+    activeTrashId = target && target.kind === 'trash' ? target.id : null;
+    if (activeGroup && target) _lastGroupSelection[activeGroup.groupKey] = { kind: target.kind, id: target.id };
   }
 
-  // Level 1: a row of boss-portrait cards for this raid (or its empty
-  // state) - same shape as the raid-select grid one level up. Nothing
-  // below here (image area, assigns panel, trash panel) is even built
-  // until a specific boss is actually open.
-  if (activeBossGroupKey == null) {
-    const showGetStarted = groups.length === 0;
+  // A raid with genuinely nothing in it yet - no portraits to show at all,
+  // just the back link and the same "Get Started" empty state as before.
+  if (!activeGroup) {
     list.innerHTML = `
       <button class="strat-back-link" onclick="setActiveRaid(null)">← All Raids</button>
-      ${showGetStarted ? `<div class="empty-state">
+      <div class="empty-state">
         <div class="empty-state-icon">📋</div>
         <div class="empty-state-text">Nothing here yet for ${activeRaid}. A strat is one encounter's diagram + assignments; a trash guide covers everything between bosses. Either one walks you through the rest.</div>
         <div class="strat-empty-cta">
           <button class="btn btn-gold" onclick="openAddStratChoice()">➕ Add Strat</button>
           <button class="btn btn-small" onclick="openAddTrashGuideModal()">🧟 Add Trash Guide</button>
         </div>
-      </div>` : renderBossSelectRow(groups)}`;
+      </div>`;
     syncAutoAssignRaidSelect();
     return;
   }
 
-  const activeGroup = activeGroupCheck;
   const active = activeTabKind === 'strat' ? strats.find(s => s.id === activeStratId) : null;
   const activeGuide = activeTabKind === 'trash' ? trashGuides.find(g => g.id === activeTrashId) : null;
 
@@ -8976,8 +8991,16 @@ function renderStrats() {
   const trashPanel = activeGuide ? renderTrashGuidePanel(activeGuide) : '';
   const poolSection = '';
 
+  // The boss row sits permanently on the same line as "← All Raids" (not
+  // a separate screen you drill into/back out of - see the validation
+  // block above) - whichever portrait matches the currently active group
+  // gets a gold ring (see renderBossSelectRow), and the sub-tab row right
+  // below it is always that specific boss's own members.
   list.innerHTML = `
-    <button class="strat-back-link" onclick="closeBossGroup()">← All Bosses</button>
+    <div class="strat-header-row">
+      <button class="strat-back-link" style="margin-bottom:0;" onclick="setActiveRaid(null)">← All Raids</button>
+      ${renderBossSelectRow(groups, activeGroup.groupKey)}
+    </div>
     <div class="strat-tabs" id="strat-tabs-container">${memberTabsHtml}</div>
     <div class="strat-content-wrap">
       ${activeTabKind === 'trash' ? trashPanel : `
@@ -9125,12 +9148,6 @@ function openBossGroup(groupKey) {
   else setActiveTrashTab(target.id);
   _lastGroupSelection[groupKey] = { kind: target.kind, id: target.id };
 }
-// Back out to the boss-select row for the current raid.
-function closeBossGroup() {
-  activeBossGroupKey = null;
-  renderStrats();
-}
-
 // Adds the next phase to an already-visible group. Reuses the normal
 // upload modal/saveStrat() untouched - the new strat joins this group
 // automatically the moment it's saved, purely by matching its name's
