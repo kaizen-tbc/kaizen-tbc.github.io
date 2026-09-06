@@ -1583,6 +1583,12 @@ tr:last-child td { border-bottom: none; }
    back link rather than the bigger, showcase-style raid-select cards one
    level up - this is a nav strip, not a landing page. */
 .strat-header-row { display: flex; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 12px; }
+/* Separates "← All Raids" from the boss portraits - align-self:stretch so
+   it spans the row's full height (the portraits are taller than the back
+   link's own text) rather than sitting as a short, centered tick mark.
+   Extra left/right margin on top of the row's own 16px gap, specifically
+   asked for as its own bit of breathing room around the line itself. */
+.strat-header-divider { width: 1px; align-self: stretch; background: var(--border-bright); margin: 0 6px; }
 .boss-select-row { display: flex; flex-wrap: wrap; gap: 8px; }
 .boss-select-card {
   width: 58px; display: flex; flex-direction: column; align-items: center; gap: 3px;
@@ -8999,6 +9005,7 @@ function renderStrats() {
   list.innerHTML = `
     <div class="strat-header-row">
       <button class="strat-back-link" style="margin-bottom:0;" onclick="setActiveRaid(null)">← All Raids</button>
+      <div class="strat-header-divider"></div>
       ${renderBossSelectRow(groups, activeGroup.groupKey)}
     </div>
     <div class="strat-tabs" id="strat-tabs-container">${memberTabsHtml}</div>
