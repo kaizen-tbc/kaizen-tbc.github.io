@@ -3235,10 +3235,8 @@ function pinRoleMeta(role) { return MAP_PIN_ROLES.find(r => r.key === role) || M
 // Blizzard's 8 standard raid target markers (Star through Skull, same
 // order/numbering as the game's own raid-marker menu - see
 // https://addonstudio.org/wiki/WoW:Target_markers). Rendered from
-// assets/marks/<key>.png - not shipped with the repo yet; see
-// assets/marks/SPEC.md for what that set needs to look like. A missing
-// file just shows as a broken image until it's added, same as a mob pin
-// before its portrait existed.
+// assets/marks/<key>.png - the game's own icons, not a custom redraw (see
+// assets/marks/README.md).
 const MARK_TYPES = [
   { key: 'star', label: 'Star' },
   { key: 'circle', label: 'Circle' },
@@ -11397,7 +11395,12 @@ function renderOneMapPin(strat, pin) {
     role = pin.role;
     iconHtml = mapRoleIconHtml(pin.role, '100%');
     const count = unassignedPlayersInRole(strat, pin.role).length;
-    labelHtml = `${pin.role} (${count})`;
+    // No visible label at all, even with "Show raider names" on - clicking
+    // the pin already opens the real unassigned list (see renderMapPopover
+    // below), so "Melee (5)" repeated over every generic pin on the map
+    // was just noise restating something a click away. The count still
+    // shows on hover via the title tooltip.
+    labelHtml = '';
     title = `${pin.role} - generic marker, ${count} currently unassigned`;
   } else if (pin.kind === 'mob') {
     // No inline overflow:hidden on the badge itself here (unlike player
@@ -11457,7 +11460,7 @@ function renderOneMapPin(strat, pin) {
     title="${title.replace(/"/g, '&quot;')}"
     onpointerdown="onMapPinPointerDown(event, ${strat.id}, ${pin.id})">
     <div class="map-pin-badge" style="${badgeStyle}">${iconHtml}${facingHtml}</div>
-    <div class="map-pin-label" style="${labelStyle}">${labelHtml}</div>
+    ${labelHtml ? `<div class="map-pin-label" style="${labelStyle}">${labelHtml}</div>` : ''}
   </div>${isFocused ? renderMapPopover(strat, pin) : ''}`;
 }
 
@@ -11524,7 +11527,8 @@ function renderMapPopover(strat, pin) {
     // single lines that don't need centering.
     body = `
       <input type="text" class="form-input" style="width:100%;margin-bottom:12px;" value="${(pin.label || '').replace(/"/g, '&quot;')}"
-        placeholder="Label" onchange="setMobPinLabel(${strat.id},${pin.id},this.value)">
+        placeholder="Label" onchange="setMobPinLabel(${strat.id},${pin.id},this.value)"
+        onkeydown="if(event.key==='Enter') this.blur();">
       <div style="text-align:center;margin-bottom:14px;">
         <a href="#" class="map-popover-link" onclick="event.preventDefault();openMobCustomModal(${strat.id},${pin.id})">🔁 Change icon</a>
       </div>
@@ -11792,7 +11796,14 @@ function setMarkPinType(sid, pinId, markType) {
 }
 function setMobPinLabel(sid, pinId, label) {
   const pin = getPin(sid, pinId);
-  if (pin) pin.label = label;
+  if (!pin) return;
+  pin.label = label;
+  // Was missing entirely - the data updated correctly (which is why
+  // toggling an unrelated checkbox afterward, forcing its own refresh,
+  // "fixed" it), but nothing ever repainted the pin itself, so the label
+  // you just typed silently didn't show up on the map until something
+  // else happened to trigger a re-render.
+  refreshMapPins(sid);
 }
 function toggleMobPinFacing(sid, pinId, hide) {
   const pin = getPin(sid, pinId);
