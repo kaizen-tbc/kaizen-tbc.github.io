@@ -1558,9 +1558,13 @@ tr:last-child td { border-bottom: none; }
 /* ── Strats landing page (raid selection cards) ──────────────────
    Replaces the old flat .strat-raid-pill row - now the ONLY way into a
    raid's strats, shown when activeRaid is null (see renderStrats). */
-.raid-select-grid { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 4px; }
+/* justify-content:center rather than the default flex-start - with 7
+   raids, a trailing incomplete row (e.g. 3 + 3 + 1) now centers under the
+   rows above it instead of hugging the left edge, giving the whole grid
+   an offset/staggered look rather than a ragged last line. */
+.raid-select-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; margin-top: 4px; }
 .raid-select-card {
-  position: relative; width: 220px; height: 128px; border-radius: 8px; overflow: hidden;
+  position: relative; width: 280px; height: 162px; border-radius: 8px; overflow: hidden;
   cursor: pointer; border: 1px solid var(--border-bright);
   background: var(--bg-card) center/cover no-repeat;
   transition: transform 0.15s ease, border-color 0.15s, box-shadow 0.15s;
@@ -1568,11 +1572,11 @@ tr:last-child td { border-bottom: none; }
 .raid-select-card:hover { transform: translateY(-3px); border-color: var(--gold-dim); box-shadow: 0 10px 26px rgba(0,0,0,0.45); }
 .raid-select-card-overlay {
   position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: flex-end;
-  padding: 10px 12px;
+  padding: 13px 15px;
   background: linear-gradient(to top, rgba(10,11,13,0.92) 0%, rgba(10,11,13,0.35) 55%, transparent 100%);
 }
-.raid-select-card-name { font-family: 'Cinzel', serif; font-size: 15px; font-weight: 700; color: var(--text-bright); line-height: 1.25; }
-.raid-select-card-count { font-size: 11px; color: var(--gold-light); margin-top: 3px; font-weight: 600; }
+.raid-select-card-name { font-family: 'Cinzel', serif; font-size: 18px; font-weight: 700; color: var(--text-bright); line-height: 1.25; }
+.raid-select-card-count { font-size: 12.5px; color: var(--gold-light); margin-top: 4px; font-weight: 600; }
 
 /* ── Inside a raid: boss-select row ───────────────────────────────
    Sits permanently on the same line as "← All Raids" (see
