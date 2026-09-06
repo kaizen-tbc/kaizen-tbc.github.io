@@ -108,4 +108,4 @@ recognizable/central figure for the headshot.
 - `swp-muru.png` — M'uru
 - `swp-kiljaeden.png` — Kil'jaeden
 
-44 icons total.
+46 icons total.
