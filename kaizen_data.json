@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-09-06T14:27:49.194Z",
+  "savedAt": "2026-09-06T14:37:47.052Z",
   "roster": [
     {
       "id": 1,
@@ -6502,14 +6502,6 @@
               "arrow": false,
               "typeB": "player",
               "valueB": 14
-            },
-            {
-              "id": 6221,
-              "typeA": "text",
-              "valueA": "",
-              "arrow": false,
-              "typeB": "player",
-              "valueB": 55
             }
           ]
         },
@@ -6620,24 +6612,6 @@
           "label": "Rage Winterchill",
           "custom": false,
           "facing": 181.69762188434856,
-          "hideFacing": false
-        },
-        {
-          "id": 2,
-          "kind": "player",
-          "x": 78.0223181413823,
-          "y": 50.781455673226326,
-          "playerId": 55
-        },
-        {
-          "id": 3,
-          "kind": "mob",
-          "x": 78.0659803882902,
-          "y": 40.48720793136181,
-          "npcSlug": "spell_shadow_summoninfernal",
-          "label": "Infernal",
-          "custom": true,
-          "facing": 181.62565781530589,
           "hideFacing": false
         },
         {
@@ -6759,14 +6733,6 @@
               "arrow": false,
               "typeB": "player",
               "valueB": 55
-            },
-            {
-              "id": 3903,
-              "typeA": "text",
-              "valueA": "OT2",
-              "arrow": false,
-              "typeB": "player",
-              "valueB": null
             }
           ]
         },
@@ -6875,7 +6841,143 @@
           ]
         }
       ],
-      "mapPins": [],
+      "mapPins": [
+        {
+          "id": 17,
+          "kind": "mob",
+          "x": 58.200196939059154,
+          "y": 39.54422466649429,
+          "npcSlug": "hyjal-anetheron",
+          "label": "Anetheron",
+          "custom": false,
+          "facing": 180,
+          "hideFacing": false
+        },
+        {
+          "id": 18,
+          "kind": "player",
+          "x": 58.06921019833544,
+          "y": 48.89548381430647,
+          "playerId": 14
+        },
+        {
+          "id": 19,
+          "kind": "mob",
+          "x": 72.60834757256738,
+          "y": 35.2222078215806,
+          "npcSlug": "spell_shadow_summoninfernal",
+          "label": "Infernal",
+          "custom": true,
+          "facing": 175.58872792267425,
+          "hideFacing": false,
+          "showLabel": true
+        },
+        {
+          "id": 20,
+          "kind": "player",
+          "x": 72.7393283913805,
+          "y": 46.302275839032184,
+          "playerId": 55
+        },
+        {
+          "id": 22,
+          "kind": "role",
+          "x": 54.53266887127555,
+          "y": 34.75072418292405,
+          "role": "Melee"
+        },
+        {
+          "id": 23,
+          "kind": "role",
+          "x": 61.34378988776914,
+          "y": 33.96490390733698,
+          "role": "Melee"
+        },
+        {
+          "id": 24,
+          "kind": "role",
+          "x": 58.06921019833544,
+          "y": 30.743038645756084,
+          "role": "Melee"
+        },
+        {
+          "id": 25,
+          "kind": "role",
+          "x": 54.663649690088654,
+          "y": 65.31913077158708,
+          "role": "Ranged"
+        },
+        {
+          "id": 26,
+          "kind": "role",
+          "x": 58.41850225168807,
+          "y": 67.6765915983483,
+          "role": "Ranged"
+        },
+        {
+          "id": 27,
+          "kind": "role",
+          "x": 69.07180032359689,
+          "y": 22.727667571420135,
+          "role": "Ranged"
+        },
+        {
+          "id": 28,
+          "kind": "role",
+          "x": 71.86610714086484,
+          "y": 28.54273547909052,
+          "role": "Ranged"
+        },
+        {
+          "id": 29,
+          "kind": "role",
+          "x": 44.83991062178759,
+          "y": 56.43935526243145,
+          "role": "Ranged"
+        },
+        {
+          "id": 30,
+          "kind": "role",
+          "x": 42.30757136405644,
+          "y": 50.624287354761066,
+          "role": "Ranged"
+        },
+        {
+          "id": 31,
+          "kind": "role",
+          "x": 42.74418198931427,
+          "y": 42.76608459889038,
+          "role": "Healer"
+        },
+        {
+          "id": 32,
+          "kind": "role",
+          "x": 63.74514832668717,
+          "y": 65.71204090938062,
+          "role": "Healer"
+        },
+        {
+          "id": 33,
+          "kind": "role",
+          "x": 73.74353638261985,
+          "y": 21.23461117947863,
+          "role": "Healer"
+        },
+        {
+          "id": 34,
+          "kind": "role",
+          "x": 53.39748006122308,
+          "y": 21.86326846578525,
+          "role": "Healer"
+        },
+        {
+          "id": 35,
+          "kind": "role",
+          "x": 71.080210384165,
+          "y": 53.9247367755746,
+          "role": "Healer"
+        }
+      ],
       "imageUpdatedAt": 1788703730305
     },
     {
