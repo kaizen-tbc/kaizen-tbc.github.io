@@ -1574,6 +1574,39 @@ tr:last-child td { border-bottom: none; }
 .raid-select-card-name { font-family: 'Cinzel', serif; font-size: 15px; font-weight: 700; color: var(--text-bright); line-height: 1.25; }
 .raid-select-card-count { font-size: 11px; color: var(--gold-light); margin-top: 3px; font-weight: 600; }
 
+/* ── Inside a raid: boss-select row (one level deeper than the raid
+   grid above, same idea) - see renderBossSelectRow/openBossGroup. Small
+   portrait cards instead of a flat text tab bar, so a boss with a trash
+   guide attached doesn't hide it behind an easy-to-miss in-tab dropdown -
+   every boss is its own clickable card, always visible up front. */
+.boss-select-row { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 4px; margin-bottom: 10px; }
+.boss-select-card {
+  width: 96px; display: flex; flex-direction: column; align-items: center; gap: 6px;
+  cursor: pointer; position: relative;
+}
+.boss-select-card-portrait {
+  width: 72px; height: 72px; border-radius: 50%; background: var(--bg-card) center/cover no-repeat;
+  border: 2px solid var(--border-bright); display: flex; align-items: center; justify-content: center;
+  font-size: 26px; transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s;
+}
+.boss-select-card:hover .boss-select-card-portrait { border-color: var(--gold-dim); transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.4); }
+.boss-select-card-name { font-size: 11.5px; font-weight: 600; color: var(--text-mid); text-align: center; line-height: 1.25; }
+.boss-select-card:hover .boss-select-card-name { color: var(--text-bright); }
+/* How many phases/guides live behind this one card - a small badge, not
+   a repeated "(3)" text like the generic map pins used to do, since
+   there's already a name label right below it. */
+.boss-select-card-count {
+  position: absolute; top: -4px; right: 8px; min-width: 16px; height: 16px; padding: 0 4px;
+  border-radius: 8px; background: var(--gold); color: #0a0b0d; font-size: 10px; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+}
+.boss-select-card-add {
+  width: 72px; height: 72px; border-radius: 50%; border: 2px dashed var(--border-bright);
+  display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 800;
+  color: var(--text-dim); transition: all 0.15s; margin-top: 0;
+}
+.boss-select-card-add:hover { color: var(--gold); border-color: var(--gold-dim); }
+
 /* ── Inside a raid: back link + "Get Started" empty state ────────── */
 .strat-back-link {
   display: inline-flex; align-items: center; gap: 5px; background: none; border: none;
@@ -3862,6 +3895,39 @@ const RAID_ENCOUNTERS = {
     { name: "Kil'jaeden", bg: 'swp-kiljaeden' },
   ],
 };
+
+// A handful of RAID_ENCOUNTERS' own `bg` keys don't have a matching single
+// boss-icons portrait, because that encounter's "boss" is really a set of
+// several equally-named individuals (see assets/boss-icons/README.md) -
+// Karazhan's Opera Event, the 3-form Reliquary of Souls, the 4-member
+// Illidari Council, the Eredar Twins. Picks one specific member as the
+// representative face for the boss-select card; every other bg key
+// already matches its portrait filename directly.
+const PORTRAIT_BG_OVERRIDE = {
+  'kara-opera': 'kara-bigbadwolf',
+  'bt-reliquary': 'bt-essence-suffering',
+  'bt-council': 'bt-gathios',
+  'swp-twins': 'swp-sacrolash',
+};
+// Finds this boss's portrait slug (for assets/boss-icons/<slug>.png) by
+// fuzzy-matching its strat/trash-guide name against RAID_ENCOUNTERS - same
+// loose, hyphen/apostrophe-insensitive substring match used to swap every
+// strat over to its clean template background (see the "reset every
+// strat" pass) and to look up +Mob's per-encounter quick-picks
+// (findBossMobs). Returns null if nothing matches (an unrecognized/
+// custom boss name) - the boss-select card just shows a generic icon then.
+function bossPortraitSlug(raid, name) {
+  const norm = s => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
+  const key = norm(stratGroupKey(name));
+  if (!key) return null;
+  const list = RAID_ENCOUNTERS[raid] || [];
+  const found = list.find(e => {
+    const el = norm(e.name);
+    return el === key || el.includes(key) || key.includes(el);
+  });
+  if (!found) return null;
+  return PORTRAIT_BG_OVERRIDE[found.bg] || found.bg;
+}
 
 // Builds a deterministic, filesystem-safe base name (no extension) for a
 // strat's image from its raid + encounter name, e.g. "ssc-hydross".
@@ -8446,6 +8512,12 @@ let activeStratId = null;
 let activeRaid = null;
 let activeTabKind = 'strat'; // 'strat' | 'trash' - which kind of tab is active
 let activeTrashId = null;
+// Third level of the same drill-down pattern as activeRaid (raid cards ->
+// a raid) and _focusedSectionId (Sections menu -> a section): null shows
+// a row of boss-portrait cards for the current raid; a group key drills
+// into that one boss's own tabs (its phases, and/or a trash guide right
+// before it) - see buildBossGroups/renderBossSelectRow.
+let activeBossGroupKey = null;
 
 function openStratsSettings() {
   document.getElementById('strats-channel-input').value = stratsChannelId || '';
@@ -8714,6 +8786,30 @@ function renderRaidSelectGrid() {
   return `<div class="raid-select-grid">${cards}</div>`;
 }
 
+// One level deeper than the raid-select grid, same idea: a row of small
+// boss-portrait cards (see bossPortraitSlug) instead of the old flat text
+// tab bar - clicking one drills into that boss's own tabs (see
+// openBossGroup/renderStrats). A group with no portrait match (an
+// orphaned/standalone trash guide, or a custom boss name that doesn't
+// match RAID_ENCOUNTERS) falls back to a generic icon rather than leaving
+// the card blank.
+function renderBossSelectRow(groups) {
+  const cards = groups.map(g => {
+    const img = g.portraitSlug ? `assets/boss-icons/${g.portraitSlug}.png` : null;
+    const count = g.members.length;
+    return `<div class="boss-select-card" onclick="openBossGroup('${g.groupKey.replace(/'/g, "\\'")}')" title="${g.name.replace(/"/g, '&quot;')}">
+      <div class="boss-select-card-portrait" style="${img ? `background-image:url('${img.replace(/'/g, "\\'")}');` : ''}">${img ? '' : '🧟'}</div>
+      <div class="boss-select-card-name">${g.name}</div>
+      ${count > 1 ? `<div class="boss-select-card-count">${count}</div>` : ''}
+    </div>`;
+  }).join('');
+  const addCard = addMenuHtml('boss-add', [
+    { label: '➕ Add Strat', onclick: 'openAddStratChoice()' },
+    { label: '🧟 Add Trash Guide', onclick: 'openAddTrashGuideModal()' },
+  ], `<div class="boss-select-card-add" onclick="%TOGGLE%" title="Add a strat or trash guide">＋</div>`);
+  return `<div class="boss-select-row">${cards}${addCard}</div>`;
+}
+
 function renderStrats() {
   const list = document.getElementById('strat-list');
   if (!list) return;
@@ -8737,60 +8833,68 @@ function renderStrats() {
     return;
   }
 
-  const raidStrats = strats.filter(s => s.raid === activeRaid);
-  const mergedTabs = buildMergedRaidTabs(activeRaid);
+  const groups = buildBossGroups(activeRaid);
 
-  const activeTabValid = activeTabKind === 'strat'
-    ? raidStrats.some(s => s.id === activeStratId)
-    : trashGuides.some(g => g.id === activeTrashId && g.raid === activeRaid);
-  if (!activeTabValid) {
-    const first = mergedTabs[0];
-    const firstTarget = first?.kind === 'group' ? first.members[0] : first;
-    activeTabKind = firstTarget ? firstTarget.kind : 'strat';
-    activeStratId = firstTarget && firstTarget.kind === 'strat' ? firstTarget.id : null;
-    activeTrashId = firstTarget && firstTarget.kind === 'trash' ? firstTarget.id : null;
+  // Validate the whole drill-down chain together, not just activeStratId/
+  // activeTrashId in isolation - if anything's stale (raid switch, the
+  // active strat got deleted, a phase renamed out from under its group)
+  // drop all the way back to the boss-select row rather than guessing
+  // which boss to auto-open. Landing on the row first is the entire point
+  // of this redesign, not just its first-visit behavior.
+  const activeGroupCheck = groups.find(g => g.groupKey === activeBossGroupKey) || null;
+  const activeTabValid = !!activeGroupCheck && activeGroupCheck.members.some(m =>
+    (m.kind === 'strat' && activeTabKind === 'strat' && m.id === activeStratId) ||
+    (m.kind === 'trash' && activeTabKind === 'trash' && m.id === activeTrashId)
+  );
+  if (activeBossGroupKey != null && !activeTabValid) {
+    activeBossGroupKey = null; activeStratId = null; activeTrashId = null;
   }
+
+  // Level 1: a row of boss-portrait cards for this raid (or its empty
+  // state) - same shape as the raid-select grid one level up. Nothing
+  // below here (image area, assigns panel, trash panel) is even built
+  // until a specific boss is actually open.
+  if (activeBossGroupKey == null) {
+    const showGetStarted = groups.length === 0;
+    list.innerHTML = `
+      <button class="strat-back-link" onclick="setActiveRaid(null)">← All Raids</button>
+      ${showGetStarted ? `<div class="empty-state">
+        <div class="empty-state-icon">📋</div>
+        <div class="empty-state-text">Nothing here yet for ${activeRaid}. A strat is one encounter's diagram + assignments; a trash guide covers everything between bosses. Either one walks you through the rest.</div>
+        <div class="strat-empty-cta">
+          <button class="btn btn-gold" onclick="openAddStratChoice()">➕ Add Strat</button>
+          <button class="btn btn-small" onclick="openAddTrashGuideModal()">🧟 Add Trash Guide</button>
+        </div>
+      </div>` : renderBossSelectRow(groups)}`;
+    syncAutoAssignRaidSelect();
+    return;
+  }
+
+  const activeGroup = activeGroupCheck;
   const active = activeTabKind === 'strat' ? strats.find(s => s.id === activeStratId) : null;
   const activeGuide = activeTabKind === 'trash' ? trashGuides.find(g => g.id === activeTrashId) : null;
-  const activeGroup = findActiveGroup(mergedTabs);
 
-  // Strat tabs are draggable for reordering; trash tabs are NOT - their
-  // position is derived automatically from beforeBoss (see
-  // buildMergedRaidTabs), not manually ordered. A group tab (multiple
-  // phases and/or a trash guide sharing one boss identity) is neither -
-  // it's one button for the whole group, with the actual phase/guide
-  // picked via the dropdown inside the content pane below, not a
-  // per-phase tab button (so no drag reorder and no remove button here -
-  // see removeActiveGroupMember for how a member gets removed instead).
-  const tabs = mergedTabs.map(t => {
-    if (t.kind === 'group') {
-      const isActive = t === activeGroup;
-      return `<button class="strat-tab-btn ${isActive ? 'active' : ''}"
-        onclick="setActiveGroupTabByKey('${t.groupKey.replace(/'/g, "\\'")}')">
-        ${t.name}
+  // Level 2: this one boss's own tabs - a real button per phase/trash
+  // guide (not hidden behind a dropdown the way a shared group used to
+  // be), plus a "+" scoped to just this boss (add another phase, or a
+  // trash guide - see addPhaseToGroup/addTrashGuideToGroup, neither of
+  // which need to ask "which boss?" since that's exactly where you are).
+  const memberTabsHtml = activeGroup.members.map(m => {
+    const isActive = (m.kind === 'strat' && activeTabKind === 'strat' && m.id === activeStratId) || (m.kind === 'trash' && activeTabKind === 'trash' && m.id === activeTrashId);
+    if (m.kind === 'strat') {
+      return `<button class="strat-tab-btn ${isActive ? 'active' : ''}" onclick="setActiveStat(${m.id})">
+        ${m.label}
+        <span class="strat-tab-rm" onclick="event.stopPropagation();removeStrat(${m.id})" title="Remove">✕</span>
       </button>`;
     }
-    const isActive = t.kind === activeTabKind && (t.kind === 'strat' ? t.id === activeStratId : t.id === activeTrashId);
-    if (t.kind === 'strat') {
-      return `<button class="strat-tab-btn ${isActive ? 'active' : ''}"
-        draggable="true"
-        data-strat-id="${t.id}"
-        ondragstart="onStratDragStart(event, ${t.id})"
-        ondragover="onStratDragOver(event)"
-        ondrop="onStratDrop(event, ${t.id})"
-        ondragleave="this.classList.remove('strat-tab-drag-over')"
-        onclick="setActiveStat(${t.id})">
-        ${t.name}
-        <span class="strat-tab-rm" onclick="event.stopPropagation();removeStrat(${t.id})" title="Remove">✕</span>
-      </button>`;
-    }
-    return `<button class="strat-tab-btn trash-tab ${isActive ? 'active' : ''}"
-      onclick="setActiveTrashTab(${t.id})"
-      ${t.orphaned ? `title="This trash guide's target boss wasn't found - check what it's set to precede"` : ''}>
-      ${t.name}${t.orphaned ? ' ⚠' : ''}
-      <span class="strat-tab-rm" onclick="event.stopPropagation();removeTrashGuide(${t.id})" title="Remove">✕</span>
+    return `<button class="strat-tab-btn trash-tab ${isActive ? 'active' : ''}" onclick="setActiveTrashTab(${m.id})">
+      ${m.label}
+      <span class="strat-tab-rm" onclick="event.stopPropagation();removeTrashGuide(${m.id})" title="Remove">✕</span>
     </button>`;
-  }).join('');
+  }).join('') + addMenuHtml('boss-tabs', [
+    { label: '➕ Add Phase', onclick: `addPhaseToGroup('${activeGroup.groupKey.replace(/'/g, "\\'")}')` },
+    { label: '🧟 Add Trash Guide', onclick: `addTrashGuideToGroup('${activeGroup.groupKey.replace(/'/g, "\\'")}')` },
+  ]);
 
   // Build assigns panel
   const assigns = active ? (active.assigns || {}) : {};
@@ -8872,63 +8976,17 @@ function renderStrats() {
   const trashPanel = activeGuide ? renderTrashGuidePanel(activeGuide) : '';
   const poolSection = '';
 
-  // Only shown when the active tab is a group (multiple phases and/or a
-  // trash guide sharing one boss identity, see buildMergedRaidTabs) - lets
-  // you pick which member is actually showing below. Posting to Discord
-  // needs no awareness of this at all: picking an option just calls the
-  // same setActiveStat/setActiveTrashTab a plain tab click already uses,
-  // so confirmPostActiveTab always posts whatever ends up active either way.
-  const groupSelectorHtml = activeGroup ? `
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
-      <label style="font-size:12px;color:var(--text-dim);">Viewing:</label>
-      <select class="form-select" style="width:auto;padding:6px 10px;" onchange="setGroupMemberSelection('${activeGroup.groupKey.replace(/'/g, "\\'")}', this.value)">
-        ${activeGroup.members.map(m => {
-          const val = `${m.kind}|${m.id}`;
-          const isSel = (m.kind === 'strat' && activeTabKind === 'strat' && m.id === activeStratId) || (m.kind === 'trash' && activeTabKind === 'trash' && m.id === activeTrashId);
-          return `<option value="${val}" ${isSel ? 'selected' : ''}>${m.label.replace(/</g, '&lt;')}</option>`;
-        }).join('')}
-      </select>
-      <button class="btn btn-small" onclick="removeActiveGroupMember()" title="Remove whichever phase/guide is currently selected above">✕ Remove This</button>
-      ${addMenuHtml('group-add', [
-        { label: '➕ Add Phase', onclick: `addPhaseToGroup('${activeGroup.groupKey.replace(/'/g, "\\'")}')` },
-        { label: '🧟 Add Trash Guide', onclick: `addTrashGuideToGroup('${activeGroup.groupKey.replace(/'/g, "\\'")}')` },
-      ])}
-    </div>` : '';
-
-  // "Get Started" is a UI-only pseudo-tab, not a persisted strat/trash -
-  // it just stops appearing the moment this raid has real content (see
-  // mergedTabs.length below). The "+" tab is the ongoing "add more"
-  // mechanism either way; the empty-state's own buttons below are the
-  // first-time version of the exact same two actions.
-  const showGetStarted = mergedTabs.length === 0;
-  const tabsBarHtml = (showGetStarted ? `<button class="strat-tab-btn active" disabled>Get Started</button>` : tabs)
-    + addMenuHtml('raid-tabs', [
-      { label: '➕ Add Strat', onclick: 'openAddStratChoice()' },
-      { label: '🧟 Add Trash Guide', onclick: 'openAddTrashGuideModal()' },
-    ]);
-
-  const emptyStateHtml = `<div class="empty-state">
-    <div class="empty-state-icon">📋</div>
-    <div class="empty-state-text">Nothing here yet for ${activeRaid}. A strat is one encounter's diagram + assignments; a trash guide covers everything between bosses. Either one walks you through the rest.</div>
-    <div class="strat-empty-cta">
-      <button class="btn btn-gold" onclick="openAddStratChoice()">➕ Add Strat</button>
-      <button class="btn btn-small" onclick="openAddTrashGuideModal()">🧟 Add Trash Guide</button>
-    </div>
-  </div>`;
-
   list.innerHTML = `
-    <button class="strat-back-link" onclick="setActiveRaid(null)">← All Raids</button>
-    <div class="strat-tabs" id="strat-tabs-container">${tabsBarHtml}</div>
-    ${showGetStarted ? emptyStateHtml : `
-      ${groupSelectorHtml}
-      <div class="strat-content-wrap">
-        ${activeTabKind === 'trash' ? trashPanel : `
-          <div style="flex:1;min-width:0;">
-            ${imageArea}
-          </div>
-          ${assignsPanel}
-        `}
-      </div>`}`;
+    <button class="strat-back-link" onclick="closeBossGroup()">← All Bosses</button>
+    <div class="strat-tabs" id="strat-tabs-container">${memberTabsHtml}</div>
+    <div class="strat-content-wrap">
+      ${activeTabKind === 'trash' ? trashPanel : `
+        <div style="flex:1;min-width:0;">
+          ${imageArea}
+        </div>
+        ${assignsPanel}
+      `}
+    </div>`;
   syncAutoAssignRaidSelect();
 }
 
@@ -8937,18 +8995,29 @@ function setActiveRaid(raid) {
   activeStratId = null;
   activeTrashId = null;
   activeTabKind = 'strat';
+  activeBossGroupKey = null; // land on the boss-select row, not mid-drilled into whatever was last open
   renderStrats();
 }
 
+// activeBossGroupKey is derived here (not just set by openBossGroup) so
+// every path that can land on a specific strat/trash - drag-reorder,
+// switching to an existing strat from the create-from-template flow,
+// posting to Discord, anywhere - keeps the drill-down state honest
+// automatically, instead of every caller having to remember to manage a
+// second piece of state alongside this one.
 function setActiveStat(id) {
   activeStratId = id;
   activeTabKind = 'strat';
+  const s = strats.find(x => x.id === id);
+  activeBossGroupKey = s ? stratGroupKey(s.name) : null;
   renderStrats();
 }
 
 function setActiveTrashTab(id) {
   activeTrashId = id;
   activeTabKind = 'trash';
+  const guide = trashGuides.find(g => g.id === id);
+  activeBossGroupKey = guide ? (guide.beforeBoss ? stratGroupKey(guide.beforeBoss) : `__trash_${id}`) : null;
   renderStrats();
 }
 
@@ -8974,23 +9043,24 @@ function stratPhaseNumber(name) {
   return m ? parseInt(m[1], 10) : 0;
 }
 
-// Merges a raid's strats and trash guides into one ordered tab list.
-// Anything sharing a group key (see stratGroupKey) collapses into ONE
-// tab - a trash guide before a boss, that boss's own phases, or both
-// together - with a dropdown inside the tab to pick which one is showing
-// (see the group-selector in renderStrats). A key with only one member
-// renders as a perfectly normal single tab, unchanged from before -
-// grouping only ever kicks in once something actually needs it. A trash
-// guide whose beforeBoss doesn't match any current strat (a genuinely
-// general guide with no single target, or a typo/renamed boss) still
-// falls through to its own tab at the end, tagged orphaned only if it
-// looks like a mismatch rather than an intentional standalone guide.
-function buildMergedRaidTabs(raid) {
+// One entry per boss in a raid (always - not just once something needs
+// grouping): a trash guide right before it (if any) plus all its phases,
+// under one groupKey. This is the data source for both the boss-select
+// row (see renderBossSelectRow) and, once drilled into one, its own tab
+// bar (see renderStrats) - replaces the old buildMergedRaidTabs, which
+// only grouped once a boss had 2+ members and hid the rest behind an
+// in-tab dropdown; confirmed live that the dropdown was easy to miss
+// entirely; a trash guide could sit right there and never get noticed.
+// A trash guide whose beforeBoss doesn't match any current strat (a
+// genuinely general guide with no single target, or a typo/renamed boss)
+// gets its own group with no portrait, tagged orphaned only if it looks
+// like a mismatch rather than an intentional standalone guide.
+function buildBossGroups(raid) {
   const raidStrats = strats.filter(s => s.raid === raid);
   const raidGuides = trashGuides.filter(g => g.raid === raid);
   const usedGuides = new Set();
   const seenGroupKeys = new Set();
-  const merged = [];
+  const groups = [];
 
   for (const s of raidStrats) {
     const key = stratGroupKey(s.name);
@@ -9007,94 +9077,67 @@ function buildMergedRaidTabs(raid) {
       ...groupGuides.map(g => ({ kind: 'trash', id: g.id, label: '🧟 Trash' })),
       ...groupStrats.map(x => ({ kind: 'strat', id: x.id, label: x.name })),
     ];
-
-    if (members.length > 1) {
-      merged.push({ kind: 'group', groupKey: key, name: key, members });
-    } else {
-      merged.push({ kind: 'strat', id: s.id, name: s.name });
-    }
+    groups.push({ groupKey: key, name: key, portraitSlug: bossPortraitSlug(raid, key), members });
   }
 
   for (const g of raidGuides) {
-    if (!usedGuides.has(g.id)) merged.push({ kind: 'trash', id: g.id, name: `🧟 ${g.beforeBoss || 'Trash'}`, orphaned: !!g.beforeBoss });
+    if (usedGuides.has(g.id)) continue;
+    groups.push({
+      groupKey: `__trash_${g.id}`, name: g.beforeBoss || 'Trash', portraitSlug: null,
+      orphaned: !!g.beforeBoss, members: [{ kind: 'trash', id: g.id, label: '🧟 Trash' }],
+    });
   }
-  return merged;
+  return groups;
 }
 
-// Which group (if any) the currently active strat/trash belongs to -
-// used to decide whether to show the in-tab dropdown selector at all.
-function findActiveGroup(mergedTabs) {
-  for (const t of mergedTabs) {
-    if (t.kind !== 'group') continue;
-    const isActiveMember = t.members.some(m =>
-      (m.kind === 'strat' && activeTabKind === 'strat' && m.id === activeStratId) ||
-      (m.kind === 'trash' && activeTabKind === 'trash' && m.id === activeTrashId)
-    );
-    if (isActiveMember) return t;
-  }
-  return null;
+// Which group (if any) the currently active strat/trash belongs to.
+function findActiveGroup(groups) {
+  return groups.find(g => g.members.some(m =>
+    (m.kind === 'strat' && activeTabKind === 'strat' && m.id === activeStratId) ||
+    (m.kind === 'trash' && activeTabKind === 'trash' && m.id === activeTrashId)
+  )) || null;
 }
 
 // Remembers which member was last viewed per group (keyed by groupKey),
-// so coming back to e.g. "Illidan Stormrage" after checking another tab
+// so coming back to e.g. "Illidan Stormrage" after checking another boss
 // resumes wherever you left off (P3, say) instead of resetting to P1
 // every time - a raid night runs through phases sequentially, often with
-// other tabs checked in between, so "already active" alone (only true
-// while you never leave the tab) wasn't enough on its own.
+// other bosses checked in between, so "already active" alone (only true
+// while you never leave the group) wasn't enough on its own.
 let _lastGroupSelection = {};
 
-// Clicking a group's tab button - prefers a member that's already active
-// (still on this same group), then whatever was last viewed for this
-// specific group, then finally defaults to the first member (trash first
-// if present, else the earliest phase) the very first time it's opened.
-function setActiveGroupTab(members, groupKey) {
-  const alreadyActive = members.find(m =>
+// Drills into one boss group (see renderBossSelectRow) - picks whichever
+// member's already active (still on this group), else whatever was last
+// viewed for it, else the first member (trash first if present, else the
+// earliest phase) the very first time it's opened.
+function openBossGroup(groupKey) {
+  const group = buildBossGroups(activeRaid).find(g => g.groupKey === groupKey);
+  if (!group) return;
+  activeBossGroupKey = groupKey;
+  const alreadyActive = group.members.find(m =>
     (m.kind === 'strat' && activeTabKind === 'strat' && m.id === activeStratId) ||
     (m.kind === 'trash' && activeTabKind === 'trash' && m.id === activeTrashId)
   );
-  const last = groupKey && _lastGroupSelection[groupKey];
-  const remembered = last ? members.find(m => m.kind === last.kind && m.id === last.id) : null;
-  const target = alreadyActive || remembered || members[0];
+  const last = _lastGroupSelection[groupKey];
+  const remembered = last ? group.members.find(m => m.kind === last.kind && m.id === last.id) : null;
+  const target = alreadyActive || remembered || group.members[0];
   if (target.kind === 'strat') setActiveStat(target.id);
   else setActiveTrashTab(target.id);
-  if (groupKey) _lastGroupSelection[groupKey] = { kind: target.kind, id: target.id };
+  _lastGroupSelection[groupKey] = { kind: target.kind, id: target.id };
+}
+// Back out to the boss-select row for the current raid.
+function closeBossGroup() {
+  activeBossGroupKey = null;
+  renderStrats();
 }
 
-function setActiveGroupTabByKey(groupKey) {
-  const group = buildMergedRaidTabs(activeRaid).find(t => t.kind === 'group' && t.groupKey === groupKey);
-  if (group) setActiveGroupTab(group.members, groupKey);
-}
-
-// The dropdown's own onchange - value is "kind|id" (e.g. "strat|37").
-// Posting to Discord needs no separate handling for a grouped selection
-// at all: this just calls the exact same setActiveStat/setActiveTrashTab
-// every plain tab click already uses, so confirmPostActiveTab keeps
-// posting whatever's currently active regardless of how it got selected.
-function setGroupMemberSelection(groupKey, value) {
-  const [kind, idStr] = value.split('|');
-  const id = Number(idStr);
-  if (kind === 'strat') setActiveStat(id);
-  else setActiveTrashTab(id);
-  _lastGroupSelection[groupKey] = { kind, id };
-}
-
-// Removes whichever member is currently selected in an open group's
-// dropdown - reuses removeStrat/removeTrashGuide exactly as a normal
-// tab's own remove button would, just triggered from the dropdown's
-// row instead of a per-phase tab button (groups don't have one).
-function removeActiveGroupMember() {
-  if (activeTabKind === 'strat' && activeStratId != null) removeStrat(activeStratId);
-  else if (activeTabKind === 'trash' && activeTrashId != null) removeTrashGuide(activeTrashId);
-}
-
-// Adds the next phase to an already-visible group (2+ members sharing a
-// group key - see stratGroupKey/buildMergedRaidTabs). Reuses the normal
+// Adds the next phase to an already-visible group. Reuses the normal
 // upload modal/saveStrat() untouched - the new strat joins this group
 // automatically the moment it's saved, purely by matching its name's
 // stripped "- P<n>" suffix against the group key, same as every other
 // phase already does.
 function addPhaseToGroup(groupKey) {
-  const group = buildMergedRaidTabs(activeRaid).find(t => t.kind === 'group' && t.groupKey === groupKey);
+  const group = buildBossGroups(activeRaid).find(g => g.groupKey === groupKey);
   const nextPhase = 1 + Math.max(0, ...(group ? group.members : [])
     .filter(m => m.kind === 'strat')
     .map(m => stratPhaseNumber(strats.find(s => s.id === m.id)?.name)));
@@ -9102,18 +9145,25 @@ function addPhaseToGroup(groupKey) {
   document.getElementById('strat-name-input').value = `${groupKey} - P${nextPhase}`;
 }
 
-// Adds a trash guide already set to precede this group's boss - we
-// already know the answer to "precedes which boss?" since you're adding
-// it from inside that exact group, so this just pre-picks it (any one
-// phase's exact name works: beforeBoss gets group-key-matched the same
-// stripped way as everything else, see buildMergedRaidTabs).
+// Adds a trash guide right here - no modal/picker at all, unlike the
+// boss-select row's own "+Add Trash Guide" (which genuinely doesn't know
+// which boss yet). Both the raid and which boss this precedes are already
+// fully known just by which group you're inside, so asking again with a
+// "Precedes which boss?" dropdown was answering a question that had
+// exactly one sane answer - confirmed unnecessary-feeling live. beforeBoss
+// stays freely editable afterward from the guide's own panel either way.
 function addTrashGuideToGroup(groupKey) {
-  const group = buildMergedRaidTabs(activeRaid).find(t => t.kind === 'group' && t.groupKey === groupKey);
+  const group = buildBossGroups(activeRaid).find(g => g.groupKey === groupKey);
   const anchor = group && group.members.find(m => m.kind === 'strat');
   const anchorName = anchor ? strats.find(s => s.id === anchor.id)?.name : groupKey;
-  openAddTrashGuideModal();
-  const bossSelect = document.getElementById('trash-guide-boss-input');
-  if (bossSelect && anchorName) bossSelect.value = anchorName;
+  const guide = { id: nextTrashGuideId++, raid: activeRaid, beforeBoss: anchorName || null, waves: [{ id: _wid(), wave: 1, mobs: '', notes: '' }] };
+  trashGuides.push(guide);
+  activeBossGroupKey = groupKey;
+  activeTabKind = 'trash';
+  activeTrashId = guide.id;
+  _lastGroupSelection[groupKey] = { kind: 'trash', id: guide.id };
+  renderStrats();
+  showToast('🧟 Trash guide added - add waves below.');
 }
 
 // A wave's "mobs" text is free-form like "6 Ghoul |  2 Crypt Fiend" - pull
@@ -11956,14 +12006,29 @@ function openAssignJobModal(sid, playerId) {
   _jobModalSid = sid; _jobModalPlayerId = playerId;
   const p = getPlayerById(playerId);
   document.getElementById('job-modal-title').textContent = `Assign ${p ? p.name : ''}`;
+  // "No assignment" sits right above Custom, not the modal's X/close -
+  // closing this modal any other way (X, clicking outside, Escape) still
+  // leaves the pin placed (that already happened before this modal even
+  // opened - see dropPinIfNeeded/pickAssign), which reads as "I backed out
+  // of this" when it hasn't actually undone anything. This is the one
+  // explicit "yes, really, just the map pin, no Sections row" choice.
   document.getElementById('job-template-list').innerHTML = SECTION_TEMPLATES.map(t =>
     `<button class="btn" style="width:100%;text-align:left;margin-bottom:6px;" onclick="assignPlayerToJobTemplate('${t.key}')">${t.label}</button>`
-  ).join('') + `<button class="btn btn-gold" style="width:100%;margin-top:4px;" onclick="assignPlayerToCustomJob()">➕ Custom...</button>`;
+  ).join('')
+    + `<button class="btn" style="width:100%;text-align:left;margin-bottom:6px;color:var(--text-dim);" onclick="skipPlayerJobAssignment()">🚫 No assignment - just the map pin</button>`
+    + `<button class="btn btn-gold" style="width:100%;margin-top:4px;" onclick="assignPlayerToCustomJob()">➕ Custom...</button>`;
   document.getElementById('job-modal-overlay').classList.add('open');
 }
 function closeAssignJobModal() {
   document.getElementById('job-modal-overlay').classList.remove('open');
   _jobModalSid = null; _jobModalPlayerId = null;
+}
+// The explicit "opt out" choice - the pin they just placed was already
+// written the moment they picked a player (see dropPinIfNeeded), so this
+// isn't a cancel, it's confirming that's genuinely all they wanted.
+function skipPlayerJobAssignment() {
+  closeAssignJobModal();
+  showToast('📍 Just on the map for now - no Sections assignment made.');
 }
 function findOrCreateSectionByLabel(sid, label) {
   const s = getStrat(sid);
