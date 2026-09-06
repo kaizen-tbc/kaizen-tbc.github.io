@@ -322,6 +322,17 @@ main {
   font-weight: 700;
 }
 .btn-gold:hover { background: var(--gold-light); border-color: var(--gold-light); color: #0a0b0d; }
+/* Unsaved-changes dot on the header's Save to GitHub button (see
+   hasUnsavedChanges/pollUnsavedIndicator) - the only other signal that
+   anything is unsaved is a native beforeunload prompt, which only fires
+   on the way OUT. This is the "you should probably do that now" cue
+   while you're still here to act on it. */
+#save-to-github-btn { position: relative; }
+#save-to-github-btn.has-unsaved::after {
+  content: ''; position: absolute; top: -3px; right: -3px;
+  width: 9px; height: 9px; border-radius: 50%;
+  background: var(--red-bright); border: 2px solid var(--bg-deep);
+}
 
 .btn-danger { border-color: var(--red); color: var(--red); }
 .btn-danger:hover { background: var(--red); color: white; }
@@ -1965,7 +1976,7 @@ a[href] > div > div[style*="line-height:1.6"] {
     <button class="nav-btn" onclick="showTab('guild-logs', this)">Guild Logs</button>
   </nav>
   <div class="header-right">
-    <button class="btn btn-small btn-gold" onclick="saveToGitHub()" title="Push kaizen_data.json to GitHub">⬆ Save to GitHub</button>
+    <button class="btn btn-small btn-gold" id="save-to-github-btn" onclick="saveToGitHub()" title="Push kaizen_data.json to GitHub">⬆ Save to GitHub</button>
     <button class="btn btn-small" onclick="openGitHubSettings()" title="Settings">⚙</button>
   </div>
 </header>
@@ -10101,19 +10112,13 @@ function clearGitHubToken() {
   showToast('GitHub token cleared.');
 }
 
-async function saveToGitHub() {
-  const cfg = getGHConfig();
-  if (!cfg.token) {
-    openGitHubSettings();
-    showToast('Enter your GitHub token first.', true);
-    return false;
-  }
-
-  showToast('⬆ Pushing to GitHub...');
-
-  const payload = {
-    version: 3,
-    savedAt: new Date().toISOString(),
+// Everything that actually gets persisted to kaizen_data.json, minus the
+// version/savedAt stamp - shared between the real save (saveToGitHub,
+// which adds that stamp on top) and the unsaved-changes tracker below,
+// which needs the exact same shape to compare against a snapshot without
+// savedAt's own timestamp making every comparison look "changed."
+function buildSavePayload() {
+  return {
     // pugs/nextPugId/guildies are per-raid now (see raids[].pugs etc) - not
     // duplicated here anymore, since a stale top-level copy is exactly what
     // caused one raid's import/edit to silently erase or shadow another's.
@@ -10129,6 +10134,60 @@ async function saveToGitHub() {
     archiveChannelId,
     stratsChannelId,
   };
+}
+
+// ── Unsaved-changes tracking ──────────────────────────────────────
+// Nothing in this app auto-saves - a new strat, a replaced image, a
+// section edit, a roster import - all of it lives only in this tab's
+// memory until "Save to GitHub" is clicked. (A replaced strat image is a
+// partial exception: the raw image FILE itself uploads straight to
+// GitHub immediately, since that's its own direct API call - but the
+// metadata saying "this strat's image is now that file" only updates here,
+// in kaizen_data.json. Confirmed live: a whole Karazhan strat, image
+// included, silently reverted to "nothing here yet" because it was built
+// in a session that got closed/reloaded before Save to GitHub - the image
+// file was still sitting in the repo, just orphaned, nothing pointing at
+// it anymore.) Comparing a JSON snapshot taken right after the last real
+// load/save against the live state on the way out catches that, without
+// needing every single mutating function in this file to remember to flag
+// itself dirty.
+let _lastSavedSnapshot = null;
+function markSavedSnapshot() {
+  try { _lastSavedSnapshot = JSON.stringify(buildSavePayload()); }
+  catch (e) { _lastSavedSnapshot = null; } // never let a snapshot failure block anything else
+}
+function hasUnsavedChanges() {
+  if (_lastSavedSnapshot == null) return false; // no baseline yet (still loading) - nothing to compare against
+  try { return JSON.stringify(buildSavePayload()) !== _lastSavedSnapshot; }
+  catch (e) { return false; }
+}
+window.addEventListener('beforeunload', e => {
+  if (!hasUnsavedChanges()) return;
+  e.preventDefault();
+  e.returnValue = ''; // browsers show their own generic prompt text, not this
+});
+// A visual cue while you're still here to act on it, not just a prompt on
+// the way out - polled rather than hooked into every single mutating
+// function (there are far too many across raiders/roster/strats/pins to
+// reliably instrument, and missing even one would silently defeat the
+// point). Cheap enough at a few-second interval; skipped entirely if the
+// button isn't even in the DOM yet (very first paint).
+setInterval(() => {
+  const btn = document.getElementById('save-to-github-btn');
+  if (btn) btn.classList.toggle('has-unsaved', hasUnsavedChanges());
+}, 4000);
+
+async function saveToGitHub() {
+  const cfg = getGHConfig();
+  if (!cfg.token) {
+    openGitHubSettings();
+    showToast('Enter your GitHub token first.', true);
+    return false;
+  }
+
+  showToast('⬆ Pushing to GitHub...');
+
+  const payload = { version: 3, savedAt: new Date().toISOString(), ...buildSavePayload() };
 
   const jsonContent = JSON.stringify(payload, null, 2);
   const encoded = btoa(unescape(encodeURIComponent(jsonContent)));
@@ -10171,6 +10230,8 @@ async function saveToGitHub() {
 
     showToast('✓ Saved to GitHub! Site updates in ~60 seconds.');
     updateVersionFooter(new Date().toISOString());
+    markSavedSnapshot(); // this exact state is now the new "clean" baseline
+    document.getElementById('save-to-github-btn')?.classList.remove('has-unsaved');
     // Returns the savedAt string (truthy, so existing `if (!saved)` checks
     // still work unchanged) rather than a bare true - saveAndWaitForGitHubPages
     // uses the exact value to confirm the PUBLISHED site has actually caught
@@ -12087,6 +12148,7 @@ async function initFromJson() {
   renderAttendanceLedger();
   renderBuilder();
   renderStrats();
+  markSavedSnapshot(); // baseline for hasUnsavedChanges - whatever just loaded (or the fresh defaults) counts as "clean"
 }
 
 initFromJson();
