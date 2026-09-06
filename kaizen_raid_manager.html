@@ -1000,6 +1000,32 @@ tr:last-child td { border-bottom: none; }
 .assigns-section.collapsed .assigns-collapse-icon { transform: rotate(-90deg); }
 .assigns-section.collapsed .assigns-section-body { display: none; }
 
+/* ── Sections: two-level drill-down ──────────────────────────────
+   Same shape as the Strats page's raid-select-grid → single-raid split
+   (see renderRaidSelectGrid/.raid-select-card): the top level is a
+   compact list of "menu item" rows, one per section, each just an icon +
+   name + an assigned-count badge - click one to drill into the exact
+   editor this panel always showed before, just for that one section
+   instead of every section stacked at once (see _focusedSectionId /
+   openSectionDrill / assignsPanelBody). That's the actual fix for the
+   panel's scroll getting out of hand with more than 2-3 sections. */
+.section-menu-item {
+  display: flex; align-items: center; gap: 8px; padding: 8px 10px;
+  background: var(--bg-panel); border: 1px solid var(--border); border-radius: 4px;
+  cursor: pointer; transition: border-color 0.12s, background 0.12s;
+}
+.section-menu-item:hover { border-color: var(--gold-dim); background: var(--bg-hover); }
+.section-menu-item-text { flex: 1; min-width: 0; }
+.section-menu-item-label { font-size: 12px; font-weight: 700; color: var(--text-bright); }
+.section-menu-item-badge { font-size: 11px; font-weight: 600; margin-top: 1px; }
+.section-menu-item-chevron { color: var(--text-dim); font-size: 15px; flex-shrink: 0; }
+/* Reorder buttons stay visible (there's no other affordance hinting a
+   section can be reordered at all, same reasoning as the drilled-in
+   editor's own .section-reorder-btns); remove-section is hover-only
+   since it's destructive and the menu item is already clickable at every
+   other point on its surface. */
+.section-menu-item-rm { opacity: 0; flex-shrink: 0; }
+.section-menu-item:hover .section-menu-item-rm { opacity: 1; }
 
 /* ===== ASSIGNS PANEL ===== */
 .assigns-panel {
@@ -10254,6 +10280,24 @@ function findRowAnywhere(sid, rowId) {
   return null;
 }
 
+// Which section+row a given player currently occupies, if any - a player
+// can have a map pin with no Sections row at all (placed via +Player but
+// never actually assigned a job), so this can legitimately come back
+// null; callers treat that as "nothing to drill into" rather than an
+// error. See onMapPinPointerDown, which is the only caller.
+function findRowForPlayer(sid, playerId) {
+  const s = getStrat(sid);
+  if (!s || playerId == null) return null;
+  for (const sec of (s.sections || [])) {
+    for (const row of (sec.rows || [])) {
+      if (rowHasPlayerSide(row) && rowActorId(row) != null && Number(rowActorId(row)) === Number(playerId)) {
+        return { sec, row };
+      }
+    }
+  }
+  return null;
+}
+
 // ── Render a player slot ──────────────────────────────────────
 let _dragPid = null;
 let _dragSlotInfo = null; // { sid, rowId, side }
@@ -10533,9 +10577,30 @@ function rowCardSummary(row) {
   return { label, value: person, empty: false, actorId };
 }
 
+// What the top-level section menu item's badge shows - "3 tanks assigned,
+// or none, or 2, etc" per the actual ask. Rows with no player side at all
+// (a Lust/Drums timing note, a Notes textarea) don't have an "assigned"
+// concept, so a section made up entirely of those just shows its row
+// count instead.
+function sectionAssignBadge(sec) {
+  const rows = sec.rows || [];
+  const playerRows = rows.filter(rowHasPlayerSide);
+  if (!playerRows.length) {
+    return { text: rows.length ? `${rows.length} row${rows.length === 1 ? '' : 's'}` : 'Empty', filled: 0, total: 0 };
+  }
+  const filled = playerRows.filter(r => !rowCardSummary(r).empty).length;
+  return { text: `${filled}/${playerRows.length} assigned`, filled, total: playerRows.length };
+}
+
 // Which row is expanded right now - one at a time, app-wide (not
 // persisted), same exclusive-focus pattern the map pins already use.
 let _focusedRowId = null;
+// Which section is drilled into right now - null shows the top-level menu
+// of every section (see assignsPanelBody/renderSectionMenuItem). Same
+// app-wide, not-persisted, exclusive-focus shape as _focusedRowId and the
+// map's _mapFocusedPinId; also mirrors activeRaid on the Strats page (null
+// = the card grid, a value = one raid's content).
+let _focusedSectionId = null;
 
 // Same convention as jobsForPlayer/rowCardSummary: the "actor" is valueA
 // when there's an arrow (a relationship - the other side is just the
@@ -10671,20 +10736,48 @@ let _dragSecInfo = null;
 // section by exactly one slot or does nothing at all - there's no
 // ambiguous drop target to miss, and greying out at the top/bottom makes
 // the boundary obvious instead of letting a drop silently fail there.
-function renderSectionHtml(sid, sec, index, total) {
-  const rowsHtml = (sec.rows || []).map(r => renderRowHtml(sid, sec.id, r, sec)).join('');
+// ── Sections top level: one collapsed "menu item" per section ────
+// Clicking anywhere on the row drills in (see openSectionDrill); the
+// reorder buttons and remove button stop that click from also firing so
+// they act on their own instead of drilling in first.
+function renderSectionMenuItem(sid, sec, index, total) {
   const atTop = index === 0;
   const atBottom = index === total - 1;
-  return `<div class="assigns-section">
+  const badge = sectionAssignBadge(sec);
+  const badgeColor = badge.total === 0
+    ? 'var(--text-dim)'
+    : (badge.filled === badge.total ? 'var(--green-bright)' : (badge.filled === 0 ? 'var(--text-dim)' : 'var(--gold)'));
+  const icon = rowCardIcon(sec), color = rowCardColor(sec);
+  return `<div class="section-menu-item" onclick="openSectionDrill(${sid},${sec.id})">
+    <div class="section-reorder-btns" onclick="event.stopPropagation()">
+      <button class="section-btn" onclick="moveSectionUp(${sid},${sec.id})" ${atTop ? 'disabled' : ''} title="Move up">▲</button>
+      <button class="section-btn" onclick="moveSectionDown(${sid},${sec.id})" ${atBottom ? 'disabled' : ''} title="Move down">▼</button>
+    </div>
+    <span class="row-card-icon" style="background:${color}22;color:${color};">${icon}</span>
+    <div class="section-menu-item-text">
+      <div class="section-menu-item-label">${(sec.label || '').replace(/</g, '&lt;')}</div>
+      <div class="section-menu-item-badge" style="color:${badgeColor};">${badge.text}</div>
+    </div>
+    <span class="section-menu-item-chevron">›</span>
+    <button class="section-btn danger section-menu-item-rm" onclick="event.stopPropagation();removeSec(${sid},${sec.id})" title="Remove section">✕</button>
+  </div>`;
+}
+
+// ── Sections drilled-in view: one section's full editor ──────────
+// Exactly what every section used to look like at once, just scoped to
+// the one section currently focused (see _focusedSectionId) - the actual
+// fix for the panel's scroll getting out of hand with more than a couple
+// sections. Reorder buttons don't belong here (order is a top-level-menu
+// concept), but rename/remove still make sense to do from right inside
+// the thing you're looking at.
+function renderSectionDrill(sid, sec) {
+  const rowsHtml = (sec.rows || []).map(r => renderRowHtml(sid, sec.id, r, sec)).join('');
+  return `<button class="strat-back-link" style="margin-bottom:0;" onclick="closeSectionDrill(${sid})">← Back to Sections</button>
+  <div class="assigns-section">
     <div class="assigns-section-header" style="cursor:default;">
-      <div class="section-reorder-btns">
-        <button class="section-btn" onclick="moveSectionUp(${sid},${sec.id})" ${atTop ? 'disabled' : ''} title="Move up">▲</button>
-        <button class="section-btn" onclick="moveSectionDown(${sid},${sec.id})" ${atBottom ? 'disabled' : ''} title="Move down">▼</button>
-      </div>
-      <input class="section-label-input" value="${(sec.label||'').replace(/"/g,'&quot;')}"
-        onchange="updateSecLabel(${sid},${sec.id},this.value)"
-        onclick="event.stopPropagation()">
-      <div class="section-header-btns">
+      <input class="section-label-input" value="${(sec.label || '').replace(/"/g, '&quot;')}"
+        onchange="updateSecLabel(${sid},${sec.id},this.value)">
+      <div class="section-header-btns" style="opacity:1;">
         <button class="section-btn danger" onclick="removeSec(${sid},${sec.id})" title="Remove section">✕</button>
       </div>
     </div>
@@ -10694,6 +10787,17 @@ function renderSectionHtml(sid, sec, index, total) {
       <button class="add-row-btn" style="flex:0 0 auto;padding-left:10px;padding-right:10px;border-left:1px solid var(--border);" onclick="openRowModal(${sid},${sec.id})" title="Build a row from scratch instead">Custom</button>
     </div>
   </div>`;
+}
+
+function openSectionDrill(sid, secId) {
+  _focusedSectionId = secId;
+  _focusedRowId = null;
+  refreshAssignsPanel(sid);
+}
+function closeSectionDrill(sid) {
+  _focusedSectionId = null;
+  _focusedRowId = null;
+  refreshAssignsPanel(sid);
 }
 
 function moveSectionUp(sid, secId) {
@@ -11307,7 +11411,23 @@ function onMapPinPointerDown(e, sid, pinId) {
       // the popover is real markup, not a class), never the image.
       const wasFocused = _mapFocusedPinId === pinId;
       _mapFocusedPinId = wasFocused ? null : pinId;
-      if (wasFocused) { _highlightedPlayerId = null; applyRowCardHighlight(null); }
+      if (wasFocused) {
+        _highlightedPlayerId = null;
+        applyRowCardHighlight(null);
+      } else if (pin.kind === 'player' && pin.playerId != null) {
+        // Jump Sections straight to that player's row, in focus, instead
+        // of leaving them to go find (or drill into) the right section
+        // themselves - this is the whole point of clicking their pin in
+        // the first place. Nothing to drill into if they have a pin but no
+        // Sections row yet (placed via +Player, never actually assigned) -
+        // leave whatever Sections is currently showing alone in that case.
+        const found = findRowForPlayer(sid, pin.playerId);
+        if (found) {
+          _focusedSectionId = found.sec.id;
+          _focusedRowId = found.row.id;
+          refreshAssignsPanel(sid);
+        }
+      }
       refreshMapPins(sid);
     }
     // A pure drag (moved===true) already mutated pin.x/y live above -
@@ -11568,21 +11688,35 @@ function assignPlayerToCustomJob() {
 // itself or anything outside it (the image, the map, the needs-list).
 function assignsPanelBody(strat) {
   const sid = strat.id;
-  const sectionsHtml = strat.sections.map((sec, i) => renderSectionHtml(sid, sec, i, strat.sections.length)).join('');
 
-  // Auto-Assign lives right here - same width as the section cards below
-  // it, directly above them - rather than up in the page header, far from
+  // Auto-Assign lives right here - same width as the section list below
+  // it, directly above it - rather than up in the page header, far from
   // the Tank/Healer/Misdirection cards it actually fills. The raid-roster
   // select travels with it since it's the one control that decides what
-  // Auto-Assign actually does.
+  // Auto-Assign actually does. Shown in both the top-level menu and a
+  // drilled-in section - it fills across every section at once, so it
+  // isn't tied to whichever one you happen to be looking at.
   const autoAssignHtml = `<div style="display:flex;gap:6px;">
     <select id="auto-assign-raid-select" class="form-select" style="flex:1;min-width:0;padding:8px 10px;font-size:12px;" onchange="updateAutoAssignRaid(this.value)" title="Which raid's this-week roster Auto-Assign pulls from - remembered for next time"></select>
     <button class="btn btn-small" style="flex-shrink:0;white-space:nowrap;" onclick="confirmAutoAssign()" title="Fill empty Tank/Healer/Misdirection slots from this week's grouped roster - never overwrites an existing assignment">🪄 Auto-Assign</button>
     <button class="btn btn-small" style="flex-shrink:0;" onclick="confirmResetStratTemplate(${sid})" title="Reset this strat's sections back to its default template - discards any edits made here">↺</button>
   </div>`;
 
+  // Drilled into one section (see openSectionDrill, and onMapPinPointerDown
+  // for the map-pin shortcut into this) - its own editor plus a back link,
+  // "+ Add Section" doesn't belong here (that's a top-level-menu action).
+  const focused = _focusedSectionId != null ? strat.sections.find(s => s.id === _focusedSectionId) : null;
+  if (focused) {
+    return `${autoAssignHtml}
+    ${renderSectionDrill(sid, focused)}`;
+  }
+
+  // Top level: one collapsed menu item per section instead of every
+  // section's full row list stacked at once - the actual fix for this
+  // panel's scroll getting out of hand with more than 2-3 sections.
+  const menuHtml = strat.sections.map((sec, i) => renderSectionMenuItem(sid, sec, i, strat.sections.length)).join('');
   return `${autoAssignHtml}
-    ${sectionsHtml}
+    ${menuHtml}
     <button class="add-section-btn" onclick="openSectionModal(${sid})">+ Add Section</button>`;
 }
 
@@ -11626,6 +11760,12 @@ function removeSec(sid, secId) {
   const s = getStrat(sid);
   if (!s) return;
   s.sections = s.sections.filter(sec => sec.id !== secId);
+  // The section being removed might be the one currently drilled into
+  // (removable from right inside its own editor, see renderSectionDrill) -
+  // without this, assignsPanelBody would go looking for a section id that
+  // no longer exists and silently fall through to the top-level menu
+  // anyway, but it's clearer to just say so.
+  if (_focusedSectionId === secId) _focusedSectionId = null;
   renderStrats();
 }
 
@@ -11654,6 +11794,10 @@ function addSection(sid, label, typeA, arrow, typeB) {
   const rowId = _rid();
   const row = { id: rowId, typeA, valueA: typeA === 'player' ? null : (typeA === 'notes' ? '' : ''), arrow: !!arrow, typeB: typeB || null, valueB: typeB === 'player' ? null : (typeB === 'text' ? '' : null) };
   s.sections.push({ id: secId, label, rows: [row] });
+  // Land inside the section you just made, not back at the top-level menu
+  // looking at it from the outside - same reasoning as switching straight
+  // to a newly-created strat instead of leaving you on the raid grid.
+  _focusedSectionId = secId;
   renderStrats();
   return row;
 }
@@ -11687,7 +11831,9 @@ function addSectionFromTemplate(sid, templateKey) {
   const tpl = SECTION_TEMPLATES.find(t => t.key === templateKey);
   if (!tpl) return;
   if (!s.sections) s.sections = [];
-  s.sections.push({ id: _sid(), label: tpl.label, rows: tpl.build() });
+  const secId = _sid();
+  s.sections.push({ id: secId, label: tpl.label, rows: tpl.build() });
+  _focusedSectionId = secId;
   closeSectionTemplateModal();
   renderStrats();
 }
