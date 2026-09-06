@@ -1359,6 +1359,7 @@ tr:last-child td { border-bottom: none; }
 .map-pin.focused { z-index: 20; }
 
 .map-pin-badge {
+  position: relative;
   width: 36px; height: 36px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
   font-size: 14px; font-weight: 700;
@@ -1385,7 +1386,13 @@ tr:last-child td { border-bottom: none; }
 .map-pin[data-kind="mob"].idle .map-pin-badge { width: 50px; height: 50px; }
 .map-pin[data-kind="mob"].idle:hover .map-pin-badge { width: 58px; height: 58px; }
 .map-pin[data-kind="mob"].dragging .map-pin-badge { width: 68px !important; height: 68px !important; }
-.map-pin[data-kind="mob"] .map-pin-facing-handle { width: 16px; height: 16px; top: -7px; border-width: 3px; }
+/* .map-pin.focused .map-pin-badge (below) only adds a box-shadow - with
+   no size rule of its own a focused mob pin would fall back to the base
+   36px badge, i.e. SHRINK from its 50px idle size the moment you click it.
+   Restore it to (bigger than idle, matching the "focused = emphasized"
+   feel every other pin kind gets for free since their base 36px already
+   sits above their idle size). */
+.map-pin[data-kind="mob"].focused .map-pin-badge { width: 58px; height: 58px; }
 .map-pin[data-role="Tank"] .map-pin-badge { border-color: var(--gold); color: var(--gold-light); }
 .map-pin[data-role="Healer"] .map-pin-badge { border-color: var(--green-bright); color: var(--green-bright); }
 .map-pin[data-role="Ranged"] .map-pin-badge { border-color: var(--teal); color: var(--teal); }
@@ -1408,24 +1415,31 @@ tr:last-child td { border-bottom: none; }
 .map-pin.linked .map-pin-badge { box-shadow: 0 0 0 3px var(--teal), 0 2px 10px rgba(0,0,0,0.5); }
 
 /* Mob pin's facing indicator (see onMobFacingHandlePointerDown) - the
-   portrait itself never rotates, only this overlay. A conic-gradient wedge
-   masked down to a ring (not a filled pie slice) reads as an arc on the
-   rim, same idea as raidplan.io's own facing indicator. 0deg = up, matching
-   the handle's resting position. */
+   portrait itself never rotates, only this overlay. Only rendered at all
+   while the pin is focused (see renderOneMapPin) - idle mob pins show a
+   clean portrait with nothing on top; clicking the pin reveals the pointer
+   to adjust it, and unfocusing hides it again. A stick-and-triangle pointer
+   reads as a direction at a glance better than a bare dot did, and stands
+   clear of the portrait itself rather than sitting right on its rim. 0deg =
+   straight up, matching the pointer's resting position. */
 .map-pin-facing { position: absolute; inset: 0; pointer-events: none; transform-origin: 50% 50%; }
-.map-pin-facing-arc {
-  position: absolute; inset: -4px; border-radius: 50%;
-  background: conic-gradient(from -35deg, transparent 0deg, var(--red-bright) 0deg, var(--red-bright) 70deg, transparent 70deg);
-  -webkit-mask: radial-gradient(circle, transparent 60%, black 62%, black 100%);
-  mask: radial-gradient(circle, transparent 60%, black 62%, black 100%);
+.map-pin-facing-pointer {
+  position: absolute; top: -20px; left: 50%; transform: translateX(-50%);
+  width: 3px; height: 16px; border-radius: 2px;
+  background: var(--red-bright); box-shadow: 0 1px 4px rgba(0,0,0,0.6);
+  cursor: grab; pointer-events: auto;
 }
-.map-pin-facing-handle {
-  position: absolute; top: -5px; left: 50%; transform: translateX(-50%);
-  width: 11px; height: 11px; border-radius: 50%;
-  background: var(--red-bright); border: 2px solid #fff;
-  cursor: grab; pointer-events: auto; box-shadow: 0 1px 4px rgba(0,0,0,0.5);
+/* Extends the grabbable area well past the thin stick itself (a 3px-wide
+   hit target is unusable) without widening what's actually drawn. */
+.map-pin-facing-pointer::after {
+  content: ''; position: absolute; inset: -8px -10px;
 }
-.map-pin-facing-handle:active { cursor: grabbing; }
+.map-pin-facing-pointer::before {
+  content: ''; position: absolute; top: -9px; left: 50%; transform: translateX(-50%);
+  width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent;
+  border-bottom: 9px solid var(--red-bright);
+}
+.map-pin-facing-pointer:active { cursor: grabbing; }
 
 .map-pin-label {
   font-size: 10.5px; font-weight: 600; color: var(--text-bright);
@@ -1435,9 +1449,19 @@ tr:last-child td { border-bottom: none; }
 .map-pin.idle .map-pin-label { display: none; }
 /* "Show raider names" toolbar checkbox (see renderMapToolbar) - a plain
    class toggle on the layer wrapper, no re-render needed, so flipping it
-   can't cause the same image-flicker every other full render here did. */
-.map-pin-layer.show-names .map-pin.idle .map-pin-label { display: block; }
+   can't cause the same image-flicker every other full render here did.
+   :not([data-kind="mob"]) - mob-pin name visibility is its own, separate
+   thing (a per-pin "Show name" checkbox in that pin's own popover, see
+   renderMapPopover/toggleMobPinLabel), not tied to this raider-only toggle;
+   otherwise turning this on used to also force on every mob label at once,
+   which is exactly what was overlapping/clipping into an unreadable mess
+   when two portraits (e.g. Attumen + Midnight) sit close together. */
+.map-pin-layer.show-names .map-pin:not([data-kind="mob"]).idle .map-pin-label { display: block; }
 .map-pin-label .class-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 5px; }
+/* Mob names run longer on average ("Baroness Dorothea Millstipe") than a
+   player's - a little more width and a touch bigger before it has to
+   ellipsize. */
+.map-pin[data-kind="mob"] .map-pin-label { max-width: 190px; font-size: 11px; }
 
 .map-popover {
   position: absolute; width: 230px; background: var(--bg-card);
@@ -11044,12 +11068,23 @@ function renderOneMapPin(strat, pin) {
 
   // The portrait itself never rotates - just this overlay (see
   // onMobFacingHandlePointerDown) - so it's a sibling of the icon inside
-  // the badge, not wrapping it.
-  const facingHtml = (pin.kind === 'mob' && !pin.hideFacing) ? `
+  // the badge, not wrapping it. Only drawn while focused: a mob pin should
+  // read as a clean portrait at rest, not a target with a red dot glued to
+  // it forever - the pointer only needs to exist while you're actually
+  // looking at (and might want to adjust) that specific pin.
+  const facingHtml = (pin.kind === 'mob' && !pin.hideFacing && isFocused) ? `
     <div class="map-pin-facing" style="transform:rotate(${pin.facing || 0}deg);">
-      <div class="map-pin-facing-arc"></div>
-      <div class="map-pin-facing-handle" onpointerdown="onMobFacingHandlePointerDown(event, ${strat.id}, ${pin.id})" title="Drag to set facing"></div>
+      <div class="map-pin-facing-pointer" onpointerdown="onMobFacingHandlePointerDown(event, ${strat.id}, ${pin.id})" title="Drag to set facing"></div>
     </div>` : '';
+
+  // Mob-pin name visibility is entirely its own thing - a per-pin "Show
+  // name" checkbox (see renderMapPopover/toggleMobPinLabel), not the
+  // idle/focused state and not the global "Show raider names" toggle. An
+  // inline style here wins over both of those CSS rules unconditionally,
+  // which is the point: two close-together portraits (Attumen + Midnight)
+  // used to force both names on together and overlap into a mess, with no
+  // way to quiet just one of them.
+  const labelStyle = pin.kind === 'mob' ? (pin.showLabel === false ? 'display:none;' : 'display:block;') : '';
 
   return `<div class="map-pin ${isFocused ? 'focused' : 'idle'} ${filled ? 'filled' : ''} ${isLinked ? 'linked' : ''}"
     data-role="${role}" data-kind="${pin.kind}" data-id="${pin.id}" ${pin.kind === 'player' && pin.playerId != null ? `data-player-id="${pin.playerId}"` : ''}
@@ -11057,7 +11092,7 @@ function renderOneMapPin(strat, pin) {
     title="${title.replace(/"/g, '&quot;')}"
     onpointerdown="onMapPinPointerDown(event, ${strat.id}, ${pin.id})">
     <div class="map-pin-badge" style="${badgeStyle}">${iconHtml}${facingHtml}</div>
-    <div class="map-pin-label">${labelHtml}</div>
+    <div class="map-pin-label" style="${labelStyle}">${labelHtml}</div>
   </div>${isFocused ? renderMapPopover(strat, pin) : ''}`;
 }
 
@@ -11116,16 +11151,28 @@ function renderMapPopover(strat, pin) {
     // assignment counterpart for an NPC the way there is for a player, so
     // this popover is the only place any of it can live.
     title = pin.label || 'Mob';
+    // A dedicated wide popover for this kind (see the .map-popover-mob
+    // width override below) - four distinct controls (label, change icon,
+    // two checkboxes) were packed edge-to-edge in the default 230px/no-gap
+    // layout and read as one crammed block; each row gets real breathing
+    // room and a left-aligned checkbox list now instead of centering
+    // single lines that don't need centering.
     body = `
-      <input type="text" class="form-input" style="width:100%;margin-bottom:10px;" value="${(pin.label || '').replace(/"/g, '&quot;')}"
+      <input type="text" class="form-input" style="width:100%;margin-bottom:12px;" value="${(pin.label || '').replace(/"/g, '&quot;')}"
         placeholder="Label" onchange="setMobPinLabel(${strat.id},${pin.id},this.value)">
-      <div style="text-align:center;margin-bottom:10px;">
+      <div style="text-align:center;margin-bottom:14px;">
         <a href="#" class="map-popover-link" onclick="event.preventDefault();openMobCustomModal(${strat.id},${pin.id})">🔁 Change icon</a>
       </div>
-      <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-mid);cursor:pointer;justify-content:center;">
-        <input type="checkbox" ${pin.hideFacing ? 'checked' : ''} onchange="toggleMobPinFacing(${strat.id},${pin.id},this.checked)">
-        Hide facing indicator
-      </label>
+      <div style="display:flex;flex-direction:column;gap:9px;padding-top:8px;border-top:1px solid var(--border);">
+        <label style="display:flex;align-items:center;gap:7px;font-size:12px;color:var(--text-mid);cursor:pointer;">
+          <input type="checkbox" ${pin.showLabel === false ? '' : 'checked'} onchange="toggleMobPinLabel(${strat.id},${pin.id},this.checked)">
+          Show name on map
+        </label>
+        <label style="display:flex;align-items:center;gap:7px;font-size:12px;color:var(--text-mid);cursor:pointer;">
+          <input type="checkbox" ${pin.hideFacing ? 'checked' : ''} onchange="toggleMobPinFacing(${strat.id},${pin.id},this.checked)">
+          Hide facing indicator
+        </label>
+      </div>
     `;
   } else {
     title = 'Text label';
@@ -11133,7 +11180,11 @@ function renderMapPopover(strat, pin) {
       placeholder="Label text..." onchange="setMapPinText(${strat.id},${pin.id},this.value)">${pin.text || ''}</textarea>`;
   }
 
-  return `<div class="map-popover" style="left:calc(${pin.x}% + 24px);top:calc(${pin.y}% - 10px);" onpointerdown="event.stopPropagation()">
+  // Mob's popover carries more (label + change-icon + 2 checkboxes) than
+  // any other kind - a bit wider so that list doesn't feel squeezed inside
+  // the same 230px every other, sparser popover uses.
+  const popoverWidth = pin.kind === 'mob' ? 270 : 230;
+  return `<div class="map-popover" style="left:calc(${pin.x}% + 24px);top:calc(${pin.y}% - 10px);width:${popoverWidth}px;" onpointerdown="event.stopPropagation()">
     <div class="map-popover-head">
       <span class="map-popover-title">${title}</span>
       <button style="background:none;border:none;color:var(--red-bright);cursor:pointer;font-size:18px;line-height:1;padding:2px;" onclick="removeMapPin(${strat.id},${pin.id})" title="Delete pin">🗑</button>
@@ -11255,6 +11306,16 @@ function toggleMobPinFacing(sid, pinId, hide) {
   pin.hideFacing = hide;
   refreshMapPins(sid);
 }
+// Per-pin, independent of the global "Show raider names" toggle (see
+// .map-pin-layer.show-names's :not([data-kind="mob"]) exclusion) - lets an
+// officer quiet an individual mob's name (e.g. Midnight, sitting right next
+// to Attumen) without hiding every mob name on the map.
+function toggleMobPinLabel(sid, pinId, show) {
+  const pin = getPin(sid, pinId);
+  if (!pin) return;
+  pin.showLabel = show;
+  refreshMapPins(sid);
+}
 
 // The custom-icon picker modal - shared by "+Mob > Custom..." (creating a
 // brand new pin, _mobModalPinId null) and a mob pin's own "Change icon"
@@ -11320,11 +11381,12 @@ function confirmMobCustomModal() {
   closeMobCustomModal();
 }
 
-// Rotates the small "facing" indicator around a mob pin's rim - the
-// portrait itself never rotates, just this overlay (see renderOneMapPin).
-// Same live-mutate-style-then-commit-on-drop shape as the pin's own
-// position-drag in onMapPinPointerDown, just an angle instead of an x/y -
-// event.stopPropagation() keeps this from also triggering that drag.
+// Rotates the small "facing" pointer around a mob pin - the portrait itself
+// never rotates, just this overlay (see renderOneMapPin), and it's only
+// even in the DOM to grab while the pin is focused. Same live-mutate-
+// style-then-commit-on-drop shape as the pin's own position-drag in
+// onMapPinPointerDown, just an angle instead of an x/y - event.stopPropagation()
+// keeps this from also triggering that drag.
 function onMobFacingHandlePointerDown(e, sid, pinId) {
   e.preventDefault();
   e.stopPropagation();
