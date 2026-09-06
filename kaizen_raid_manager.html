@@ -1450,6 +1450,23 @@ tr:last-child td { border-bottom: none; }
    (idle/focused/dragging), not a size change of its own. */
 .map-pin.linked .map-pin-badge { box-shadow: 0 0 0 3px var(--teal), 0 2px 10px rgba(0,0,0,0.5); }
 
+/* A text pin is a real floating text block, not a badge+label pin (see
+   renderTextMapPin) - no circle, no ring, just the styled text itself
+   sitting on the map. white-space:pre-wrap so a manually-typed line break
+   survives; the width cap keeps a long note from stretching edge-to-edge
+   across the whole strat image. line-height explicit (not inherited from
+   .map-pin-layer's line-height:0, same issue as .map-pin-label had) so
+   the text doesn't visually spill past its own box. */
+.map-text-block {
+  line-height: 1.3; white-space: pre-wrap; word-break: break-word; max-width: 320px;
+  cursor: grab; outline: none; user-select: none; text-align: center;
+}
+.map-text-block[contenteditable="true"] {
+  cursor: text; user-select: text; min-width: 40px;
+  background: rgba(20,20,24,0.35); border-radius: 4px; padding: 2px 5px;
+  box-shadow: 0 0 0 1px rgba(240,192,64,0.5);
+}
+
 /* Mob pin's facing indicator (see onMobFacingHandlePointerDown) - the
    portrait itself never rotates, only this overlay. Two separate pieces,
    matching raidplan.io's own version of this: a small triangle that hugs
@@ -3214,6 +3231,24 @@ const MAP_PIN_ROLES = [
   { key: 'Melee', icon: '⚔', letter: 'M', color: 'var(--red-bright)' },
 ];
 function pinRoleMeta(role) { return MAP_PIN_ROLES.find(r => r.key === role) || MAP_PIN_ROLES[2]; }
+
+// Blizzard's 8 standard raid target markers (Star through Skull, same
+// order/numbering as the game's own raid-marker menu - see
+// https://addonstudio.org/wiki/WoW:Target_markers). Rendered from
+// assets/marks/<key>.png - not shipped with the repo yet; see
+// assets/marks/SPEC.md for what that set needs to look like. A missing
+// file just shows as a broken image until it's added, same as a mob pin
+// before its portrait existed.
+const MARK_TYPES = [
+  { key: 'star', label: 'Star' },
+  { key: 'circle', label: 'Circle' },
+  { key: 'diamond', label: 'Diamond' },
+  { key: 'triangle', label: 'Triangle' },
+  { key: 'moon', label: 'Moon' },
+  { key: 'square', label: 'Square' },
+  { key: 'cross', label: 'Cross' },
+  { key: 'skull', label: 'Skull' },
+];
 
 // Hand-drawn (not a font/emoji) so "white icon on a solid fill" is
 // guaranteed rather than at the mercy of whether a given Unicode glyph
@@ -11219,6 +11254,12 @@ function renderMapToolbar(strat) {
     })),
     { label: '➕ Custom...', onclick: `openMobCustomModal(${strat.id})` },
   ], `<button class="btn btn-small" onclick="%TOGGLE%" title="Add a mob/NPC portrait">＋ Mob</button>`);
+  // Always the same 8, unlike +Mob's per-encounter list - these are
+  // Blizzard's fixed raid target icons, not tied to any specific strat.
+  const markMenuHtml = addMenuHtml('mark', MARK_TYPES.map(m => ({
+    label: `<img src="assets/marks/${m.key}.png" style="width:16px;height:16px;object-fit:contain;vertical-align:middle;margin-right:6px;" onerror="this.style.visibility='hidden'">${m.label}`,
+    onclick: `addMarkMapPin(${strat.id},'${m.key}')`,
+  })), `<button class="btn btn-small" onclick="%TOGGLE%" title="Add a raid target marker (skull, star, etc.)">＋ Mark</button>`);
 
   return `<div class="map-toolbar">
     <span style="font-size:11px;color:var(--text-dim);">Generic:</span>
@@ -11227,6 +11268,7 @@ function renderMapToolbar(strat) {
     <button class="btn btn-small" onclick="openPickerForNewPin(${strat.id})" title="Place a specific person on the map">＋ Player</button>
     <button class="btn btn-small" onclick="addTextMapPin(${strat.id})" title="Drop a free text label">＋ Text</button>
     ${mobMenuHtml}
+    ${markMenuHtml}
     <div style="margin-left:auto;display:flex;align-items:center;gap:14px;">
       <a href="#" class="map-popover-link" onclick="event.preventDefault();confirmClearAllPins(${strat.id})" title="Delete every pin on this strat's map">🗑 Clear all pins</a>
       <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-dim);cursor:pointer;"
@@ -11282,7 +11324,46 @@ function applyPinHighlight(playerId) {
   }
 }
 
+// A text pin is a real floating text block on the map, not a badge+label
+// pin like every other kind - there's nothing to circle-crop or ring-color,
+// it's just styled text (font size/weight/style/color, an optional
+// outline) sitting directly on the image, Figma/Photoshop-style. Kept as
+// its own render path entirely rather than shoehorned into the shared
+// badge/label structure below. See startTextEdit/commitTextEdit and the
+// 'text' branch of renderMapPopover for the formatting toolbar.
+function textStrokeCss(strokeColor) {
+  if (!strokeColor) return '';
+  // A handful of offset shadows reads as a clean outline at any size and
+  // works the same in every browser - -webkit-text-stroke clips/looks
+  // uneven at small sizes and isn't the same everywhere.
+  const c = strokeColor;
+  const offs = [[-1,-1],[1,-1],[-1,1],[1,1],[0,-1],[0,1],[-1,0],[1,0]];
+  return offs.map(([x,y]) => `${x}px ${y}px 0 ${c}`).join(', ');
+}
+function renderTextMapPin(strat, pin) {
+  const isFocused = _mapFocusedPinId === pin.id;
+  const fontSize = pin.fontSize || 20;
+  const bold = pin.bold !== false; // default true - these are meant to stand out, matching the bold white callouts on the original strat screenshots
+  const italic = !!pin.italic;
+  const color = pin.color || '#ffffff';
+  const shadow = textStrokeCss(pin.strokeColor);
+  const style = `font-size:${fontSize}px;font-weight:${bold ? 800 : 400};font-style:${italic ? 'italic' : 'normal'};color:${color};${shadow ? `text-shadow:${shadow};` : ''}`;
+  const escaped = (pin.text || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return `<div class="map-pin idle" data-kind="text" data-id="${pin.id}"
+    style="left:${pin.x}%;top:${pin.y}%;"
+    title="Click to edit this text"
+    onpointerdown="onMapPinPointerDown(event, ${strat.id}, ${pin.id})">
+    <div class="map-text-block" contenteditable="${isFocused}" spellcheck="false" style="${style}"
+      onpointerdown="if(this.isContentEditable) event.stopPropagation();"
+      oninput="commitTextPinEdit(${strat.id}, ${pin.id}, this)"
+      onblur="commitTextPinEdit(${strat.id}, ${pin.id}, this)"
+      onkeydown="if(event.key==='Escape') this.blur();"
+    >${escaped || 'Text'}</div>
+  </div>${isFocused ? renderMapPopover(strat, pin) : ''}`;
+}
+
 function renderOneMapPin(strat, pin) {
+  if (pin.kind === 'text') return renderTextMapPin(strat, pin);
   const isFocused = _mapFocusedPinId === pin.id;
   const isLinked = pin.kind === 'player' && pin.playerId != null && _highlightedPlayerId != null && Number(pin.playerId) === Number(_highlightedPlayerId);
   let role = '', iconHtml = '', labelHtml = '', fillColor = '', filled = false, title = '', badgeStyle = '';
@@ -11330,7 +11411,19 @@ function renderOneMapPin(strat, pin) {
     badgeStyle = `border-color:var(--border-bright);padding:0;`;
     labelHtml = pin.label || 'Mob';
     title = pin.label || 'Mob';
+  } else if (pin.kind === 'mark') {
+    // Blizzard's 8 raid target icons (see MARK_TYPES) - plain flat art, no
+    // ring/color needed the way role pins get one, the icon's own color IS
+    // the marker (yellow star, orange circle, etc.), same reasoning as not
+    // drawing a ring around a mob portrait.
+    const markDef = MARK_TYPES.find(m => m.key === pin.markType);
+    iconHtml = `<img src="assets/marks/${pin.markType}.png" alt="" style="width:100%;height:100%;object-fit:contain;">`;
+    badgeStyle = `border-color:transparent;background:transparent;padding:2px;`;
+    labelHtml = markDef ? markDef.label : 'Mark';
+    title = markDef ? markDef.label : 'Mark';
   } else {
+    // Unreachable in practice ('text' returns via renderTextMapPin above)
+    // - kept as a harmless fallback rather than deleted outright.
     iconHtml = '📝';
     labelHtml = pin.text || 'Label';
     title = pin.text || 'Text label - click to edit';
@@ -11446,16 +11539,60 @@ function renderMapPopover(strat, pin) {
         </label>
       </div>
     `;
-  } else {
-    title = 'Text label';
-    body = `<textarea class="form-input" style="width:100%;min-height:60px;font-size:12px;resize:vertical;"
-      placeholder="Label text..." onchange="setMapPinText(${strat.id},${pin.id},this.value)">${pin.text || ''}</textarea>`;
+  } else if (pin.kind === 'mark') {
+    // Minimal on purpose - a raid target marker is just "which of the 8,
+    // and where," nothing to label or configure beyond that. All 8 shown
+    // directly rather than behind another click - the current one gets a
+    // gold ring so it's obvious which is active.
+    const markDef = MARK_TYPES.find(m => m.key === pin.markType);
+    title = markDef ? markDef.label : 'Mark';
+    body = `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;">
+      ${MARK_TYPES.map(m => `<button class="btn btn-small" style="padding:6px;${m.key === pin.markType ? 'border-color:var(--gold);box-shadow:0 0 0 1px var(--gold);' : ''}"
+          title="${m.label}" onclick="setMarkPinType(${strat.id},${pin.id},'${m.key}')">
+          <img src="assets/marks/${m.key}.png" alt="${m.label}" style="width:20px;height:20px;object-fit:contain;display:block;margin:0 auto;" onerror="this.style.visibility='hidden'">
+        </button>`).join('')}
+    </div>`;
+  } else if (pin.kind === 'text') {
+    // Formatting toolbar for the floating text block itself (see
+    // renderTextMapPin) - font size, bold/italic, text color, and an
+    // optional outline color for contrast against a busy background.
+    // Editing the actual words happens inline, right on the map (click
+    // into the text itself), not here.
+    const fontSize = pin.fontSize || 20;
+    const bold = pin.bold !== false;
+    const italic = !!pin.italic;
+    const color = pin.color || '#ffffff';
+    const activeBtn = 'background:var(--gold);color:#0a0b0d;border-color:var(--gold);';
+    title = 'Text';
+    body = `
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+        <label style="font-size:11px;color:var(--text-dim);">Size</label>
+        <input type="number" min="10" max="72" value="${fontSize}" class="form-input" style="width:52px;padding:5px 6px;"
+          onchange="setTextPinStyle(${strat.id},${pin.id},'fontSize',parseInt(this.value,10)||20)">
+        <button class="section-btn" style="font-weight:800;${bold ? activeBtn : ''}" title="Bold"
+          onclick="setTextPinStyle(${strat.id},${pin.id},'bold',${!bold})">B</button>
+        <button class="section-btn" style="font-style:italic;${italic ? activeBtn : ''}" title="Italic"
+          onclick="setTextPinStyle(${strat.id},${pin.id},'italic',${!italic})">I</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+        <label style="font-size:11px;color:var(--text-dim);flex:1;">Text color</label>
+        <input type="color" value="${color}" style="width:34px;height:24px;padding:0;border:none;background:none;cursor:pointer;"
+          onchange="setTextPinStyle(${strat.id},${pin.id},'color',this.value)">
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-mid);cursor:pointer;flex:1;">
+          <input type="checkbox" ${pin.strokeColor ? 'checked' : ''} onchange="toggleTextPinStroke(${strat.id},${pin.id},this.checked)">
+          Outline
+        </label>
+        ${pin.strokeColor ? `<input type="color" value="${pin.strokeColor}" style="width:34px;height:24px;padding:0;border:none;background:none;cursor:pointer;" onchange="setTextPinStyle(${strat.id},${pin.id},'strokeColor',this.value)">` : ''}
+      </div>
+    `;
   }
 
-  // Mob's popover carries more (label + change-icon + 2 checkboxes) than
-  // any other kind - a bit wider so that list doesn't feel squeezed inside
-  // the same 230px every other, sparser popover uses.
-  const popoverWidth = pin.kind === 'mob' ? 270 : 230;
+  // Mob's and text's popovers carry more controls than any other kind - a
+  // bit wider so that list doesn't feel squeezed inside the same 230px
+  // every other, sparser popover uses.
+  const popoverWidth = (pin.kind === 'mob' || pin.kind === 'text') ? 270 : 230;
   return `<div class="map-popover" style="left:calc(${pin.x}% + 24px);top:calc(${pin.y}% - 10px);width:${popoverWidth}px;" onpointerdown="event.stopPropagation()">
     <div class="map-popover-head">
       <span class="map-popover-title">${title}</span>
@@ -11562,14 +11699,66 @@ function addRoleMapPin(sid, role) {
   refreshMapPins(sid);
   showToast(`📍 ${role} pin dropped in the center - drag it into position.`);
 }
+// A real floating text block (see renderTextMapPin), not a note-pin you
+// click to open a popover - defaults land it already in edit mode with
+// its placeholder text pre-selected, same as dropping a new text layer in
+// Figma/Photoshop: it's obviously waiting for you to just start typing.
 function addTextMapPin(sid) {
-  const pin = addMapPin(sid, 'text', { text: '' });
-  _mapFocusedPinId = pin ? pin.id : null;
+  const pin = addMapPin(sid, 'text', {
+    text: 'Text', fontSize: 20, bold: true, italic: false, color: '#ffffff', strokeColor: '#000000',
+  });
+  if (!pin) return;
+  _mapFocusedPinId = pin.id;
   refreshMapPins(sid);
+  setTimeout(() => selectTextPinContent(sid, pin.id), 0);
 }
-function setMapPinText(sid, pinId, text) {
+// Selects the block's whole text content so the very next keystroke
+// replaces it, rather than appending after/before the placeholder.
+function selectTextPinContent(sid, pinId) {
+  const el = document.querySelector(`.map-pin[data-kind="text"][data-id="${pinId}"] .map-text-block`);
+  if (!el) return;
+  el.focus();
+  const range = document.createRange();
+  range.selectNodeContents(el);
+  const sel = window.getSelection();
+  sel.removeAllRanges();
+  sel.addRange(range);
+}
+// Persists the live-typed content - wired to both oninput (every
+// keystroke, so nothing is ever lost regardless of how the pin loses
+// focus) and onblur (redundant safety net, harmless to call twice).
+// innerText (not textContent) so line breaks the user actually typed
+// survive.
+function commitTextPinEdit(sid, pinId, el) {
   const pin = getPin(sid, pinId);
-  if (pin) pin.text = text;
+  if (pin) pin.text = el.innerText.trim() ? el.innerText : '';
+}
+// Formatting toolbar controls (see renderMapPopover's 'text' branch) - all
+// route through here rather than one setter per field. Re-focuses the
+// text block afterward (without re-selecting its content - that would
+// nuke whatever the officer already typed) since refreshMapPins tears
+// down and recreates the contenteditable element on every style change.
+function setTextPinStyle(sid, pinId, field, value) {
+  const pin = getPin(sid, pinId);
+  if (!pin) return;
+  pin[field] = value;
+  refreshMapPins(sid);
+  const el = document.querySelector(`.map-pin[data-kind="text"][data-id="${pinId}"] .map-text-block`);
+  el?.focus();
+}
+function toggleTextPinStroke(sid, pinId, on) {
+  const pin = getPin(sid, pinId);
+  if (!pin) return;
+  // Remembers the last color used rather than just flipping a boolean -
+  // unchecking then rechecking "Outline" shouldn't force you to re-pick a
+  // color you already chose a minute ago.
+  if (on) {
+    pin.strokeColor = pin._lastStrokeColor || '#000000';
+  } else {
+    pin._lastStrokeColor = pin.strokeColor;
+    pin.strokeColor = '';
+  }
+  refreshMapPins(sid);
 }
 
 // ── Mob pins ─────────────────────────────────────────────────────
@@ -11583,6 +11772,23 @@ function addMobMapPin(sid, slug, label, custom) {
   addMapPin(sid, 'mob', { npcSlug: slug, label, custom: !!custom, facing: 0, hideFacing: false });
   refreshMapPins(sid);
   showToast(`📍 ${label} pin dropped in the center - drag it into position.`);
+}
+
+// ── Raid target marker pins (see MARK_TYPES) ────────────────────
+function addMarkMapPin(sid, markType) {
+  const def = MARK_TYPES.find(m => m.key === markType);
+  addMapPin(sid, 'mark', { markType });
+  refreshMapPins(sid);
+  showToast(`📍 ${def ? def.label : 'Mark'} dropped in the center - drag it into position.`);
+}
+// Swaps which of the 8 an existing pin shows - see the 'mark' branch of
+// renderMapPopover, which renders all 8 as small buttons directly rather
+// than a separate picker/modal (there's nothing else about a mark pin to
+// configure, so there's no reason to hide the options behind another click).
+function setMarkPinType(sid, pinId, markType) {
+  const pin = getPin(sid, pinId);
+  if (pin) pin.markType = markType;
+  refreshMapPins(sid);
 }
 function setMobPinLabel(sid, pinId, label) {
   const pin = getPin(sid, pinId);
