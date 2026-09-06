@@ -1424,8 +1424,14 @@ tr:last-child td { border-bottom: none; }
    dragging the handle turns the rim triangle together with it. 0deg =
    straight up. */
 .map-pin-facing { position: absolute; inset: 0; pointer-events: none; transform-origin: 50% 50%; }
+/* top is the triangle's own negative height plus a couple px of clearance -
+   this wrapper's inset:0 is measured from .map-pin-badge's PADDING box
+   (box-sizing:border-box, so its ~2px border sits further out still), so
+   landing the base at exactly -11px still buried it a couple px inside
+   the badge's actual visible rim. The extra clearance puts the whole
+   triangle outside the circle with a hair of a gap, not straddling it. */
 .map-pin-facing-arrow {
-  position: absolute; top: -5px; left: 50%; transform: translateX(-50%);
+  position: absolute; top: -14px; left: 50%; transform: translateX(-50%);
   width: 0; height: 0;
   border-left: 7px solid transparent; border-right: 7px solid transparent;
   border-bottom: 11px solid var(--red-bright);
@@ -1440,6 +1446,15 @@ tr:last-child td { border-bottom: none; }
 .map-pin-facing-handle:active { cursor: grabbing; }
 
 .map-pin-label {
+  /* .map-pin-layer sets line-height:0 (to close up the few px gap an
+     inline-block image otherwise leaves below it) - without overriding it
+     back here, that inherits straight into this label too, collapsing its
+     own line box to ~0 regardless of font-size. The text still painted
+     (browsers don't clip glyphs to a collapsed line box) but the
+     background pill's actual height shrank to just its padding, so it
+     read as a sliver that didn't contour to the text sitting well outside
+     it, top and bottom. */
+  line-height: 1.3;
   font-size: 10.5px; font-weight: 600; color: var(--text-bright);
   background: rgba(10,11,13,0.75); padding: 2px 7px; border-radius: 5px;
   white-space: nowrap; max-width: 150px; overflow: hidden; text-overflow: ellipsis;
