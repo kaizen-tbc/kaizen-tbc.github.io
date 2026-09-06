@@ -10538,17 +10538,58 @@ function dropPinIfNeeded(sid, pid) {
 // gain from collapsing them, so they render exactly as before.
 function rowHasPlayerSide(row) { return row.typeA === 'player' || row.typeB === 'player'; }
 
+// Real spell icons for sections that ARE a specific, well-known
+// raid-utility ability (Player -> Player relationships like Misdirection,
+// Innervate, Bloodlust/Drums) - matched by keyword against the section's
+// own label. The icon already says what this is, so a real ability icon
+// (with a tooltip explaining it) reads better than repeating the name as
+// text in every row - and it's what actually fixes the icon circle itself:
+// a custom section with no emoji prefix at all (e.g. "Innervate Assigns",
+// typed free-hand rather than picked from a template) fell back to
+// cramming the literal word "Innervate" into a 26px circle, spilling out
+// past its edges. Icon slugs verified live against wow.zamimg.com;
+// tooltip text condensed from each spell's actual tooltip.
+const SECTION_ABILITY_ICON = [
+  { match: /misdirect/i, slug: 'ability_hunter_misdirection', title: 'Misdirection — redirects your threat to a party/raid member for your next attack within 30 sec, lasting 8 sec.' },
+  { match: /innervate/i, slug: 'spell_nature_lightning', title: 'Innervate — infuses a healer with energy, restoring 20% of max mana over 8 sec.' },
+  { match: /lust|drums|heroism/i, slug: 'spell_nature_bloodlust', title: 'Bloodlust / Heroism — +30% haste for the raid for 40 sec (Sated for 10 min after).' },
+];
+function sectionAbilityIcon(sec) {
+  const label = sec.label || '';
+  return SECTION_ABILITY_ICON.find(e => e.match.test(label)) || null;
+}
+
 // Icon/color for a row's blade - lifted straight off the section's own
 // label rather than a new per-row field: every section label already
 // starts with an emoji by convention ("🛡 Tanks", "✚ Healer Assigns", a
 // custom section can follow the same pattern), so this needs no new data.
-function rowCardIcon(sec) { return (sec.label || '').trim().split(' ')[0] || '📌'; }
+// Falls back to a generic pin rather than the raw label text when the
+// "first word" is too long to plausibly be a single emoji glyph (an emoji
+// is 1-2 UTF-16 code units; anything longer is plain text someone typed
+// with no emoji prefix at all) - same overflow problem sectionAbilityIcon
+// exists to head off for the specific cases it covers.
+function rowCardIcon(sec) {
+  const first = (sec.label || '').trim().split(' ')[0] || '';
+  return (first && first.length <= 3) ? first : '📌';
+}
+// Real <img> (with a hover tooltip) for a known ability section, or the
+// plain emoji/fallback glyph above otherwise - the one function every
+// caller (row-card blade, section menu item) should actually use.
+function rowCardIconHtml(sec) {
+  const ability = sectionAbilityIcon(sec);
+  if (ability) {
+    return `<img src="https://wow.zamimg.com/images/wow/icons/medium/${ability.slug}.jpg" alt="" title="${ability.title.replace(/"/g, '&quot;')}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+  }
+  return rowCardIcon(sec);
+}
 function rowCardColor(sec) {
   const l = (sec.label || '').toLowerCase();
   if (l.includes('tank')) return 'var(--gold)';
   if (l.includes('heal')) return 'var(--green-bright)';
   if (l.includes('misdirect') || /\bmd\b/.test(l)) return 'var(--purple)';
   if (l.includes('interrupt') || l.includes('dispel')) return 'var(--red-bright)';
+  if (/innervate/i.test(l)) return 'var(--green-bright)';
+  if (/lust|drums|heroism/i.test(l)) return 'var(--red-bright)';
   return 'var(--teal)';
 }
 
@@ -10703,7 +10744,7 @@ function renderRowHtml(sid, secId, row, sec) {
   const actorId = rowActorId(row);
   const isLinked = actorId != null && _highlightedPlayerId != null && Number(actorId) === Number(_highlightedPlayerId);
   const summary = rowCardSummary(row);
-  const icon = rowCardIcon(sec);
+  const icon = rowCardIconHtml(sec);
   const color = rowCardColor(sec);
   const arrowHtml = arrow ? '<span class="assigns-arrow">→</span>' : '';
   const hasB = typeB != null;
@@ -10747,7 +10788,7 @@ function renderSectionMenuItem(sid, sec, index, total) {
   const badgeColor = badge.total === 0
     ? 'var(--text-dim)'
     : (badge.filled === badge.total ? 'var(--green-bright)' : (badge.filled === 0 ? 'var(--text-dim)' : 'var(--gold)'));
-  const icon = rowCardIcon(sec), color = rowCardColor(sec);
+  const icon = rowCardIconHtml(sec), color = rowCardColor(sec);
   return `<div class="section-menu-item" onclick="openSectionDrill(${sid},${sec.id})">
     <div class="section-reorder-btns" onclick="event.stopPropagation()">
       <button class="section-btn" onclick="moveSectionUp(${sid},${sec.id})" ${atTop ? 'disabled' : ''} title="Move up">▲</button>
