@@ -1376,6 +1376,16 @@ tr:last-child td { border-bottom: none; }
 .map-pin.idle:hover .map-pin-badge { width: 29px; height: 29px; font-size: 14px; }
 .map-pin.dragging .map-pin-badge { width: 34px !important; height: 34px !important; font-size: 15px !important; box-shadow: 0 0 0 4px rgba(26,175,192,0.25), 0 2px 10px rgba(0,0,0,0.6); }
 .map-pin.focused .map-pin-badge { box-shadow: 0 0 0 3px rgba(240,192,64,0.35), 0 2px 10px rgba(0,0,0,0.6); }
+/* A mob pin's portrait is a real (busy) piece of art, not a simple flat
+   icon like the role/class ones - it needs real size to read as anything
+   more than a color blob, so these run roughly double the normal pin
+   sizes. The facing indicator/handle scale up to match (see
+   .map-pin-facing-handle) so they stay proportionate, not suddenly tiny
+   against a much bigger badge. */
+.map-pin[data-kind="mob"].idle .map-pin-badge { width: 50px; height: 50px; }
+.map-pin[data-kind="mob"].idle:hover .map-pin-badge { width: 58px; height: 58px; }
+.map-pin[data-kind="mob"].dragging .map-pin-badge { width: 68px !important; height: 68px !important; }
+.map-pin[data-kind="mob"] .map-pin-facing-handle { width: 16px; height: 16px; top: -7px; border-width: 3px; }
 .map-pin[data-role="Tank"] .map-pin-badge { border-color: var(--gold); color: var(--gold-light); }
 .map-pin[data-role="Healer"] .map-pin-badge { border-color: var(--green-bright); color: var(--green-bright); }
 .map-pin[data-role="Ranged"] .map-pin-badge { border-color: var(--teal); color: var(--teal); }

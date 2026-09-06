@@ -11,18 +11,30 @@ Deliver plain square images; we crop them into a circle in code via `object-fit:
 - **Square, 512×512px**, PNG or JPG (PNG if there's real transparency to gain from
   it, JPG otherwise — don't fight for a clean alpha cutout, see Style below).
 - Centered **headshot/bust crop** — face and upper "shoulders" filling most of the
-  frame, like a character portrait, not a full-body shot. Should read clearly at
-  ~30px (how it actually displays in the pin), so keep it simple and high-contrast.
+  frame, like a character portrait, not a full-body shot. Displays at ~50-68px in
+  the pin (bigger than a first pass assumed, since these are real art, not a flat
+  icon - but still small), so it has to read as a clear, recognizable *silhouette
+  and face* at a glance, not just look nice zoomed in.
 - **Representative, not photoreal-accurate.** These are stylized AI-generated
   portraits, not in-game model renders — close enough to be recognizable to
   someone who's fought the boss is the bar, not a pixel-perfect likeness. Fine if
   it reads as "AI art" as long as it looks *good* (clean, confident linework/
   rendering, not muddy or uncanny).
-- Background: a simple, moody, thematic backdrop (a soft dark vignette, or a
-  color/element tied to the boss's theme — fel-green mist for a demon, ice for a
-  frost boss, etc.) rather than a flat/blank background. Since the final display
-  crops to a circle, keep the subject centered with a little breathing room at
-  the edges.
+- **Background: plain and neutral, not a busy scene.** The first pass used
+  moody thematic backdrops (fire mist, dungeon scenery, etc.) that looked
+  *great* at full size but turn into indistinct color blobs once shrunk down
+  to pin size - the face stopped being the thing your eye lands on. Use a
+  simple flat or soft two-tone gradient background instead (a single color or
+  a subtle radial fade works fine, still themed if you want - e.g. dark red for
+  a fel demon, icy blue-white for a frost boss - just not textured/detailed),
+  chosen so the boss's silhouette and face contrast *hard* against it. The
+  background's whole job is to make the subject pop, not to be a scene of its
+  own. Keep the subject centered with a little breathing room at the edges
+  (the display crops to a circle).
+- **Simplify the level of detail generally** - fewer competing highlights,
+  less busy armor/fur/scale texture, bolder shapes and clearer value contrast
+  (dark vs. light) throughout, not just in the background. Simple reads better
+  than intricate at this size; "simple is more" is the whole brief here.
 - One consistent overall art style across the whole set (painterly digital
   portrait style is a good default) so they read as one cohesive set rather than
   each boss looking like it came from a different generator/style.
