@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-09-06T14:08:50.307Z",
+  "savedAt": "2026-09-06T14:27:49.194Z",
   "roster": [
     {
       "id": 1,
@@ -6502,6 +6502,14 @@
               "arrow": false,
               "typeB": "player",
               "valueB": 14
+            },
+            {
+              "id": 6221,
+              "typeA": "text",
+              "valueA": "",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": 55
             }
           ]
         },
@@ -6602,7 +6610,128 @@
           ]
         }
       ],
-      "mapPins": [],
+      "mapPins": [
+        {
+          "id": 1,
+          "kind": "mob",
+          "x": 59.16073676148,
+          "y": 36.32235940491338,
+          "npcSlug": "hyjal-winterchill",
+          "label": "Rage Winterchill",
+          "custom": false,
+          "facing": 181.69762188434856,
+          "hideFacing": false
+        },
+        {
+          "id": 2,
+          "kind": "player",
+          "x": 78.0223181413823,
+          "y": 50.781455673226326,
+          "playerId": 55
+        },
+        {
+          "id": 3,
+          "kind": "mob",
+          "x": 78.0659803882902,
+          "y": 40.48720793136181,
+          "npcSlug": "spell_shadow_summoninfernal",
+          "label": "Infernal",
+          "custom": true,
+          "facing": 181.62565781530589,
+          "hideFacing": false
+        },
+        {
+          "id": 4,
+          "kind": "player",
+          "x": 58.898775123853795,
+          "y": 45.67362388191038,
+          "playerId": 14
+        },
+        {
+          "id": 5,
+          "kind": "role",
+          "x": 54.44534437745973,
+          "y": 33.49340961031082,
+          "role": "Melee"
+        },
+        {
+          "id": 6,
+          "kind": "role",
+          "x": 58.156534692151254,
+          "y": 27.285426235662097,
+          "role": "Melee"
+        },
+        {
+          "id": 7,
+          "kind": "role",
+          "x": 63.09023238880044,
+          "y": 30.27154434872992,
+          "role": "Melee"
+        },
+        {
+          "id": 8,
+          "kind": "role",
+          "x": 46.41171005709788,
+          "y": 33.80773558887172,
+          "role": "Healer"
+        },
+        {
+          "id": 9,
+          "kind": "role",
+          "x": 47.89618499859236,
+          "y": 47.63817457087805,
+          "role": "Healer"
+        },
+        {
+          "id": 10,
+          "kind": "role",
+          "x": 58.63680756431698,
+          "y": 54.47480457346378,
+          "role": "Healer"
+        },
+        {
+          "id": 11,
+          "kind": "role",
+          "x": 69.20278114240999,
+          "y": 49.13123096281956,
+          "role": "Healer"
+        },
+        {
+          "id": 12,
+          "kind": "role",
+          "x": 70.33796995246246,
+          "y": 30.42870733801037,
+          "role": "Healer"
+        },
+        {
+          "id": 13,
+          "kind": "role",
+          "x": 51.56371306637597,
+          "y": 25.47803853597487,
+          "role": "Ranged"
+        },
+        {
+          "id": 14,
+          "kind": "role",
+          "x": 65.884545127979,
+          "y": 22.09901561429833,
+          "role": "Ranged"
+        },
+        {
+          "id": 15,
+          "kind": "role",
+          "x": 52.91720718905735,
+          "y": 52.66742220296137,
+          "role": "Ranged"
+        },
+        {
+          "id": 16,
+          "kind": "role",
+          "x": 64.61836957720283,
+          "y": 52.588838043728735,
+          "role": "Ranged"
+        }
+      ],
       "imageUpdatedAt": 1788703730305
     },
     {
