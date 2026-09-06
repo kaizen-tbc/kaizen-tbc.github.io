@@ -9207,11 +9207,6 @@ function bestiaryMobForName(raid, name) {
 }
 
 function renderTrashGuidePanel(guide) {
-  const raidStratNames = strats.filter(s => s.raid === guide.raid).map(s => s.name);
-  const bossOptions = raidStratNames.map(n =>
-    `<option value="${n.replace(/"/g,'&quot;')}" ${n === guide.beforeBoss ? 'selected' : ''}>${n}</option>`
-  ).join('');
-
   // Which bestiary mobs actually show up across this guide's waves,
   // derived from the wave text itself rather than manually tagged -
   // dedupe by bestiary id since the same mob type appears in most waves.
@@ -9260,11 +9255,14 @@ function renderTrashGuidePanel(guide) {
   return `
     <div style="flex:1;min-width:0;">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
-        <label style="font-size:12px;color:var(--text-dim);">Precedes:</label>
-        <select class="form-select" style="width:auto;padding:6px 10px;" onchange="updateTrashGuideBoss(${guide.id}, this.value)">
-          <option value="">— none / end of raid —</option>
-          ${bossOptions}
-        </select>
+        <!-- Read-only, not a picker - which boss this precedes is already
+             exactly which boss's tab group you're inside to even be
+             looking at this (see buildBossGroups/addTrashGuideToGroup);
+             re-picking it here would be answering a question the nav
+             already answered. Still shown as plain text since it's
+             genuinely useful info, especially for an orphaned guide whose
+             boss no longer exists (see buildBossGroups's orphaned flag). -->
+        <span style="font-size:12px;color:var(--text-dim);">Precedes: <strong style="color:var(--text-bright);">${guide.beforeBoss ? guide.beforeBoss.replace(/</g, '&lt;') : '— none / end of raid —'}</strong></span>
         <button class="btn btn-small" onclick="openTrashBestiaryModal('${guide.raid.replace(/'/g,"\\'")}')">🐺 Manage Bestiary</button>
       </div>
 
@@ -9287,12 +9285,6 @@ function renderTrashGuidePanel(guide) {
     </div>`;
 }
 
-function updateTrashGuideBoss(guideId, boss) {
-  const guide = trashGuides.find(g => g.id === guideId);
-  if (!guide) return;
-  guide.beforeBoss = boss || null;
-  renderStrats();
-}
 
 function addTrashWaveRow(guideId) {
   const guide = trashGuides.find(g => g.id === guideId);
