@@ -2318,6 +2318,51 @@ a[href] > div > div[style*="line-height:1.6"] {
   </div>
 </div>
 
+<!-- Add Strat: choice modal (Template vs Custom) - see openAddStratChoice.
+     "Custom" hands off to the pre-existing #strat-upload-area form. -->
+<div class="modal-overlay" id="strat-create-modal-overlay" onclick="if(event.target===this)closeStratCreateModal()">
+  <div class="modal" style="width:440px;">
+    <div class="modal-header">
+      <div class="modal-title">Add Strat</div>
+      <button class="modal-close" onclick="closeStratCreateModal()">&#x2715;</button>
+    </div>
+    <div class="modal-body">
+      <div id="strat-create-choice" style="display:flex;gap:10px;">
+        <button class="btn btn-gold" style="flex:1;padding:16px 10px;height:auto;white-space:normal;line-height:1.4;" onclick="showStratCreateStep('template')">
+          📋 Use a Template<br><span style="font-size:11px;font-weight:400;opacity:0.85;">Pick a raid + encounter - background included</span>
+        </button>
+        <button class="btn" style="flex:1;padding:16px 10px;height:auto;white-space:normal;line-height:1.4;" onclick="showStratCreateStep('custom')">
+          🖼 Custom<br><span style="font-size:11px;font-weight:400;opacity:0.85;">Upload your own screenshot</span>
+        </button>
+      </div>
+      <div id="strat-create-template" style="display:none;">
+        <div class="form-group">
+          <label class="form-label">Raid</label>
+          <select class="form-select" id="strat-create-raid" onchange="updateStratCreateEncounterOptions()">
+            <option value="">— Select Raid —</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Encounter</label>
+          <select class="form-select" id="strat-create-encounter" onchange="updateStratCreatePreview()">
+            <option value="">— Select Encounter —</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Background preview</label>
+          <div id="strat-create-preview" style="min-height:120px;display:flex;align-items:center;justify-content:center;background:var(--bg-hover);border-radius:4px;padding:8px;">
+            <span style="font-size:11px;color:var(--text-dim);">Pick a raid and encounter</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn" onclick="showStratCreateStep('choice')">← Back</button>
+          <button class="btn btn-gold" style="flex:1;" onclick="confirmStratCreateTemplate()">Create Strat</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Mob Pin Custom Icon Modal - shared by "+Mob > Custom..." and a mob
      pin's own "Change icon" (see openMobCustomModal) -->
 <div class="modal-overlay" id="mob-modal-overlay" onclick="if(event.target===this)closeMobCustomModal()">
@@ -3598,6 +3643,76 @@ const CUSTOM_MOB_ICONS = [
   { slug: 'ability_hunter_beasttaming', label: 'Beast' },
   { slug: 'inv_misc_head_human_01', label: 'Humanoid' },
 ];
+
+// Every encounter with a default background ready in
+// assets/backgrounds/default/ (see that folder's README), keyed by raid for
+// the "Use a Template" strat-creation flow - `bg` is the background's file
+// basename (no extension). Deliberately encounter-level, not per-NPC like
+// BOSS_MOBS - one shared background regardless of which specific form/add
+// is in the room (e.g. one Opera Event background for all 3 variants).
+// Black Temple's phased fights (Bloodboil/Reliquary/Illidan) use the exact
+// "- P1" name BOSS_DEFAULT_SECTIONS already keys its first phase as, so the
+// section template applies immediately rather than falling back to generic.
+const RAID_ENCOUNTERS = {
+  'Karazhan': [
+    { name: 'Attumen the Huntsman', bg: 'kara-attumen' },
+    { name: 'Moroes', bg: 'kara-moroes' },
+    { name: 'Maiden of Virtue', bg: 'kara-maiden' },
+    { name: 'Opera Event', bg: 'kara-opera' },
+    { name: 'The Curator', bg: 'kara-curator' },
+    { name: 'Shade of Aran', bg: 'kara-aran' },
+    { name: 'Terestian Illhoof', bg: 'kara-illhoof' },
+    { name: 'Netherspite', bg: 'kara-netherspite' },
+    { name: 'Chess Event', bg: 'kara-chess' },
+    { name: 'Prince Malchezaar', bg: 'kara-malchezaar' },
+    { name: 'Nightbane', bg: 'kara-nightbane' },
+  ],
+  "Gruul's Lair & Magtheridon's Lair": [
+    { name: 'High King Maulgar', bg: 'gruul-mag-maulgar' },
+    { name: 'Gruul the Dragonkiller', bg: 'gruul-mag-gruul' },
+    { name: 'Magtheridon', bg: 'gruul-mag-magtheridon' },
+  ],
+  'Serpentshrine Cavern': [
+    { name: 'Hydross the Unstable', bg: 'ssc-hydross' },
+    { name: 'The Lurker Below', bg: 'ssc-lurker' },
+    { name: 'Leotheras the Blind', bg: 'ssc-leotheras' },
+    { name: 'Fathom-Lord Karathress', bg: 'ssc-karathress' },
+    { name: 'Morogrim Tidewalker', bg: 'ssc-morogrim' },
+    { name: 'Lady Vashj', bg: 'ssc-vashj' },
+  ],
+  'The Eye': [
+    { name: "Al'ar", bg: 'tk-alar' },
+    { name: 'Void Reaver', bg: 'tk-voidreaver' },
+    { name: 'High Astromancer Solarian', bg: 'tk-solarian' },
+    { name: "Kael'thas Sunstrider", bg: 'tk-kaelthas' },
+  ],
+  'Battle for Mount Hyjal': [
+    { name: 'Rage Winterchill', bg: 'hyjal-winterchill' },
+    { name: 'Anetheron', bg: 'hyjal-anetheron' },
+    { name: "Kaz'rogal", bg: 'hyjal-kazrogal' },
+    { name: 'Azgalor', bg: 'hyjal-azgalor' },
+    { name: 'Archimonde', bg: 'hyjal-archimonde' },
+  ],
+  'Black Temple': [
+    { name: "Naj'entus", bg: 'bt-najentus' },
+    { name: 'Supremus', bg: 'bt-supremus' },
+    { name: 'Shade of Akama', bg: 'bt-akama' },
+    { name: 'Teron Gorefiend', bg: 'bt-gorefiend' },
+    { name: 'Bloodboil - P1', bg: 'bt-bloodboil' },
+    { name: 'Reliquary of Souls - P1', bg: 'bt-reliquary' },
+    { name: 'Mother Shahraz', bg: 'bt-shahraz' },
+    { name: 'Illidari Council', bg: 'bt-council' },
+    { name: 'Illidan Stormrage - P1', bg: 'bt-illidan' },
+  ],
+  'Sunwell Plateau': [
+    { name: 'Kalecgos', bg: 'swp-kalecgos' },
+    { name: 'Brutallus', bg: 'swp-brutallus' },
+    { name: 'Felmyst', bg: 'swp-felmyst' },
+    { name: 'The Eredar Twins', bg: 'swp-twins' },
+    { name: "M'uru", bg: 'swp-muru' },
+    { name: "Kil'jaeden", bg: 'swp-kiljaeden' },
+  ],
+};
 
 // Builds a deterministic, filesystem-safe base name (no extension) for a
 // strat's image from its raid + encounter name, e.g. "ssc-hydross".
@@ -8639,7 +8754,7 @@ function renderStrats() {
   const showGetStarted = mergedTabs.length === 0;
   const tabsBarHtml = (showGetStarted ? `<button class="strat-tab-btn active" disabled>Get Started</button>` : tabs)
     + addMenuHtml('raid-tabs', [
-      { label: '➕ Add Strat', onclick: 'openStratUpload()' },
+      { label: '➕ Add Strat', onclick: 'openAddStratChoice()' },
       { label: '🧟 Add Trash Guide', onclick: 'openAddTrashGuideModal()' },
     ]);
 
@@ -8647,7 +8762,7 @@ function renderStrats() {
     <div class="empty-state-icon">📋</div>
     <div class="empty-state-text">Nothing here yet for ${activeRaid}. A strat is one encounter's diagram + assignments; a trash guide covers everything between bosses. Either one walks you through the rest.</div>
     <div class="strat-empty-cta">
-      <button class="btn btn-gold" onclick="openStratUpload()">➕ Add Strat</button>
+      <button class="btn btn-gold" onclick="openAddStratChoice()">➕ Add Strat</button>
       <button class="btn btn-small" onclick="openAddTrashGuideModal()">🧟 Add Trash Guide</button>
     </div>
   </div>`;
@@ -9469,6 +9584,85 @@ function removeStrat(id) {
   strats = strats.filter(s => s.id !== id);
   if (activeStratId === id) activeStratId = null;
   renderStrats();
+}
+
+// "+ Add Strat" now opens this choice first, rather than going straight to
+// the raw upload form - "Custom" below still leads to that exact form,
+// unchanged; "Use a Template" is the new path (raid + encounter picked from
+// RAID_ENCOUNTERS, background + section template applied automatically).
+function openAddStratChoice() {
+  document.getElementById('strat-create-choice').style.display = 'flex';
+  document.getElementById('strat-create-template').style.display = 'none';
+  const raidSelect = document.getElementById('strat-create-raid');
+  if (raidSelect.options.length <= 1) {
+    RAID_INSTANCES.forEach(r => {
+      const opt = document.createElement('option');
+      opt.value = r; opt.textContent = r;
+      raidSelect.appendChild(opt);
+    });
+  }
+  raidSelect.value = activeRaid || '';
+  updateStratCreateEncounterOptions();
+  document.getElementById('strat-create-modal-overlay').classList.add('open');
+}
+function closeStratCreateModal() {
+  document.getElementById('strat-create-modal-overlay').classList.remove('open');
+}
+// 'custom' hands off to the exact pre-existing upload form (openStratUpload,
+// untouched below) rather than reimplementing it inside this modal.
+function showStratCreateStep(step) {
+  if (step === 'custom') { closeStratCreateModal(); openStratUpload(); return; }
+  document.getElementById('strat-create-choice').style.display = step === 'choice' ? 'flex' : 'none';
+  document.getElementById('strat-create-template').style.display = step === 'template' ? 'block' : 'none';
+}
+function updateStratCreateEncounterOptions() {
+  const raid = document.getElementById('strat-create-raid').value;
+  const encSelect = document.getElementById('strat-create-encounter');
+  const encounters = RAID_ENCOUNTERS[raid] || [];
+  encSelect.innerHTML = '<option value="">— Select Encounter —</option>'
+    + encounters.map(e => `<option value="${e.name.replace(/"/g, '&quot;')}">${e.name}</option>`).join('');
+  updateStratCreatePreview();
+}
+function updateStratCreatePreview() {
+  const raid = document.getElementById('strat-create-raid').value;
+  const encName = document.getElementById('strat-create-encounter').value;
+  const el = document.getElementById('strat-create-preview');
+  const enc = (RAID_ENCOUNTERS[raid] || []).find(e => e.name === encName);
+  el.innerHTML = enc
+    ? `<img src="assets/backgrounds/default/${enc.bg}.jpg" style="max-width:100%;max-height:160px;border-radius:4px;object-fit:contain;">`
+    : `<span style="font-size:11px;color:var(--text-dim);">Pick a raid and encounter</span>`;
+}
+// Applies BOSS_DEFAULT_SECTIONS immediately when known (unlike the raw
+// upload flow, which always starts from generic defaultSections() and
+// leaves the officer to click "Reset to default template" themselves) -
+// picking a specific encounter here is exactly the extra certainty that
+// makes jumping straight to its real template safe.
+function confirmStratCreateTemplate() {
+  const raid = document.getElementById('strat-create-raid').value;
+  const encName = document.getElementById('strat-create-encounter').value;
+  if (!raid || !encName) { showToast('Pick a raid and encounter first.', true); return; }
+  const enc = (RAID_ENCOUNTERS[raid] || []).find(e => e.name === encName);
+  if (!enc) return;
+
+  const existing = strats.find(s => s.raid === raid && s.name === encName);
+  if (existing) {
+    closeStratCreateModal();
+    activeRaid = raid; activeStratId = existing.id; activeTabKind = 'strat';
+    renderStrats();
+    showToast(`"${encName}" already exists - switched to it.`);
+    return;
+  }
+
+  const builder = BOSS_DEFAULT_SECTIONS[encName] || defaultSections;
+  strats.push({
+    id: nextStratId++, name: encName, raid,
+    image: `assets/backgrounds/default/${enc.bg}.jpg`,
+    sections: builder(),
+  });
+  closeStratCreateModal();
+  activeRaid = raid; activeStratId = strats[strats.length - 1].id; activeTabKind = 'strat';
+  renderStrats();
+  showToast(`✓ "${encName}" created from template.`);
 }
 
 function openStratUpload() {
