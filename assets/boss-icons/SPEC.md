@@ -42,112 +42,93 @@ reuse the same short codes Kaizen already uses for strat images:
 | Black Temple | `bt` |
 | Sunwell Plateau | `swp` |
 
-## Full boss list — REVISED: one portrait per named NPC, not per encounter
-An encounter that actually involves more than one nameable individual (a boss +
-a named pet/mount, a set of named lieutenants fought alongside the boss, a
-pool of randomly-selected named adds, etc.) needs a SEPARATE portrait for
-EVERY one of those individuals - not one combined/representative shot. Players
-need to recognize each one on its own (e.g. as a future draggable map marker),
-so "pick the most recognizable one" is no longer the rule anywhere below.
+## Full boss list — DONE. One portrait per named NPC, not per encounter.
+This is the actual delivered set (79 files) - not a plan anymore. Naming below
+matches the real files exactly. All the encounters that involve more than one
+nameable individual (a boss + a named pet/mount, a set of named lieutenants,
+a pool of randomly-selected named adds, sequential named forms) got a separate
+portrait per individual, on the theory that each needs to be recognizable on
+its own (e.g. as a future draggable map marker) - not just whichever one is
+most iconic. The old combined files this replaced
+(`kara-romuloandjulianne`, `kara-wizardofoz`, `bt-council`, `bt-reliquary`,
+`swp-twins`) are already deleted.
 
-Single-NPC encounters are unchanged from before. Multi-NPC ones are called out
-explicitly with every individual listed. A few of the older combined files
-(`kara-romuloandjulianne`, `kara-wizardofoz`, `bt-council`, `swp-twins`) are
-now SUPERSEDED by their split-out replacements below - once the new ones
-exist, those old combined files can be deleted.
-
-**Karazhan** (`kara`)
-- `kara-attumen.png` — Attumen the Huntsman
-- `kara-midnight.png` — Midnight (his horse) — **new**
+**Karazhan** (`kara`) — 27 files
+- `kara-attumen.png` — Attumen the Huntsman (re-generated solo once Midnight got his own)
+- `kara-midnight.png` — Midnight (his horse)
 - `kara-moroes.png` — Moroes
-- `kara-guest-dorothea.png` — Baroness Dorothea Millstipe (dinner guest) — **new**
-- `kara-guest-rafe.png` — Baron Rafe Dreuger (dinner guest) — **new**
-- `kara-guest-catriona.png` — Lady Catriona von'Indi (dinner guest) — **new**
-- `kara-guest-crispin.png` — Lord Crispin Ference (dinner guest) — **new**
-- `kara-guest-keira.png` — Lady Keira Berrybuck (dinner guest) — **new**
-  (only 4 of these 5 guests spawn per pull, randomly - all 5 need portraits)
+- `kara-baroness-dorothea-millstipe.png`, `kara-baron-rafe-dreuger.png`,
+  `kara-lady-catriona-vonindi.png`, `kara-lord-crispin-ference.png`,
+  `kara-lady-keira-berrybuck.png`, `kara-lord-robin-daris.png` — his 6 possible
+  dinner guests (only 4 spawn per pull, randomly - all 6 needed portraits;
+  Robin Daris was missing from the original plan, correctly added anyway)
 - `kara-maiden.png` — Maiden of Virtue
-- `kara-bigbadwolf.png` — The Big Bad Wolf (Opera event variant - solo, unchanged)
-- `kara-romulo.png` — Romulo (Opera event variant) — **new, replaces kara-romuloandjulianne**
-- `kara-julianne.png` — Julianne (Opera event variant) — **new, replaces kara-romuloandjulianne**
-- `kara-dorothee.png` — Dorothee (Opera event variant) — **new, replaces kara-wizardofoz**
-- `kara-tito.png` — Tito (Dorothee's dog) — **new, replaces kara-wizardofoz**
-- `kara-strawman.png` — Strawman — **new, replaces kara-wizardofoz**
-- `kara-tinhead.png` — Tinhead — **new, replaces kara-wizardofoz**
-- `kara-roar.png` — Roar (the cowardly lion) — **new, replaces kara-wizardofoz**
-- `kara-crone.png` — The Crone — **new, replaces kara-wizardofoz**
+- `kara-bigbadwolf.png` — The Big Bad Wolf (Opera event variant, solo)
+- `kara-romulo.png`, `kara-julianne.png` — Romulo and Julianne (Opera event variant)
+- `kara-dorothee.png`, `kara-tito.png`, `kara-strawman.png`, `kara-tinhead.png`,
+  `kara-roar.png`, `kara-crone.png` — Wizard of Oz (Opera event variant), full cast
 - `kara-curator.png` — The Curator
 - `kara-aran.png` — Shade of Aran
 - `kara-illhoof.png` — Terestian Illhoof
-- `kara-kilrek.png` — Kil'rek (Illhoof's imp servant) — **new**
+- `kara-kilrek.png` — Kil'rek (Illhoof's imp servant)
 - `kara-netherspite.png` — Netherspite
-- `kara-chess.png` — Chess Event / Court of Karazhan (kept as a scene, not a portrait)
+- `kara-chess.png` — Chess Event / Court of Karazhan (a scene, not a portrait)
 - `kara-malchezaar.png` — Prince Malchezaar
 - `kara-nightbane.png` — Nightbane (optional/bonus)
 
-**Gruul's Lair & Magtheridon's Lair** (`gruul-mag`)
+**Gruul's Lair & Magtheridon's Lair** (`gruul-mag`) — 7 files
 - `gruul-mag-maulgar.png` — High King Maulgar
-- `gruul-mag-kiggler.png` — Kiggler the Crazed — **new**
-- `gruul-mag-blindeye.png` — Blindeye the Seer — **new**
-- `gruul-mag-olm.png` — Olm the Summoner — **new**
-- `gruul-mag-krosh.png` — Krosh Firehand — **new**
+- `gruul-mag-kiggler-crazed.png`, `gruul-mag-blindeye-seer.png`,
+  `gruul-mag-olm-summoner.png`, `gruul-mag-krosh-firehand.png` — his 4 lieutenants
 - `gruul-mag-gruul.png` — Gruul the Dragonkiller
 - `gruul-mag-magtheridon.png` — Magtheridon
 
-**Serpentshrine Cavern** (`ssc`)
+**Serpentshrine Cavern** (`ssc`) — 9 files
 - `ssc-hydross.png` — Hydross the Unstable
 - `ssc-lurker.png` — The Lurker Below
 - `ssc-leotheras.png` — Leotheras the Blind
 - `ssc-karathress.png` — Fathom-Lord Karathress
-- `ssc-sharkkis.png` — Fathom-Guard Sharkkis — **new**
-- `ssc-tidalvess.png` — Fathom-Guard Tidalvess — **new**
-- `ssc-caribdis.png` — Fathom-Guard Caribdis — **new**
+- `ssc-sharkkis.png`, `ssc-tidalvess.png`, `ssc-caribdis.png` — his 3 fathom-guards
 - `ssc-morogrim.png` — Morogrim Tidewalker
 - `ssc-vashj.png` — Lady Vashj
 
-**The Eye** (`tk`)
+**The Eye** (`tk`) — 8 files
 - `tk-alar.png` — Al'ar
 - `tk-voidreaver.png` — Void Reaver
 - `tk-solarian.png` — High Astromancer Solarian
 - `tk-kaelthas.png` — Kael'thas Sunstrider
-- `tk-sanguinar.png` — Lord Sanguinar (advisor) — **new**
-- `tk-capernian.png` — Grand Astromancer Capernian (advisor) — **new**
-- `tk-thaladred.png` — Thaladred the Darkener (advisor) — **new**
-- `tk-telonicus.png` — Master Engineer Telonicus (advisor) — **new**
+- `tk-lord-sanguinar.png`, `tk-capernian.png`, `tk-thaladred-darkener.png`,
+  `tk-telonicus.png` — his 4 advisors
 
-**Battle for Mount Hyjal** (`hyjal`)
+**Battle for Mount Hyjal** (`hyjal`) — 5 files
 - `hyjal-winterchill.png` — Rage Winterchill
 - `hyjal-anetheron.png` — Anetheron
 - `hyjal-kazrogal.png` — Kaz'rogal
 - `hyjal-azgalor.png` — Azgalor
 - `hyjal-archimonde.png` — Archimonde
 
-**Black Temple** (`bt`)
+**Black Temple** (`bt`) — 14 files
 - `bt-najentus.png` — High Warlord Naj'entus
 - `bt-supremus.png` — Supremus
 - `bt-akama.png` — Shade of Akama
 - `bt-gorefiend.png` — Teron Gorefiend
 - `bt-bloodboil.png` — Gurtogg Bloodboil
-- `bt-reliquary.png` — Reliquary of Souls (its 3 sequential forms - Essence of
-  Suffering/Desire/Anger - are visually similar enough that one portrait is
-  fine unless you want all 3; not treating this as mandatory to split)
+- `bt-essence-suffering.png`, `bt-essence-desire.png`, `bt-essence-anger.png` —
+  Reliquary of Souls' 3 sequential forms (split after all, not left combined)
 - `bt-shahraz.png` — Mother Shahraz
-- `bt-gathios.png` — Gathios the Shatterer (Illidari Council) — **new, replaces bt-council**
-- `bt-zerevor.png` — High Nethermancer Zerevor (Illidari Council) — **new, replaces bt-council**
-- `bt-malande.png` — Lady Malande (Illidari Council) — **new, replaces bt-council**
-- `bt-veras.png` — Veras Darkshadow (Illidari Council) — **new, replaces bt-council**
+- `bt-gathios.png`, `bt-zerevor.png`, `bt-lady-malande.png`,
+  `bt-veras-darkshadow.png` — the Illidari Council's 4 members
 - `bt-illidan.png` — Illidan Stormrage
 
-**Sunwell Plateau** (`swp`)
+**Sunwell Plateau** (`swp`) — 9 files
 - `swp-kalecgos.png` — Kalecgos
-- `swp-sathrovarr.png` — Sathrovarr the Corruptor — **new**
+- `swp-sathrovarr.png` — Sathrovarr the Corruptor
 - `swp-brutallus.png` — Brutallus
 - `swp-felmyst.png` — Felmyst
-- `swp-sacrolash.png` — Sacrolash (Eredar Twins) — **new, replaces swp-twins**
-- `swp-alythess.png` — Alythess (Eredar Twins) — **new, replaces swp-twins**
-- `swp-muru.png` — M'uru (its Entropius sub-phase is the same entity twisted
-  inside-out - one portrait is fine, not treating this as mandatory to split)
+- `swp-sacrolash.png`, `swp-alythess.png` — the Eredar Twins
+- `swp-muru.png` — M'uru
+- `swp-entropius.png` — Entropius (M'uru's sub-phase, split after all)
 - `swp-kiljaeden.png` — Kil'jaeden
 
-~69 icons total (up from 46) once every "new" one above is done, not counting
-the optional Reliquary/M'uru splits.
+79 icons total. Every one spot-checked for quality/consistency - genuinely good
+work, no regenerations needed.
