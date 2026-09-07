@@ -1466,6 +1466,10 @@ tr:last-child td { border-bottom: none; }
   background: rgba(20,20,24,0.35); border-radius: 4px; padding: 2px 5px;
   box-shadow: 0 0 0 1px rgba(240,192,64,0.5);
 }
+/* A text pin lays its (optional) icon and its text side by side, not
+   stacked like every other pin's badge-above-label - overrides .map-pin's
+   base column layout just for this kind. */
+.map-pin-text-row { flex-direction: row; gap: 6px; }
 
 /* Mob pin's facing indicator (see onMobFacingHandlePointerDown) - the
    portrait itself never rotates, only this overlay. Two separate pieces,
@@ -3844,6 +3848,42 @@ const CUSTOM_MOB_ICONS = [
   { slug: 'ability_hunter_beasttaming', label: 'Beast' },
   { slug: 'inv_misc_head_human_01', label: 'Humanoid' },
 ];
+
+// Real spell icons for a text pin's optional icon (see renderTextMapPin/
+// the 'text' branch of renderMapPopover) - the small badge sitting beside
+// a strategy callout ("4s stun, cannot be dispelled" + the actual spell's
+// icon), same idea OXM.gg does well. Scoped per encounter the same way
+// BOSS_MOBS/findBossMobs already is, so +Text's icon quick-picks only show
+// abilities that actually belong to whichever strat you're on. This is a
+// starting set, not exhaustive - every slug here is a real ability this
+// exact boss casts, verified live against wow.zamimg.com/Wowhead's own
+// tooltip data (not guessed), same verification standard as
+// SECTION_ABILITY_ICON. Expand as more encounters need a specific callout;
+// GENERIC_ABILITY_ICONS below plus the manual slug/URL field cover
+// anything not curated yet.
+const BOSS_ABILITY_ICONS = {
+  'Attumen the Huntsman': [{ slug: 'ability_warrior_charge', label: 'Charge' }],
+  'High King Maulgar': [{ slug: 'ability_whirlwind', label: 'Whirlwind' }],
+  "Kael'thas Sunstrider": [{ slug: 'spell_fire_fireball02', label: 'Pyroblast' }],
+  'Rage Winterchill': [{ slug: 'spell_frost_frostnova', label: 'Frost Nova' }],
+  'Archimonde': [{ slug: 'spell_shadow_possession', label: 'Fear' }],
+};
+// Always available regardless of encounter - common raid-utility/threat
+// callouts that show up on strategy notes for almost any fight, not tied
+// to one specific boss.
+const GENERIC_ABILITY_ICONS = [
+  { slug: 'ability_hunter_misdirection', label: 'Misdirection' },
+  { slug: 'spell_nature_lightning', label: 'Innervate' },
+  { slug: 'spell_nature_bloodlust', label: 'Bloodlust' },
+];
+function findBossAbilityIcons(stratName) {
+  const key = stratGroupKey(stratName || '');
+  if (BOSS_ABILITY_ICONS[key]) return BOSS_ABILITY_ICONS[key];
+  const keyLower = key.toLowerCase();
+  const found = Object.keys(BOSS_ABILITY_ICONS).find(k =>
+    keyLower.includes(k.toLowerCase()) || k.toLowerCase().includes(keyLower));
+  return found ? BOSS_ABILITY_ICONS[found] : [];
+}
 
 // Every encounter with a default background ready in
 // assets/backgrounds/default/ (see that folder's README), keyed by raid for
@@ -11417,10 +11457,19 @@ function renderTextMapPin(strat, pin) {
   const shadow = textStrokeCss(pin.strokeColor);
   const style = `font-size:${fontSize}px;font-weight:${bold ? 800 : 400};font-style:${italic ? 'italic' : 'normal'};color:${color};${shadow ? `text-shadow:${shadow};` : ''}`;
   const escaped = (pin.text || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  return `<div class="map-pin idle" data-kind="text" data-id="${pin.id}"
+  // The optional icon (see the 'text' branch of renderMapPopover) sits
+  // beside the text as its own small badge, same idea as a spell icon next
+  // to a strategy callout on OXM.gg - matching height to roughly the
+  // text's own line height so it doesn't tower over or shrink under a
+  // short/tall font-size choice.
+  const iconSize = Math.round(fontSize * 1.3);
+  const iconHtml = pin.iconSlug ? `<img src="https://wow.zamimg.com/images/wow/icons/medium/${pin.iconSlug}.jpg" alt=""
+    style="width:${iconSize}px;height:${iconSize}px;border-radius:4px;border:1.5px solid rgba(255,255,255,0.4);flex-shrink:0;box-shadow:0 1px 4px rgba(0,0,0,0.6);">` : '';
+  return `<div class="map-pin idle map-pin-text-row" data-kind="text" data-id="${pin.id}"
     style="left:${pin.x}%;top:${pin.y}%;"
     title="Click to edit this text"
     onpointerdown="onMapPinPointerDown(event, ${strat.id}, ${pin.id})">
+    ${iconHtml}
     <div class="map-text-block" contenteditable="${isFocused}" spellcheck="false" style="${style}"
       onpointerdown="if(this.isContentEditable) event.stopPropagation();"
       oninput="commitTextPinEdit(${strat.id}, ${pin.id}, this)"
@@ -11660,6 +11709,19 @@ function renderMapPopover(strat, pin) {
         </label>
         ${pin.strokeColor ? `<input type="color" value="${pin.strokeColor}" style="width:34px;height:24px;padding:0;border:none;background:none;cursor:pointer;" onchange="setTextPinStyle(${strat.id},${pin.id},'strokeColor',this.value)">` : ''}
       </div>
+      <div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--border);">
+        <div style="font-size:11px;color:var(--text-dim);margin-bottom:6px;">Icon (optional)</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;">
+          <button class="btn btn-small" style="padding:4px 7px;${!pin.iconSlug ? activeBtn : ''}" title="No icon"
+            onclick="setTextPinIcon(${strat.id},${pin.id},'')">✕</button>
+          ${[...findBossAbilityIcons(strat.name), ...GENERIC_ABILITY_ICONS].map(a => `<button class="btn btn-small" style="padding:3px;${pin.iconSlug === a.slug ? activeBtn : ''}" title="${a.label.replace(/"/g, '&quot;')}"
+              onclick="setTextPinIcon(${strat.id},${pin.id},'${a.slug}')">
+              <img src="https://wow.zamimg.com/images/wow/icons/medium/${a.slug}.jpg" alt="${a.label}" style="width:18px;height:18px;object-fit:cover;border-radius:3px;display:block;">
+            </button>`).join('')}
+        </div>
+        <input type="text" class="form-input" style="width:100%;font-size:11px;padding:6px 8px;" placeholder="Or paste a Wowhead icon slug/URL..."
+          onchange="setTextPinIconFromInput(${strat.id},${pin.id},this.value)">
+      </div>
     `;
   }
 
@@ -11833,6 +11895,21 @@ function toggleTextPinStroke(sid, pinId, on) {
     pin.strokeColor = '';
   }
   refreshMapPins(sid);
+}
+// The small icon beside a text pin (see the 'text' branch of
+// renderMapPopover/renderTextMapPin) - an empty slug clears it.
+function setTextPinIcon(sid, pinId, slug) {
+  const pin = getPin(sid, pinId);
+  if (!pin) return;
+  pin.iconSlug = slug || null;
+  refreshMapPins(sid);
+}
+// Manual entry for anything not in the quick-pick row - same "paste a
+// bare slug or a full wow.zamimg.com URL, either works" convention as the
+// mob-pin custom-icon field (updateCustomMobIconFromInput).
+function setTextPinIconFromInput(sid, pinId, value) {
+  const m = String(value || '').trim().match(/([a-z0-9_]+)\.jpg(?:$|\?)/i);
+  setTextPinIcon(sid, pinId, m ? m[1] : String(value || '').trim());
 }
 
 // ── Mob pins ─────────────────────────────────────────────────────
