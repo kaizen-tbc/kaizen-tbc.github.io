@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-09-07T13:48:53.026Z",
+  "savedAt": "2026-09-07T13:55:17.100Z",
   "roster": [
     {
       "id": 1,
@@ -7151,26 +7151,26 @@
             {
               "id": 4105,
               "typeA": "player",
-              "valueA": null,
+              "valueA": -2,
               "arrow": true,
               "typeB": "player",
-              "valueB": null
+              "valueB": 55
             },
             {
               "id": 4106,
               "typeA": "player",
-              "valueA": null,
+              "valueA": 36,
               "arrow": true,
               "typeB": "player",
-              "valueB": null
+              "valueB": 14
             },
             {
               "id": 4107,
               "typeA": "player",
-              "valueA": null,
+              "valueA": -3,
               "arrow": true,
-              "typeB": "player",
-              "valueB": null
+              "typeB": "text",
+              "valueB": "Raid Healer"
             }
           ]
         },
@@ -7189,10 +7189,10 @@
             {
               "id": 4109,
               "typeA": "player",
-              "valueA": null,
+              "valueA": 29,
               "arrow": true,
               "typeB": "player",
-              "valueB": null
+              "valueB": 55
             }
           ]
         },
@@ -7234,7 +7234,10 @@
         }
       ],
       "mapPins": [],
-      "imageUpdatedAt": 1788703730305
+      "imageUpdatedAt": 1788703730305,
+      "mapRoleOverride": {
+        "-2": "Healer"
+      }
     },
     {
       "id": 41,
