@@ -1304,6 +1304,11 @@ tr:last-child td { border-bottom: none; }
 
 .strat-tab-btn:hover { color: var(--text-bright); }
 .strat-tab-btn.active { color: var(--gold); border-bottom-color: var(--gold); }
+.strat-tab-btn[draggable="true"] { cursor: grab; }
+/* The tab actually being dragged (see onStratTabDragStart) - washed out
+   in place while it follows the cursor, matching the "lifted" look a
+   browser's own native drag ghost image already gives it for free. */
+.strat-tab-btn.dragging { opacity: 0.35; }
 
 .strat-tab-rm {
   opacity: 0;
@@ -3183,6 +3188,19 @@ let trashGuides = []; // { id, raid, beforeBoss, waves:[{id, wave, mobs, notes}]
 let nextTrashGuideId = 1;
 let _nextWaveId = 1;
 function _wid() { return _nextWaveId++; }
+
+// Manual drag-to-reorder for a boss group's own tab strip (trash guide +
+// phases - see buildBossGroups/renderStrats' memberTabsHtml). Keyed by
+// groupKey, each value is the exact tab order last dropped into place:
+// [{kind:'strat'|'trash', id}, ...]. Nothing here for a group that's
+// never been reordered - buildBossGroups' own natural order (trash
+// first, then phases low-to-high) still applies until someone drags.
+// Reordering doubles as setting that group's default tab too, since
+// openBossGroup falls back to members[0] the very first time a group is
+// ever opened (no _lastGroupSelection yet) - drag the boss phase in
+// front of trash once and it opens on the boss from then on, no separate
+// "set as default" control needed.
+let groupTabOrder = {};
 
 function defaultSections() {
   return [
@@ -8511,6 +8529,7 @@ function loadData(event) {
       if (data.trashGuides) trashGuides = data.trashGuides;
       if (data.nextTrashGuideId) nextTrashGuideId = data.nextTrashGuideId;
       if (data.nextWaveId) _nextWaveId = data.nextWaveId;
+      if (data.groupTabOrder) groupTabOrder = data.groupTabOrder;
       if (data.autoAssignRaidId) autoAssignRaidId = data.autoAssignRaidId;
       if (data.guildies) guildies = data.guildies;
       if (data.attendanceLedger) attendanceLedger = data.attendanceLedger;
@@ -9107,21 +9126,29 @@ function renderStrats() {
   // be), plus a "+" scoped to just this boss (add another phase, or a
   // trash guide - see addPhaseToGroup/addTrashGuideToGroup, neither of
   // which need to ask "which boss?" since that's exactly where you are).
+  const groupKeyEsc = activeGroup.groupKey.replace(/'/g, "\\'");
+  // Drag-to-reorder (see onStratTabDragStart/onStratTabDrop below) - only
+  // meaningful once there's more than one tab to reorder against.
+  const canReorder = activeGroup.members.length > 1;
   const memberTabsHtml = activeGroup.members.map(m => {
     const isActive = (m.kind === 'strat' && activeTabKind === 'strat' && m.id === activeStratId) || (m.kind === 'trash' && activeTabKind === 'trash' && m.id === activeTrashId);
+    const dragAttrs = canReorder ? `draggable="true" data-tab-key="${m.kind}:${m.id}"
+        ondragstart="onStratTabDragStart(event,'${groupKeyEsc}')"
+        ondragover="onStratTabDragOver(event,this)"
+        ondragend="onStratTabDragEnd(event)"` : '';
     if (m.kind === 'strat') {
-      return `<button class="strat-tab-btn ${isActive ? 'active' : ''}" onclick="setActiveStat(${m.id})">
+      return `<button class="strat-tab-btn ${isActive ? 'active' : ''}" ${dragAttrs} onclick="setActiveStat(${m.id})">
         ${m.label}
         <span class="strat-tab-rm" onclick="event.stopPropagation();removeStrat(${m.id})" title="Remove">✕</span>
       </button>`;
     }
-    return `<button class="strat-tab-btn trash-tab ${isActive ? 'active' : ''}" onclick="setActiveTrashTab(${m.id})">
+    return `<button class="strat-tab-btn trash-tab ${isActive ? 'active' : ''}" ${dragAttrs} onclick="setActiveTrashTab(${m.id})">
       ${m.label}
       <span class="strat-tab-rm" onclick="event.stopPropagation();removeTrashGuide(${m.id})" title="Remove">✕</span>
     </button>`;
   }).join('') + addMenuHtml('boss-tabs', [
-    { label: '➕ Add Phase', onclick: `addPhaseToGroup('${activeGroup.groupKey.replace(/'/g, "\\'")}')` },
-    { label: '🧟 Add Trash Guide', onclick: `addTrashGuideToGroup('${activeGroup.groupKey.replace(/'/g, "\\'")}')` },
+    { label: '➕ Add Phase', onclick: `addPhaseToGroup('${groupKeyEsc}')` },
+    { label: '🧟 Add Trash Guide', onclick: `addTrashGuideToGroup('${groupKeyEsc}')` },
   ]);
 
   // Build assigns panel
@@ -9215,7 +9242,7 @@ function renderStrats() {
       <div class="strat-header-divider"></div>
       ${renderBossSelectRow(groups, activeGroup.groupKey)}
     </div>
-    <div class="strat-tabs" id="strat-tabs-container">${memberTabsHtml}</div>
+    <div class="strat-tabs" id="strat-tabs-container" ondragover="onStratTabsContainerDragOver(event)" ondrop="onStratTabDrop(event,'${groupKeyEsc}')">${memberTabsHtml}</div>
     <div class="strat-content-wrap">
       ${activeTabKind === 'trash' ? trashPanel : `
         <div style="flex:1;min-width:0;">
@@ -9292,6 +9319,24 @@ function stratPhaseNumber(name) {
 // genuinely general guide with no single target, or a typo/renamed boss)
 // gets its own group with no portrait, tagged orphaned only if it looks
 // like a mismatch rather than an intentional standalone guide.
+
+// Reorders a group's members in place to match its saved drag order (see
+// groupTabOrder/onStratTabDrop), if one exists. Anything not in the saved
+// order (a phase added after the last drag, say) keeps its natural
+// position relative to other unplaced members - it doesn't just vanish
+// off the front/back. Array.sort is stable in every engine this runs on,
+// so that "keep relative order" fall-through is safe.
+function applyGroupTabOrder(groupKey, members) {
+  const saved = groupTabOrder[groupKey];
+  if (!saved || !saved.length) return;
+  const rank = new Map(saved.map((m, i) => [`${m.kind}:${m.id}`, i]));
+  members.sort((a, b) => {
+    const ai = rank.has(`${a.kind}:${a.id}`) ? rank.get(`${a.kind}:${a.id}`) : Infinity;
+    const bi = rank.has(`${b.kind}:${b.id}`) ? rank.get(`${b.kind}:${b.id}`) : Infinity;
+    return ai - bi;
+  });
+}
+
 function buildBossGroups(raid) {
   const raidStrats = strats.filter(s => s.raid === raid);
   const raidGuides = trashGuides.filter(g => g.raid === raid);
@@ -9314,6 +9359,7 @@ function buildBossGroups(raid) {
       ...groupGuides.map(g => ({ kind: 'trash', id: g.id, label: '🧟 Trash' })),
       ...groupStrats.map(x => ({ kind: 'strat', id: x.id, label: x.name })),
     ];
+    applyGroupTabOrder(key, members);
     groups.push({ groupKey: key, name: key, portraitSlug: bossPortraitSlug(raid, key), members });
   }
 
@@ -9362,6 +9408,70 @@ function openBossGroup(groupKey) {
   else setActiveTrashTab(target.id);
   _lastGroupSelection[groupKey] = { kind: target.kind, id: target.id };
 }
+
+// ── Boss tab drag-to-reorder ──────────────────────────────────────
+// Native HTML5 drag-and-drop (same mechanism as the assign-slot dragging
+// elsewhere in this file), not a pointer-tracked drag - the live "other
+// tabs slide over" effect comes for free from actually moving the real
+// button into the DOM on every dragover, the same vanilla-JS sortable-list
+// trick used all over the web (Firefox's own tab strip included), rather
+// than something built from scratch here.
+let _draggedTabGroupKey = null;
+
+function onStratTabDragStart(e, groupKey) {
+  _draggedTabGroupKey = groupKey;
+  e.dataTransfer.effectAllowed = 'move';
+  // Firefox won't start a real drag at all without setData.
+  e.dataTransfer.setData('text/plain', e.currentTarget.dataset.tabKey);
+  e.currentTarget.classList.add('dragging');
+}
+
+function onStratTabDragEnd(e) {
+  e.currentTarget.classList.remove('dragging');
+  _draggedTabGroupKey = null;
+}
+
+// Fires continuously while dragging over another tab button - moves the
+// actual dragged element to sit before/after whichever tab the pointer is
+// currently over (whichever half of it the pointer is on), live.
+function onStratTabDragOver(e, overTab) {
+  e.preventDefault();
+  e.stopPropagation(); // don't also let the container-level handler below re-place it
+  const container = document.getElementById('strat-tabs-container');
+  const dragging = container?.querySelector('.strat-tab-btn.dragging');
+  if (!dragging || overTab === dragging) return;
+  const rect = overTab.getBoundingClientRect();
+  const before = (e.clientX - rect.left) < rect.width / 2;
+  container.insertBefore(dragging, before ? overTab : overTab.nextSibling);
+}
+
+// Fires over the empty space past the last real tab (before the "+" add
+// button, which never itself becomes draggable/droppable) - lets you drag
+// a tab all the way to the end without needing to hover exactly on top of
+// the last button.
+function onStratTabsContainerDragOver(e) {
+  e.preventDefault();
+  if (!_draggedTabGroupKey) return;
+  const container = e.currentTarget;
+  const dragging = container.querySelector('.strat-tab-btn.dragging');
+  const addTrigger = container.querySelector('[data-add-menu-toggle]');
+  if (dragging && addTrigger) container.insertBefore(dragging, addTrigger);
+}
+
+// Commits whatever order the tabs are actually sitting in right now (after
+// however many live dragover moves) as this group's new permanent order.
+function onStratTabDrop(e, groupKey) {
+  e.preventDefault();
+  if (_draggedTabGroupKey !== groupKey) return;
+  const container = document.getElementById('strat-tabs-container');
+  groupTabOrder[groupKey] = [...container.querySelectorAll('.strat-tab-btn[data-tab-key]')].map(btn => {
+    const [kind, id] = btn.dataset.tabKey.split(':');
+    return { kind, id: Number(id) };
+  });
+  _draggedTabGroupKey = null;
+  renderStrats();
+}
+
 // Adds the next phase to an already-visible group. Reuses the normal
 // upload modal/saveStrat() untouched - the new strat joins this group
 // automatically the moment it's saved, purely by matching its name's
@@ -10433,6 +10543,7 @@ function buildSavePayload() {
     roster, raids, nextRaidId, attendance, nextId, guildInfo, strats, nextStratId,
     trashBestiary, nextBestiaryId, trashGuides, nextTrashGuideId,
     nextWaveId: _nextWaveId,
+    groupTabOrder,
     autoAssignRaidId,
     attendanceLedger, nextLedgerId, benchLog,
     nameAliases,
@@ -12677,6 +12788,7 @@ async function initFromJson() {
     if (data.trashGuides) trashGuides = data.trashGuides;
     if (data.nextTrashGuideId) nextTrashGuideId = data.nextTrashGuideId;
     if (data.nextWaveId) _nextWaveId = data.nextWaveId;
+    if (data.groupTabOrder) groupTabOrder = data.groupTabOrder;
     if (data.autoAssignRaidId) autoAssignRaidId = data.autoAssignRaidId;
     if (data.attendanceLedger) attendanceLedger = data.attendanceLedger;
     if (data.nextLedgerId) nextLedgerId = data.nextLedgerId;
