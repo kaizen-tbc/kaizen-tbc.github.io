@@ -11617,15 +11617,18 @@ function renderTextMapPin(strat, pin) {
   const bold = pin.bold !== false; // default true - these are meant to stand out, matching the bold white callouts on the original strat screenshots
   const italic = !!pin.italic;
   const color = pin.color || '#ffffff';
+  const align = pin.align || 'center';
   const shadow = textStrokeCss(pin.strokeColor);
-  const style = `font-size:${fontSize}px;font-weight:${bold ? 800 : 400};font-style:${italic ? 'italic' : 'normal'};color:${color};${shadow ? `text-shadow:${shadow};` : ''}`;
+  const style = `font-size:${fontSize}px;font-weight:${bold ? 800 : 400};font-style:${italic ? 'italic' : 'normal'};color:${color};text-align:${align};${shadow ? `text-shadow:${shadow};` : ''}`;
   const escaped = (pin.text || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   // The optional icon (see the 'text' branch of renderMapPopover) sits
   // beside the text as its own small badge, same idea as a spell icon next
   // to a strategy callout on OXM.gg - matching height to roughly the
   // text's own line height so it doesn't tower over or shrink under a
-  // short/tall font-size choice.
-  const iconSize = Math.round(fontSize * 1.3);
+  // short/tall font-size choice, unless "Scale with text" is off
+  // (pin.iconScale === false), in which case it stays a fixed size no
+  // matter what the font size is set to.
+  const iconSize = pin.iconScale === false ? 24 : Math.round(fontSize * 1.3);
   const iconHtml = pin.iconSlug ? `<img src="https://wow.zamimg.com/images/wow/icons/medium/${pin.iconSlug}.jpg" alt=""
     style="width:${iconSize}px;height:${iconSize}px;border-radius:4px;border:1.5px solid rgba(255,255,255,0.4);flex-shrink:0;box-shadow:0 1px 4px rgba(0,0,0,0.6);">` : '';
   return `<div class="map-pin idle map-pin-text-row" data-kind="text" data-id="${pin.id}"
@@ -11848,7 +11851,10 @@ function renderMapPopover(strat, pin) {
     const bold = pin.bold !== false;
     const italic = !!pin.italic;
     const color = pin.color || '#ffffff';
+    const align = pin.align || 'center';
+    const iconScale = pin.iconScale !== false;
     const activeBtn = 'background:var(--gold);color:#0a0b0d;border-color:var(--gold);';
+    const ALIGNS = [{ key: 'left', label: '⟵' }, { key: 'center', label: '↔' }, { key: 'right', label: '⟶' }];
     title = 'Text';
     body = `
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
@@ -11859,6 +11865,11 @@ function renderMapPopover(strat, pin) {
           onclick="setTextPinStyle(${strat.id},${pin.id},'bold',${!bold})">B</button>
         <button class="section-btn" style="font-style:italic;${italic ? activeBtn : ''}" title="Italic"
           onclick="setTextPinStyle(${strat.id},${pin.id},'italic',${!italic})">I</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+        <label style="font-size:11px;color:var(--text-dim);">Align</label>
+        ${ALIGNS.map(a => `<button class="section-btn" style="${align === a.key ? activeBtn : ''}" title="${a.key[0].toUpperCase()}${a.key.slice(1)} align"
+            onclick="setTextPinStyle(${strat.id},${pin.id},'align','${a.key}')">${a.label}</button>`).join('')}
       </div>
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
         <label style="font-size:11px;color:var(--text-dim);flex:1;">Text color</label>
@@ -11882,8 +11893,12 @@ function renderMapPopover(strat, pin) {
               <img src="https://wow.zamimg.com/images/wow/icons/medium/${a.slug}.jpg" alt="${a.label}" style="width:18px;height:18px;object-fit:cover;border-radius:3px;display:block;">
             </button>`).join('')}
         </div>
-        <input type="text" class="form-input" style="width:100%;font-size:11px;padding:6px 8px;" placeholder="Or paste a Wowhead icon slug/URL..."
+        <input type="text" class="form-input" style="width:100%;font-size:11px;padding:6px 8px;margin-bottom:8px;" placeholder="Or paste a Wowhead icon slug/URL..."
           onchange="setTextPinIconFromInput(${strat.id},${pin.id},this.value)">
+        ${pin.iconSlug ? `<label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-mid);cursor:pointer;">
+          <input type="checkbox" ${iconScale ? 'checked' : ''} onchange="setTextPinStyle(${strat.id},${pin.id},'iconScale',this.checked)">
+          Scale icon with text size
+        </label>` : ''}
       </div>
     `;
   }
