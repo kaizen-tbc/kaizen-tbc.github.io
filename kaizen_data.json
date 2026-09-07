@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-09-07T13:46:35.101Z",
+  "savedAt": "2026-09-07T13:48:53.026Z",
   "roster": [
     {
       "id": 1,
@@ -7415,6 +7415,31 @@
           "x": 53.48480455503889,
           "y": 37.99877705866942,
           "markType": "square"
+        },
+        {
+          "id": 42,
+          "kind": "text",
+          "x": 53.22283699550208,
+          "y": 89.62716809890286,
+          "text": "Don't face your back to the\ntree. You will get airburst here and silenced.",
+          "fontSize": 14,
+          "bold": true,
+          "italic": false,
+          "color": "#ffffff",
+          "strokeColor": "#000000"
+        },
+        {
+          "id": 43,
+          "kind": "text",
+          "x": 18.948902912762794,
+          "y": 12.145286794343987,
+          "text": "Shamans in every group or use pvp trinkets to get out of fear.",
+          "fontSize": 14,
+          "bold": false,
+          "italic": false,
+          "color": "#ffffff",
+          "strokeColor": "#000000",
+          "iconSlug": "spell_shadow_possession"
         }
       ],
       "imageUpdatedAt": 1788703730305
