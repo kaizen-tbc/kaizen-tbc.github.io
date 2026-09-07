@@ -3865,8 +3865,55 @@ const BOSS_ABILITY_ICONS = {
   'Attumen the Huntsman': [{ slug: 'ability_warrior_charge', label: 'Charge' }],
   'High King Maulgar': [{ slug: 'ability_whirlwind', label: 'Whirlwind' }],
   "Kael'thas Sunstrider": [{ slug: 'spell_fire_fireball02', label: 'Pyroblast' }],
-  'Rage Winterchill': [{ slug: 'spell_frost_frostnova', label: 'Frost Nova' }],
+  // Hyjal - verified against each boss's real TrinityCore spell IDs +
+  // Wowhead's own icon data (not guessed), same standard as the rest of
+  // this list.
+  'Rage Winterchill': [
+    { slug: 'spell_frost_frostbolt02', label: 'Icebolt' },
+    { slug: 'spell_frost_frostnova', label: 'Frost Nova' },
+    { slug: 'spell_shadow_deathanddecay', label: 'Death and Decay' },
+  ],
+  'Anetheron': [
+    { slug: 'spell_shadow_carrionswarm', label: 'Carrion Swarm' },
+    { slug: 'spell_shadow_vampiricaura', label: 'Vampiric Aura' },
+  ],
+  "Kaz'rogal": [
+    { slug: 'spell_shadow_soulleech_3', label: "Mark of Kaz'rogal" },
+    { slug: 'ability_warstomp', label: 'War Stomp' },
+  ],
+  'Azgalor': [
+    { slug: 'spell_shadow_rainoffire', label: 'Rain of Fire' },
+    { slug: 'spell_shadow_impphaseshift', label: 'Howl of Azgalor' },
+  ],
   'Archimonde': [{ slug: 'spell_shadow_possession', label: 'Fear' }],
+  // Black Temple - same verification standard.
+  "Naj'entus": [{ slug: 'spell_frost_iceshard', label: 'Impaling Spine' }],
+  'Supremus': [
+    { slug: 'spell_fire_felcano', label: 'Volcanic Eruption' },
+    { slug: 'ability_warrior_charge', label: 'Charge' },
+  ],
+  'Shade of Akama': [{ slug: 'spell_nature_chainlightning', label: 'Chain Lightning' }],
+  'Teron Gorefiend': [
+    { slug: 'spell_arcane_prismaticcloak', label: 'Shadow of Death' },
+    { slug: 'spell_shadow_unholyfrenzy', label: 'Crushing Shadows' },
+  ],
+  'Bloodboil - P1': [{ slug: 'spell_shadow_bloodboil', label: 'Bloodboil' }],
+  'Reliquary of Souls - P1': [
+    { slug: 'spell_shadow_coneofsilence', label: 'Soul Scream' },
+    { slug: 'spell_shadow_demonictactics', label: 'Spite' },
+  ],
+  'Mother Shahraz': [
+    { slug: 'spell_shadow_shadowfury', label: 'Fatal Attraction' },
+    { slug: 'spell_shadow_impphaseshift', label: 'Interrupting Shriek' },
+  ],
+  'Illidari Council': [
+    { slug: 'spell_frost_icestorm', label: 'Blizzard' },
+    { slug: 'ability_warrior_innerrage', label: 'Judgment of Command' },
+  ],
+  'Illidan Stormrage - P1': [
+    { slug: 'spell_fire_bluehellfire', label: 'Flame Crash' },
+    { slug: 'spell_shadow_soulleech_3', label: 'Parasitic Shadowfiend' },
+  ],
 };
 // Always available regardless of encounter - common raid-utility/threat
 // callouts that show up on strategy notes for almost any fight, not tied
