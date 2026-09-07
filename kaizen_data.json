@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-09-06T14:43:31.189Z",
+  "savedAt": "2026-09-07T13:46:35.101Z",
   "roster": [
     {
       "id": 1,
@@ -7369,7 +7369,54 @@
           ]
         }
       ],
-      "mapPins": [],
+      "mapPins": [
+        {
+          "id": 36,
+          "kind": "mob",
+          "x": 53.441142308130985,
+          "y": 49.15742390616883,
+          "npcSlug": "hyjal-archimonde",
+          "label": "Archimonde",
+          "custom": false,
+          "facing": 0,
+          "hideFacing": false
+        },
+        {
+          "id": 37,
+          "kind": "mark",
+          "x": 45.97509943184006,
+          "y": 35.64131623190821,
+          "markType": "star"
+        },
+        {
+          "id": 38,
+          "kind": "mark",
+          "x": 57.89456713261444,
+          "y": 31.633630694740244,
+          "markType": "circle"
+        },
+        {
+          "id": 39,
+          "kind": "mark",
+          "x": 45.625813300398036,
+          "y": 51.514884732930035,
+          "markType": "diamond"
+        },
+        {
+          "id": 40,
+          "kind": "mark",
+          "x": 61.69308194112176,
+          "y": 48.607350779094844,
+          "markType": "triangle"
+        },
+        {
+          "id": 41,
+          "kind": "mark",
+          "x": 53.48480455503889,
+          "y": 37.99877705866942,
+          "markType": "square"
+        }
+      ],
       "imageUpdatedAt": 1788703730305
     },
     {
