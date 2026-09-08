@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-09-08T13:29:29.943Z",
+  "savedAt": "2026-09-08T13:30:31.536Z",
   "roster": [
     {
       "id": 1,
@@ -10231,9 +10231,147 @@
       ],
       "mapPins": [],
       "imageUpdatedAt": 1788703730305
+    },
+    {
+      "id": 62,
+      "name": "Attumen the Huntsman",
+      "raid": "Karazhan",
+      "image": "assets/backgrounds/default/kara-attumen.jpg",
+      "sections": [
+        {
+          "id": 6108,
+          "label": "🛡 Tanks",
+          "rows": [
+            {
+              "id": 6221,
+              "typeA": "text",
+              "valueA": "MT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": 1
+            },
+            {
+              "id": 6222,
+              "typeA": "text",
+              "valueA": "OT",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 6223,
+              "typeA": "text",
+              "valueA": "OT2",
+              "arrow": false,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 6109,
+          "label": "✚ Healer Assigns",
+          "rows": [
+            {
+              "id": 6224,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 6225,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 6226,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 6227,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 6110,
+          "label": "🏹 Misdirection",
+          "rows": [
+            {
+              "id": 6228,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            },
+            {
+              "id": 6229,
+              "typeA": "player",
+              "valueA": null,
+              "arrow": true,
+              "typeB": "player",
+              "valueB": null
+            }
+          ]
+        },
+        {
+          "id": 6111,
+          "label": "🔊 Lust / Drums",
+          "rows": [
+            {
+              "id": 6230,
+              "typeA": "text",
+              "valueA": "Timing",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            },
+            {
+              "id": 6231,
+              "typeA": "text",
+              "valueA": "Notes",
+              "arrow": false,
+              "typeB": "text",
+              "valueB": ""
+            }
+          ]
+        },
+        {
+          "id": 6112,
+          "label": "📋 Strategy Notes",
+          "rows": [
+            {
+              "id": 6232,
+              "typeA": "notes",
+              "valueA": "",
+              "arrow": false,
+              "typeB": null,
+              "valueB": null
+            }
+          ]
+        }
+      ],
+      "mapPins": [],
+      "mapRoleOverride": {
+        "1": "Tank"
+      }
     }
   ],
-  "nextStratId": 62,
+  "nextStratId": 63,
   "trashBestiary": [
     {
       "id": 3,
