@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-09-07T18:20:37.342Z",
+  "savedAt": "2026-09-08T03:41:19.183Z",
   "roster": [
     {
       "id": 1,
@@ -990,36 +990,36 @@
         [
           46,
           31,
-          -1,
+          -2,
           -3,
           14
         ],
         [
           40,
-          11,
-          35,
+          29,
           17,
-          29
+          35
         ],
         [
           67,
+          2,
           4,
           39,
-          22,
-          2
+          22
         ],
         [
           33,
           28,
           66,
+          55,
           19
         ],
         [
-          55,
-          -2,
+          41,
+          -1,
           27,
-          36,
-          -4
+          -4,
+          36
         ]
       ],
       "groupTitles": [
@@ -1032,7 +1032,6 @@
       "specOverrides": {
         "2": "Destruction",
         "4": "Balance",
-        "11": "Beastmastery",
         "14": "Feral",
         "17": "Survival",
         "19": "Holy",
@@ -1046,6 +1045,7 @@
         "36": "Holy",
         "39": "Destruction",
         "40": "Enhancement",
+        "41": "Shadow",
         "46": "Enhancement",
         "55": "Protection",
         "66": "Arcane",
@@ -1054,7 +1054,6 @@
       "roleOverrides": {
         "2": "Ranged",
         "4": "Ranged",
-        "11": "Ranged",
         "14": "Tank",
         "17": "Ranged",
         "19": "Ranged",
@@ -1068,6 +1067,7 @@
         "36": "Healer",
         "39": "Ranged",
         "40": "Melee",
+        "41": "Ranged",
         "46": "Melee",
         "55": "Tank",
         "66": "Ranged",
@@ -1076,7 +1076,6 @@
       "userIdMap": {
         "2": "510158141388750849",
         "4": "137777201792811008",
-        "11": "473718939679981581",
         "14": "458021620251099147",
         "17": "534211155854360606",
         "19": "106863642942709760",
@@ -1090,21 +1089,40 @@
         "36": "179449409518567424",
         "39": "368979837467099139",
         "40": "331204665536544782",
+        "41": "222160767011520523",
         "46": "185217579055448064",
         "55": "397962649154879489",
         "66": "384157825603207179",
         "67": "604808748854149142",
-        "-1": "185994214352486400",
-        "-2": "595869887952322561",
+        "-1": "473718939679981581",
+        "-2": "185994214352486400",
         "-3": "136350271629426688",
-        "-4": "227110510972108810"
+        "-4": "227110510972108810",
+        "-5": "595869887952322561"
       },
       "bench": [],
-      "absent": [],
+      "absent": [
+        -5
+      ],
       "tentative": [],
       "pugs": [
         {
           "id": -1,
+          "name": "Ytknight/Zuulman",
+          "class": "Paladin",
+          "ms": "Holy",
+          "os": "",
+          "role": "Healer",
+          "status": "Pug",
+          "altOf": "",
+          "notes": "Via Raid Helper",
+          "_rhStatus": "attending",
+          "_rhSpec": "Holy",
+          "_rhClass": "Paladin",
+          "_userId": "473718939679981581"
+        },
+        {
+          "id": -2,
           "name": "Bradpitiful/Zabanya",
           "class": "Warrior",
           "ms": "Fury",
@@ -1117,21 +1135,6 @@
           "_rhSpec": "Fury",
           "_rhClass": "Warrior",
           "_userId": "185994214352486400"
-        },
-        {
-          "id": -2,
-          "name": "Clutch",
-          "class": "Paladin",
-          "ms": "Holy",
-          "os": "",
-          "role": "Healer",
-          "status": "Pug",
-          "altOf": "",
-          "notes": "Via Raid Helper",
-          "_rhStatus": "attending",
-          "_rhSpec": "Holy",
-          "_rhClass": "Paladin",
-          "_userId": "595869887952322561"
         },
         {
           "id": -3,
@@ -1162,9 +1165,24 @@
           "_rhSpec": "Holy",
           "_rhClass": "Priest",
           "_userId": "227110510972108810"
+        },
+        {
+          "id": -5,
+          "name": "Clutch",
+          "class": "Absence",
+          "ms": "",
+          "os": "",
+          "role": "Ranged",
+          "status": "Pug",
+          "altOf": "",
+          "notes": "Via Raid Helper",
+          "_rhStatus": "absence",
+          "_rhSpec": "",
+          "_rhClass": "Absence",
+          "_userId": "595869887952322561"
         }
       ],
-      "nextPugId": -5,
+      "nextPugId": -6,
       "signUpPool": [
         {
           "id": 67,
@@ -1202,6 +1220,21 @@
         },
         {
           "id": -1,
+          "name": "Ytknight/Zuulman",
+          "class": "Paladin",
+          "ms": "Holy",
+          "os": "",
+          "role": "Healer",
+          "status": "Pug",
+          "altOf": "",
+          "notes": "Via Raid Helper",
+          "_rhStatus": "attending",
+          "_rhSpec": "Holy",
+          "_rhClass": "Paladin",
+          "_userId": "473718939679981581"
+        },
+        {
+          "id": -2,
           "name": "Bradpitiful/Zabanya",
           "class": "Warrior",
           "ms": "Fury",
@@ -1214,23 +1247,6 @@
           "_rhSpec": "Fury",
           "_rhClass": "Warrior",
           "_userId": "185994214352486400"
-        },
-        {
-          "id": 11,
-          "name": "Zuulman",
-          "class": "Hunter",
-          "ms": "Beastmastery",
-          "os": "",
-          "role": "Ranged",
-          "status": "Alt",
-          "altOf": "",
-          "level": 70,
-          "notes": "Eng/LW",
-          "discordUserId": "473718939679981581",
-          "_rhStatus": "attending",
-          "_userId": "473718939679981581",
-          "_rhSpec": "Beastmastery",
-          "_rhClass": "Hunter"
         },
         {
           "id": 14,
@@ -1248,21 +1264,6 @@
           "_userId": "458021620251099147",
           "_rhSpec": "Feral",
           "_rhClass": "Druid"
-        },
-        {
-          "id": -2,
-          "name": "Clutch",
-          "class": "Paladin",
-          "ms": "Holy",
-          "os": "",
-          "role": "Healer",
-          "status": "Pug",
-          "altOf": "",
-          "notes": "Via Raid Helper",
-          "_rhStatus": "attending",
-          "_rhSpec": "Holy",
-          "_rhClass": "Paladin",
-          "_userId": "595869887952322561"
         },
         {
           "id": 35,
@@ -1484,6 +1485,23 @@
           "_rhClass": "Shaman"
         },
         {
+          "id": 41,
+          "name": "Velogis",
+          "class": "Priest",
+          "ms": "Shadow",
+          "os": "",
+          "role": "Ranged",
+          "status": "Main",
+          "altOf": "",
+          "level": 70,
+          "notes": "",
+          "discordUserId": "222160767011520523",
+          "_rhStatus": "attending",
+          "_userId": "222160767011520523",
+          "_rhSpec": "Shadow",
+          "_rhClass": "Priest"
+        },
+        {
           "id": -4,
           "name": "Depew/Kiricolo",
           "class": "Priest",
@@ -1565,6 +1583,21 @@
           "_userId": "179449409518567424",
           "_rhSpec": "Holy",
           "_rhClass": "Priest"
+        },
+        {
+          "id": -5,
+          "name": "Clutch",
+          "class": "Absence",
+          "ms": "",
+          "os": "",
+          "role": "Ranged",
+          "status": "Pug",
+          "altOf": "",
+          "notes": "Via Raid Helper",
+          "_rhStatus": "absence",
+          "_rhSpec": "",
+          "_rhClass": "Absence",
+          "_userId": "595869887952322561"
         }
       ],
       "rhEventTitle": "9/8 mount hyjal",
@@ -11168,6 +11201,7 @@
   ],
   "nextTrashGuideId": 13,
   "nextWaveId": 33,
+  "groupTabOrder": {},
   "autoAssignRaidId": 2,
   "attendanceLedger": [
     {
