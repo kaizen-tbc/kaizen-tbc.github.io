@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-09-08T03:42:39.675Z",
+  "savedAt": "2026-09-08T13:29:29.943Z",
   "roster": [
     {
       "id": 1,
@@ -11201,7 +11201,48 @@
   ],
   "nextTrashGuideId": 13,
   "nextWaveId": 33,
-  "groupTabOrder": {},
+  "groupTabOrder": {
+    "Rage Winterchill": [
+      {
+        "kind": "strat",
+        "id": 37
+      },
+      {
+        "kind": "trash",
+        "id": 1
+      }
+    ],
+    "Anetheron": [
+      {
+        "kind": "strat",
+        "id": 38
+      },
+      {
+        "kind": "trash",
+        "id": 2
+      }
+    ],
+    "Kaz'rogal": [
+      {
+        "kind": "strat",
+        "id": 39
+      },
+      {
+        "kind": "trash",
+        "id": 3
+      }
+    ],
+    "Azgalor": [
+      {
+        "kind": "strat",
+        "id": 40
+      },
+      {
+        "kind": "trash",
+        "id": 4
+      }
+    ]
+  },
   "autoAssignRaidId": 2,
   "attendanceLedger": [
     {
