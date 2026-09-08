@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-09-08T13:30:31.536Z",
+  "savedAt": "2026-09-08T18:51:31.566Z",
   "roster": [
     {
       "id": 1,
@@ -989,17 +989,16 @@
       "groups": [
         [
           46,
-          17,
-          -2,
-          -3,
-          14
+          -4,
+          31,
+          35
         ],
         [
           40,
-          35,
-          31,
           29,
-          55
+          -3,
+          17,
+          14
         ],
         [
           67,
@@ -1009,17 +1008,18 @@
           22
         ],
         [
-          33,
           28,
           66,
-          19
+          19,
+          55,
+          33
         ],
         [
-          41,
-          -1,
+          -2,
+          -5,
           27,
-          -4,
-          36
+          36,
+          -1
         ]
       ],
       "groupTitles": [
@@ -1094,20 +1094,40 @@
         "55": "397962649154879489",
         "66": "384157825603207179",
         "67": "604808748854149142",
-        "-1": "473718939679981581",
-        "-2": "185994214352486400",
-        "-3": "136350271629426688",
-        "-4": "227110510972108810",
-        "-5": "595869887952322561"
+        "-1": "110886021859721216",
+        "-2": "473718939679981581",
+        "-3": "185994214352486400",
+        "-4": "136350271629426688",
+        "-5": "227110510972108810",
+        "-6": "595869887952322561"
       },
-      "bench": [],
-      "absent": [
-        -5
+      "bench": [
+        41
       ],
-      "tentative": [],
+      "absent": [
+        -6
+      ],
+      "tentative": [
+        33
+      ],
       "pugs": [
         {
           "id": -1,
+          "name": "asklu",
+          "class": "Shaman",
+          "ms": "Restoration",
+          "os": "",
+          "role": "Healer",
+          "status": "Pug",
+          "altOf": "",
+          "notes": "Via Raid Helper",
+          "_rhStatus": "attending",
+          "_rhSpec": "Restoration",
+          "_rhClass": "Shaman",
+          "_userId": "110886021859721216"
+        },
+        {
+          "id": -2,
           "name": "Ytknight/Zuulman",
           "class": "Paladin",
           "ms": "Holy",
@@ -1122,7 +1142,7 @@
           "_userId": "473718939679981581"
         },
         {
-          "id": -2,
+          "id": -3,
           "name": "Bradpitiful/Zabanya",
           "class": "Warrior",
           "ms": "Fury",
@@ -1137,7 +1157,7 @@
           "_userId": "185994214352486400"
         },
         {
-          "id": -3,
+          "id": -4,
           "name": "Jen",
           "class": "Paladin",
           "ms": "Retribution",
@@ -1152,7 +1172,7 @@
           "_userId": "136350271629426688"
         },
         {
-          "id": -4,
+          "id": -5,
           "name": "Depew/Kiricolo",
           "class": "Priest",
           "ms": "Holy",
@@ -1167,7 +1187,7 @@
           "_userId": "227110510972108810"
         },
         {
-          "id": -5,
+          "id": -6,
           "name": "Clutch",
           "class": "Absence",
           "ms": "",
@@ -1182,8 +1202,23 @@
           "_userId": "595869887952322561"
         }
       ],
-      "nextPugId": -6,
+      "nextPugId": -7,
       "signUpPool": [
+        {
+          "id": -1,
+          "name": "asklu",
+          "class": "Shaman",
+          "ms": "Restoration",
+          "os": "",
+          "role": "Healer",
+          "status": "Pug",
+          "altOf": "",
+          "notes": "Via Raid Helper",
+          "_rhStatus": "attending",
+          "_rhSpec": "Restoration",
+          "_rhClass": "Shaman",
+          "_userId": "110886021859721216"
+        },
         {
           "id": 67,
           "name": "Shamanitis",
@@ -1219,7 +1254,7 @@
           "_rhClass": "Warrior"
         },
         {
-          "id": -1,
+          "id": -2,
           "name": "Ytknight/Zuulman",
           "class": "Paladin",
           "ms": "Holy",
@@ -1234,7 +1269,7 @@
           "_userId": "473718939679981581"
         },
         {
-          "id": -2,
+          "id": -3,
           "name": "Bradpitiful/Zabanya",
           "class": "Warrior",
           "ms": "Fury",
@@ -1334,7 +1369,7 @@
           "_rhClass": "Hunter"
         },
         {
-          "id": -3,
+          "id": -4,
           "name": "Jen",
           "class": "Paladin",
           "ms": "Retribution",
@@ -1468,23 +1503,6 @@
           "_rhClass": "Warlock"
         },
         {
-          "id": 33,
-          "name": "Oreoshake",
-          "class": "Shaman",
-          "ms": "Elemental",
-          "os": "",
-          "role": "Ranged",
-          "status": "Main",
-          "altOf": "",
-          "level": 70,
-          "notes": "",
-          "discordUserId": "356427338373791746",
-          "_rhStatus": "attending",
-          "_userId": "356427338373791746",
-          "_rhSpec": "Elemental",
-          "_rhClass": "Shaman"
-        },
-        {
           "id": 41,
           "name": "Velogis",
           "class": "Priest",
@@ -1502,7 +1520,7 @@
           "_rhClass": "Priest"
         },
         {
-          "id": -4,
+          "id": -5,
           "name": "Depew/Kiricolo",
           "class": "Priest",
           "ms": "Holy",
@@ -1585,7 +1603,7 @@
           "_rhClass": "Priest"
         },
         {
-          "id": -5,
+          "id": -6,
           "name": "Clutch",
           "class": "Absence",
           "ms": "",
@@ -1598,6 +1616,23 @@
           "_rhSpec": "",
           "_rhClass": "Absence",
           "_userId": "595869887952322561"
+        },
+        {
+          "id": 33,
+          "name": "Oreoshake",
+          "class": "Shaman",
+          "ms": "Elemental",
+          "os": "",
+          "role": "Ranged",
+          "status": "Main",
+          "altOf": "",
+          "level": 70,
+          "notes": "",
+          "discordUserId": "356427338373791746",
+          "_rhStatus": "tentative",
+          "_userId": "356427338373791746",
+          "_rhSpec": "Elemental",
+          "_rhClass": "Shaman"
         }
       ],
       "rhEventTitle": "9/8 mount hyjal",
