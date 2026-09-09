@@ -21,6 +21,16 @@ export default {
       return handleRHProxy(request, url, env);
     }
 
+    // ── App state (D1) ── /api/state - replaces the browser's old
+    // "PUT kaizen_data.json straight to the GitHub Contents API" save
+    // path. See loadAppData/handleGetState/handleSaveState below.
+    if (url.pathname === '/api/state' && request.method === 'GET') {
+      return handleGetState(request, env);
+    }
+    if (url.pathname === '/api/state' && request.method === 'PUT') {
+      return handleSaveState(request, env);
+    }
+
     // ── Current WCL rate-limit status, read-only diagnostic ── /wcl-status
     if (url.pathname === '/wcl-status' && request.method === 'GET') {
       const rl = await getWCLRateLimit(env);
@@ -152,15 +162,100 @@ export default {
   }
 };
 
+// ── App state (D1) ────────────────────────────────────────────
+// Real datastore, replacing kaizen_data.json-committed-to-GitHub. See
+// wrangler.toml's kaizen_db binding + schema.sql. Single-row/singleton
+// for now (id=1) - not yet split per-guild, see schema.sql's own notes
+// on why that's a deliberate later step, not this one.
+//
+// Interim auth: a single shared bearer secret (APP_WRITE_KEY, set via
+// `wrangler secret put`), same shape as every other secret this Worker
+// already reads from env (RH_API_KEY, DISCORD_BOT_TOKEN, ...) - a stand-in
+// until real Discord/Google sign-in (Clerk) lands and replaces this check
+// with "does this request carry a valid session for someone allowed to
+// touch Kaizen's data" instead of "does it know one fixed string."
+function checkWriteAuth(request, env) {
+  const got = request.headers.get('Authorization') || '';
+  return env.APP_WRITE_KEY && got === `Bearer ${env.APP_WRITE_KEY}`;
+}
+
+// Central place anything in this Worker gets "current app data" from -
+// tries D1 first (the real source of truth now), falls back to the old
+// GitHub-hosted kaizen_data.json only if D1 has nothing yet. That
+// fallback exists purely as a mid-cutover safety net (so the Worker's
+// own Discord-posting handlers - post-roster, fallout reports, etc. -
+// keep working even before the frontend/D1 migration is fully live) and
+// should come out once D1 is confirmed to always have real data.
+async function loadAppData(env) {
+  if (env.kaizen_db) {
+    const row = await env.kaizen_db.prepare('SELECT data FROM app_state WHERE id = 1').first();
+    if (row && row.data) return JSON.parse(row.data);
+  }
+  const res = await fetch(`https://kaizen-tbc.github.io/kaizen_data.json?v=${Date.now()}`);
+  if (!res.ok) throw new Error('Could not load raid data');
+  return res.json();
+}
+
+// GET /api/state - the frontend's replacement for "auto-load
+// kaizen_data.json from GitHub Pages on page load."
+async function handleGetState(request, env) {
+  if (!checkWriteAuth(request, env)) return corsResponse(JSON.stringify({ error: 'Unauthorized' }), 401);
+  try {
+    if (!env.kaizen_db) throw new Error('kaizen_db binding not configured.');
+    const row = await env.kaizen_db.prepare('SELECT data, version, updated_at, updated_by FROM app_state WHERE id = 1').first();
+    if (!row) return corsResponse(JSON.stringify({ data: null, version: 0 }), 200);
+    return corsResponse(JSON.stringify({
+      data: JSON.parse(row.data), version: row.version, updatedAt: row.updated_at, updatedBy: row.updated_by,
+    }), 200);
+  } catch (err) {
+    return corsResponse(JSON.stringify({ error: err.message }), 500);
+  }
+}
+
+// PUT /api/state - the frontend's replacement for "PUT kaizen_data.json
+// straight to the GitHub Contents API." Body: { data, expectedVersion,
+// updatedBy }. expectedVersion is whatever version the last GET returned
+// (0 for "never saved yet") - a real optimistic-concurrency check, unlike
+// the old GitHub-commit setup where two people saving around the same
+// time could silently clobber each other with no error at all (confirmed
+// happening more than once). A stale expectedVersion means someone else
+// saved in between - the client's job is to reload and retry, not this
+// endpoint's to guess which side should win.
+async function handleSaveState(request, env) {
+  if (!checkWriteAuth(request, env)) return corsResponse(JSON.stringify({ error: 'Unauthorized' }), 401);
+  try {
+    if (!env.kaizen_db) throw new Error('kaizen_db binding not configured.');
+    const { data, expectedVersion, updatedBy } = await request.json();
+    if (data == null) throw new Error('Missing data.');
+
+    const current = await env.kaizen_db.prepare('SELECT version FROM app_state WHERE id = 1').first();
+    const currentVersion = current ? current.version : 0;
+    if ((expectedVersion || 0) !== currentVersion) {
+      return corsResponse(JSON.stringify({
+        error: 'Version conflict - someone else saved since you last loaded. Reload and reapply your change.',
+        currentVersion,
+      }), 409);
+    }
+
+    const nextVersion = currentVersion + 1;
+    const now = new Date().toISOString();
+    await env.kaizen_db.prepare(
+      `INSERT INTO app_state (id, data, version, updated_at, updated_by) VALUES (1, ?, ?, ?, ?)
+       ON CONFLICT(id) DO UPDATE SET data=excluded.data, version=excluded.version, updated_at=excluded.updated_at, updated_by=excluded.updated_by`
+    ).bind(JSON.stringify(data), nextVersion, now, updatedBy || null).run();
+
+    return corsResponse(JSON.stringify({ version: nextVersion, updatedAt: now }), 200);
+  } catch (err) {
+    return corsResponse(JSON.stringify({ error: err.message }), 500);
+  }
+}
+
 // ── Direct roster post from raid manager ─────────────────────
 async function handleDirectRosterPost(request, env) {
   try {
     const { raidId, channelId, notify = true } = await request.json();
 
-    // Fetch latest data from GitHub Pages
-    const dataRes = await fetch(`https://kaizen-tbc.github.io/kaizen_data.json?v=${Date.now()}`);
-    if (!dataRes.ok) throw new Error('Could not load raid data');
-    const data = await dataRes.json();
+    const data = await loadAppData(env);
 
     const raids  = data.raids || [];
     const roster = data.roster || [];
@@ -232,9 +327,7 @@ async function handleEditRosterPost(request, env) {
     const { raidId, channelId, notify = true, titleOverride, rosterMessageId, followUpMessageId } = await request.json();
     if (!channelId) throw new Error('No channel ID provided.');
 
-    const dataRes = await fetch(`https://kaizen-tbc.github.io/kaizen_data.json?v=${Date.now()}`);
-    if (!dataRes.ok) throw new Error('Could not load raid data');
-    const data = await dataRes.json();
+    const data = await loadAppData(env);
 
     const raids  = data.raids || [];
     const roster = data.roster || [];
@@ -748,11 +841,7 @@ async function handleImportCommand(interaction, guildId, options, env) {
 // /post-roster — post current roster from kaizen_data.json
 async function handlePostRosterCommand(interaction, guildId, options, env) {
   try {
-    // Fetch current raid data from GitHub Pages
-    const dataUrl = `https://kaizen-tbc.github.io/kaizen_data.json?v=${Date.now()}`;
-    const dataRes = await fetch(dataUrl);
-    if (!dataRes.ok) throw new Error('Could not load raid data');
-    const data = await dataRes.json();
+    const data = await loadAppData(env);
 
     const raids  = data.raids || [];
     const roster = data.roster || [];
@@ -1702,8 +1791,7 @@ async function runPostLogs(interaction, env) {
 
     const details = await getReportFightsAndStats(env, report.code);
 
-    const dataRes = await fetch(`https://kaizen-tbc.github.io/kaizen_data.json?v=${Date.now()}`);
-    const guildData = dataRes.ok ? await dataRes.json() : { roster: [] };
+    const guildData = await loadAppData(env).catch(() => ({ roster: [] }));
 
     const embeds = buildLogSummaryEmbeds(report, details, guildData.roster || []);
 
@@ -1871,8 +1959,7 @@ async function handleDirectLogPost(request, env) {
       details = await getReportFightsAndStats(env, report.code);
     }
 
-    const dataRes = await fetch(`https://kaizen-tbc.github.io/kaizen_data.json?v=${Date.now()}`);
-    const guildData = dataRes.ok ? await dataRes.json() : { roster: [] };
+    const guildData = await loadAppData(env).catch(() => ({ roster: [] }));
 
     // Embed, not plain content - tested live, without a card the rankings
     // read cramped/ran together (same finding as strats and fallout).
@@ -2335,8 +2422,7 @@ async function handleFalloutReport(request, env) {
     // it just falls back to generic coaching (today's prior behavior).
     let stratNotes = '';
     try {
-      const dataRes = await fetch(`https://kaizen-tbc.github.io/kaizen_data.json?v=${Date.now()}`);
-      const guildData = dataRes.ok ? await dataRes.json() : null;
+      const guildData = await loadAppData(env).catch(() => null);
       if (guildData?.strats) {
         stratNotes = gatherRelevantStratNotes(guildData.strats, dpsSurvivedBad, healersSurvivedBad, deaths);
       }
@@ -2435,8 +2521,7 @@ async function handlePersonalReport(request, env) {
     // mechanism as the regular fallout report.
     let stratNotes = '';
     try {
-      const dataRes = await fetch(`https://kaizen-tbc.github.io/kaizen_data.json?v=${Date.now()}`);
-      const guildData = dataRes.ok ? await dataRes.json() : null;
+      const guildData = await loadAppData(env).catch(() => null);
       if (guildData?.strats) {
         stratNotes = gatherRelevantStratNotes(guildData.strats, [...dpsFights, ...tankFights], healerFights, { byEncounter: [] });
       }
