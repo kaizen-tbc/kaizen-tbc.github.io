@@ -38,6 +38,12 @@ export default {
     if (url.pathname === '/api/my-guilds' && request.method === 'GET') {
       return handleMyGuilds(request, env);
     }
+    if (url.pathname === '/api/register-guild/start' && request.method === 'POST') {
+      return handleRegisterGuildStart(request, env);
+    }
+    if (url.pathname === '/api/register-guild/callback' && request.method === 'GET') {
+      return handleRegisterGuildCallback(request, env);
+    }
 
     // ── Current WCL rate-limit status, read-only diagnostic ── /wcl-status
     if (url.pathname === '/wcl-status' && request.method === 'GET') {
@@ -372,6 +378,115 @@ async function handlePublicState(request, env) {
   } catch (err) {
     return corsResponse(JSON.stringify({ error: err.message }), 500);
   }
+}
+
+// ── Guild registration (Phase 2) ──────────────────────────────
+// Proves ownership the same way That's My BIS does: the ownership
+// check IS the Discord bot-invite flow, not something we verify
+// ourselves. Discord's own "add bot to a server" picker only ever shows
+// servers where the person already has Manage Server permission - we
+// never parse scopes/permission bitfields, Discord enforces that part
+// natively. All we do is trust whichever guild_id comes back on the
+// callback and tie it to whichever Clerk user actually started the
+// flow (via the signed `state`, not Discord's own identity - we don't
+// even need Discord's `code` for this, since we already know who's
+// asking from Clerk).
+async function importHmacKey(secret) {
+  return crypto.subtle.importKey('raw', new TextEncoder().encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign', 'verify']);
+}
+function b64urlEncode(input) {
+  const bytes = typeof input === 'string' ? new TextEncoder().encode(input) : new Uint8Array(input);
+  let str = '';
+  for (const b of bytes) str += String.fromCharCode(b);
+  return btoa(str).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+function b64urlDecodeToString(str) {
+  str = str.replace(/-/g, '+').replace(/_/g, '/');
+  while (str.length % 4) str += '=';
+  return atob(str);
+}
+async function signRegisterState(env, sub) {
+  const payloadB64 = b64urlEncode(JSON.stringify({ sub, exp: Date.now() + 10 * 60 * 1000 })); // 10 min - just long enough to click through Discord's own consent screen
+  const sig = b64urlEncode(await crypto.subtle.sign('HMAC', await importHmacKey(env.REGISTER_STATE_SECRET), new TextEncoder().encode(payloadB64)));
+  return `${payloadB64}.${sig}`;
+}
+async function verifyRegisterState(env, state) {
+  const [payloadB64, sig] = (state || '').split('.');
+  if (!payloadB64 || !sig) return null;
+  const expectedSig = b64urlEncode(await crypto.subtle.sign('HMAC', await importHmacKey(env.REGISTER_STATE_SECRET), new TextEncoder().encode(payloadB64)));
+  if (expectedSig !== sig) return null; // tampered or signed with a different secret
+  try {
+    const payload = JSON.parse(b64urlDecodeToString(payloadB64));
+    if (!payload.sub || !payload.exp || payload.exp < Date.now()) return null;
+    return payload.sub;
+  } catch { return null; }
+}
+
+// POST /api/register-guild/start - authenticated (Clerk). Hands back a
+// URL rather than redirecting itself, since this is called via fetch()
+// but Discord's consent screen needs a real top-level page navigation -
+// the frontend does `window.location.href = redirectUrl`.
+async function handleRegisterGuildStart(request, env) {
+  const auth = await verifyAuth(request, env);
+  if (!auth) return corsResponse(JSON.stringify({ error: 'Unauthorized' }), 401);
+  if (!env.DISCORD_CLIENT_ID || !env.REGISTER_STATE_SECRET) {
+    return corsResponse(JSON.stringify({ error: 'Guild registration is not configured yet.' }), 500);
+  }
+  const url = new URL(request.url);
+  const params = new URLSearchParams({
+    client_id: env.DISCORD_CLIENT_ID,
+    scope: 'bot',
+    permissions: '93248', // view channel, send messages, manage messages, add reactions, embed links, read message history - adjust later if the bot needs more
+    redirect_uri: `${url.origin}/api/register-guild/callback`,
+    response_type: 'code',
+    state: await signRegisterState(env, auth.sub),
+  });
+  return corsResponse(JSON.stringify({ redirectUrl: `https://discord.com/api/oauth2/authorize?${params.toString()}` }), 200);
+}
+
+// GET /api/register-guild/callback - Discord's own redirect target,
+// hit by a plain browser navigation (not a fetch, no Authorization
+// header at all) after someone approves adding the bot to one of their
+// servers. Trust comes entirely from the signed `state`, not from
+// Discord's identity - see verifyRegisterState.
+async function handleRegisterGuildCallback(request, env) {
+  const url = new URL(request.url);
+  const guildDiscordId = url.searchParams.get('guild_id');
+  const state = url.searchParams.get('state');
+  const discordError = url.searchParams.get('error');
+  // TODO: swap this to the real domain once this app moves off the pilot Worker.
+  const frontendBase = 'https://kaizen-krm.dsd030708.workers.dev';
+  const fail = (msg) => Response.redirect(`${frontendBase}/?registerError=${encodeURIComponent(msg)}`, 302);
+
+  if (discordError) return fail(discordError);
+  if (!guildDiscordId) return fail('Discord did not return a server.');
+  if (!env.kaizen_db) return fail('Database not configured.');
+
+  const userId = await verifyRegisterState(env, state);
+  if (!userId) return fail('This registration link expired or is invalid - please try again.');
+
+  // Already registered? Don't create a duplicate guild for the same
+  // Discord server - just make sure this user ends up an active member.
+  const existing = await env.kaizen_db.prepare('SELECT id FROM guilds WHERE discord_guild_id = ?').bind(guildDiscordId).first();
+  let guildId;
+  if (existing) {
+    guildId = existing.id;
+  } else {
+    const now = new Date().toISOString();
+    const inserted = await env.kaizen_db.prepare(
+      'INSERT INTO guilds (slug, name, discord_guild_id, owner_user_id, created_at) VALUES (?, ?, ?, ?, ?)'
+    ).bind(`guild-${guildDiscordId}`, 'New Guild (edit me)', guildDiscordId, userId, now).run();
+    guildId = inserted.meta.last_row_id;
+  }
+
+  const now = new Date().toISOString();
+  await env.kaizen_db.prepare(
+    `INSERT INTO guild_memberships (guild_id, user_id, role, status, requested_at, decided_at, decided_by)
+     VALUES (?, ?, 'gm', 'active', ?, ?, ?)
+     ON CONFLICT(guild_id, user_id) DO UPDATE SET status='active', role='gm', decided_at=excluded.decided_at, decided_by=excluded.decided_by`
+  ).bind(guildId, userId, now, now, userId).run();
+
+  return Response.redirect(`${frontendBase}/?registered=${guildId}`, 302);
 }
 
 // ── Direct roster post from raid manager ─────────────────────

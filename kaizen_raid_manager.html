@@ -2095,6 +2095,12 @@ a[href] > div > div[style*="line-height:1.6"] {
   <div class="header-right">
     <button class="btn btn-small btn-gold" id="save-to-github-btn" onclick="saveAppData()" title="Save to the database" style="display:none;">💾 Save</button>
     <button class="btn btn-small" onclick="openSettings()" title="Settings">⚙</button>
+    <!-- Phase 2 MVP entry point - not the real krm.gg "Join your Guild"
+         flow yet (see registerGuild()), just enough of a button to
+         actually test the Discord bot-invite ownership flow end to end.
+         Only makes sense signed in (the start call needs a Clerk
+         session), so it toggles alongside sign-in-btn/clerk-user-button. -->
+    <button class="btn btn-small" id="register-guild-btn" onclick="registerGuild()" title="Register a new guild by inviting the Kaizen bot to its Discord server" style="display:none;">+ Register Guild</button>
     <button class="btn btn-small btn-gold" id="sign-in-btn" onclick="openSignInGate()" style="display:none;">Sign In</button>
     <div id="clerk-user-button" style="display:none;align-items:center;"></div>
   </div>
@@ -5632,6 +5638,46 @@ async function clerkAuthHeader() {
   const token = await window.Clerk?.session?.getToken();
   if (!token) throw new Error('Not signed in.');
   return { 'Authorization': `Bearer ${token}` };
+}
+
+// Phase 2 MVP - "register a guild" IS "invite the Kaizen bot to your
+// Discord server" (see handleRegisterGuildStart/Callback in
+// kaizen-worker.js). Ownership is proven by Discord itself: their own
+// bot-invite picker only ever shows servers where you already have
+// Manage Server permission, so there's nothing for us to verify beyond
+// trusting the guild_id Discord hands back on the callback. This is
+// deliberately not the real krm.gg "Join your Guild" flow yet - just
+// enough to prove the mechanism end to end on the pilot.
+async function registerGuild() {
+  try {
+    const res = await fetch(`${APP_API_WORKER}/api/register-guild/start`, {
+      method: 'POST',
+      headers: await clerkAuthHeader(),
+    });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || `Could not start registration (${res.status})`);
+    window.location.href = result.redirectUrl; // full top-level navigation - Discord's consent screen isn't something fetch() can drive
+  } catch (err) {
+    showToast(`✗ Could not start guild registration: ${err.message}`, true);
+  }
+}
+
+// Discord lands back here after someone approves/cancels the bot invite
+// (see handleRegisterGuildCallback's redirect). Just a one-time toast on
+// page load - there's no guild-switcher yet to actually jump into the
+// newly registered guild (that's real routing, Phase 3's job), so for
+// now this only confirms the registration itself worked.
+function checkRegisterGuildReturn() {
+  const params = new URLSearchParams(window.location.search);
+  const registered = params.get('registered');
+  const registerError = params.get('registerError');
+  if (registered) showToast(`✓ Guild registered (id ${registered})! There's no guild-switcher yet, so this still shows Kaizen - the new guild's own row is live in the database though.`);
+  if (registerError) showToast(`✗ Guild registration failed: ${registerError}`, true);
+  if (registered || registerError) {
+    params.delete('registered'); params.delete('registerError');
+    const clean = window.location.pathname + (params.toString() ? `?${params}` : '');
+    window.history.replaceState({}, '', clean); // drop the query params without a reload, so refreshing doesn't re-show the toast
+  }
 }
 
 async function rhFetch(url, headers = {}) {
@@ -13028,6 +13074,7 @@ window.addEventListener('load', async function () {
     document.getElementById('sign-in-btn').style.display = isSignedIn ? 'none' : '';
     document.getElementById('clerk-user-button').style.display = isSignedIn ? 'flex' : 'none';
     document.getElementById('save-to-github-btn').style.display = isSignedIn ? '' : 'none';
+    document.getElementById('register-guild-btn').style.display = isSignedIn ? '' : 'none';
 
     if (isSignedIn) {
       closeSignInGate();
@@ -13040,7 +13087,7 @@ window.addEventListener('load', async function () {
 
     if (isSignedIn !== _lastAuthState) {
       _lastAuthState = isSignedIn;
-      initFromJson();
+      initFromJson().then(checkRegisterGuildReturn); // after, not before - showToast only ever shows one toast at a time, and initFromJson's own "Loaded" would otherwise stomp this one within milliseconds
     }
   });
 });

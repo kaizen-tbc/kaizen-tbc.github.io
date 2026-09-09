@@ -47,3 +47,14 @@ database_id = "6c91462e-b412-48f1-9585-7813a85d6926"
 [vars]
 CLERK_JWKS_URL = "https://polished-mule-5604.clerk.accounts.dev/.well-known/jwks.json"
 CLERK_ISSUER = "https://polished-mule-5604.clerk.accounts.dev"
+
+# Guild registration (see /api/register-guild/* in kaizen-worker.js) -
+# proves ownership by having the user invite the real Kaizen bot to a
+# Discord server, which Discord itself only lets happen if they already
+# have Manage Server permission there - we don't parse permissions
+# ourselves, Discord's own bot-invite picker enforces it. DISCORD_CLIENT_ID
+# is the bot's public Application ID (safe to commit, same one used in
+# any invite link); REGISTER_STATE_SECRET (a real secret, set via
+# `wrangler secret put`) HMAC-signs the OAuth state param so the callback
+# can trust which Clerk user actually started the flow.
+DISCORD_CLIENT_ID = "1539371978983604314"
