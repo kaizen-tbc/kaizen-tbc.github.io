@@ -3,6 +3,8 @@
 // Handles Discord slash commands + Raid Helper API proxy
 // ============================================================
 
+import { createRemoteJWKSet, jwtVerify } from 'jose';
+
 const DISCORD_API = 'https://discord.com/api/v10';
 const RH_API      = 'https://raid-helper.xyz/api/v4';
 
@@ -168,15 +170,40 @@ export default {
 // for now (id=1) - not yet split per-guild, see schema.sql's own notes
 // on why that's a deliberate later step, not this one.
 //
-// Interim auth: a single shared bearer secret (APP_WRITE_KEY, set via
-// `wrangler secret put`), same shape as every other secret this Worker
-// already reads from env (RH_API_KEY, DISCORD_BOT_TOKEN, ...) - a stand-in
-// until real Discord/Google sign-in (Clerk) lands and replaces this check
-// with "does this request carry a valid session for someone allowed to
-// touch Kaizen's data" instead of "does it know one fixed string."
-function checkWriteAuth(request, env) {
-  const got = request.headers.get('Authorization') || '';
-  return env.APP_WRITE_KEY && got === `Bearer ${env.APP_WRITE_KEY}`;
+// Real per-user auth via Clerk (replaces the shared-secret stopgap the
+// previous step shipped) - the frontend signs everyone in with
+// Clerk.load()/mountSignIn() (Discord for now), and sends whatever
+// Clerk.session.getToken() returns as a Bearer token. Verifying it here
+// needs no secret at all - createRemoteJWKSet fetches Clerk's PUBLIC
+// signing keys (that's the whole point of a JWKS URL) and checks the
+// token was really signed by them, not tampered with, and not expired.
+// The JWKS response itself is cached by `jose` across requests in this
+// isolate, so this isn't a network round-trip on every single call.
+let _clerkJWKS = null;
+function getClerkJWKS(env) {
+  if (!_clerkJWKS) _clerkJWKS = createRemoteJWKSet(new URL(env.CLERK_JWKS_URL));
+  return _clerkJWKS;
+}
+
+async function verifyAuth(request, env) {
+  const header = request.headers.get('Authorization') || '';
+  const token = header.startsWith('Bearer ') ? header.slice(7) : null;
+  if (!token) return null;
+  try {
+    const { payload } = await jwtVerify(token, getClerkJWKS(env), { issuer: env.CLERK_ISSUER });
+    // azp ("authorized party") - which origin this token was actually
+    // issued for. Clerk only sets it some of the time, so this check is
+    // written to no-op (not block) when it's absent, but locks the token
+    // to a known Kaizen origin whenever Clerk does supply it - stops a
+    // token minted for some other site from being replayed against this
+    // Worker just because it happens to share the same Clerk instance.
+    const authorizedParties = ['https://kaizen-tbc.github.io', 'http://localhost:8793', 'http://localhost:8794'];
+    if (payload.azp && !authorizedParties.includes(payload.azp)) return null;
+    return payload; // payload.sub is the Clerk user id, if a caller ever needs it
+  } catch (err) {
+    console.log('Clerk token verification failed:', err.message);
+    return null;
+  }
 }
 
 // Central place anything in this Worker gets "current app data" from -
@@ -199,7 +226,7 @@ async function loadAppData(env) {
 // GET /api/state - the frontend's replacement for "auto-load
 // kaizen_data.json from GitHub Pages on page load."
 async function handleGetState(request, env) {
-  if (!checkWriteAuth(request, env)) return corsResponse(JSON.stringify({ error: 'Unauthorized' }), 401);
+  if (!(await verifyAuth(request, env))) return corsResponse(JSON.stringify({ error: 'Unauthorized' }), 401);
   try {
     if (!env.kaizen_db) throw new Error('kaizen_db binding not configured.');
     const row = await env.kaizen_db.prepare('SELECT data, version, updated_at, updated_by FROM app_state WHERE id = 1').first();
@@ -222,7 +249,7 @@ async function handleGetState(request, env) {
 // saved in between - the client's job is to reload and retry, not this
 // endpoint's to guess which side should win.
 async function handleSaveState(request, env) {
-  if (!checkWriteAuth(request, env)) return corsResponse(JSON.stringify({ error: 'Unauthorized' }), 401);
+  if (!(await verifyAuth(request, env))) return corsResponse(JSON.stringify({ error: 'Unauthorized' }), 401);
   try {
     if (!env.kaizen_db) throw new Error('kaizen_db binding not configured.');
     const { data, expectedVersion, updatedBy } = await request.json();

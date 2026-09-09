@@ -34,3 +34,14 @@ id = "d8aaec5fbe0942189426e25cb9ab6a81"
 binding = "kaizen_db"
 database_name = "kaizen-db"
 database_id = "6c91462e-b412-48f1-9585-7813a85d6926"
+
+# Clerk (real Discord/Google sign-in, replacing the shared-secret stopgap
+# from the previous step - see verifyAuth in kaizen-worker.js). Both of
+# these are public by design (the JWKS URL's whole point is to be safe to
+# expose - it's how anyone can verify a Clerk-signed token without ever
+# holding a secret), so plain [vars] rather than `wrangler secret put`.
+# This is the Development Clerk instance - swap both when moving to a
+# production Clerk instance later.
+[vars]
+CLERK_JWKS_URL = "https://polished-mule-5604.clerk.accounts.dev/.well-known/jwks.json"
+CLERK_ISSUER = "https://polished-mule-5604.clerk.accounts.dev"

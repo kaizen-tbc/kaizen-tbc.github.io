@@ -2036,6 +2036,24 @@ a[href] > div > div[style*="line-height:1.6"] {
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8959237604087556" crossorigin="anonymous"></script>
   <script>const whTooltips = { colorLinks: true, iconizeLinks: false, renameLinks: false, iconSize: 'small' };</script>
   <script async src="https://wow.zamimg.com/js/tooltips.js"></script>
+
+  <!-- Clerk (real sign-in, replacing the old shared-secret setup - see
+       APP_WRITE_KEY's removal below and verifyAuth in kaizen-worker.js).
+       This is the Development Clerk instance (polished-mule-5604) - swap
+       both the publishable key and src domain when moving to production. -->
+  <script
+    defer
+    crossorigin="anonymous"
+    src="https://polished-mule-5604.clerk.accounts.dev/npm/@clerk/ui@1/dist/ui.browser.js"
+    type="text/javascript"
+  ></script>
+  <script
+    defer
+    crossorigin="anonymous"
+    data-clerk-publishable-key="pk_test_cG9saXNoZWQtbXVsZS01NjA0LmNsZXJrLmFjY291bnRzLmRldiQ"
+    src="https://polished-mule-5604.clerk.accounts.dev/npm/@clerk/clerk-js@6/dist/clerk.browser.js"
+    type="text/javascript"
+  ></script>
 </head><body>
 
 <header>
@@ -2056,8 +2074,22 @@ a[href] > div > div[style*="line-height:1.6"] {
   <div class="header-right">
     <button class="btn btn-small btn-gold" id="save-to-github-btn" onclick="saveAppData()" title="Save to the database">💾 Save</button>
     <button class="btn btn-small" onclick="openGitHubSettings()" title="Settings">⚙</button>
+    <div id="clerk-user-button" style="display:flex;align-items:center;"></div>
   </div>
 </header>
+
+<!-- Auth gate (see the Clerk bootstrap script near the bottom of the
+     file) - covers everything until Clerk confirms a signed-in user.
+     Deliberately a fixed overlay rather than wrapping the whole app body
+     in a hide/show container - the app markup underneath is untouched,
+     this just sits on top of it. -->
+<div id="auth-gate" style="position:fixed;inset:0;z-index:99999;background:var(--bg-deep);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:20px;">
+  <div style="display:flex;align-items:center;gap:10px;">
+    <div class="guild-icon">K</div>
+    <div style="font-family:'Cinzel',serif;font-size:22px;font-weight:700;color:var(--text-bright);">Kaizen Raid Manager</div>
+  </div>
+  <div id="clerk-sign-in"></div>
+</div>
 
 <main>
 
@@ -5472,15 +5504,26 @@ const RH_API     = 'https://raid-helper.xyz/api/v4';
 // static assets (strat images, boss/mob icons - see getGHConfig's other
 // callers), just not for this JSON blob anymore.
 //
-// APP_WRITE_KEY is a single shared secret, same trust level the old
-// GitHub-token-in-localStorage setup already had (anyone with the page
-// open could read either one from devtools) - an interim stand-in until
-// real Discord/Google sign-in (Clerk) replaces it with per-user sessions
-// the Worker actually verifies, rather than one fixed string everyone
-// shares. Fine for a small trusted pilot; not meant to outlive that.
+// Auth for it is real now (see the Clerk bootstrap further down + the
+// <script> tags in <head>) - every call sends whatever
+// Clerk.session.getToken() hands back as a Bearer token, and the Worker
+// verifies it against Clerk's public keys (verifyAuth in
+// kaizen-worker.js). No shared secret anywhere anymore.
 // ======================================================
-const APP_WRITE_KEY = 'dWzGW6Zl6lTcxnBVZFjLsGN5VhgbZynoNdmiG321FLM';
 let _appStateVersion = 0; // last version we loaded/saved - see saveAppData's optimistic-concurrency check
+
+// Every /api/state call needs a fresh-ish Clerk session token. getToken()
+// caches internally (~1 min TTL) and refreshes on its own, so calling it
+// again here on every request is normal/cheap, not a real network round
+// trip most of the time. Throws (via the ?? null -> caller's own checks)
+// if Clerk hasn't loaded yet or nobody's signed in - both should be
+// impossible by the time anything calls this, since the auth gate blocks
+// initFromJson()/saveAppData() from ever running otherwise.
+async function clerkAuthHeader() {
+  const token = await window.Clerk?.session?.getToken();
+  if (!token) throw new Error('Not signed in.');
+  return { 'Authorization': `Bearer ${token}` };
+}
 
 async function rhFetch(url, headers = {}) {
   // Route through our Cloudflare Worker — no CORS issues, handles auth
@@ -10598,13 +10641,14 @@ setInterval(() => {
 async function saveAppData() {
   showToast('⬆ Saving...');
   const payload = buildSavePayload();
-  const nowIso = new Date().toISOString();
 
   try {
+    const authHeader = await clerkAuthHeader();
+    const updatedBy = window.Clerk?.user?.username || window.Clerk?.user?.fullName || 'unknown';
     const res = await fetch(`${RH_WORKER}/api/state`, {
       method: 'PUT',
-      headers: { 'Authorization': `Bearer ${APP_WRITE_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ data: payload, expectedVersion: _appStateVersion, updatedBy: guildInfo?.name || 'unknown' }),
+      headers: { ...authHeader, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ data: payload, expectedVersion: _appStateVersion, updatedBy }),
     });
     const result = await res.json();
 
@@ -12703,7 +12747,7 @@ document.addEventListener('keydown', e => {
 // ======================================================
 async function initFromJson() {
   try {
-    const res = await fetch(`${RH_WORKER}/api/state`, { headers: { 'Authorization': `Bearer ${APP_WRITE_KEY}` } });
+    const res = await fetch(`${RH_WORKER}/api/state`, { headers: await clerkAuthHeader() });
     if (!res.ok) throw new Error('Could not reach the app state API');
     const result = await res.json();
     if (!result.data) throw new Error('No app state saved yet');
@@ -12796,7 +12840,35 @@ async function initFromJson() {
   markSavedSnapshot(); // baseline for hasUnsavedChanges - whatever just loaded (or the fresh defaults) counts as "clean"
 }
 
-initFromJson();
+// ── Clerk bootstrap ───────────────────────────────────────────
+// Real sign-in gate (see the auth-gate overlay + Clerk <script> tags in
+// <head>) - nothing loads until Clerk confirms a signed-in user, since
+// initFromJson()/saveAppData() both need a real session token now (no
+// more shared secret to fall back to). Clerk.load() only resolves once
+// its own script has finished loading, which is why this waits for the
+// page's 'load' event first rather than running inline at parse time
+// (the two <script defer> tags in <head> may not have executed yet).
+let _clerkSignedIn = false;
+window.addEventListener('load', async function () {
+  await Clerk.load({ ui: { ClerkUI: window.__internal_ClerkUICtor } });
+
+  Clerk.addListener(({ user }) => {
+    const gate = document.getElementById('auth-gate');
+    if (user) {
+      gate.style.display = 'none';
+      if (!_clerkSignedIn) {
+        _clerkSignedIn = true;
+        initFromJson();
+        const userBtnEl = document.getElementById('clerk-user-button');
+        if (userBtnEl && !userBtnEl.hasChildNodes()) Clerk.mountUserButton(userBtnEl);
+      }
+    } else {
+      gate.style.display = 'flex';
+      const signInEl = document.getElementById('clerk-sign-in');
+      if (signInEl && !signInEl.hasChildNodes()) Clerk.mountSignIn(signInEl);
+    }
+  });
+});
 
 // One-time migration: ensure all roster entries have a level field
 // Runs after load so existing JSON entries get defaulted immediately
