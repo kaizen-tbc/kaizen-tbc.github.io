@@ -32,6 +32,9 @@ export default {
     if (url.pathname === '/api/state' && request.method === 'PUT') {
       return handleSaveState(request, env);
     }
+    if (url.pathname === '/api/public-state' && request.method === 'GET') {
+      return handlePublicState(request, env);
+    }
     if (url.pathname === '/api/my-guilds' && request.method === 'GET') {
       return handleMyGuilds(request, env);
     }
@@ -344,6 +347,31 @@ async function handleMyGuilds(request, env) {
      WHERE m.user_id = ?`
   ).bind(auth.sub).all();
   return corsResponse(JSON.stringify({ guilds: results }), 200);
+}
+
+// GET /api/public-state?guildId=1 - no auth at all, deliberately. This
+// is the "published guild page" read path (see the unauthenticated row
+// of tabPermissions in the frontend) - the whole point is being visible
+// to someone who never signed in. Returns the exact same blob a member
+// would get; which parts actually render is the frontend's call
+// (tabPermissions), not something enforced here - there's no per-tab
+// split in the data to enforce against (app_state is still one blob per
+// guild, see schema.sql's own notes on why). That's an acceptable gap
+// for a single small pilot guild, not something to carry forever: it
+// means a tab a GM sets to "hidden" for the public is still sitting in
+// the raw JSON response if anyone inspects it, just not rendered.
+async function handlePublicState(request, env) {
+  const url = new URL(request.url);
+  const guildId = parseInt(url.searchParams.get('guildId'), 10);
+  if (!guildId) return corsResponse(JSON.stringify({ error: 'Missing guildId.' }), 400);
+  try {
+    if (!env.kaizen_db) throw new Error('kaizen_db binding not configured.');
+    const row = await env.kaizen_db.prepare('SELECT data, updated_at FROM app_state WHERE guild_id = ?').bind(guildId).first();
+    if (!row) return corsResponse(JSON.stringify({ error: 'Guild not found.' }), 404);
+    return corsResponse(JSON.stringify({ data: JSON.parse(row.data), updatedAt: row.updated_at }), 200);
+  } catch (err) {
+    return corsResponse(JSON.stringify({ error: err.message }), 500);
+  }
 }
 
 // ── Direct roster post from raid manager ─────────────────────

@@ -2032,6 +2032,18 @@ a[href] > div > div[style*="line-height:1.6"] {
 }
 .ov-inline-textarea:focus { border-color: var(--gold-dim); }
 .ov-inline-textarea::placeholder { color: var(--text-dim); opacity: 0.6; }
+
+/* Per-tab read-only mode (see tabPermissions/canEdit/applyTabPermissions)
+   - a class toggled on a whole tab-panel container, not per-control, so
+   a role that can't edit a tab gets it read-only everywhere on that tab
+   for free. Generic form controls just lose interactivity; anything that
+   actively mutates state (upload/remove/add buttons - things with no
+   natural "disabled but still shows the current value" state) needs its
+   own krm-edit-only tag to actually disappear, since disabling a button
+   visually still invites a click. */
+.krm-readonly input, .krm-readonly textarea, .krm-readonly select { pointer-events: none; opacity: 0.75; }
+.krm-readonly [contenteditable="true"] { pointer-events: none; }
+.krm-readonly .krm-edit-only { display: none !important; }
 </style>
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8959237604087556" crossorigin="anonymous"></script>
   <script>const whTooltips = { colorLinks: true, iconizeLinks: false, renameLinks: false, iconSize: 'small' };</script>
@@ -2072,23 +2084,28 @@ a[href] > div > div[style*="line-height:1.6"] {
     <button class="nav-btn" onclick="showTab('guild-logs', this)">Guild Logs</button>
   </nav>
   <div class="header-right">
-    <button class="btn btn-small btn-gold" id="save-to-github-btn" onclick="saveAppData()" title="Save to the database">💾 Save</button>
+    <button class="btn btn-small btn-gold" id="save-to-github-btn" onclick="saveAppData()" title="Save to the database" style="display:none;">💾 Save</button>
     <button class="btn btn-small" onclick="openSettings()" title="Settings">⚙</button>
-    <div id="clerk-user-button" style="display:flex;align-items:center;"></div>
+    <button class="btn btn-small btn-gold" id="sign-in-btn" onclick="openSignInGate()" style="display:none;">Sign In</button>
+    <div id="clerk-user-button" style="display:none;align-items:center;"></div>
   </div>
 </header>
 
-<!-- Auth gate (see the Clerk bootstrap script near the bottom of the
-     file) - covers everything until Clerk confirms a signed-in user.
-     Deliberately a fixed overlay rather than wrapping the whole app body
-     in a hide/show container - the app markup underneath is untouched,
-     this just sits on top of it. -->
-<div id="auth-gate" style="position:fixed;inset:0;z-index:99999;background:var(--bg-deep);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:20px;">
+<!-- Sign-in panel (see the Clerk bootstrap script near the bottom of the
+     file) - NOT a hard gate anymore. An unauthenticated visitor sees the
+     app right away in read-only mode (see myRole/canEdit -
+     tabPermissions.*.unauthenticated), same as the eventual published
+     guild page; this only opens on demand when they click "Sign In" in
+     the header. Deliberately a fixed overlay rather than wrapping the
+     whole app body in a hide/show container - the app markup underneath
+     is untouched, this just sits on top of it while open. -->
+<div id="auth-gate" onclick="if(event.target===this)closeSignInGate()" style="position:fixed;inset:0;z-index:99999;background:rgba(10,11,13,0.85);display:none;align-items:center;justify-content:center;flex-direction:column;gap:20px;">
   <div style="display:flex;align-items:center;gap:10px;">
     <div class="guild-icon">K</div>
     <div style="font-family:'Cinzel',serif;font-size:22px;font-weight:700;color:var(--text-bright);">Kaizen Raid Manager</div>
   </div>
   <div id="clerk-sign-in"></div>
+  <button class="btn btn-small" onclick="closeSignInGate()">Continue browsing without signing in</button>
 </div>
 
 <main>
@@ -2127,7 +2144,7 @@ a[href] > div > div[style*="line-height:1.6"] {
   <div class="cms-section">
     <div class="cms-section-header">
       <div class="cms-section-label">Raid Schedule</div>
-      <button class="btn btn-small" onclick="addScheduleEntry()">+ Add Day</button>
+      <button class="btn btn-small krm-edit-only" onclick="addScheduleEntry()">+ Add Day</button>
     </div>
     <div style="display:flex;flex-direction:column;gap:10px;" id="ov-schedule"></div>
   </div>
@@ -4524,6 +4541,54 @@ let stratsChannelId = '';
 let raidHelperServerId = '';
 let raidHelperApiKey = '';
 
+// Per-tab permission matrix - what each role can do on each tab.
+// 'hidden' | 'view' | 'edit'. GM-editable (not built yet - these are
+// just the shipped defaults for now); every role check in the app reads
+// this via canEdit()/getPermLevel() below, never a hardcoded role name.
+// unauthenticated = nobody signed in at all, the "published guild page"
+// audience; member = signed in, on the roster, no edit rights by default;
+// officer/gm = as discussed.
+let tabPermissions = {
+  overview:      { unauthenticated: 'view', member: 'view', officer: 'view', gm: 'edit' },
+  raiders:       { unauthenticated: 'view', member: 'view', officer: 'edit', gm: 'edit' },
+  weeklyRoster:  { unauthenticated: 'view', member: 'view', officer: 'edit', gm: 'edit' },
+  strats:        { unauthenticated: 'view', member: 'view', officer: 'edit', gm: 'edit' },
+  guildLogs:     { unauthenticated: 'view', member: 'view', officer: 'edit', gm: 'edit' },
+};
+
+// Who's actually looking right now - set once in initFromJson()/the
+// unauthenticated pass-through path, read everywhere else. Defaults to
+// the least-privileged tier so any code path that somehow runs before
+// it's actually determined fails closed (read-only), not open.
+let myRole = 'unauthenticated';
+
+function getPermLevel(tab) {
+  return (tabPermissions[tab] && tabPermissions[tab][myRole]) || 'hidden';
+}
+function canEdit(tab) { return getPermLevel(tab) === 'edit'; }
+function canView(tab) { return getPermLevel(tab) !== 'hidden'; }
+
+// Toggles .krm-readonly on each tab-panel container per myRole - once,
+// after myRole is known (see initFromJson) - not something individual
+// render functions need to think about, since it's a class on the
+// panel itself, not its re-rendered children (renderOverview() etc.
+// only ever replace innerHTML on elements *inside* tab-overview, never
+// tab-overview's own classList, so this survives every later re-render
+// without needing to be called again).
+const TAB_PERM_MAP = {
+  'tab-overview':    'overview',
+  'tab-roster':      'raiders',
+  'tab-builder':     'weeklyRoster',
+  'tab-strats':      'strats',
+  'tab-guild-logs':  'guildLogs',
+};
+function applyTabPermissions() {
+  for (const [panelId, permKey] of Object.entries(TAB_PERM_MAP)) {
+    const el = document.getElementById(panelId);
+    if (el) el.classList.toggle('krm-readonly', !canEdit(permKey));
+  }
+}
+
 // Resolved display names for the above (e.g. "logs-archive") — purely
 // cosmetic, so the confirm dialog can say "#logs-archive" instead of a
 // raw numeric ID. Falls back to the ID itself if resolution hasn't
@@ -6741,11 +6806,11 @@ function renderOverview() {
           <div style="font-family:'Cinzel',serif;font-size:42px;font-weight:900;color:#fff;letter-spacing:0.04em;line-height:1;">${guildInfo.guildName||'Kaizen'}</div>
         </div>
         <div style="position:absolute;bottom:10px;right:12px;display:flex;gap:6px;z-index:2;">
-          <label class="btn btn-small" style="cursor:pointer;font-size:11px;">
+          <label class="btn btn-small krm-edit-only" style="cursor:pointer;font-size:11px;">
             🖼 ${guildInfo.banner ? 'Replace Banner' : 'Upload Banner'}
             <input type="file" accept="image/*" onchange="uploadOverviewImage(event,'banner')" style="display:none;">
           </label>
-          ${guildInfo.banner ? `<button class="btn btn-small" onclick="guildInfo.banner='';renderOverview();" style="font-size:11px;">✕ Remove</button>` : ''}
+          ${guildInfo.banner ? `<button class="btn btn-small krm-edit-only" onclick="guildInfo.banner='';renderOverview();" style="font-size:11px;">✕ Remove</button>` : ''}
         </div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
@@ -6786,7 +6851,7 @@ function renderOverview() {
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
           <span style="font-size:13px;font-weight:600;color:${cleared ? 'var(--gold)' : 'var(--text-bright)'};">${p.label}</span>
           <div style="display:flex;align-items:center;gap:8px;">
-            <label class="btn btn-small" style="cursor:pointer;font-size:10px;padding:3px 6px;" title="Upload raid image">
+            <label class="btn btn-small krm-edit-only" style="cursor:pointer;font-size:10px;padding:3px 6px;" title="Upload raid image">
               🖼 ${p.image ? 'Replace' : 'Add Image'}
               <input type="file" accept="image/*" onchange="uploadProgressionImage(event,${i})" style="display:none;">
             </label>
@@ -6810,7 +6875,7 @@ function renderOverview() {
   if (schedEl) {
     schedEl.innerHTML = (guildInfo.raidSchedule || []).map((r, i) => `
       <div style="padding:12px 14px;background:var(--bg-hover);border-radius:3px;border:1px solid var(--border-bright);position:relative;margin-bottom:8px;">
-        <button onclick="removeScheduleEntry(${i})" style="position:absolute;top:8px;right:8px;background:none;border:none;color:var(--red-bright);cursor:pointer;font-size:12px;opacity:0.6;" title="Remove">✕</button>
+        <button class="krm-edit-only" onclick="removeScheduleEntry(${i})" style="position:absolute;top:8px;right:8px;background:none;border:none;color:var(--red-bright);cursor:pointer;font-size:12px;opacity:0.6;" title="Remove">✕</button>
         <input class="ov-inline-input" style="font-family:'Cinzel',serif;font-size:15px;font-weight:600;color:var(--gold);margin-bottom:4px;display:block;"
           value="${(r.day||'').replace(/"/g,'&quot;')}" placeholder="Day" onchange="guildInfo.raidSchedule[${i}].day=this.value">
         <input class="ov-inline-input" style="font-size:13px;font-weight:600;color:var(--text-bright);margin-bottom:2px;display:block;"
@@ -6819,7 +6884,7 @@ function renderOverview() {
           value="${(r.time||'').replace(/"/g,'&quot;')}" placeholder="Time" onchange="guildInfo.raidSchedule[${i}].time=this.value">
         <input class="ov-inline-input" style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:8px;"
           value="${(r.note||'').replace(/"/g,'&quot;')}" placeholder="Note" onchange="guildInfo.raidSchedule[${i}].note=this.value">
-        <label class="btn btn-small" style="cursor:pointer;font-size:10px;padding:3px 6px;" title="Upload schedule image">
+        <label class="btn btn-small krm-edit-only" style="cursor:pointer;font-size:10px;padding:3px 6px;" title="Upload schedule image">
           🖼 ${r.image ? 'Replace Image' : 'Add Image'}
           <input type="file" accept="image/*" onchange="uploadScheduleImage(event,${i})" style="display:none;">
         </label>
@@ -8635,6 +8700,11 @@ function loadData(event) {
       if (data.stratsChannelId) stratsChannelId = data.stratsChannelId;
       if (data.raidHelperServerId) raidHelperServerId = data.raidHelperServerId;
       if (data.raidHelperApiKey) raidHelperApiKey = data.raidHelperApiKey;
+      if (data.tabPermissions) {
+        for (const tab of Object.keys(tabPermissions)) {
+          if (data.tabPermissions[tab]) tabPermissions[tab] = { ...tabPermissions[tab], ...data.tabPermissions[tab] };
+        }
+      }
       renderRoster();
       renderOverview();
       renderAttendance();
@@ -10647,6 +10717,7 @@ function buildSavePayload() {
     stratsChannelId,
     raidHelperServerId,
     raidHelperApiKey,
+    tabPermissions,
   };
 }
 
@@ -12806,11 +12877,28 @@ document.addEventListener('keydown', e => {
 // ======================================================
 async function initFromJson() {
   try {
-    const res = await fetch(`${APP_API_WORKER}/api/state?guildId=${CURRENT_GUILD_ID}`, { headers: await clerkAuthHeader() });
-    const result = await res.json();
-    if (!res.ok) throw new Error(result.error || `Could not reach the app state API (${res.status})`);
+    // Signed in -> the real, authenticated /api/state (membership-
+    // checked once ENFORCE_GUILD_MEMBERSHIP flips on server-side) which
+    // also tells us our role. Not signed in -> /api/public-state, no
+    // auth at all - the "published guild page" read path. Either way we
+    // end up with the same `data` shape; myRole is what actually decides
+    // what renders editable vs. read-only vs. hidden from here on.
+    const signedIn = !!window.Clerk?.user;
+    let result;
+    if (signedIn) {
+      const res = await fetch(`${APP_API_WORKER}/api/state?guildId=${CURRENT_GUILD_ID}`, { headers: await clerkAuthHeader() });
+      result = await res.json();
+      if (!res.ok) throw new Error(result.error || `Could not reach the app state API (${res.status})`);
+      myRole = result.role || 'member'; // signed in with no membership row yet still isn't the public tier
+    } else {
+      const res = await fetch(`${APP_API_WORKER}/api/public-state?guildId=${CURRENT_GUILD_ID}`);
+      result = await res.json();
+      if (!res.ok) throw new Error(result.error || `Could not reach the app state API (${res.status})`);
+      myRole = 'unauthenticated';
+      _appStateVersion = 0; // no version to track - the public path never saves
+    }
     if (!result.data) throw new Error('No app state saved yet');
-    _appStateVersion = result.version || 0;
+    if (signedIn) _appStateVersion = result.version || 0;
     const data = result.data;
     if (data.roster) roster = data.roster;
     // Migrate: default level to 70 for any existing entry missing it
@@ -12878,9 +12966,14 @@ async function initFromJson() {
     if (data.stratsChannelId) stratsChannelId = data.stratsChannelId;
     if (data.raidHelperServerId) raidHelperServerId = data.raidHelperServerId;
     if (data.raidHelperApiKey) raidHelperApiKey = data.raidHelperApiKey;
+    if (data.tabPermissions) {
+      for (const tab of Object.keys(tabPermissions)) {
+        if (data.tabPermissions[tab]) tabPermissions[tab] = { ...tabPermissions[tab], ...data.tabPermissions[tab] };
+      }
+    }
     showToast('📂 Loaded.');
     updateVersionFooter(result.updatedAt);
-    console.log('Auto-loaded app state from D1, version', _appStateVersion);
+    console.log('Auto-loaded app state from D1 as', myRole, signedIn ? `(version ${_appStateVersion})` : '(public, read-only)');
   } catch(err) {
     // Init default raid if nothing loaded
     if (raids.length === 0) {
@@ -12891,6 +12984,7 @@ async function initFromJson() {
     }
     console.log('Could not load app state, using defaults:', err.message);
   }
+  applyTabPermissions();
   renderRaidTabs();
   renderRoster();
   renderOverview();
@@ -12902,34 +12996,48 @@ async function initFromJson() {
 }
 
 // ── Clerk bootstrap ───────────────────────────────────────────
-// Real sign-in gate (see the auth-gate overlay + Clerk <script> tags in
-// <head>) - nothing loads until Clerk confirms a signed-in user, since
-// initFromJson()/saveAppData() both need a real session token now (no
-// more shared secret to fall back to). Clerk.load() only resolves once
-// its own script has finished loading, which is why this waits for the
-// page's 'load' event first rather than running inline at parse time
-// (the two <script defer> tags in <head> may not have executed yet).
-let _clerkSignedIn = false;
+// NOT a hard sign-in gate anymore - an unauthenticated visitor loads the
+// app right away via /api/public-state (see initFromJson) and gets a
+// read-only view driven by myRole/tabPermissions.*.unauthenticated. The
+// sign-in panel only opens on demand (openSignInGate, from the header's
+// "Sign In" button). Clerk.load() only resolves once its own script has
+// finished loading, which is why this waits for the page's 'load' event
+// first rather than running inline at parse time (the two <script defer>
+// tags in <head> may not have executed yet).
+//
+// _lastAuthState tracks signed-in/signed-out as a boolean, not "has this
+// run yet" - Clerk.addListener fires on more than just the first load
+// (session refreshes, etc.), and initFromJson() needs to re-run on an
+// actual sign-in/sign-out transition (different endpoint, different
+// role/data) but NOT on every incidental listener fire in between.
+let _lastAuthState;
 window.addEventListener('load', async function () {
   await Clerk.load({ ui: { ClerkUI: window.__internal_ClerkUICtor } });
 
   Clerk.addListener(({ user }) => {
-    const gate = document.getElementById('auth-gate');
-    if (user) {
-      gate.style.display = 'none';
-      if (!_clerkSignedIn) {
-        _clerkSignedIn = true;
-        initFromJson();
-        const userBtnEl = document.getElementById('clerk-user-button');
-        if (userBtnEl && !userBtnEl.hasChildNodes()) Clerk.mountUserButton(userBtnEl);
-      }
+    const isSignedIn = !!user;
+    document.getElementById('sign-in-btn').style.display = isSignedIn ? 'none' : '';
+    document.getElementById('clerk-user-button').style.display = isSignedIn ? 'flex' : 'none';
+    document.getElementById('save-to-github-btn').style.display = isSignedIn ? '' : 'none';
+
+    if (isSignedIn) {
+      closeSignInGate();
+      const userBtnEl = document.getElementById('clerk-user-button');
+      if (!userBtnEl.hasChildNodes()) Clerk.mountUserButton(userBtnEl);
     } else {
-      gate.style.display = 'flex';
       const signInEl = document.getElementById('clerk-sign-in');
-      if (signInEl && !signInEl.hasChildNodes()) Clerk.mountSignIn(signInEl);
+      if (!signInEl.hasChildNodes()) Clerk.mountSignIn(signInEl);
+    }
+
+    if (isSignedIn !== _lastAuthState) {
+      _lastAuthState = isSignedIn;
+      initFromJson();
     }
   });
 });
+
+function openSignInGate() { document.getElementById('auth-gate').style.display = 'flex'; }
+function closeSignInGate() { document.getElementById('auth-gate').style.display = 'none'; }
 
 // One-time migration: ensure all roster entries have a level field
 // Runs after load so existing JSON entries get defaulted immediately
