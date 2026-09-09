@@ -32,6 +32,9 @@ export default {
     if (url.pathname === '/api/state' && request.method === 'PUT') {
       return handleSaveState(request, env);
     }
+    if (url.pathname === '/api/my-guilds' && request.method === 'GET') {
+      return handleMyGuilds(request, env);
+    }
 
     // ── Current WCL rate-limit status, read-only diagnostic ── /wcl-status
     if (url.pathname === '/wcl-status' && request.method === 'GET') {
@@ -166,9 +169,10 @@ export default {
 
 // ── App state (D1) ────────────────────────────────────────────
 // Real datastore, replacing kaizen_data.json-committed-to-GitHub. See
-// wrangler.toml's kaizen_db binding + schema.sql. Single-row/singleton
-// for now (id=1) - not yet split per-guild, see schema.sql's own notes
-// on why that's a deliberate later step, not this one.
+// wrangler.toml's kaizen_db binding + schema.sql. Multi-tenant now - one
+// app_state row PER GUILD (guild_id), not a singleton - see
+// migrate-to-multitenant.sql for how the original single row became
+// guild_id 1.
 //
 // Real per-user auth via Clerk (replaces the shared-secret stopgap the
 // previous step shipped) - the frontend signs everyone in with
@@ -184,6 +188,14 @@ function getClerkJWKS(env) {
   if (!_clerkJWKS) _clerkJWKS = createRemoteJWKSet(new URL(env.CLERK_JWKS_URL));
   return _clerkJWKS;
 }
+
+// TEMPORARY - flip to true once the real GM membership row is seeded
+// (see migrate-to-multitenant.sql/getActiveMembership) so signing in
+// doesn't 403 with zero membership rows yet in the table. Rolling out
+// "the DB now requires membership" and "a membership row actually
+// exists" as two separate deploys on purpose, rather than risk locking
+// out the one person actively testing this in between.
+const ENFORCE_GUILD_MEMBERSHIP = false;
 
 async function verifyAuth(request, env) {
   const header = request.headers.get('Authorization') || '';
@@ -213,9 +225,13 @@ async function verifyAuth(request, env) {
 // own Discord-posting handlers - post-roster, fallout reports, etc. -
 // keep working even before the frontend/D1 migration is fully live) and
 // should come out once D1 is confirmed to always have real data.
-async function loadAppData(env) {
+// Defaults to guild 1 ("Kaizen") - every one of this Worker's own
+// Discord-command handlers still only ever means that one guild; they
+// don't yet take a guildId of their own to look up (a real gap once a
+// second guild exists, not addressed by this step).
+async function loadAppData(env, guildId = 1) {
   if (env.kaizen_db) {
-    const row = await env.kaizen_db.prepare('SELECT data FROM app_state WHERE id = 1').first();
+    const row = await env.kaizen_db.prepare('SELECT data FROM app_state WHERE guild_id = ?').bind(guildId).first();
     if (row && row.data) return JSON.parse(row.data);
   }
   const res = await fetch(`https://kaizen-tbc.github.io/kaizen_data.json?v=${Date.now()}`);
@@ -223,16 +239,41 @@ async function loadAppData(env) {
   return res.json();
 }
 
-// GET /api/state - the frontend's replacement for "auto-load
-// kaizen_data.json from GitHub Pages on page load."
+// The actual access-control boundary: being signed in (verifyAuth) only
+// proves who you are, not that you belong to a given guild. Returns the
+// membership row ({role, status, ...}) or null - null covers "never
+// requested," "still pending," and "rejected" alike, since none of those
+// should be able to read or write that guild's data. Registration/join
+// flows (not built yet) are what ever creates one of these rows with
+// status='active' in the first place; for now the only way a row exists
+// is a direct DB seed (see migrate-to-multitenant.sql's owner, or a
+// manually-inserted GM row for testing).
+async function getActiveMembership(env, guildId, userId) {
+  if (!env.kaizen_db || !guildId || !userId) return null;
+  const row = await env.kaizen_db.prepare(
+    "SELECT role, status FROM guild_memberships WHERE guild_id = ? AND user_id = ? AND status = 'active'"
+  ).bind(guildId, userId).first();
+  return row || null;
+}
+
+// GET /api/state?guildId=1 - the frontend's replacement for "auto-load
+// kaizen_data.json from GitHub Pages on page load," now scoped to
+// whichever guild you're asking for.
 async function handleGetState(request, env) {
-  if (!(await verifyAuth(request, env))) return corsResponse(JSON.stringify({ error: 'Unauthorized' }), 401);
+  const auth = await verifyAuth(request, env);
+  if (!auth) return corsResponse(JSON.stringify({ error: 'Unauthorized' }), 401);
+  const url = new URL(request.url);
+  const guildId = parseInt(url.searchParams.get('guildId'), 10);
+  if (!guildId) return corsResponse(JSON.stringify({ error: 'Missing guildId.' }), 400);
+  const membership = await getActiveMembership(env, guildId, auth.sub);
+  if (ENFORCE_GUILD_MEMBERSHIP && !membership) return corsResponse(JSON.stringify({ error: 'Not a member of this guild.' }), 403);
   try {
     if (!env.kaizen_db) throw new Error('kaizen_db binding not configured.');
-    const row = await env.kaizen_db.prepare('SELECT data, version, updated_at, updated_by FROM app_state WHERE id = 1').first();
-    if (!row) return corsResponse(JSON.stringify({ data: null, version: 0 }), 200);
+    const row = await env.kaizen_db.prepare('SELECT data, version, updated_at, updated_by FROM app_state WHERE guild_id = ?').bind(guildId).first();
+    if (!row) return corsResponse(JSON.stringify({ data: null, version: 0, role: membership?.role || null }), 200);
     return corsResponse(JSON.stringify({
       data: JSON.parse(row.data), version: row.version, updatedAt: row.updated_at, updatedBy: row.updated_by,
+      role: membership?.role || null,
     }), 200);
   } catch (err) {
     return corsResponse(JSON.stringify({ error: err.message }), 500);
@@ -240,22 +281,33 @@ async function handleGetState(request, env) {
 }
 
 // PUT /api/state - the frontend's replacement for "PUT kaizen_data.json
-// straight to the GitHub Contents API." Body: { data, expectedVersion,
-// updatedBy }. expectedVersion is whatever version the last GET returned
-// (0 for "never saved yet") - a real optimistic-concurrency check, unlike
-// the old GitHub-commit setup where two people saving around the same
-// time could silently clobber each other with no error at all (confirmed
-// happening more than once). A stale expectedVersion means someone else
-// saved in between - the client's job is to reload and retry, not this
-// endpoint's to guess which side should win.
+// straight to the GitHub Contents API." Body: { guildId, data,
+// expectedVersion, updatedBy }. expectedVersion is whatever version the
+// last GET returned (0 for "never saved yet") - a real optimistic-
+// concurrency check, unlike the old GitHub-commit setup where two people
+// saving around the same time could silently clobber each other with no
+// error at all (confirmed happening more than once). A stale
+// expectedVersion means someone else saved in between - the client's job
+// is to reload and retry, not this endpoint's to guess which side should
+// win.
+//
+// Any active member can write, regardless of role (gm/officer/raider) -
+// finer-grained "who can edit vs. just view" isn't built yet. Worth
+// doing once roles actually mean something beyond membership, not
+// assumed here.
 async function handleSaveState(request, env) {
-  if (!(await verifyAuth(request, env))) return corsResponse(JSON.stringify({ error: 'Unauthorized' }), 401);
+  const auth = await verifyAuth(request, env);
+  if (!auth) return corsResponse(JSON.stringify({ error: 'Unauthorized' }), 401);
   try {
     if (!env.kaizen_db) throw new Error('kaizen_db binding not configured.');
-    const { data, expectedVersion, updatedBy } = await request.json();
+    const { guildId, data, expectedVersion, updatedBy } = await request.json();
+    if (!guildId) throw new Error('Missing guildId.');
     if (data == null) throw new Error('Missing data.');
 
-    const current = await env.kaizen_db.prepare('SELECT version FROM app_state WHERE id = 1').first();
+    const membership = await getActiveMembership(env, guildId, auth.sub);
+    if (ENFORCE_GUILD_MEMBERSHIP && !membership) return corsResponse(JSON.stringify({ error: 'Not a member of this guild.' }), 403);
+
+    const current = await env.kaizen_db.prepare('SELECT version FROM app_state WHERE guild_id = ?').bind(guildId).first();
     const currentVersion = current ? current.version : 0;
     if ((expectedVersion || 0) !== currentVersion) {
       return corsResponse(JSON.stringify({
@@ -267,14 +319,31 @@ async function handleSaveState(request, env) {
     const nextVersion = currentVersion + 1;
     const now = new Date().toISOString();
     await env.kaizen_db.prepare(
-      `INSERT INTO app_state (id, data, version, updated_at, updated_by) VALUES (1, ?, ?, ?, ?)
-       ON CONFLICT(id) DO UPDATE SET data=excluded.data, version=excluded.version, updated_at=excluded.updated_at, updated_by=excluded.updated_by`
-    ).bind(JSON.stringify(data), nextVersion, now, updatedBy || null).run();
+      `INSERT INTO app_state (guild_id, data, version, updated_at, updated_by) VALUES (?, ?, ?, ?, ?)
+       ON CONFLICT(guild_id) DO UPDATE SET data=excluded.data, version=excluded.version, updated_at=excluded.updated_at, updated_by=excluded.updated_by`
+    ).bind(guildId, JSON.stringify(data), nextVersion, now, updatedBy || null).run();
 
     return corsResponse(JSON.stringify({ version: nextVersion, updatedAt: now }), 200);
   } catch (err) {
     return corsResponse(JSON.stringify({ error: err.message }), 500);
   }
+}
+
+// GET /api/my-guilds - every guild the signed-in user has ANY membership
+// row for, pending/rejected included (not just active) - the frontend
+// needs to be able to show "your request to join X is still pending,"
+// not just silently omit it. This is what a guild-switcher/landing page
+// will eventually list from; nothing calls it yet.
+async function handleMyGuilds(request, env) {
+  const auth = await verifyAuth(request, env);
+  if (!auth) return corsResponse(JSON.stringify({ error: 'Unauthorized' }), 401);
+  if (!env.kaizen_db) return corsResponse(JSON.stringify({ error: 'kaizen_db binding not configured.' }), 500);
+  const { results } = await env.kaizen_db.prepare(
+    `SELECT g.id, g.slug, g.name, m.role, m.status
+     FROM guild_memberships m JOIN guilds g ON g.id = m.guild_id
+     WHERE m.user_id = ?`
+  ).bind(auth.sub).all();
+  return corsResponse(JSON.stringify({ guilds: results }), 200);
 }
 
 // ── Direct roster post from raid manager ─────────────────────

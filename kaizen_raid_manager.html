@@ -5524,6 +5524,14 @@ const RH_API     = 'https://raid-helper.xyz/api/v4';
 // own save/load data went through this Worker instead.
 const APP_API_WORKER = 'https://krm-hosted-bot.dsd030708.workers.dev';
 
+// Which guild's data this page loads/saves - hardcoded to Kaizen (guild
+// id 1, see migrate-to-multitenant.sql) until a real guild-switcher/
+// registration flow exists to pick this dynamically. Every /api/state
+// call is scoped by this - the Worker still checks you're an active
+// member of whichever guildId you send, this constant doesn't bypass
+// that, it just means there's only one to pick from today.
+const CURRENT_GUILD_ID = 1;
+
 // ======================================================
 // APP STATE (D1, via the Worker's /api/state) - see wrangler.toml/
 // schema.sql/kaizen-worker.js. Replaces kaizen_data.json-on-GitHub as the
@@ -10699,7 +10707,7 @@ async function saveAppData() {
     const res = await fetch(`${APP_API_WORKER}/api/state`, {
       method: 'PUT',
       headers: { ...authHeader, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ data: payload, expectedVersion: _appStateVersion, updatedBy }),
+      body: JSON.stringify({ guildId: CURRENT_GUILD_ID, data: payload, expectedVersion: _appStateVersion, updatedBy }),
     });
     const result = await res.json();
 
@@ -12798,9 +12806,9 @@ document.addEventListener('keydown', e => {
 // ======================================================
 async function initFromJson() {
   try {
-    const res = await fetch(`${APP_API_WORKER}/api/state`, { headers: await clerkAuthHeader() });
-    if (!res.ok) throw new Error('Could not reach the app state API');
+    const res = await fetch(`${APP_API_WORKER}/api/state?guildId=${CURRENT_GUILD_ID}`, { headers: await clerkAuthHeader() });
     const result = await res.json();
+    if (!res.ok) throw new Error(result.error || `Could not reach the app state API (${res.status})`);
     if (!result.data) throw new Error('No app state saved yet');
     _appStateVersion = result.version || 0;
     const data = result.data;
