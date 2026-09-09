@@ -322,7 +322,7 @@ main {
   font-weight: 700;
 }
 .btn-gold:hover { background: var(--gold-light); border-color: var(--gold-light); color: #0a0b0d; }
-/* Unsaved-changes dot on the header's Save to GitHub button (see
+/* Unsaved-changes dot on the header's Save button (see
    hasUnsavedChanges/pollUnsavedIndicator) - the only other signal that
    anything is unsaved is a native beforeunload prompt, which only fires
    on the way OUT. This is the "you should probably do that now" cue
@@ -2054,7 +2054,7 @@ a[href] > div > div[style*="line-height:1.6"] {
     <button class="nav-btn" onclick="showTab('guild-logs', this)">Guild Logs</button>
   </nav>
   <div class="header-right">
-    <button class="btn btn-small btn-gold" id="save-to-github-btn" onclick="saveToGitHub()" title="Push kaizen_data.json to GitHub">⬆ Save to GitHub</button>
+    <button class="btn btn-small btn-gold" id="save-to-github-btn" onclick="saveAppData()" title="Save to the database">💾 Save</button>
     <button class="btn btn-small" onclick="openGitHubSettings()" title="Settings">⚙</button>
   </div>
 </header>
@@ -2068,7 +2068,7 @@ a[href] > div > div[style*="line-height:1.6"] {
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid var(--border);">
     <div>
       <div style="font-family:'Cinzel',serif;font-size:18px;font-weight:700;color:var(--text-bright);">Overview Editor</div>
-      <div style="font-size:12px;color:var(--text-dim);margin-top:2px;">Changes publish to the guild page when you Save to GitHub</div>
+      <div style="font-size:12px;color:var(--text-dim);margin-top:2px;">Changes publish to the guild page when you Save</div>
     </div>
     <a href="https://kaizen-tbc.github.io" target="_blank" class="btn btn-small" style="font-size:11px;">↗ View Published Page</a>
   </div>
@@ -3278,7 +3278,7 @@ const SECTION_TEMPLATES = [
 //    here" - see unassignedPlayersInRole), and 'text' (a free label, no
 //    role/assignment semantics at all).
 // mapPins and mapRoleOverride live directly on each strat object (see
-// buildMapPinsHtml) - saveToGitHub already persists `strats` wholesale,
+// buildMapPinsHtml) - saveAppData already persists `strats` wholesale,
 // so no separate save-site wiring is needed beyond the id counter below.
 let _nextPinId = 1;
 function _pinId() { return _nextPinId++; }
@@ -4383,7 +4383,7 @@ function syncActiveRaid() {
 // mutating in place (groups = groups.map(...), very common in drag-and-
 // drop to strip out nulls/removed ids), which silently breaks that
 // reference. Nothing ever re-established it afterward. Concretely:
-// saveToGitHub() serializes `raids` directly, never these page-level
+// saveAppData() serializes `raids` directly, never these page-level
 // shim variables - so once the reference broke, any further edit on that
 // tab was silently never persisted. It would just sit there stale until
 // the next explicit re-sync (switching tabs, Auto-Fill, etc), at which
@@ -4433,7 +4433,7 @@ let nextLedgerId = 1;
 // never got a group slot" on its own - that's indistinguishable from a
 // plain no-show, so it earns no free credit; see computeBenchedNames.
 // Cross-referenced by date when importing WCL attendance. Persisted (see
-// saveData/loadData/saveToGitHub) since roster-finalize and WCL-attendance-
+// saveData/loadData/saveAppData) since roster-finalize and WCL-attendance-
 // import routinely happen in separate sessions, sometimes days apart.
 let benchLog = [];
 // Scheduled date of the most recently imported Raid Helper event (its own
@@ -5465,6 +5465,23 @@ function quickAddUnmatchedToRoster(name) {
 const RH_WORKER  = 'https://kaizen-bot.dsd030708.workers.dev';
 const RH_API     = 'https://raid-helper.xyz/api/v4';
 
+// ======================================================
+// APP STATE (D1, via the Worker's /api/state) - see wrangler.toml/
+// schema.sql/kaizen-worker.js. Replaces kaizen_data.json-on-GitHub as the
+// datastore (initFromJson/saveAppData below); GitHub is still used for
+// static assets (strat images, boss/mob icons - see getGHConfig's other
+// callers), just not for this JSON blob anymore.
+//
+// APP_WRITE_KEY is a single shared secret, same trust level the old
+// GitHub-token-in-localStorage setup already had (anyone with the page
+// open could read either one from devtools) - an interim stand-in until
+// real Discord/Google sign-in (Clerk) replaces it with per-user sessions
+// the Worker actually verifies, rather than one fixed string everyone
+// shares. Fine for a small trusted pilot; not meant to outlive that.
+// ======================================================
+const APP_WRITE_KEY = 'dWzGW6Zl6lTcxnBVZFjLsGN5VhgbZynoNdmiG321FLM';
+let _appStateVersion = 0; // last version we loaded/saved - see saveAppData's optimistic-concurrency check
+
 async function rhFetch(url, headers = {}) {
   // Route through our Cloudflare Worker — no CORS issues, handles auth
   const path = url.replace(RH_API, '');
@@ -6078,12 +6095,11 @@ async function publishRosterToDiscord(notify = true) {
     // attendance import can find both later: don't dock the benched, and
     // flag anyone slotted-but-missing from the log for a human look.
     recordRosterSnapshot();
-    // Save current state to GitHub AND confirm the published site has
-    // actually caught up before posting - bail rather than post if the
+    // Save current state before posting - bail rather than post if the
     // save itself failed, since the Worker would otherwise silently post
-    // whatever was published before (stale, not "nothing"), which is
-    // worse than just stopping here. See saveAndWaitForGitHubPages.
-    const saved = await saveAndWaitForGitHubPages('Saving roster to GitHub...');
+    // whatever was there before (stale, not "nothing"), which is worse
+    // than just stopping here. See saveAndPublish.
+    const saved = await saveAndPublish('Saving roster...');
     if (!saved) { showToast('✗ Roster not published — GitHub save failed, fix that first.', true); return; }
 
     // Ask Worker to post the roster
@@ -8775,7 +8791,7 @@ function updateStratsChannelId(value) {
 
 // Assignments on a pug-heavy week can change right up until posting time,
 // so this now saves to GitHub itself rather than requiring a separate
-// manual "Save to GitHub" click first (that extra step is exactly what
+// manual "Save" click first (that extra step is exactly what
 // caused a stale/empty post live - edited assignments, forgot to save,
 // posted whatever was still published from before). See postStratToDiscord
 // for the wait built in after the save.
@@ -8889,49 +8905,28 @@ function confirmPostTrashGuide() {
 
 let _stratPostInFlight = false;
 
-// A fixed wait was tried first (45s) and confirmed live to NOT be
-// reliable - GitHub Pages/CDN propagation time is inconsistent, and a
-// flat guess either wastes time or, worse, isn't long enough and silently
-// lets the Worker post stale content (exactly what happened: a bestiary
-// mob deleted right before posting still showed up, because the fixed
-// wait ran out before the published site actually caught up). Polling the
-// real published file for the exact savedAt value just written removes
-// the guesswork entirely - proceed the moment it's actually live, wait
-// longer than 45s when the CDN is slow that day, either way never post
-// before it's confirmed. Shared by every "save then post" flow (strats,
-// trash guides, roster).
-const GH_PAGES_POLL_MAX_MS = 120000; // generous ceiling - only ever hit on unusually slow propagation
-const GH_PAGES_POLL_INTERVAL_MS = 4000;
-
-async function saveAndWaitForGitHubPages(savingLabel) {
+// Used to be a poll loop waiting for GitHub Pages/CDN propagation to
+// catch up before letting the Worker post (that lag was real and once
+// caused a genuinely stale post - a deleted bestiary mob still showed up
+// because the fixed wait this originally used ran out too early). D1
+// writes have no such propagation delay - the moment saveAppData's PUT
+// resolves, the Worker's very next read sees it, since both read the
+// same row. So this is now just a thin wrapper: save, and only proceed
+// if it actually succeeded. Kept as its own function (not inlined at
+// each call site) because every "save then post" flow - strats, trash
+// guides, roster - shares the exact same "don't post if the save failed"
+// requirement.
+async function saveAndPublish(savingLabel) {
   showToast(`⬆ ${savingLabel}`);
-  const savedAt = await saveToGitHub();
-  if (!savedAt) return false;
-
-  const start = Date.now();
-  while (Date.now() - start < GH_PAGES_POLL_MAX_MS) {
-    const elapsed = Math.round((Date.now() - start) / 1000);
-    showToast(`⏳ Waiting for GitHub Pages to publish before posting... (${elapsed}s)`);
-    try {
-      const res = await fetch(`https://kaizen-tbc.github.io/kaizen_data.json?v=${Date.now()}`, { cache: 'no-store' });
-      if (res.ok) {
-        const live = await res.json();
-        if (live.savedAt === savedAt) return true; // confirmed live - safe to post now
-      }
-    } catch { /* transient fetch hiccup - just retry on the next interval */ }
-    await new Promise(r => setTimeout(r, GH_PAGES_POLL_INTERVAL_MS));
-  }
-  // Slow propagation is rare but real - proceed rather than block forever,
-  // but say so plainly so a stale post (if it still happens) isn't a surprise.
-  showToast('⚠ GitHub Pages is taking longer than usual - posting anyway, worth double-checking the result.', true);
-  return true;
+  const saved = await saveAppData();
+  return !!saved;
 }
 
 async function postStratToDiscord(stratId) {
   if (_stratPostInFlight) { showToast('Already publishing - hang on.', true); return; }
   _stratPostInFlight = true;
   try {
-    const saved = await saveAndWaitForGitHubPages('Saving latest assignments to GitHub...');
+    const saved = await saveAndPublish('Saving latest assignments...');
     if (!saved) { showToast('✗ Strat not posted — GitHub save failed, fix that first.', true); return; }
 
     showToast('🚀 Publishing strat to Discord...');
@@ -8954,7 +8949,7 @@ async function postTrashGuideToDiscord(guideId) {
   if (_stratPostInFlight) { showToast('Already publishing - hang on.', true); return; }
   _stratPostInFlight = true;
   try {
-    const saved = await saveAndWaitForGitHubPages('Saving latest trash guide to GitHub...');
+    const saved = await saveAndPublish('Saving latest trash guide...');
     if (!saved) { showToast('✗ Trash guide not posted — GitHub save failed, fix that first.', true); return; }
 
     showToast('🚀 Publishing trash guide to Discord...');
@@ -9855,7 +9850,7 @@ async function uploadBestiaryMobImage(event, mobId) {
 
     mob.image = path;
     renderBestiaryModalList();
-    showToast('✓ Mob image uploaded! Save to GitHub to publish it.');
+    showToast('✓ Mob image uploaded! Save to publish it.');
   } catch (err) {
     showToast(`✗ Image upload failed: ${err.message}`, true);
   }
@@ -10529,7 +10524,7 @@ function clearGitHubToken() {
 }
 
 // Everything that actually gets persisted to kaizen_data.json, minus the
-// version/savedAt stamp - shared between the real save (saveToGitHub,
+// version/savedAt stamp - shared between the real save (saveAppData,
 // which adds that stamp on top) and the unsaved-changes tracker below,
 // which needs the exact same shape to compare against a snapshot without
 // savedAt's own timestamp making every comparison look "changed."
@@ -10556,13 +10551,13 @@ function buildSavePayload() {
 // ── Unsaved-changes tracking ──────────────────────────────────────
 // Nothing in this app auto-saves - a new strat, a replaced image, a
 // section edit, a roster import - all of it lives only in this tab's
-// memory until "Save to GitHub" is clicked. (A replaced strat image is a
+// memory until "Save" is clicked. (A replaced strat image is a
 // partial exception: the raw image FILE itself uploads straight to
 // GitHub immediately, since that's its own direct API call - but the
 // metadata saying "this strat's image is now that file" only updates here,
 // in kaizen_data.json. Confirmed live: a whole Karazhan strat, image
 // included, silently reverted to "nothing here yet" because it was built
-// in a session that got closed/reloaded before Save to GitHub - the image
+// in a session that got closed/reloaded before Save - the image
 // file was still sitting in the repo, just orphaned, nothing pointing at
 // it anymore.) Comparing a JSON snapshot taken right after the last real
 // load/save against the live state on the way out catches that, without
@@ -10594,69 +10589,47 @@ setInterval(() => {
   if (btn) btn.classList.toggle('has-unsaved', hasUnsavedChanges());
 }, 4000);
 
-async function saveToGitHub() {
-  const cfg = getGHConfig();
-  if (!cfg.token) {
-    openGitHubSettings();
-    showToast('Enter your GitHub token first.', true);
-    return false;
-  }
-
-  showToast('⬆ Pushing to GitHub...');
-
-  const payload = { version: 3, savedAt: new Date().toISOString(), ...buildSavePayload() };
-
-  const jsonContent = JSON.stringify(payload, null, 2);
-  const encoded = btoa(unescape(encodeURIComponent(jsonContent)));
-
-  const apiBase = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/kaizen_data.json`;
-  const headers = {
-    'Authorization': `token ${cfg.token}`,
-    'Accept': 'application/vnd.github.v3+json',
-    'Content-Type': 'application/json',
-  };
+// Saves straight to D1 via the Worker (see wrangler.toml/schema.sql) -
+// replaces the old "PUT kaizen_data.json to the GitHub Contents API"
+// (kaizen_data.json/GitHub Pages is no longer this app's datastore, just
+// still where the static assets - strat images, boss/mob icons - live,
+// see getGHConfig's other callers). Named saveAppData now, not
+// saveToGitHub - it doesn't touch GitHub at all anymore.
+async function saveAppData() {
+  showToast('⬆ Saving...');
+  const payload = buildSavePayload();
+  const nowIso = new Date().toISOString();
 
   try {
-    // Step 1: get current file SHA (required by GitHub API to update)
-    const getRes = await fetch(apiBase, { headers });
-    let sha = null;
-    if (getRes.ok) {
-      const fileData = await getRes.json();
-      sha = fileData.sha;
-    } else if (getRes.status !== 404) {
-      throw new Error(`GitHub API error: ${getRes.status}`);
-    }
-
-    // Step 2: PUT new content
-    const body = {
-      message: `raid data update ${new Date().toISOString().slice(0,16).replace('T',' ')}`,
-      content: encoded,
-    };
-    if (sha) body.sha = sha;
-
-    const putRes = await fetch(apiBase, {
+    const res = await fetch(`${RH_WORKER}/api/state`, {
       method: 'PUT',
-      headers,
-      body: JSON.stringify(body),
+      headers: { 'Authorization': `Bearer ${APP_WRITE_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ data: payload, expectedVersion: _appStateVersion, updatedBy: guildInfo?.name || 'unknown' }),
     });
+    const result = await res.json();
 
-    if (!putRes.ok) {
-      const err = await putRes.json();
-      throw new Error(err.message || `PUT failed: ${putRes.status}`);
+    if (res.status === 409) {
+      // Someone else saved in between our last load and now - the old
+      // GitHub-commit setup let this happen silently (whoever's commit
+      // landed second just won); this is the whole reason for the
+      // version check, so surface it plainly instead of guessing which
+      // side should win.
+      showToast('✗ Someone else saved since you last loaded - reload the page and reapply your change.', true);
+      return false;
     }
+    if (!res.ok) throw new Error(result.error || `Save failed: ${res.status}`);
 
-    showToast('✓ Saved to GitHub! Site updates in ~60 seconds.');
-    updateVersionFooter(new Date().toISOString());
+    _appStateVersion = result.version;
+    showToast('✓ Saved.');
+    updateVersionFooter(result.updatedAt);
     markSavedSnapshot(); // this exact state is now the new "clean" baseline
     document.getElementById('save-to-github-btn')?.classList.remove('has-unsaved');
-    // Returns the savedAt string (truthy, so existing `if (!saved)` checks
-    // still work unchanged) rather than a bare true - saveAndWaitForGitHubPages
-    // uses the exact value to confirm the PUBLISHED site has actually caught
-    // up before posting, instead of guessing a fixed wait duration.
-    return payload.savedAt;
+    // Returns the updatedAt string (truthy, so existing `if (!saved)`
+    // checks elsewhere still work unchanged) rather than a bare true.
+    return result.updatedAt;
   } catch (err) {
-    console.error('GitHub save error:', err);
-    showToast(`✗ GitHub save failed: ${err.message}`, true);
+    console.error('Save error:', err);
+    showToast(`✗ Save failed: ${err.message}`, true);
     return false;
   }
 }
@@ -11354,7 +11327,7 @@ function healPriorityRank(cls) {
 // Which raid tab's roster Auto-Assign pulls from - a guild can run
 // multiple weekly raids for the same instance (Tuesday BT, Thursday BT),
 // so this can't just be "whatever raid happens to be globally active"
-// elsewhere in the app. Persisted (see saveToGitHub) so the choice sticks
+// elsewhere in the app. Persisted (see saveAppData) so the choice sticks
 // across sessions, not just this one.
 let autoAssignRaidId = null;
 
@@ -12730,9 +12703,12 @@ document.addEventListener('keydown', e => {
 // ======================================================
 async function initFromJson() {
   try {
-    const res = await fetch('kaizen_data.json?v=' + Date.now());
-    if (!res.ok) throw new Error('No local JSON found');
-    const data = await res.json();
+    const res = await fetch(`${RH_WORKER}/api/state`, { headers: { 'Authorization': `Bearer ${APP_WRITE_KEY}` } });
+    if (!res.ok) throw new Error('Could not reach the app state API');
+    const result = await res.json();
+    if (!result.data) throw new Error('No app state saved yet');
+    _appStateVersion = result.version || 0;
+    const data = result.data;
     if (data.roster) roster = data.roster;
     // Migrate: default level to 70 for any existing entry missing it
     roster.forEach(p => { if (!p.level) p.level = 70; });
@@ -12797,9 +12773,9 @@ async function initFromJson() {
     if (data.logsChannelId) logsChannelId = data.logsChannelId;
     if (data.archiveChannelId) archiveChannelId = data.archiveChannelId;
     if (data.stratsChannelId) stratsChannelId = data.stratsChannelId;
-    showToast('📂 Loaded kaizen_data.json automatically.');
-    updateVersionFooter(data.savedAt);
-    console.log('Auto-loaded kaizen_data.json');
+    showToast('📂 Loaded.');
+    updateVersionFooter(result.updatedAt);
+    console.log('Auto-loaded app state from D1, version', _appStateVersion);
   } catch(err) {
     // Init default raid if nothing loaded
     if (raids.length === 0) {
@@ -12808,7 +12784,7 @@ async function initFromJson() {
       activeRaidId = r.id;
       syncActiveRaid();
     }
-    console.log('No kaizen_data.json found, using defaults.');
+    console.log('Could not load app state, using defaults:', err.message);
   }
   renderRaidTabs();
   renderRoster();
