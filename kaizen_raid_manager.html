@@ -2073,7 +2073,7 @@ a[href] > div > div[style*="line-height:1.6"] {
   </nav>
   <div class="header-right">
     <button class="btn btn-small btn-gold" id="save-to-github-btn" onclick="saveAppData()" title="Save to the database">💾 Save</button>
-    <button class="btn btn-small" onclick="openGitHubSettings()" title="Settings">⚙</button>
+    <button class="btn btn-small" onclick="openSettings()" title="Settings">⚙</button>
     <div id="clerk-user-button" style="display:flex;align-items:center;"></div>
   </div>
 </header>
@@ -2829,17 +2829,20 @@ a[href] > div > div[style*="line-height:1.6"] {
 </div>
 
 <!-- ==================== GITHUB SETTINGS MODAL ==================== -->
-<div class="modal-overlay" id="github-modal-overlay" onclick="if(event.target===this)closeGitHubSettings()">
+<div class="modal-overlay" id="settings-modal-overlay" onclick="if(event.target===this)closeSettings()">
   <div class="modal" style="width:480px;">
     <div class="modal-header">
       <div class="modal-title">Settings</div>
-      <button class="modal-close" onclick="closeGitHubSettings()">✕</button>
+      <button class="modal-close" onclick="closeSettings()">✕</button>
     </div>
     <div class="modal-body">
-      <!-- GitHub -->
-      <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-dim);margin-bottom:10px;">GitHub</div>
+      <!-- GitHub - personal to this browser, optional -->
+      <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:10px;">
+        <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-dim);">GitHub</div>
+        <div style="font-size:10px;color:var(--text-dim);">personal to this browser · optional</div>
+      </div>
       <div class="notice notice-info" style="margin-bottom:16px;">
-        <span>ℹ</span> Tokens are stored only in your browser and never sent anywhere except the relevant API.
+        <span>ℹ</span> Only needed if you're uploading strat/mob images. Stored in this browser only, never saved with the rest of the guild's data.
       </div>
       <div class="form-group" style="margin-bottom:14px;">
         <label class="form-label">GitHub Personal Access Token</label>
@@ -2857,8 +2860,14 @@ a[href] > div > div[style*="line-height:1.6"] {
         <input type="text" class="form-input" id="gh-repo-input" value="guild" placeholder="kaizen-tbc.github.io">
       </div>
 
-      <!-- Raid Helper -->
-      <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-dim);margin-bottom:10px;padding-top:16px;border-top:1px solid var(--border);">Raid Helper</div>
+      <!-- Raid Helper - guild-wide, saved for everyone -->
+      <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:10px;padding-top:16px;border-top:1px solid var(--border);">
+        <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-dim);">Raid Helper</div>
+        <div style="font-size:10px;color:var(--gold-dim);">shared for the whole guild</div>
+      </div>
+      <div class="notice notice-info" style="margin-bottom:16px;">
+        <span>ℹ</span> Saved for everyone the moment you click Save below (not just this browser) - set this once, not per-person.
+      </div>
       <div class="form-group" style="margin-bottom:14px;">
         <label class="form-label">Discord Server ID</label>
         <input type="text" class="form-input" id="rh-server-id-input" placeholder="e.g. 123456789012345678">
@@ -2875,13 +2884,13 @@ a[href] > div > div[style*="line-height:1.6"] {
       </div>
     </div>
     <div class="modal-footer">
-      <button class="btn" onclick="closeGitHubSettings()">Cancel</button>
+      <button class="btn" onclick="closeSettings()">Cancel</button>
       <button class="btn btn-danger btn-small" onclick="clearGitHubToken()" style="margin-right:auto;">Clear Tokens</button>
       <button class="btn btn-small" onclick="saveData()" title="Download kaizen_data.json locally">💾 Save Local</button>
       <label class="btn btn-small" style="cursor:pointer;" title="Load a previously saved JSON file">
         📂 Load JSON<input type="file" accept=".json" onchange="loadData(event)" style="display:none;">
       </label>
-      <button class="btn btn-gold" onclick="saveGitHubSettings()">Save Settings</button>
+      <button class="btn btn-gold" onclick="saveSettingsModal()">Save Settings</button>
     </div>
   </div>
 </div>
@@ -4504,6 +4513,16 @@ let archiveChannelId = '';
 // was there before (no archive, these are a living reference not a
 // history worth keeping) then posts the current strat's image + assigns.
 let stratsChannelId = '';
+
+// Raid Helper integration config - guild-wide, same for everyone (unlike
+// the GitHub token in getGHConfig, which is genuinely personal to
+// whoever's browser it's in). Used to live in localStorage, meaning every
+// officer had to separately paste the same values into their own browser
+// with no way to tell if they'd drifted - now part of the shared saved
+// state like the channel IDs above, so it's configured once. See
+// getRHConfig/saveSettingsModal.
+let raidHelperServerId = '';
+let raidHelperApiKey = '';
 
 // Resolved display names for the above (e.g. "logs-archive") — purely
 // cosmetic, so the confirm dialog can say "#logs-archive" instead of a
@@ -8606,6 +8625,8 @@ function loadData(event) {
       if (data.logsChannelId) logsChannelId = data.logsChannelId;
       if (data.archiveChannelId) archiveChannelId = data.archiveChannelId;
       if (data.stratsChannelId) stratsChannelId = data.stratsChannelId;
+      if (data.raidHelperServerId) raidHelperServerId = data.raidHelperServerId;
+      if (data.raidHelperApiKey) raidHelperApiKey = data.raidHelperApiKey;
       renderRoster();
       renderOverview();
       renderAttendance();
@@ -10528,14 +10549,18 @@ function getGHConfig() {
   };
 }
 
+// Guild-wide now (see raidHelperServerId/raidHelperApiKey), not
+// per-browser localStorage - RH_SERVER_KEY/RH_APIKEY_KEY below are read
+// only as a one-time migration for anyone who'd already configured this
+// the old way, so upgrading doesn't silently blank it out for them.
 function getRHConfig() {
   return {
-    serverId: localStorage.getItem(RH_SERVER_KEY) || '',
-    apiKey:   localStorage.getItem(RH_APIKEY_KEY) || '',
+    serverId: raidHelperServerId || localStorage.getItem(RH_SERVER_KEY) || '',
+    apiKey:   raidHelperApiKey   || localStorage.getItem(RH_APIKEY_KEY) || '',
   };
 }
 
-function openGitHubSettings() {
+function openSettings() {
   const cfg = getGHConfig();
   const rh  = getRHConfig();
   document.getElementById('gh-token-input').value      = cfg.token;
@@ -10543,34 +10568,50 @@ function openGitHubSettings() {
   document.getElementById('gh-repo-input').value       = cfg.repo;
   document.getElementById('rh-server-id-input').value  = rh.serverId;
   document.getElementById('rh-api-key-input').value    = rh.apiKey;
-  document.getElementById('github-modal-overlay').classList.add('open');
+  document.getElementById('settings-modal-overlay').classList.add('open');
 }
 
-function closeGitHubSettings() {
-  document.getElementById('github-modal-overlay').classList.remove('open');
+function closeSettings() {
+  document.getElementById('settings-modal-overlay').classList.remove('open');
 }
 
-function saveGitHubSettings() {
+// GitHub (personal, this browser only - localStorage) and Raid Helper
+// (guild-wide - the real saved state, same as the Discord channel IDs)
+// have different save semantics, on purpose:
+// - GitHub: optional (only matters if you're uploading strat/mob images),
+//   saved locally, never shared. A blank field here leaves whatever's
+//   already saved alone rather than wiping it - use "Clear Tokens" for
+//   that.
+// - Raid Helper: not personal, so it shouldn't live in one browser's
+//   storage while everyone else's drifts - this calls saveAppData()
+//   directly instead of waiting for the header's Save button, so a
+//   config change like this doesn't need a second manual step to
+//   actually stick. That said, it's still a full save of whatever's
+//   currently in memory (there's only one savable blob right now, not
+//   per-field granularity) - anything else you were mid-editing saves
+//   right along with it, same as clicking the header Save button would.
+async function saveSettingsModal() {
   const token    = document.getElementById('gh-token-input').value.trim();
   const user     = document.getElementById('gh-user-input').value.trim();
   const repo     = document.getElementById('gh-repo-input').value.trim();
   const serverId = document.getElementById('rh-server-id-input').value.trim();
   const apiKey   = document.getElementById('rh-api-key-input').value.trim();
-  if (!token) { showToast('Please enter a GitHub token.', true); return; }
-  localStorage.setItem(GH_TOKEN_KEY,  token);
-  localStorage.setItem(GH_USER_KEY,   user);
-  localStorage.setItem(GH_REPO_KEY,   repo);
-  if (serverId) localStorage.setItem(RH_SERVER_KEY, serverId);
-  if (apiKey)   localStorage.setItem(RH_APIKEY_KEY, apiKey);
-  closeGitHubSettings();
-  showToast('GitHub settings saved.');
+
+  if (token) localStorage.setItem(GH_TOKEN_KEY, token);
+  if (user)  localStorage.setItem(GH_USER_KEY,  user);
+  if (repo)  localStorage.setItem(GH_REPO_KEY,  repo);
+
+  raidHelperServerId = serverId;
+  raidHelperApiKey = apiKey;
+  closeSettings();
+  await saveAppData(); // its own toasts cover success/failure
 }
 
 function clearGitHubToken() {
   localStorage.removeItem(GH_TOKEN_KEY);
   localStorage.removeItem(GH_USER_KEY);
   localStorage.removeItem(GH_REPO_KEY);
-  closeGitHubSettings();
+  closeSettings();
   showToast('GitHub token cleared.');
 }
 
@@ -10596,6 +10637,8 @@ function buildSavePayload() {
     logsChannelId,
     archiveChannelId,
     stratsChannelId,
+    raidHelperServerId,
+    raidHelperApiKey,
   };
 }
 
@@ -12747,7 +12790,7 @@ function confirmRowModal() {
 // KEYBOARD
 // ======================================================
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') { closeModal(); closeConfirm(); closePugModal(); closeAssignPicker(); closeGitHubSettings(); closeGuildieModal(); closeRowModal(); }
+  if (e.key === 'Escape') { closeModal(); closeConfirm(); closePugModal(); closeAssignPicker(); closeSettings(); closeGuildieModal(); closeRowModal(); }
 });
 
 // ======================================================
@@ -12825,6 +12868,8 @@ async function initFromJson() {
     if (data.logsChannelId) logsChannelId = data.logsChannelId;
     if (data.archiveChannelId) archiveChannelId = data.archiveChannelId;
     if (data.stratsChannelId) stratsChannelId = data.stratsChannelId;
+    if (data.raidHelperServerId) raidHelperServerId = data.raidHelperServerId;
+    if (data.raidHelperApiKey) raidHelperApiKey = data.raidHelperApiKey;
     showToast('📂 Loaded.');
     updateVersionFooter(result.updatedAt);
     console.log('Auto-loaded app state from D1, version', _appStateVersion);
