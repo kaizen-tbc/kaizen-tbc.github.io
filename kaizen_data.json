@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-09-08T23:51:56.202Z",
+  "savedAt": "2026-09-09T00:19:05.979Z",
   "roster": [
     {
       "id": 1,
@@ -996,21 +996,23 @@
         ],
         [
           46,
-          29,
+          35,
           31,
-          35
+          -1021,
+          29
         ],
         [
           67,
-          2,
           4,
+          2,
           39,
           22
         ],
         [
           28,
-          66,
           19,
+          -7,
+          66,
           55
         ],
         [
@@ -1199,9 +1201,20 @@
           "_rhSpec": "",
           "_rhClass": "Absence",
           "_userId": "595869887952322561"
+        },
+        {
+          "id": -7,
+          "name": "Eyecyou",
+          "class": "Mage",
+          "ms": "Arcane",
+          "os": "",
+          "role": "Ranged",
+          "status": "Main",
+          "altOf": "",
+          "notes": "PUG"
         }
       ],
-      "nextPugId": -7,
+      "nextPugId": -8,
       "signUpPool": [
         {
           "id": -1,
@@ -1632,6 +1645,30 @@
           "_userId": "356427338373791746",
           "_rhSpec": "Elemental",
           "_rhClass": "Shaman"
+        },
+        {
+          "id": -1021,
+          "name": "Daisojenn",
+          "class": "Hunter",
+          "ms": "Beastmastery",
+          "os": "",
+          "role": "Ranged",
+          "status": "Main",
+          "altOf": "",
+          "level": 70,
+          "notes": "",
+          "_rosterId": 21
+        },
+        {
+          "id": -7,
+          "name": "Eyecyou",
+          "class": "Mage",
+          "ms": "Arcane",
+          "os": "",
+          "role": "Ranged",
+          "status": "Main",
+          "altOf": "",
+          "notes": "PUG"
         }
       ],
       "rhEventTitle": "9/8 mount hyjal",
@@ -1898,6 +1935,19 @@
           "level": 70,
           "notes": "",
           "_rosterId": 31
+        },
+        {
+          "id": -1021,
+          "name": "Daisojenn",
+          "class": "Hunter",
+          "ms": "Beastmastery",
+          "os": "",
+          "role": "Ranged",
+          "status": "Main",
+          "altOf": "",
+          "level": 70,
+          "notes": "",
+          "_rosterId": 21
         }
       ]
     },
