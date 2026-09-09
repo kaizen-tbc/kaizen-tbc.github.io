@@ -197,7 +197,7 @@ async function verifyAuth(request, env) {
     // to a known Kaizen origin whenever Clerk does supply it - stops a
     // token minted for some other site from being replayed against this
     // Worker just because it happens to share the same Clerk instance.
-    const authorizedParties = ['https://kaizen-tbc.github.io', 'http://localhost:8793', 'http://localhost:8794'];
+    const authorizedParties = ['https://kaizen-krm.dsd030708.workers.dev', 'https://kaizen-tbc.github.io', 'http://localhost:8793', 'http://localhost:8794'];
     if (payload.azp && !authorizedParties.includes(payload.azp)) return null;
     return payload; // payload.sub is the Clerk user id, if a caller ever needs it
   } catch (err) {

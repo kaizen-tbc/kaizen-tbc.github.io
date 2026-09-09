@@ -5497,6 +5497,14 @@ function quickAddUnmatchedToRoster(name) {
 const RH_WORKER  = 'https://kaizen-bot.dsd030708.workers.dev';
 const RH_API     = 'https://raid-helper.xyz/api/v4';
 
+// This pilot's own Worker (D1 + Clerk /api/state only - see wrangler.toml
+// on the hosted-krm branch) - deliberately separate from RH_WORKER above,
+// which stays pointed at the real production kaizen-bot for every
+// Discord-posting/Raid Helper/WCL feature. Posting to Discord from this
+// pilot still posts for real through that same real bot; only the app's
+// own save/load data went through this Worker instead.
+const APP_API_WORKER = 'https://krm-hosted-bot.dsd030708.workers.dev';
+
 // ======================================================
 // APP STATE (D1, via the Worker's /api/state) - see wrangler.toml/
 // schema.sql/kaizen-worker.js. Replaces kaizen_data.json-on-GitHub as the
@@ -10645,7 +10653,7 @@ async function saveAppData() {
   try {
     const authHeader = await clerkAuthHeader();
     const updatedBy = window.Clerk?.user?.username || window.Clerk?.user?.fullName || 'unknown';
-    const res = await fetch(`${RH_WORKER}/api/state`, {
+    const res = await fetch(`${APP_API_WORKER}/api/state`, {
       method: 'PUT',
       headers: { ...authHeader, 'Content-Type': 'application/json' },
       body: JSON.stringify({ data: payload, expectedVersion: _appStateVersion, updatedBy }),
@@ -12747,7 +12755,7 @@ document.addEventListener('keydown', e => {
 // ======================================================
 async function initFromJson() {
   try {
-    const res = await fetch(`${RH_WORKER}/api/state`, { headers: await clerkAuthHeader() });
+    const res = await fetch(`${APP_API_WORKER}/api/state`, { headers: await clerkAuthHeader() });
     if (!res.ok) throw new Error('Could not reach the app state API');
     const result = await res.json();
     if (!result.data) throw new Error('No app state saved yet');
