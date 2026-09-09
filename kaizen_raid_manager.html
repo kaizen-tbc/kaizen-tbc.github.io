@@ -2043,7 +2043,16 @@ a[href] > div > div[style*="line-height:1.6"] {
    visually still invites a click. */
 .krm-readonly input, .krm-readonly textarea, .krm-readonly select { pointer-events: none; opacity: 0.75; }
 .krm-readonly [contenteditable="true"] { pointer-events: none; }
+.krm-readonly [draggable="true"] { pointer-events: none; } /* assign-slot/pool-player drag sources - Weekly Roster's whole edit surface */
 .krm-readonly .krm-edit-only { display: none !important; }
+/* Search/filter controls don't mutate anything - a read-only viewer
+   should still be able to search/filter, so these opt back OUT of the
+   blanket input lockout above. */
+.krm-readonly .krm-view-ok { pointer-events: auto !important; opacity: 1 !important; }
+/* For controls that carry real information alongside being editable
+   (a spec/role pill showing "who's playing what," not just a bare
+   action button) - disable, don't hide, so the info stays visible. */
+.krm-readonly .krm-edit-disable { pointer-events: none !important; }
 </style>
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8959237604087556" crossorigin="anonymous"></script>
   <script>const whTooltips = { colorLinks: true, iconizeLinks: false, renameLinks: false, iconSize: 'small' };</script>
@@ -2193,7 +2202,7 @@ a[href] > div > div[style*="line-height:1.6"] {
         <div class="section-title">Guild Roster</div>
         <div class="section-subtitle">Manage members, designate alts, and set raider status</div>
       </div>
-      <div style="display:flex;gap:8px;">
+      <div class="krm-edit-only" style="display:flex;gap:8px;">
         <button class="btn" onclick="openGuildPasteModal()">⬆ Import Guild Roster</button>
         <button class="btn btn-gold" onclick="openAddModal()">+ Add Member</button>
       </div>
@@ -2202,18 +2211,18 @@ a[href] > div > div[style*="line-height:1.6"] {
     <div class="stats-strip" id="roster-stats"></div>
 
     <div class="roster-controls">
-      <input type="text" class="filter-input" placeholder="Search name..." id="roster-search" oninput="renderRoster()">
-      <select class="filter-select" id="filter-class" onchange="renderRoster()">
+      <input type="text" class="filter-input krm-view-ok" placeholder="Search name..." id="roster-search" oninput="renderRoster()">
+      <select class="filter-select krm-view-ok" id="filter-class" onchange="renderRoster()">
         <option value="">All Classes</option>
         <option>Druid</option><option>Hunter</option><option>Mage</option>
         <option>Paladin</option><option>Priest</option><option>Rogue</option>
         <option>Shaman</option><option>Warlock</option><option>Warrior</option>
       </select>
-      <select class="filter-select" id="filter-role" onchange="renderRoster()">
+      <select class="filter-select krm-view-ok" id="filter-role" onchange="renderRoster()">
         <option value="">All Roles</option>
         <option>Tank</option><option>Healer</option><option>Melee</option><option>Ranged</option>
       </select>
-      <select class="filter-select" id="filter-status" onchange="renderRoster()">
+      <select class="filter-select krm-view-ok" id="filter-status" onchange="renderRoster()">
         <option value="">All Status</option>
         <option>Main</option><option>Alt</option><option>Casual</option>
       </select>
@@ -2248,7 +2257,7 @@ a[href] > div > div[style*="line-height:1.6"] {
         <div class="section-title">Attendance Ledger</div>
         <div class="section-subtitle">Imports attendance straight from Warcraft Logs — no manual upload</div>
       </div>
-      <button class="btn btn-small btn-gold" onclick="openWCLAttendanceImport()">⬇ Import from Warcraft Logs</button>
+      <button class="btn btn-small btn-gold krm-edit-only" onclick="openWCLAttendanceImport()">⬇ Import from Warcraft Logs</button>
     </div>
     <div id="ledger-list"></div>
   </div>
@@ -2261,7 +2270,7 @@ a[href] > div > div[style*="line-height:1.6"] {
   <!-- Raid tabs row — browser tab style, + immediately after last tab -->
   <div style="display:flex;align-items:flex-end;margin-bottom:20px;border-bottom:1px solid var(--border);">
     <div id="raid-tabs" style="display:flex;gap:0;overflow-x:auto;"></div>
-    <button onclick="openAddRaidModal()"
+    <button class="krm-edit-only" onclick="openAddRaidModal()"
       style="flex-shrink:0;height:36px;width:36px;background:none;border:none;border-bottom:2px solid transparent;color:var(--text-dim);font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:color 0.15s;padding-bottom:2px;"
       onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='var(--text-dim)'"
       title="Add raid tab">＋</button>
@@ -2274,14 +2283,14 @@ a[href] > div > div[style*="line-height:1.6"] {
       <div>
         <div style="display:flex;align-items:center;gap:6px;">
           <div class="section-title" id="active-raid-title" style="margin-bottom:0;">Weekly Roster</div>
-          <button onclick="openRaidSettings()" title="Raid Settings"
+          <button class="krm-edit-only" onclick="openRaidSettings()" title="Raid Settings"
             style="background:var(--bg-hover);border:none;color:var(--text-dim);cursor:pointer;font-size:13px;padding:4px 6px;line-height:1;transition:all 0.15s;border-radius:3px;"
             onmouseover="this.style.color='var(--gold)';this.style.background='var(--bg-card)'" onmouseout="this.style.color='var(--text-dim)';this.style.background='var(--bg-hover)'">⚙</button>
         </div>
         <div class="section-subtitle" id="active-raid-subtitle" style="margin:0;">Select or add a raid tab above</div>
       </div>
     </div>
-    <div style="display:flex;gap:6px;align-items:center;">
+    <div class="krm-edit-only" style="display:flex;gap:6px;align-items:center;">
       <button class="btn btn-small" style="background:rgba(88,101,242,0.15);border-color:#5865F2;color:#7289da;" onclick="openRaidHelperImport()">⬇ Import Roster</button>
       <button class="btn btn-small" style="background:#5865F2;border-color:#4752c4;color:#fff;font-weight:700;" onclick="confirmPublishRoster()">↑ Post to Discord</button>
     </div>
@@ -2292,7 +2301,7 @@ a[href] > div > div[style*="line-height:1.6"] {
 
   <!-- Secondary actions left, role counts right — same row -->
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
-    <div style="display:flex;gap:6px;align-items:center;">
+    <div class="krm-edit-only" style="display:flex;gap:6px;align-items:center;">
       <button class="btn btn-small" onclick="openGuildieModal()">+ Guildie</button>
       <button class="btn btn-small" onclick="openPugModal()">+ Pug</button>
       <button class="btn btn-small" onclick="clearGroupsToPool()">Clear</button>
@@ -2699,13 +2708,13 @@ a[href] > div > div[style*="line-height:1.6"] {
     <div>
       <div style="display:flex;align-items:center;gap:6px;">
         <div class="section-title" style="margin-bottom:0;">Guild Logs</div>
-        <button onclick="openGuildLogsSettings()" title="Guild Logs Settings"
+        <button class="krm-edit-only" onclick="openGuildLogsSettings()" title="Guild Logs Settings"
           style="background:var(--bg-hover);border:none;color:var(--text-dim);cursor:pointer;font-size:13px;padding:4px 6px;line-height:1;transition:all 0.15s;border-radius:3px;"
           onmouseover="this.style.color='var(--gold)';this.style.background='var(--bg-card)'" onmouseout="this.style.color='var(--text-dim)';this.style.background='var(--bg-hover)'">⚙</button>
       </div>
       <div class="section-subtitle">Pick a report — top/bottom parses, attendance, post to Discord</div>
     </div>
-    <div style="display:flex;gap:8px;align-items:stretch;">
+    <div class="krm-edit-only" style="display:flex;gap:8px;align-items:stretch;">
       <button class="btn" style="white-space:nowrap;flex-shrink:0;padding:9px 12px;" onclick="openOtherReportModal()" title="Fetch a report by link or code — not from this guild's own logs">🔗</button>
       <select class="form-select" id="logs-report-select" style="min-width:240px;">
         <option value="">Latest (most complete)</option>
@@ -5537,8 +5546,8 @@ function renderAttendanceLedger() {
                 font-size:11px;font-weight:600;margin:2px;">
         ${n}
         ${isBenched ? `<span style="font-size:9px;color:var(--gold);font-weight:700;" title="Raid Helper Bench - counted, not docked">BENCH</span>` : ''}
-        ${isUnmatched ? `<button onclick="quickAddUnmatchedToRoster('${n.replace(/'/g, "\\'")}')" style="background:none;border:none;color:var(--gold);cursor:pointer;font-size:10px;padding:0;" title="Add to roster">+</button>` : ''}
-        <button onclick="removeNameFromLedgerWeek(${week.id}, '${n.replace(/'/g, "\\'")}')" style="background:none;border:none;color:var(--red-bright);cursor:pointer;font-size:10px;padding:0;opacity:0.6;" title="Remove (pug)">✕</button>
+        ${isUnmatched ? `<button class="krm-edit-only" onclick="quickAddUnmatchedToRoster('${n.replace(/'/g, "\\'")}')" style="background:none;border:none;color:var(--gold);cursor:pointer;font-size:10px;padding:0;" title="Add to roster">+</button>` : ''}
+        <button class="krm-edit-only" onclick="removeNameFromLedgerWeek(${week.id}, '${n.replace(/'/g, "\\'")}')" style="background:none;border:none;color:var(--red-bright);cursor:pointer;font-size:10px;padding:0;opacity:0.6;" title="Remove (pug)">✕</button>
       </div>`;
     }).join('');
 
@@ -5552,7 +5561,7 @@ function renderAttendanceLedger() {
           style="background:none;border:none;color:var(--text-bright);font-weight:600;font-size:13px;flex:1;outline:none;">
         <span style="font-size:11px;color:var(--text-dim);">${week.names.length} raiders</span>
         ${unmatched.length > 0 ? `<span style="font-size:11px;color:var(--gold);">${unmatched.length} unmatched</span>` : ''}
-        <button onclick="confirmRemoveLedgerWeek(${week.id})" class="btn btn-small btn-danger" style="font-size:11px;">✕ Remove Week</button>
+        <button onclick="confirmRemoveLedgerWeek(${week.id})" class="btn btn-small btn-danger krm-edit-only" style="font-size:11px;">✕ Remove Week</button>
       </div>
       <div>${namesHtml}</div>
     </div>`;
@@ -7321,7 +7330,7 @@ function renderRoster() {
       <td style="color:var(--text-dim);font-size:14px;">${p.altOf || '—'}</td>
       <td>${renderAttendanceBar(p.name)}</td>
       <td>
-        <div class="action-cell">
+        <div class="action-cell krm-edit-only">
           <button class="btn btn-small" onclick="openEditModal(${p.id})">Edit</button>
           <button class="btn btn-small btn-danger" onclick="confirmRemove(${p.id})">✕</button>
         </div>
@@ -7636,18 +7645,18 @@ function renderBuilder() {
           style="cursor:grab;">
           <span class="class-dot" style="background:var(--${cc})"></span>
           <span class="slot-row-name class-${cc}">${p.name}</span>
-          <div class="spec-override-wrap" onclick="event.stopPropagation()">
+          <div class="spec-override-wrap krm-edit-disable" onclick="event.stopPropagation()">
             <div class="spec-pill${isSpecOverridden ? ' overridden' : ''}" onclick="toggleSpecDropdown(event,'spec-dd-${p.id}')">${currentSpec}${isSpecOverridden ? ' ✎' : ''}</div>
             <div class="spec-dropdown" id="spec-dd-${p.id}">${specOptions}</div>
           </div>
-          <div class="spec-override-wrap" onclick="event.stopPropagation()">
+          <div class="spec-override-wrap krm-edit-disable" onclick="event.stopPropagation()">
             <div class="spec-pill${isRoleOverridden ? ' overridden' : ''}" onclick="toggleSpecDropdown(event,'role-dd-${p.id}')">${currentRole}${isRoleOverridden ? ' ✎' : ''}</div>
             <div class="spec-dropdown" id="role-dd-${p.id}">${roleOptions}</div>
           </div>
-          <button class="slot-row-rm" onclick="event.stopPropagation();removeFromGroup(${g},${i})" title="Remove">✕</button>
+          <button class="slot-row-rm krm-edit-only" onclick="event.stopPropagation();removeFromGroup(${g},${i})" title="Remove">✕</button>
         </div>`;
       } else {
-        return `<div class="group-slot-row empty-slot"
+        return `<div class="group-slot-row empty-slot krm-edit-disable"
           ondragover="event.preventDefault();this.classList.add('slot-drag-over')"
           ondragleave="this.classList.remove('slot-drag-over')"
           ondrop="this.classList.remove('slot-drag-over');onDropSlot(event,${g},${i})"
@@ -7780,7 +7789,7 @@ function renderPool() {
   if (pugStrip) {
     pugStrip.innerHTML = signUpPool.length > 0
       ? `<span style="font-size:11px;color:var(--text-dim);">${signUpPool.length} sign-ups · ${unassignedFromPool.length} unassigned</span>
-         <button class="btn btn-small btn-danger" onclick="signUpPool=[];pugs=[];nextPugId=-1;bench=[];absent=[];tentative=[];clearGroups();renderBuilder();" style="padding:2px 8px;font-size:11px;">✕ Clear Import</button>`
+         <button class="btn btn-small btn-danger krm-edit-only" onclick="signUpPool=[];pugs=[];nextPugId=-1;bench=[];absent=[];tentative=[];clearGroups();renderBuilder();" style="padding:2px 8px;font-size:11px;">✕ Clear Import</button>`
       : '';
   }
 }
