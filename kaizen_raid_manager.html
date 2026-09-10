@@ -3189,17 +3189,29 @@ body.landing-mode #landing-page { display: block; }
 
 <!-- ==================== STRATS TAB ==================== -->
 <div class="tab-panel" id="tab-strats">
+  <!-- Deliberately NOT split into #manager-strats-view/#public-strats-view
+       the way Overview/Raiders/Raids were - this system's own state
+       machine (activeRaid/activeBossGroupKey/activeTabKind/drag-reorder,
+       see renderStrats()) is the deepest and most stateful in the app,
+       and both creative-review documents explicitly warn against
+       rebuilding it ("the strongest product... preserve capability, not
+       just imitate the reference's simpler example"). Scope for this
+       pass: hide manager-only controls (krm-edit-only, same mechanism
+       as everywhere else), fix the header label for mode (same pattern
+       as Overview's fix), and give the index grid real container
+       width/typography. The map+assignment DETAIL view still needs its
+       own dedicated visitor pass - not done this round, see CHANGELOG.md. -->
   <div class="section-header">
     <div>
       <div style="display:flex;align-items:center;gap:6px;">
-        <div class="section-title" style="margin-bottom:0;">Strat Manager</div>
-        <button onclick="openStratsSettings()" title="Strats Settings"
+        <div id="strats-header-title" class="section-title" style="margin-bottom:0;">Strat Manager</div>
+        <button class="krm-edit-only" onclick="openStratsSettings()" title="Strats Settings"
           style="background:var(--bg-hover);border:none;color:var(--text-dim);cursor:pointer;font-size:13px;padding:4px 6px;line-height:1;transition:all 0.15s;border-radius:3px;"
           onmouseover="this.style.color='var(--gold)';this.style.background='var(--bg-card)'" onmouseout="this.style.color='var(--text-dim)';this.style.background='var(--bg-hover)'">⚙</button>
       </div>
-      <div class="section-subtitle">Upload encounter diagrams — they show on the public site automatically</div>
+      <div id="strats-header-subtitle" class="section-subtitle">Upload encounter diagrams — they show on the public site automatically</div>
     </div>
-    <div style="display:flex;gap:8px;align-items:center;">
+    <div class="krm-edit-only" style="display:flex;gap:8px;align-items:center;">
       <!-- + Pug / + Trash Guide / + Add Strat moved into the raid-scoped
            view itself (see renderStrats' back-link/tabs area and the
            empty "Get Started" state) - they apply to a specific raid,
@@ -3244,8 +3256,13 @@ body.landing-mode #landing-page { display: block; }
     </div>
   </div>
 
-  <!-- Raid selector + strat list -->
-  <div id="strat-list"></div>
+  <!-- Raid selector + strat list - #strat-list-wrap's pub-container
+       class is toggled in applyTabPermissions() alongside the header
+       label swap above, so the index grid/detail view get real content
+       width in public mode without a second parallel renderer. -->
+  <div id="strat-list-wrap">
+    <div id="strat-list"></div>
+  </div>
 
   <!-- AD ZONE: Strats below content — 300x250 rectangle -->
 </div>
@@ -5384,6 +5401,31 @@ function applyTabPermissions() {
   if (managerOverviewView) managerOverviewView.style.display = inManageMode ? '' : 'none';
   if (publicOverviewView) publicOverviewView.style.display = inManageMode ? 'none' : '';
   if (!inManageMode) renderPublicOverview();
+
+  // Strats/Encounter plans - lighter-touch than the other 4 tabs (see
+  // the long HTML comment on #tab-strats for why): same renderStrats()
+  // output either way, just the header label and content-container
+  // width/typography change for mode, plus krm-edit-only already hides
+  // the settings gear/Post to Discord button.
+  const stratsTitle = document.getElementById('strats-header-title');
+  const stratsSubtitle = document.getElementById('strats-header-subtitle');
+  if (stratsTitle && stratsSubtitle) {
+    if (inManageMode) {
+      stratsTitle.textContent = 'Strat Manager';
+      stratsTitle.className = 'section-title';
+      stratsTitle.style.fontSize = '';
+      stratsSubtitle.textContent = 'Upload encounter diagrams — they show on the public site automatically';
+      stratsSubtitle.className = 'section-subtitle';
+    } else {
+      stratsTitle.textContent = 'Encounter plans';
+      stratsTitle.className = 'pub-title';
+      stratsTitle.style.fontSize = 'clamp(28px, 3.4vw, 40px)'; // this is a sub-heading next to a page title elsewhere, not a full hero title
+      stratsSubtitle.textContent = 'Positions, assignments, and the people behind them.';
+      stratsSubtitle.className = 'pub-subtitle';
+    }
+  }
+  const stratListWrap = document.getElementById('strat-list-wrap');
+  if (stratListWrap) stratListWrap.classList.toggle('pub-container', !inManageMode);
   const manageBtn = document.getElementById('manage-guild-btn');
   if (manageBtn) manageBtn.style.display = (!inManageMode && hasAnyRealEditAccess()) ? '' : 'none';
   const banner = document.getElementById('manage-mode-banner');
@@ -10485,7 +10527,7 @@ function renderBossSelectRow(groups, activeGroupKey) {
     { label: '➕ Add Strat', onclick: 'openAddStratChoice()' },
     { label: '🧟 Add Trash Guide', onclick: 'openAddTrashGuideModal()' },
   ], `<div class="boss-select-card-add" onclick="%TOGGLE%" title="Add a strat or trash guide">＋</div>`);
-  return `<div class="boss-select-row">${cards}${addCard}</div>`;
+  return `<div class="boss-select-row">${cards}<span class="krm-edit-only">${addCard}</span></div>`;
 }
 
 function renderStrats() {
@@ -10543,7 +10585,7 @@ function renderStrats() {
       <div class="empty-state">
         <div class="empty-state-icon">📋</div>
         <div class="empty-state-text">Nothing here yet for ${activeRaid}. A strat is one encounter's diagram + assignments; a trash guide covers everything between bosses. Either one walks you through the rest.</div>
-        <div class="strat-empty-cta">
+        <div class="strat-empty-cta krm-edit-only">
           <button class="btn btn-gold" onclick="openAddStratChoice()">➕ Add Strat</button>
           <button class="btn btn-small" onclick="openAddTrashGuideModal()">🧟 Add Trash Guide</button>
         </div>
@@ -10573,17 +10615,17 @@ function renderStrats() {
     if (m.kind === 'strat') {
       return `<button class="strat-tab-btn ${isActive ? 'active' : ''}" ${dragAttrs} onclick="setActiveStat(${m.id})">
         ${m.label}
-        <span class="strat-tab-rm" onclick="event.stopPropagation();removeStrat(${m.id})" title="Remove">✕</span>
+        <span class="strat-tab-rm krm-edit-only" onclick="event.stopPropagation();removeStrat(${m.id})" title="Remove">✕</span>
       </button>`;
     }
     return `<button class="strat-tab-btn trash-tab ${isActive ? 'active' : ''}" ${dragAttrs} onclick="setActiveTrashTab(${m.id})">
       ${m.label}
-      <span class="strat-tab-rm" onclick="event.stopPropagation();removeTrashGuide(${m.id})" title="Remove">✕</span>
+      <span class="strat-tab-rm krm-edit-only" onclick="event.stopPropagation();removeTrashGuide(${m.id})" title="Remove">✕</span>
     </button>`;
-  }).join('') + addMenuHtml('boss-tabs', [
+  }).join('') + `<span class="krm-edit-only">${addMenuHtml('boss-tabs', [
     { label: '➕ Add Phase', onclick: `addPhaseToGroup('${groupKeyEsc}')` },
     { label: '🧟 Add Trash Guide', onclick: `addTrashGuideToGroup('${groupKeyEsc}')` },
-  ]);
+  ])}</span>`;
 
   // Build assigns panel
   const assigns = active ? (active.assigns || {}) : {};
@@ -10651,7 +10693,7 @@ function renderStrats() {
         <img src="${resolveImg(active.image)}${active.image && !active.image.startsWith('data:') && active.imageUpdatedAt ? '?v=' + active.imageUpdatedAt : ''}" alt="${active.name}" style="max-width:100%;max-height:70vh;border-radius:3px;object-fit:contain;">
         <div id="map-pins-container-${active.id}">${renderMapPins(active)}</div>
       </div>
-      <div style="position:absolute;top:10px;right:10px;display:flex;gap:6px;z-index:30;">
+      <div class="krm-edit-only" style="position:absolute;top:10px;right:10px;display:flex;gap:6px;z-index:30;">
         <label class="btn btn-small" style="cursor:pointer;font-size:11px;" title="Replace image">
           🔄 Replace Image
           <input type="file" accept="image/png,image/jpeg,image/jpg,image/webp" onchange="replaceStratImage(event, ${active.id})" style="display:none;">
@@ -13162,7 +13204,7 @@ function renderMapToolbar(strat) {
     onclick: `addMarkMapPin(${strat.id},'${m.key}')`,
   })), `<button class="btn btn-small" onclick="%TOGGLE%" title="Add a raid target marker (skull, star, etc.)">＋ Mark</button>`);
 
-  return `<div class="map-toolbar">
+  return `<div class="map-toolbar krm-edit-only">
     <span style="font-size:11px;color:var(--text-dim);">Generic:</span>
     ${roleBtns}
     <div class="divider"></div>
@@ -13985,7 +14027,7 @@ function assignsPanelBody(strat) {
   // Auto-Assign actually does. Shown in both the top-level menu and a
   // drilled-in section - it fills across every section at once, so it
   // isn't tied to whichever one you happen to be looking at.
-  const autoAssignHtml = `<div style="display:flex;gap:6px;">
+  const autoAssignHtml = `<div class="krm-edit-only" style="display:flex;gap:6px;">
     <select id="auto-assign-raid-select" class="form-select" style="flex:1;min-width:0;padding:8px 10px;font-size:12px;" onchange="updateAutoAssignRaid(this.value)" title="Which raid's this-week roster Auto-Assign pulls from - remembered for next time"></select>
     <button class="btn btn-small" style="flex-shrink:0;white-space:nowrap;" onclick="confirmAutoAssign()" title="Fill empty Tank/Healer/Misdirection slots from this week's grouped roster - never overwrites an existing assignment">🪄 Auto-Assign</button>
     <button class="btn btn-small" style="flex-shrink:0;" onclick="confirmResetStratTemplate(${sid})" title="Reset this strat's sections back to its default template - discards any edits made here">↺</button>
@@ -14006,7 +14048,7 @@ function assignsPanelBody(strat) {
   const menuHtml = strat.sections.map((sec, i) => renderSectionMenuItem(sid, sec, i, strat.sections.length)).join('');
   return `${autoAssignHtml}
     ${menuHtml}
-    <button class="add-section-btn" onclick="openSectionModal(${sid})">+ Add Section</button>`;
+    <button class="add-section-btn krm-edit-only" onclick="openSectionModal(${sid})">+ Add Section</button>`;
 }
 
 function buildAssignsPanel(strat) {
