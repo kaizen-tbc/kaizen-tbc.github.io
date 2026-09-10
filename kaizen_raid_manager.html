@@ -13515,7 +13515,7 @@ function renderOneMapPin(strat, pin) {
   const facingHtml = (pin.kind === 'mob' && !pin.hideFacing) ? `
     <div class="map-pin-facing" style="transform:rotate(${pin.facing || 0}deg);">
       <div class="map-pin-facing-arrow"></div>
-      ${isFocused ? `<div class="map-pin-facing-handle" onpointerdown="onMobFacingHandlePointerDown(event, ${strat.id}, ${pin.id})" title="Drag to set facing"></div>` : ''}
+      ${isFocused ? `<div class="map-pin-facing-handle krm-edit-only" onpointerdown="onMobFacingHandlePointerDown(event, ${strat.id}, ${pin.id})" title="Drag to set facing"></div>` : ''}
     </div>` : '';
 
   // Mob-pin name visibility is entirely its own thing - a per-pin "Show
@@ -13727,7 +13727,22 @@ function onMapPinPointerDown(e, sid, pinId) {
   const pinEl = layer.querySelector(`.map-pin[data-id="${pinId}"]`);
   if (pinEl) pinEl.classList.add('dragging');
 
+  // Selecting/highlighting a pin (the click path below, when moved stays
+  // false) is real, valuable public behavior - "selectable class/spec
+  // pins... actor -> target relationships" is exactly what a visitor
+  // should be able to do. Actually repositioning one is not -
+  // guild-plan-winterchill.html's own spec is explicit: "public pins do
+  // not drag." This wasn't previously permission-checked at all (pin.x/y
+  // mutated on every pointermove regardless of role) - not a data
+  // integrity hole (nothing persists without a real authenticated Save,
+  // itself already krm-edit-only and server-verified), but it let a
+  // visitor's own view drift out of sync with reality, which is real UX
+  // confusion even if harmless. onMove below simply never runs for a
+  // read-only viewer; the click-to-focus path in onUp is untouched.
+  const canDrag = canEdit('strats');
+
   function onMove(ev) {
+    if (!canDrag) return;
     if (Math.abs(ev.clientX - startX) > 3 || Math.abs(ev.clientY - startY) > 3) moved = true;
     let x = ((ev.clientX - rect.left) / rect.width) * 100;
     let y = ((ev.clientY - rect.top) / rect.height) * 100;
