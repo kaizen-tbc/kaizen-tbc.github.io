@@ -2171,8 +2171,18 @@ a[href] > div > div[style*="line-height:1.6"] {
   display: flex; align-items: center; gap: 24px;
   width: min(1200px, calc(100% - 64px)); margin-inline: auto; padding-block: 24px;
 }
-.public-wordmark { font-family: var(--kz-font-display); font-style: italic; font-weight: 700; font-size: 22px; color: var(--kz-text); }
-.public-edition { font-size: 14px; color: var(--kz-muted); }
+.public-wordmark { font-family: var(--kz-font-display); font-style: italic; font-weight: 700; font-size: 22px; color: var(--kz-text); white-space: nowrap; }
+.public-edition { font-size: 14px; color: var(--kz-muted); white-space: nowrap; }
+/* "Sign In" was wrapping to two lines at 375px - the relocated account
+   button (see #public-masthead-account) has no flex-shrink/nowrap of
+   its own, reused as-is from the manager topbar's .btn class. */
+#public-masthead-account { flex-shrink: 0; }
+#public-masthead-account .btn { white-space: nowrap; }
+@media (max-width: 460px) {
+  /* Realm/faction is secondary at this width - drop it before the
+     wordmark+account row is forced to wrap or overflow. */
+  .public-edition { display: none; }
+}
 .public-nav { display: flex; gap: 32px; overflow-x: auto; width: min(1200px, calc(100% - 64px)); margin-inline: auto; }
 .public-nav-link {
   padding: 14px 0 18px; white-space: nowrap; background: none; border: none;
