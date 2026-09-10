@@ -201,13 +201,12 @@ function getClerkJWKS(env) {
   return _clerkJWKS;
 }
 
-// TEMPORARY - flip to true once the real GM membership row is seeded
-// (see migrate-to-multitenant.sql/getActiveMembership) so signing in
-// doesn't 403 with zero membership rows yet in the table. Rolling out
-// "the DB now requires membership" and "a membership row actually
-// exists" as two separate deploys on purpose, rather than risk locking
-// out the one person actively testing this in between.
-const ENFORCE_GUILD_MEMBERSHIP = false;
+// Was false until a real GM membership row existed for anyone (see
+// migrate-to-multitenant.sql's original seed comment) - now on for real.
+// getActiveMembership() is the actual boundary: signed in only proves
+// who you are, this is what proves you belong to the specific guild
+// you're asking about.
+const ENFORCE_GUILD_MEMBERSHIP = true;
 
 async function verifyAuth(request, env) {
   const header = request.headers.get('Authorization') || '';
