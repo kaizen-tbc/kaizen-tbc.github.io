@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-09-10T12:53:40.113Z",
+  "savedAt": "2026-09-10T16:54:10.184Z",
   "roster": [
     {
       "id": 1,
@@ -990,7 +990,9 @@
         [
           46,
           -2,
-          35
+          35,
+          -11,
+          -10
         ],
         [
           40,
@@ -1238,9 +1240,31 @@
           "_rhSpec": "Holy",
           "_rhClass": "Tentative",
           "_userId": "473718939679981581"
+        },
+        {
+          "id": -10,
+          "name": "Victoreem",
+          "class": "Hunter",
+          "ms": "Survival",
+          "os": "",
+          "role": "Ranged",
+          "status": "Main",
+          "altOf": "",
+          "notes": "PUG"
+        },
+        {
+          "id": -11,
+          "name": "Penywize",
+          "class": "Druid",
+          "ms": "Feral",
+          "os": "",
+          "role": "Melee",
+          "status": "Main",
+          "altOf": "",
+          "notes": "PUG"
         }
       ],
-      "nextPugId": -10,
+      "nextPugId": -12,
       "signUpPool": [
         {
           "id": 28,
@@ -1680,6 +1704,28 @@
           "_rhSpec": "Holy",
           "_rhClass": "Tentative",
           "_userId": "473718939679981581"
+        },
+        {
+          "id": -10,
+          "name": "Victoreem",
+          "class": "Hunter",
+          "ms": "Survival",
+          "os": "",
+          "role": "Ranged",
+          "status": "Main",
+          "altOf": "",
+          "notes": "PUG"
+        },
+        {
+          "id": -11,
+          "name": "Penywize",
+          "class": "Druid",
+          "ms": "Feral",
+          "os": "",
+          "role": "Melee",
+          "status": "Main",
+          "altOf": "",
+          "notes": "PUG"
         }
       ],
       "rhEventTitle": "9/10 Black Temple",
