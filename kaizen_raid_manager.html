@@ -2122,8 +2122,8 @@ body.landing-mode #landing-page { display: block; }
    used position:sticky before this landing page did, which is why that
    pre-existing rule never surfaced the bug until now. */
 #landing-page .lp-top { position: sticky; top: 0; z-index: 20; border-bottom: 1px solid var(--lp-line); background: var(--lp-bg); }
-#landing-page .lp-nav { min-height: 76px; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
-#landing-page .lp-wordmark { font: italic bold 29px Georgia, serif; color: var(--lp-text); text-decoration: none; letter-spacing: -1px; }
+#landing-page .lp-nav { min-height: 76px; display: flex; align-items: center; justify-content: space-between; gap: 12px 24px; flex-wrap: wrap; padding-block: 12px; }
+#landing-page .lp-wordmark { font: italic bold 29px Georgia, serif; color: var(--lp-text); text-decoration: none; letter-spacing: -1px; white-space: nowrap; flex-shrink: 0; }
 #landing-page .lp-wordmark i { color: var(--lp-danger); font-style: normal; }
 #landing-page .lp-navlinks { display: flex; align-items: center; gap: 24px; }
 #landing-page .lp-navlinks a, #landing-page .lp-navlinks .lp-linklike {
@@ -2225,11 +2225,20 @@ body.landing-mode #landing-page { display: block; }
      /<slug> now. Adapted from kaizen-brand-guide-v1.1/homepage.html: same
      structure and copy, but every CTA is wired to the real Clerk sign-in
      gate this app already has (see openSignInGate/goToMyGuildOrRegister)
-     instead of the brand guide's local-only prototype form. -->
+     instead of the brand guide's local-only prototype form.
+
+     Deliberately <div role="..."> instead of <header>/<nav>/<main> - the
+     app's own global CSS already styles those bare tags (fixed 56px
+     header height, a flex nav, main's own max-width/padding/z-index),
+     and #landing-page-scoped selectors only outrank the properties they
+     actually redeclare, not the ones they don't - the .lp-nav row growing
+     past a leaked height:56px is exactly what put the theme toggle
+     button visibly past the header's own divider line. Same ARIA
+     landmarks, none of the tag-name collisions. -->
 <div id="landing-page">
 <a href="#landing-main" style="position:absolute;left:-9999px;" onfocus="this.style.left='16px'" onblur="this.style.left='-9999px'">Skip to content</a>
-<header class="lp-top">
-  <nav class="lp-wrap lp-nav" aria-label="Main navigation">
+<div class="lp-top" role="banner">
+  <div class="lp-wrap lp-nav" role="navigation" aria-label="Main navigation">
     <a class="lp-wordmark" href="/">Kaizen<i> /</i></a>
     <div class="lp-navlinks">
       <a href="#features">Features</a>
@@ -2238,9 +2247,9 @@ body.landing-mode #landing-page { display: block; }
       <button type="button" class="lp-linklike" id="lp-nav-continue" style="display:none;" onclick="goToMyGuildOrRegister()">Continue →</button>
       <button type="button" id="lp-theme-toggle" aria-label="Switch to light mode">Light mode</button>
     </div>
-  </nav>
-</header>
-<main id="landing-main">
+  </div>
+</div>
+<div id="landing-main" role="main">
 <section class="lp-hero">
   <div>
     <div class="lp-eyebrow">Kaizen raid manager / The Burning Crusade</div>
@@ -2350,7 +2359,7 @@ body.landing-mode #landing-page { display: block; }
     </div>
   </div>
 </section>
-</main>
+</div>
 <footer class="lp-footer">
   <div class="lp-wrap">
     <div class="lp-nav">
