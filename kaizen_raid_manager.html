@@ -41,13 +41,16 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* overflow-x lives on <html>, not <body> - see below for why this
+   isn't just a style preference. */
+html { overflow-x: hidden; }
+
 body {
   background: var(--bg-deep);
   color: var(--text-bright);
   font-family: 'Inter', sans-serif;
   font-size: 16px;
   min-height: 100vh;
-  overflow-x: hidden;
 }
 
 /* Subtle texture overlay */
@@ -2110,6 +2113,14 @@ body.landing-mode #landing-page { display: block; }
 #landing-page svg { max-width: 100%; }
 #landing-page a:focus-visible, #landing-page button:focus-visible { outline: 3px solid var(--lp-focus); outline-offset: 4px; }
 #landing-page .lp-wrap { width: min(1200px, calc(100% - 64px)); margin: auto; }
+/* position:sticky here is why overflow-x moved from body to html at the
+   top of this stylesheet - body's own overflow-x:hidden (with no
+   matching overflow-y) makes browsers silently promote body into its
+   OWN scroll container, which detaches this sticky header from the
+   real viewport scroll: it visually stops respecting the content
+   before it and floats independently instead. Nothing else in the app
+   used position:sticky before this landing page did, which is why that
+   pre-existing rule never surfaced the bug until now. */
 #landing-page .lp-top { position: sticky; top: 0; z-index: 20; border-bottom: 1px solid var(--lp-line); background: var(--lp-bg); }
 #landing-page .lp-nav { min-height: 76px; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
 #landing-page .lp-wordmark { font: italic bold 29px Georgia, serif; color: var(--lp-text); text-decoration: none; letter-spacing: -1px; }
@@ -13669,6 +13680,14 @@ async function initFromJson() {
 // actual sign-in/sign-out transition (different endpoint, different
 // role/data) but NOT on every incidental listener fire in between.
 let _lastAuthState;
+// Guards goToMyGuildOrRegister on the landing page (see below) - the
+// first Clerk callback after page load just reports whatever session
+// already existed (e.g. you never signed out from testing the app
+// earlier), it isn't news, and redirecting on it would mean the landing
+// page is literally unviewable to anyone with a live session. Only a
+// *later* callback - a real transition after that first one resolves -
+// means someone actually just clicked something.
+let _authResolvedOnce = false;
 window.addEventListener('load', async function () {
   await resolveGuildFromUrl(); // decides CURRENT_GUILD_ID/inManageMode/isLandingPage before anything else touches any of them
   if (isLandingPage) initLandingPage(); // theme toggle + raid picker - independent of Clerk/auth state
@@ -13697,14 +13716,19 @@ window.addEventListener('load', async function () {
 
     if (isSignedIn !== _lastAuthState) {
       _lastAuthState = isSignedIn;
-      // On the landing page there's no guild to load - a fresh sign-in
+      // On the landing page there's no guild to load - a real sign-in
       // there means "take me in": send them straight to their guild (or
       // into the join/register flow if they don't have one yet). See
-      // goToMyGuildOrRegister. Signing out on the landing page needs no
-      // extra handling - the nav toggle above already covers it.
-      if (isLandingPage) { if (isSignedIn) goToMyGuildOrRegister(); }
+      // goToMyGuildOrRegister. But only on an actual transition, never on
+      // this first callback resolving whatever session already existed
+      // (see _authResolvedOnce) - otherwise the homepage would redirect
+      // away from itself before anyone with a live session ever saw it.
+      // Signing out on the landing page needs no extra handling - the
+      // nav toggle above already covers it.
+      if (isLandingPage) { if (isSignedIn && _authResolvedOnce) goToMyGuildOrRegister(); }
       else initFromJson().then(checkRegisterGuildReturn); // after, not before - showToast only ever shows one toast at a time, and initFromJson's own "Loaded" would otherwise stomp this one within milliseconds
     }
+    _authResolvedOnce = true;
   });
 });
 
