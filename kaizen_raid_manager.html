@@ -2465,7 +2465,49 @@ body.landing-mode #landing-page { display: block; }
 #tab-strats .public-player-detail-head{display:flex;align-items:center;gap:10px}.public-player-detail-head strong{display:block;color:var(--kz-text,#f1eee7);font:15px/1.2 var(--kz-font-ui)}.public-player-detail-head span{display:block;margin-top:3px;font-size:11px}.public-player-detail-jobs{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}.public-player-detail-jobs span{padding:5px 8px;border:1px solid var(--kz-line,#29313b);border-radius:999px;color:var(--kz-text,#f1eee7);font-size:11px}
 @media(max-width:850px){#tab-strats .strat-guide-hero{grid-template-columns:1fr}#tab-strats .strat-spell-grid{grid-template-columns:1fr 1fr}}
 @media(max-width:480px){#tab-strats .strat-guide{padding:18px}#tab-strats .strat-guide-heading{flex-direction:column;gap:10px}#tab-strats .strat-spell-grid{grid-template-columns:1fr}}
-#tab-strats .add-row-btn{width:auto!important;flex:1 1 0!important;min-width:0;padding:12px!important;font-size:13px;white-space:nowrap}#tab-strats .section-label-input{text-transform:none;letter-spacing:0}</style>
+#tab-strats .add-row-btn{width:auto!important;flex:1 1 0!important;min-width:0;padding:12px!important;font-size:13px;white-space:nowrap}#tab-strats .section-label-input{text-transform:none;letter-spacing:0}
+/* Homepage player-first public assignment reference. Manager controls are separate. */
+#tab-strats .public-assignments .personal-plan{min-width:0}
+#tab-strats .public-player-eyebrow{font:12px/1.5 var(--kz-font-ui);letter-spacing:.08em;text-transform:uppercase;color:var(--kz-muted);margin-bottom:18px}
+#tab-strats .player-choices{display:grid;gap:4px;max-height:260px;overflow-y:auto}
+#tab-strats .player-choices button{display:flex;gap:10px;align-items:center;text-align:left;padding:10px 12px;min-height:48px;border:0;border-left:2px solid transparent;border-radius:0;background:transparent;color:var(--kz-text);cursor:pointer;font:13px/1.4 var(--kz-font-ui);width:100%}
+#tab-strats .player-choices button[aria-pressed=true]{background:var(--kz-raised,var(--bg-card));border-left-color:var(--kz-accent)}
+#tab-strats .player-choices button:focus-visible{outline:2px solid var(--kz-accent);outline-offset:-2px}
+#tab-strats .player-choices button>img{border-radius:3px!important;border:0!important}
+#tab-strats .choice-name{flex:1;min-width:0}#tab-strats .choice-name strong,#tab-strats .choice-name small{display:block;overflow-wrap:anywhere}
+#tab-strats .choice-name small{font-size:11px;font-weight:400;color:var(--kz-muted);margin-top:2px}
+#tab-strats .choice-target{font-size:11px;color:var(--kz-muted);max-width:100px;overflow-wrap:anywhere}
+#tab-strats .personal-detail{border-top:1px solid var(--kz-line);margin-top:24px;padding-top:20px}
+#tab-strats .personal-detail>small{color:var(--kz-muted);font-size:12px}
+#tab-strats .personal-detail h3{font:400 24px/1.2 var(--kz-font-display);margin:6px 0;color:var(--kz-text)}
+#tab-strats .assigned-job{display:flex;align-items:center;gap:10px;margin:16px 0}
+#tab-strats .assigned-job>img{width:32px;height:32px;border-radius:4px}
+#tab-strats .assigned-job strong,#tab-strats .assigned-job span{display:block;font:13px/1.5 var(--kz-font-ui)}
+#tab-strats .assigned-job span,#tab-strats .personal-detail p{color:var(--kz-muted)}
+#tab-strats .ability-reference{font-size:12px;color:var(--kz-accent);display:inline-block;padding:6px 0}
+#tab-strats .public-raid-note{border-top:1px solid var(--kz-line);margin-top:18px;padding-top:12px;font:12px/1.6 var(--kz-font-ui)}
+#tab-strats .public-raid-note summary{cursor:pointer;color:var(--kz-muted);padding:4px 0}#tab-strats .public-raid-note p{white-space:pre-wrap;overflow-wrap:anywhere}
+
+
+/* Fixed player list/detail composition; only the player list scrolls. */
+#tab-strats .assigns-panel.public-assignments{height:var(--strat-map-height);min-height:560px;max-height:none;overflow:visible;box-sizing:border-box}
+#tab-strats .public-assignments .personal-plan{display:grid;grid-template-rows:auto minmax(0,1fr) 220px;height:100%;min-height:0}
+#tab-strats .public-assignments .player-choices{display:block;min-height:0;max-height:none;overflow-y:auto;overscroll-behavior:contain}
+#tab-strats .public-assignments .personal-detail{height:220px;box-sizing:border-box;margin:0;padding-top:18px;overflow:visible}
+#tab-strats .personal-detail .assigned-job{margin:10px 0}.assignment-pager{display:flex;justify-content:space-between;align-items:center;margin-top:8px;font-size:12px}.assignment-pager button{padding:4px 10px;cursor:pointer}
+#tab-strats .guild-fight-notes{margin-top:26px;border-top:1px solid var(--kz-line);padding-top:24px}
+#tab-strats .guild-brief-label{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--kz-accent)}
+#tab-strats .guild-fight-notes h4{font:400 26px/1.3 var(--kz-font-display);margin:6px 0}
+#tab-strats .guild-brief-intro{color:var(--kz-muted);font-size:14px;margin:0 0 20px}
+#tab-strats .guild-brief-grid{display:grid;grid-template-columns:2fr 1fr;gap:28px}
+#tab-strats .guild-brief-grid article:first-child{order:2}#tab-strats .guild-brief-grid article:last-child{order:1}
+#tab-strats .guild-brief-grid h5{font:600 14px/1.5 var(--kz-font-ui);margin:0 0 10px}
+#tab-strats .guild-brief-grid p{font:14px/1.7 var(--kz-font-ui);color:var(--kz-muted);white-space:pre-wrap;overflow-wrap:anywhere;margin:0 0 8px}
+#tab-strats .brief-edit-label{display:block;font:12px/1.5 var(--kz-font-ui);color:var(--kz-muted);margin:8px 0}
+#tab-strats .brief-edit-label textarea{display:block;width:100%;margin-top:6px;resize:vertical;line-height:1.6}
+@media(max-width:850px){#tab-strats .assigns-panel.public-assignments{height:560px}#tab-strats .guild-brief-grid{grid-template-columns:1fr}}
+
+</style>
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8959237604087556" crossorigin="anonymous"></script>
   <script>const whTooltips = { colorLinks: true, iconizeLinks: false, renameLinks: false, iconSize: 'small' };</script>
   <script async src="https://wow.zamimg.com/js/tooltips.js"></script>
@@ -13376,7 +13418,7 @@ function confirmClearAllPins(stratId) {
 // _mapFocusedPinId above). Global rather than per-strat: this is a
 // "let me see everyone before I screenshot/post this" utility, not
 // something worth remembering differently fight-to-fight.
-let _showRaiderNames = false;
+let _showRaiderNames = true;
 function toggleShowRaiderNames(sid, checked) {
   _showRaiderNames = checked;
   const layer = document.getElementById(`map-pin-layer-${sid}`);
@@ -13464,18 +13506,11 @@ function refreshAssignsPanel(sid) {
 // real content rebuilt (see toggleRowFocus/onMapPinPointerDown), so
 // cross-highlighting never costs more than a classList change.
 function applyRowCardHighlight(playerId) {
-  document.querySelectorAll('.assigns-row-card.linked').forEach(el => el.classList.remove('linked'));
-  if (playerId != null) {
-    document.querySelectorAll(`.assigns-row-card[data-actor-id="${playerId}"]`).forEach(el => el.classList.add('linked'));
-  }
-  const detail = document.querySelector('.public-player-detail');
-  if (detail && playerId != null) {
-    const player = getPlayerById(playerId);
-    const strat = activeStratId != null ? getStrat(activeStratId) : null;
-    const jobs = strat ? jobsForPlayer(strat, playerId) : [];
-    if (player) detail.innerHTML = `<div class="public-player-detail-head">${classSpecIconHtml(player,32)}<div><strong>${stratDisplayText(player.name)}</strong><span>${stratDisplayText(player.spec || player.role || 'Raider')}</span></div></div><div class="public-player-detail-jobs">${jobs.length ? jobs.map(j => `<span>${stratDisplayText(j.sectionLabel || 'Assignment')}: ${stratDisplayText(j.detail || 'Assigned')}</span>`).join('') : '<span>No assignment detail added yet.</span>'}</div>`;
-  }
+ document.querySelectorAll('.assigns-row-card.linked').forEach(el=>el.classList.remove('linked'));
+ if(playerId!=null) document.querySelectorAll('.assigns-row-card[data-actor-id="'+Number(playerId)+'"]').forEach(el=>el.classList.add('linked'));
+ syncPublicPlayerDetail(playerId);
 }
+
 function applyPinHighlight(playerId) {
   document.querySelectorAll('.map-pin.linked').forEach(el => el.classList.remove('linked'));
   if (playerId != null) {
@@ -14272,26 +14307,68 @@ function encounterGuideFor(strat) {
 }
 function renderEncounterGuide(strat) {
   const guide = encounterGuideFor(strat);
-  if (!guide) return '';
+  if (!guide) return '<section class="strat-guide"><h3>How to read this fight</h3>'+renderGuildFightNotes(strat)+'</section>';
   const icon = spell => `https://wow.zamimg.com/images/wow/icons/large/${spell.slug}.jpg`;
   return `<section class="strat-guide" aria-labelledby="encounter-guide-title-${strat.id}">
     <div class="strat-guide-heading"><div><small>${stratDisplayText(guide.eyebrow)}</small><h3 id="encounter-guide-title-${strat.id}">How to read this fight</h3><p>${stratDisplayText(guide.summary)}</p></div><a class="strat-guide-source" href="${guide.source}" target="_blank" rel="noreferrer">Open full guide ↗</a></div>
     <div class="strat-guide-hero"><div class="strat-guide-boss"><img src="${guide.image}" alt="${stratDisplayText(strat.name)}"/><div><span>Encounter focus</span><strong>${stratDisplayText(strat.name)}</strong></div></div><div class="strat-guide-video">${guide.videoUrl ? `<iframe src="${stratDisplayText(guide.videoUrl)}" title="${stratDisplayText(strat.name)} explainer" loading="lazy" allowfullscreen></iframe>` : '<div class="video-placeholder"><span>30 sec</span><strong>Encounter explainer</strong><small>Add a short video from the guild page manager.</small></div>'}</div></div>
     <div class="strat-spell-grid">${guide.spells.map(spell => `<article class="strat-spell-card"><img src="${icon(spell)}" alt="" data-wowhead="spell=${spell.slug}"/><div><strong>${stratDisplayText(spell.name)}</strong><span>${stratDisplayText(spell.cue)}</span><p>${stratDisplayText(spell.text)}</p></div></article>`).join('')}</div>
+    ${renderGuildFightNotes(strat)}
   </section>`;
 }
 // Read-only projection of the SAME section/row records. No assignment mutation or parallel model.
+
+
+function renderGuildFightNotes(strat) {
+ const sections=(strat.sections||[]).map(sec=>({sec,rows:(sec.rows||[]).filter(r=>r.typeA!=='player'&&r.typeB!=='player')})).filter(x=>x.rows.length);
+ if(!sections.length) return '';
+ return '<section class="guild-fight-notes"><div class="guild-brief-label">From your raid leader</div><h4>Our plan for this fight</h4><p class="guild-brief-intro">Guild calls, cooldown timing, and the details to remember on the pull.</p><div class="guild-brief-grid">'+sections.map(({sec,rows})=>'<article><h5>'+stratDisplayText((sec.label||'Guild notes').replace(/^[^\p{L}\p{N}]+/u,''))+'</h5>'+rows.map(row=>['A','B'].filter(side=>row['type'+side]).map(side=>canEdit('strats')?'<label class="brief-edit-label">'+(side==='B'?'Timing / detail':'Guild instruction')+'<textarea class="form-input" rows="4" onchange="updateGuildBrief('+Number(strat.id)+','+Number(sec.id)+','+Number(row.id)+',\'value'+side+'\',this.value)">'+stratDisplayText(row['value'+side])+'</textarea></label>':'<p>'+stratDisplayText(row['value'+side])+'</p>').join('')).join('')+'</article>').join('')+'</div></section>';
+}
+function updateGuildBrief(sid,secId,rowId,field,value) {
+ if(!canEdit('strats')||!['valueA','valueB'].includes(field)) return;
+ updateRowField(sid,secId,rowId,field,value);
+}
+
+function publicPlayerJobs(strat,pid) {
+  return (strat.sections||[]).flatMap(sec=>(sec.rows||[]).filter(row=>rowActorId(row)!=null && Number(rowActorId(row))===Number(pid)).map(row=>({sec,row})));
+}
+function publicPlayers(strat) {
+  const ids=new Set();
+  for(const sec of strat.sections||[]) for(const row of sec.rows||[]) for(const side of ['A','B']) if(row['type'+side]==='player' && row['value'+side]!=null) ids.add(Number(row['value'+side]));
+  for(const pin of strat.mapPins||[]) if(pin.kind==='player' && pin.playerId!=null) ids.add(Number(pin.playerId));
+  return [...ids].map(getPlayerById).filter(Boolean);
+}
+function publicJobTitle(job) {
+  return job.row.typeA==='text' && !job.row.arrow ? job.row.valueA : (job.sec.label||'Assignment').replace(/^[^\p{L}\p{N}]+/u,'');
+}
+function renderPublicPlayerDetail(strat,pid,page=0) {
+  const p=getPlayerById(pid); if(!p) return '<p>Select a player to see their assignment.</p>';
+  const jobs=publicPlayerJobs(strat,pid);
+  return '<small>'+stratDisplayText([p.ms,p.class].filter(Boolean).join(' '))+'</small><h3>'+stratDisplayText(p.name)+'</h3>'+ (jobs.length ? jobs.slice(page,page+1).map(job=>{
+    const target=job.row.arrow ? jobRowTargetLabel(job.row) : '';
+    const ability=sectionAbilityIcon(job.sec);
+    return '<div class="assigned-job">'+(ability ? '<img src="https://wow.zamimg.com/images/wow/icons/medium/'+ability.slug+'.jpg" alt="">' : '')+'<div><strong>'+stratDisplayText(publicJobTitle(job))+'</strong>'+(target?'<span>→ '+stratDisplayText(target)+'</span>':'')+'</div></div>'+(ability && /misdirect/i.test(job.sec.label)?'<a class="ability-reference" href="https://www.wowhead.com/tbc/spell=34477" data-wowhead="spell=34477&amp;domain=tbc" target="_blank" rel="noopener">Misdirection on Wowhead ↗</a>':'');
+  }).join('')+(jobs.length>1?'<div class="assignment-pager"><button type="button" onclick="pagePublicJob('+strat.id+','+Number(pid)+','+((page+jobs.length-1)%jobs.length)+')" aria-label="Previous assignment">←</button><span>Assignment '+(page+1)+' of '+jobs.length+'</span><button type="button" onclick="pagePublicJob('+strat.id+','+Number(pid)+','+((page+1)%jobs.length)+')" aria-label="Next assignment">→</button></div>':'') : '<p>No personal assignment has been added.</p>');
+}
+function pagePublicJob(sid,pid,page){const el=document.querySelector('.public-assignments .personal-detail');if(el)el.innerHTML=renderPublicPlayerDetail(getStrat(sid),pid,page);}
+function syncPublicPlayerDetail(pid) {
+  const panel=document.querySelector('.public-assignments'); if(!panel) return;
+  const strat=getStrat(Number(panel.id.replace('assigns-panel-',''))); if(!strat) return;
+  panel.querySelectorAll('[data-public-player]').forEach(b=>b.setAttribute('aria-pressed',String(Number(b.dataset.publicPlayer)===Number(pid) && pid!=null)));
+  const detail=panel.querySelector('.personal-detail'); if(detail) detail.innerHTML=pid==null?'<p>Select a player to see their assignment.</p>':renderPublicPlayerDetail(strat,pid);
+}
+function selectPublicPlayer(sid,pid) {
+  if(canEdit('strats')) return;
+  _highlightedPlayerId=pid; applyPinHighlight(pid); applyRowCardHighlight(pid);
+}
 function renderPublicAssignments(strat) {
-  const cell = (type, value) => {
-    if (type === 'player') {
-      const player = value != null ? getPlayerById(value) : null;
-      return player ? `<span class="public-assignment-person">${classSpecIconHtml(player,24)}<span>${stratDisplayText(player.name)}</span></span>` : '<span class="public-assignment-empty">Not assigned</span>';
-    }
-    return value !== null && value !== undefined && String(value).trim() ? stratDisplayText(value) : '<span class="public-assignment-empty">No note added</span>';
-  };
-  const sections = strat.sections || [];
-  const body = sections.length ? sections.map(sec => `<section class="public-assignment-section"><h4><span class="row-card-icon">${rowCardIconHtml(sec)}</span>${stratDisplayText((sec.label || '').replace(/^[^\p{L}\p{N}]+/u,''))}</h4>${(sec.rows || []).map(row => `<div class="assigns-row-card public-assignment-row" ${rowActorId(row) != null ? `data-actor-id="${Number(rowActorId(row))}"` : ''}>${cell(row.typeA,row.valueA)}${row.typeB ? `${row.arrow ? '<span class="public-assignment-arrow">→</span>' : ' · '}${cell(row.typeB,row.valueB)}` : ''}</div>`).join('') || '<p class="public-assignment-empty">No assignments added.</p>'}</section>`).join('') : '<p class="public-assignment-empty">No assignments shared for this encounter.</p>';
-  return `<div class="assignment-heading"><h3>Raid assignments</h3><p>Responsibilities for this encounter.</p></div>${body}<div class="public-player-detail"><span>Select a player on the map to see their assignment here.</span></div>`;
+  const players=publicPlayers(strat);
+  const selected=players.find(p=>Number(p.id)===Number(_highlightedPlayerId))||players[0];
+  return '<div class="personal-plan"><div class="public-player-eyebrow">Your raid / player assignments</div><div class="player-choices">'+players.map(p=>{
+    const jobs=publicPlayerJobs(strat,p.id),job=jobs[0];
+    const target=job?.row.arrow ? jobRowTargetLabel(job.row) : '';
+    return '<button type="button" data-public-player="'+Number(p.id)+'" aria-pressed="'+(p===selected)+'" onclick="selectPublicPlayer('+Number(strat.id)+','+Number(p.id)+')">'+classSpecIconHtml(p,28)+'<span class="choice-name"><strong>'+stratDisplayText(p.name)+'</strong><small>'+stratDisplayText(job?publicJobTitle(job):p.role||'Raider')+(jobs.length>1?' · +'+(jobs.length-1):'')+'</small></span>'+(target?'<span class="choice-target">→ '+stratDisplayText(target)+'</span>':'')+'</button>';
+  }).join('')+'</div><div class="personal-detail" aria-live="polite">'+(selected?renderPublicPlayerDetail(strat,selected.id):'<p>No players assigned yet.</p>')+'</div></div>';
 }
 
 function assignsPanelBody(strat) {
