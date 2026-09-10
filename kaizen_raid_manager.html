@@ -2750,18 +2750,41 @@ body.landing-mode #landing-page { display: block; }
     </div>
   </div>
 
+  <!-- Roster Readiness card - "explicit readiness counts and gaps... must
+       remain visible without opening another tab" (Design/DESIGN-
+       INSTRUCTIONS.md's visual bar, matching D08 in DECISIONS.md). The
+       approved reference shows a fixed-target example ("1 healer
+       needed" against a known 2-tank/2-healer/6-damage 10-man comp) -
+       the real app has no configured target composition per raid
+       (varies by guild/tier/strategy, not in the data model), so
+       inventing a "needed" role would be fabricating data the app
+       doesn't actually have. This shows the same honest shape with
+       real numbers instead: filled/total (was buried as small text in
+       #builder-coverage) and actual role counts (was
+       #role-count-strip, relocated here rather than duplicated) - see
+       renderCoverage() for what fills readiness-filled-count/
+       readiness-open-status. -->
+  <div class="card" id="roster-readiness-card" style="margin-bottom:16px;padding:18px 20px;display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
+    <div style="display:flex;align-items:baseline;gap:4px;flex-shrink:0;">
+      <span id="readiness-filled-count" style="font-family:'Cinzel',serif;font-size:36px;font-weight:700;color:var(--gold);line-height:1;">0</span>
+      <span id="readiness-total-count" style="font-size:16px;color:var(--text-dim);">/0</span>
+    </div>
+    <div style="flex-shrink:0;">
+      <div style="font-size:13px;font-weight:600;color:var(--text-bright);">Roster slots filled</div>
+      <div id="readiness-open-status" style="font-size:12px;margin-top:2px;"></div>
+    </div>
+    <div id="role-count-strip" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-left:auto;"></div>
+  </div>
+
   <!-- Coverage buff icons -->
   <div id="builder-coverage" style="margin-bottom:16px;"></div>
 
-  <!-- Secondary actions left, role counts right — same row -->
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
-    <div class="krm-edit-only" style="display:flex;gap:6px;align-items:center;">
-      <button class="btn btn-small" onclick="openGuildieModal()">+ Guildie</button>
-      <button class="btn btn-small" onclick="openPugModal()">+ Pug</button>
-      <button class="btn btn-small" onclick="clearGroupsToPool()">Clear</button>
-      <button class="btn btn-small btn-gold" onclick="autoFillGroups()">Auto-Fill</button>
-    </div>
-    <div id="role-count-strip" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;"></div>
+  <!-- Secondary actions -->
+  <div class="krm-edit-only" style="display:flex;gap:6px;align-items:center;margin-bottom:14px;flex-wrap:wrap;">
+    <button class="btn btn-small" onclick="openGuildieModal()">+ Guildie</button>
+    <button class="btn btn-small" onclick="openPugModal()">+ Pug</button>
+    <button class="btn btn-small" onclick="clearGroupsToPool()">Clear</button>
+    <button class="btn btn-small btn-gold" onclick="autoFillGroups()">Auto-Fill</button>
   </div>
 
   <div class="groups-container" id="groups-container"></div>
@@ -9077,12 +9100,35 @@ function renderCoverage() {
   document.getElementById('builder-coverage').innerHTML = `
     <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
       <div style="display:flex;gap:3px;align-items:center;flex-wrap:wrap;">${raidBuffStrip}</div>
-      <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-dim);margin-left:auto;">${filled}/${groupCount * 5} filled</span>
     </div>`;
 
-  // Role counts go in the strip below, right-aligned next to secondary buttons
+  // Role counts go in the readiness card's strip (see #roster-readiness-card)
   const roleStripEl = document.getElementById('role-count-strip');
   if (roleStripEl) roleStripEl.innerHTML = roleStrip;
+
+  // Roster Readiness card - real filled/total + real open-slot count, no
+  // fabricated "role needed" claim (see the HTML comment on
+  // #roster-readiness-card for why: no per-raid target composition
+  // exists in the data model to compare against).
+  const readinessTotal = groupCount * 5;
+  const readinessOpen = readinessTotal - filled;
+  const filledCountEl = document.getElementById('readiness-filled-count');
+  const totalCountEl = document.getElementById('readiness-total-count');
+  const openStatusEl = document.getElementById('readiness-open-status');
+  if (filledCountEl) filledCountEl.textContent = filled;
+  if (totalCountEl) totalCountEl.textContent = `/${readinessTotal}`;
+  if (openStatusEl) {
+    if (readinessTotal === 0) {
+      openStatusEl.textContent = 'No groups yet';
+      openStatusEl.style.color = 'var(--text-dim)';
+    } else if (readinessOpen > 0) {
+      openStatusEl.textContent = `${readinessOpen} open slot${readinessOpen === 1 ? '' : 's'}`;
+      openStatusEl.style.color = 'var(--gold-light)';
+    } else {
+      openStatusEl.textContent = 'Roster full';
+      openStatusEl.style.color = 'var(--green-bright)';
+    }
+  }
 
   // Inject group buff strips into group boxes after renderBuilder has run
   requestAnimationFrame(() => {
