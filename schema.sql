@@ -27,20 +27,24 @@ CREATE TABLE IF NOT EXISTS guilds (
 );
 
 -- Who belongs to which guild, with what role and approval status - the
--- actual access-control boundary (see verifyGuildAccess in
+-- actual access-control boundary (see getActiveMembership in
 -- kaizen-worker.js). role/status are plain strings, not enums (D1/SQLite
--- has none) - kept to 'gm' | 'officer' | 'raider' and
+-- has none) - kept to 'gm' | 'officer' | 'member' and
 -- 'pending' | 'active' | 'rejected' by application-code convention, not
--- a DB constraint.
+-- a DB constraint. display_name is a display-only convenience (whatever
+-- Clerk's own profile said at request time - see handleRequestJoin) so
+-- an approver reviewing the pending queue sees a real name, not a bare
+-- Clerk user id - never used for anything security-relevant.
 CREATE TABLE IF NOT EXISTS guild_memberships (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   guild_id INTEGER NOT NULL REFERENCES guilds(id),
   user_id TEXT NOT NULL,           -- Clerk user id
-  role TEXT NOT NULL DEFAULT 'raider',
+  role TEXT NOT NULL DEFAULT 'member',
   status TEXT NOT NULL DEFAULT 'pending',
   requested_at TEXT NOT NULL,
   decided_at TEXT,
   decided_by TEXT,                 -- Clerk user id of whoever approved/rejected
+  display_name TEXT,
   UNIQUE(guild_id, user_id)
 );
 

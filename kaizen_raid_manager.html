@@ -2123,6 +2123,17 @@ a[href] > div > div[style*="line-height:1.6"] {
   <a id="back-to-published-link" href="#" style="color:#0a0b0d;text-decoration:underline;font-weight:700;">← Back to published page</a>
 </div>
 
+<!-- Request-to-join banner (see renderJoinGuildUi) - shown to a signed-
+     in visitor who isn't an active member yet: null status -> a button
+     to request; 'pending' -> just says so, no button; 'rejected' ->
+     lets them try again. Hidden entirely for an active member (nothing
+     to ask for) or an unauthenticated visitor (nothing to join with
+     yet - they'd sign in first). -->
+<div id="join-guild-banner" style="display:none;background:var(--bg-panel);border-bottom:1px solid var(--border-bright);padding:8px 20px;font-size:12px;align-items:center;justify-content:space-between;">
+  <span id="join-guild-status-text" style="color:var(--text-mid);"></span>
+  <button id="join-guild-btn" class="btn btn-small btn-gold" onclick="requestToJoinGuild()" style="display:none;">Request to Join</button>
+</div>
+
 <!-- Sign-in panel (see the Clerk bootstrap script near the bottom of the
      file) - NOT a hard gate anymore. An unauthenticated visitor sees the
      app right away in read-only mode (see myRole/canEdit -
@@ -2930,6 +2941,17 @@ a[href] > div > div[style*="line-height:1.6"] {
         <div style="font-size:11px;color:var(--text-dim);margin-top:6px;">
           Without this, you paste an event URL manually. With it, events auto-load.
         </div>
+      </div>
+
+      <!-- Members - only meaningful for a GM/Officer, and only fetched
+           when this modal opens (see openSettings/loadPendingRequests) -
+           no reason to hit this endpoint for every visitor, most of
+           whom would just get the 403 anyway. Hidden entirely (not just
+           empty) for anyone else, same "don't show a button that leads
+           nowhere" reasoning as manage-guild-btn. -->
+      <div id="members-settings-section" style="display:none;margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">
+        <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-dim);margin-bottom:10px;">Pending Membership Requests</div>
+        <div id="pending-requests-list" style="display:flex;flex-direction:column;gap:8px;"></div>
       </div>
     </div>
     <div class="modal-footer">
@@ -5760,6 +5782,54 @@ function checkRegisterGuildReturn() {
     params.delete('registered'); params.delete('registerError');
     const clean = window.location.pathname + (params.toString() ? `?${params}` : '');
     window.history.replaceState({}, '', clean); // drop the query params without a reload, so refreshing doesn't re-show the toast
+  }
+}
+
+// Shows/hides the request-to-join banner based on myMembershipStatus
+// (set in initFromJson) - called alongside applyTabPermissions once
+// data/status is known. Not shown to an unauthenticated visitor at all
+// (there's nothing to request with yet) or an active member (nothing
+// left to ask for).
+function renderJoinGuildUi() {
+  const banner = document.getElementById('join-guild-banner');
+  const text = document.getElementById('join-guild-status-text');
+  const btn = document.getElementById('join-guild-btn');
+  if (!banner) return;
+  const signedIn = !!window.Clerk?.user;
+  // null covers two very different cases: an unauthenticated visitor
+  // (nothing to show - the sign-in flow covers that), and a signed-in
+  // active member (nothing left to ask for - see initFromJson, which
+  // only ever sets a non-null status for pending/rejected). Either way,
+  // null means hide the banner.
+  if (!signedIn || myMembershipStatus === null) {
+    banner.style.display = 'none';
+    return;
+  }
+  banner.style.display = 'flex';
+  if (myMembershipStatus === 'pending') {
+    text.textContent = `Your request to join ${guildInfo?.guildName || currentGuildSlug} is pending approval.`;
+    btn.style.display = 'none';
+  } else { // 'rejected'
+    text.textContent = `Your request to join ${guildInfo?.guildName || currentGuildSlug} wasn't approved. You can try again.`;
+    btn.style.display = '';
+  }
+}
+
+async function requestToJoinGuild() {
+  try {
+    const displayName = window.Clerk?.user?.username || window.Clerk?.user?.fullName || null;
+    const res = await fetch(`${APP_API_WORKER}/api/guild-membership/request`, {
+      method: 'POST',
+      headers: { ...(await clerkAuthHeader()), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ guildId: CURRENT_GUILD_ID, displayName }),
+    });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || `Could not send request (${res.status})`);
+    myMembershipStatus = result.status === 'active' ? null : result.status;
+    renderJoinGuildUi();
+    showToast(result.status === 'active' ? '✓ Already a member!' : '✓ Request sent - a GM or Officer needs to approve it.');
+  } catch (err) {
+    showToast(`✗ Could not request to join: ${err.message}`, true);
   }
 }
 
@@ -10785,6 +10855,67 @@ function openSettings() {
   document.getElementById('rh-server-id-input').value  = rh.serverId;
   document.getElementById('rh-api-key-input').value    = rh.apiKey;
   document.getElementById('settings-modal-overlay').classList.add('open');
+
+  const membersSection = document.getElementById('members-settings-section');
+  const isApprover = myRole === 'gm' || myRole === 'officer';
+  membersSection.style.display = isApprover ? 'block' : 'none';
+  if (isApprover) loadPendingRequests();
+}
+
+// Fetched fresh every time Settings opens (not cached/pre-loaded on
+// every page load) - the approval queue only matters to a GM/Officer
+// actually looking at it, and hitting a membership-checked endpoint for
+// every visitor who never opens Settings would just be wasted calls.
+async function loadPendingRequests() {
+  const listEl = document.getElementById('pending-requests-list');
+  listEl.innerHTML = `<div style="font-size:12px;color:var(--text-dim);">Loading...</div>`;
+  try {
+    const res = await fetch(`${APP_API_WORKER}/api/guild-membership/pending?guildId=${CURRENT_GUILD_ID}`, { headers: await clerkAuthHeader() });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || `Could not load requests (${res.status})`);
+    renderPendingRequests(result.requests || []);
+  } catch (err) {
+    listEl.innerHTML = `<div style="font-size:12px;color:var(--red-bright);">${err.message}</div>`;
+  }
+}
+
+function renderPendingRequests(requests) {
+  const listEl = document.getElementById('pending-requests-list');
+  if (requests.length === 0) {
+    listEl.innerHTML = `<div style="font-size:12px;color:var(--text-dim);font-style:italic;">No pending requests.</div>`;
+    return;
+  }
+  listEl.innerHTML = requests.map(r => {
+    const uid = r.user_id.replace(/'/g, "\\'");
+    const name = (r.display_name || r.user_id).replace(/</g, '&lt;');
+    return `<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg-hover);border-radius:3px;border:1px solid var(--border);">
+      <span style="flex:1;font-size:13px;font-weight:600;color:var(--text-bright);">${name}</span>
+      <select id="role-pick-${r.user_id}" class="form-select" style="font-size:11px;padding:4px 6px;">
+        <option value="member">Member</option>
+        <option value="officer">Officer</option>
+      </select>
+      <button class="btn btn-small btn-gold" onclick="decideMembershipRequest('${uid}','approve')">✓ Approve</button>
+      <button class="btn btn-small btn-danger" onclick="decideMembershipRequest('${uid}','reject')">✕ Reject</button>
+    </div>`;
+  }).join('');
+}
+
+async function decideMembershipRequest(userId, decision) {
+  const roleSelect = document.getElementById(`role-pick-${userId}`);
+  const role = roleSelect ? roleSelect.value : 'member';
+  try {
+    const res = await fetch(`${APP_API_WORKER}/api/guild-membership/decide`, {
+      method: 'POST',
+      headers: { ...(await clerkAuthHeader()), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ guildId: CURRENT_GUILD_ID, userId, decision, role }),
+    });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || `Could not decide request (${res.status})`);
+    showToast(decision === 'approve' ? `✓ Approved as ${role}.` : '✓ Rejected.');
+    loadPendingRequests(); // refresh the list - the one just decided should drop off
+  } catch (err) {
+    showToast(`✗ Could not decide request: ${err.message}`, true);
+  }
 }
 
 function closeSettings() {
@@ -13013,21 +13144,41 @@ document.addEventListener('keydown', e => {
 // ======================================================
 // INIT — auto-load kaizen_data.json from same folder if available
 // ======================================================
+// Signed in but not (yet) an active member of CURRENT_GUILD_ID - null
+// means "no relationship at all" (never requested), otherwise 'pending'
+// or 'rejected'. null/undefined-vs-'rejected' matters for which label
+// the "Request to Join" UI shows (see renderJoinGuildUi). Stays null
+// for an active member or an unauthenticated visitor - neither has a
+// "request to join" decision left to make.
+let myMembershipStatus = null;
+
 async function initFromJson() {
   try {
-    // Signed in -> the real, authenticated /api/state (membership-
-    // checked once ENFORCE_GUILD_MEMBERSHIP flips on server-side) which
-    // also tells us our role. Not signed in -> /api/public-state, no
-    // auth at all - the "published guild page" read path. Either way we
-    // end up with the same `data` shape; myRole is what actually decides
-    // what renders editable vs. read-only vs. hidden from here on.
+    // Signed in -> check /api/guild-membership/mine first (cheap, never
+    // 403s) to find out whether we're an ACTIVE member before touching
+    // the real data endpoint at all. Only an active member gets
+    // /api/state (membership-checked, tells us our role); everyone else
+    // - not signed in, or signed in but pending/rejected/never asked -
+    // gets the exact same /api/public-state read-only path. Hitting
+    // /api/state for a non-member would just 403 and leave a legitimate
+    // "let me see if I can request to join" visitor with a broken page
+    // instead of the published view they're actually entitled to see.
     const signedIn = !!window.Clerk?.user;
-    let result;
+    let isActiveMember = false;
+    myMembershipStatus = null;
     if (signedIn) {
+      const mineRes = await fetch(`${APP_API_WORKER}/api/guild-membership/mine?guildId=${CURRENT_GUILD_ID}`, { headers: await clerkAuthHeader() });
+      const mine = await mineRes.json();
+      isActiveMember = mine.status === 'active';
+      if (!isActiveMember) myMembershipStatus = mine.status; // null | 'pending' | 'rejected'
+    }
+
+    let result;
+    if (isActiveMember) {
       const res = await fetch(`${APP_API_WORKER}/api/state?guildId=${CURRENT_GUILD_ID}`, { headers: await clerkAuthHeader() });
       result = await res.json();
       if (!res.ok) throw new Error(result.error || `Could not reach the app state API (${res.status})`);
-      myRole = result.role || 'member'; // signed in with no membership row yet still isn't the public tier
+      myRole = result.role || 'member';
     } else {
       const res = await fetch(`${APP_API_WORKER}/api/public-state?guildId=${CURRENT_GUILD_ID}`);
       result = await res.json();
@@ -13036,7 +13187,7 @@ async function initFromJson() {
       _appStateVersion = 0; // no version to track - the public path never saves
     }
     if (!result.data) throw new Error('No app state saved yet');
-    if (signedIn) _appStateVersion = result.version || 0;
+    if (isActiveMember) _appStateVersion = result.version || 0;
     const data = result.data;
     if (data.roster) roster = data.roster;
     // Migrate: default level to 70 for any existing entry missing it
@@ -13123,6 +13274,7 @@ async function initFromJson() {
     console.log('Could not load app state, using defaults:', err.message);
   }
   applyTabPermissions();
+  renderJoinGuildUi();
   renderRaidTabs();
   renderRoster();
   renderOverview();

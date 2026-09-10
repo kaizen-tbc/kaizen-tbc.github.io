@@ -47,6 +47,18 @@ export default {
     if (url.pathname === '/api/guild-by-slug' && request.method === 'GET') {
       return handleGuildBySlug(request, env);
     }
+    if (url.pathname === '/api/guild-membership/mine' && request.method === 'GET') {
+      return handleGuildMembershipMine(request, env);
+    }
+    if (url.pathname === '/api/guild-membership/request' && request.method === 'POST') {
+      return handleGuildMembershipRequest(request, env);
+    }
+    if (url.pathname === '/api/guild-membership/pending' && request.method === 'GET') {
+      return handleGuildMembershipPending(request, env);
+    }
+    if (url.pathname === '/api/guild-membership/decide' && request.method === 'POST') {
+      return handleGuildMembershipDecide(request, env);
+    }
 
     // ── Current WCL rate-limit status, read-only diagnostic ── /wcl-status
     if (url.pathname === '/wcl-status' && request.method === 'GET') {
@@ -372,6 +384,130 @@ async function handleGuildBySlug(request, env) {
   const row = await env.kaizen_db.prepare('SELECT id, slug, name FROM guilds WHERE slug = ?').bind(slug).first();
   if (!row) return corsResponse(JSON.stringify({ error: 'No guild registered at this address.' }), 404);
   return corsResponse(JSON.stringify(row), 200);
+}
+
+// ── Request-to-join / approve (the other half of Phase 2) ─────────
+// Registering a guild auto-approves its own GM (they obviously already
+// own it, per the Discord bot-invite proof). Everyone else needs an
+// actual request-then-approve step - this is that step. GM and Officer
+// can both decide requests (delegating recruitment to officers is
+// normal for a guild; nothing here is GM-only).
+function isApproverRole(role) { return role === 'gm' || role === 'officer'; }
+
+// GET /api/guild-membership/mine?guildId=1 - authenticated. Tells the
+// frontend whether the signed-in user has any relationship to this
+// guild at all (active/pending/rejected/none) WITHOUT needing to
+// succeed at loading the guild's actual data - deliberately separate
+// from /api/state, whose membership check would otherwise just 403 a
+// legitimate "let me see if I can request to join" visitor with nothing
+// useful to act on.
+async function handleGuildMembershipMine(request, env) {
+  const auth = await verifyAuth(request, env);
+  if (!auth) return corsResponse(JSON.stringify({ error: 'Unauthorized' }), 401);
+  const url = new URL(request.url);
+  const guildId = parseInt(url.searchParams.get('guildId'), 10);
+  if (!guildId) return corsResponse(JSON.stringify({ error: 'Missing guildId.' }), 400);
+  if (!env.kaizen_db) return corsResponse(JSON.stringify({ error: 'kaizen_db binding not configured.' }), 500);
+  const row = await env.kaizen_db.prepare(
+    'SELECT role, status FROM guild_memberships WHERE guild_id = ? AND user_id = ?'
+  ).bind(guildId, auth.sub).first();
+  return corsResponse(JSON.stringify({ role: row?.role || null, status: row?.status || null }), 200);
+}
+
+// POST /api/guild-membership/request - authenticated. Body: { guildId,
+// displayName }. displayName is purely cosmetic (see schema.sql's own
+// note - whatever Clerk's profile says right now, client-supplied and
+// never trusted for anything else) so an approver reviewing the queue
+// sees a real name instead of a bare Clerk user id. Idempotent-ish: an
+// existing active/pending row is left alone (still returns success -
+// re-clicking "Request to Join" shouldn't be an error), a rejected one
+// can be re-requested (flips back to pending, same as a fresh request).
+async function handleGuildMembershipRequest(request, env) {
+  const auth = await verifyAuth(request, env);
+  if (!auth) return corsResponse(JSON.stringify({ error: 'Unauthorized' }), 401);
+  if (!env.kaizen_db) return corsResponse(JSON.stringify({ error: 'kaizen_db binding not configured.' }), 500);
+  const { guildId, displayName } = await request.json();
+  if (!guildId) return corsResponse(JSON.stringify({ error: 'Missing guildId.' }), 400);
+
+  const guild = await env.kaizen_db.prepare('SELECT id FROM guilds WHERE id = ?').bind(guildId).first();
+  if (!guild) return corsResponse(JSON.stringify({ error: 'Guild not found.' }), 404);
+
+  const existing = await env.kaizen_db.prepare(
+    'SELECT status FROM guild_memberships WHERE guild_id = ? AND user_id = ?'
+  ).bind(guildId, auth.sub).first();
+
+  if (existing && existing.status !== 'rejected') {
+    return corsResponse(JSON.stringify({ status: existing.status }), 200); // already pending or active - nothing to do
+  }
+
+  const now = new Date().toISOString();
+  await env.kaizen_db.prepare(
+    `INSERT INTO guild_memberships (guild_id, user_id, role, status, requested_at, display_name)
+     VALUES (?, ?, 'member', 'pending', ?, ?)
+     ON CONFLICT(guild_id, user_id) DO UPDATE SET status='pending', requested_at=excluded.requested_at, display_name=excluded.display_name, decided_at=NULL, decided_by=NULL`
+  ).bind(guildId, auth.sub, now, displayName || null).run();
+
+  return corsResponse(JSON.stringify({ status: 'pending' }), 200);
+}
+
+// GET /api/guild-membership/pending?guildId=1 - authenticated AND the
+// caller must already be an active gm/officer of that exact guild (an
+// active member of some OTHER guild, or a pending member of this one,
+// doesn't count) - this is the approval queue itself, not something a
+// plain Member should be able to see.
+async function handleGuildMembershipPending(request, env) {
+  const auth = await verifyAuth(request, env);
+  if (!auth) return corsResponse(JSON.stringify({ error: 'Unauthorized' }), 401);
+  const url = new URL(request.url);
+  const guildId = parseInt(url.searchParams.get('guildId'), 10);
+  if (!guildId) return corsResponse(JSON.stringify({ error: 'Missing guildId.' }), 400);
+  if (!env.kaizen_db) return corsResponse(JSON.stringify({ error: 'kaizen_db binding not configured.' }), 500);
+
+  const membership = await getActiveMembership(env, guildId, auth.sub);
+  if (!membership || !isApproverRole(membership.role)) {
+    return corsResponse(JSON.stringify({ error: 'Only a GM or Officer can view pending requests.' }), 403);
+  }
+
+  const { results } = await env.kaizen_db.prepare(
+    `SELECT user_id, display_name, requested_at FROM guild_memberships WHERE guild_id = ? AND status = 'pending' ORDER BY requested_at ASC`
+  ).bind(guildId).all();
+  return corsResponse(JSON.stringify({ requests: results }), 200);
+}
+
+// POST /api/guild-membership/decide - authenticated AND the caller must
+// be an active gm/officer of that guild. Body: { guildId, userId,
+// decision: 'approve'|'reject', role } - role only matters on approve
+// (defaults to 'member'; an approver can hand someone Officer directly
+// instead of promoting them separately afterward), ignored on reject.
+async function handleGuildMembershipDecide(request, env) {
+  const auth = await verifyAuth(request, env);
+  if (!auth) return corsResponse(JSON.stringify({ error: 'Unauthorized' }), 401);
+  if (!env.kaizen_db) return corsResponse(JSON.stringify({ error: 'kaizen_db binding not configured.' }), 500);
+  const { guildId, userId, decision, role } = await request.json();
+  if (!guildId || !userId || !['approve', 'reject'].includes(decision)) {
+    return corsResponse(JSON.stringify({ error: 'Missing or invalid guildId/userId/decision.' }), 400);
+  }
+
+  const membership = await getActiveMembership(env, guildId, auth.sub);
+  if (!membership || !isApproverRole(membership.role)) {
+    return corsResponse(JSON.stringify({ error: 'Only a GM or Officer can decide membership requests.' }), 403);
+  }
+
+  const newStatus = decision === 'approve' ? 'active' : 'rejected';
+  const newRole = decision === 'approve' ? (role === 'officer' ? 'officer' : 'member') : undefined;
+  const now = new Date().toISOString();
+
+  if (newRole) {
+    await env.kaizen_db.prepare(
+      `UPDATE guild_memberships SET status = ?, role = ?, decided_at = ?, decided_by = ? WHERE guild_id = ? AND user_id = ? AND status = 'pending'`
+    ).bind(newStatus, newRole, now, auth.sub, guildId, userId).run();
+  } else {
+    await env.kaizen_db.prepare(
+      `UPDATE guild_memberships SET status = ?, decided_at = ?, decided_by = ? WHERE guild_id = ? AND user_id = ? AND status = 'pending'`
+    ).bind(newStatus, now, auth.sub, guildId, userId).run();
+  }
+
+  return corsResponse(JSON.stringify({ status: newStatus }), 200);
 }
 
 // GET /api/public-state?guildId=1 - no auth at all, deliberately. This
