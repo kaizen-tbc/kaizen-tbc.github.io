@@ -2687,6 +2687,14 @@ body.landing-mode #landing-page { display: block; }
 <!-- ==================== ROSTER TAB (with sub-tabs) ==================== -->
 <div class="tab-panel" id="tab-roster">
 
+  <!-- Manager editing view (full table, sub-tabs, import/add, attendance
+       ledger) vs. #public-roster-view below - a visitor gets a real
+       directory composition, not a read-only/dimmed version of the
+       editor. Toggled in applyTabPermissions() alongside the shell
+       swap. Neither view duplicates roster data - #public-roster-view
+       reads the same live `roster` array this one does, just presents
+       a curated field subset (see renderPublicRaidersDirectory). -->
+  <div id="manager-roster-view">
   <div class="sub-nav" style="display:flex;gap:6px;margin-bottom:20px;border-bottom:1px solid var(--border);padding-bottom:0;">
     <button class="sub-nav-btn active" onclick="showRosterSubTab('guild-roster', this)">Guild Roster</button>
     <button class="sub-nav-btn" onclick="showRosterSubTab('attendance-ledger', this)">Attendance</button>
@@ -2771,6 +2779,50 @@ body.landing-mode #landing-page { display: block; }
       <button class="btn btn-small btn-gold krm-edit-only" onclick="openWCLAttendanceImport()">⬇ Import from Warcraft Logs</button>
     </div>
     <div id="ledger-list"></div>
+  </div>
+  </div><!-- /#manager-roster-view -->
+
+  <!-- Public visitor directory - Design/preview/guild-raiders.html:
+       "Searchable public character directory; spec icons, readable
+       rows, role filter. Keep all permitted real fields... five
+       example rows are not a cap." Hidden entirely (not just emptied)
+       when the GM has set Raiders to hidden for unauthenticated
+       visitors (see canView('raiders') in renderPublicRaidersDirectory)
+       - "return a safe unavailable state on direct routes" per
+       PUBLIC-SITE-VISUAL-HANDOFF.md, rather than an empty table. -->
+  <div id="public-roster-view" style="display:none;">
+    <div class="section-header">
+      <div>
+        <div class="section-title">Our raiders</div>
+        <div class="section-subtitle">The people you'll be raiding with</div>
+      </div>
+    </div>
+    <div id="public-roster-unavailable" style="display:none;padding:32px;text-align:center;color:var(--text-dim);">
+      The roster isn't public for this guild right now.
+    </div>
+    <div id="public-roster-content" style="display:none;">
+      <div class="roster-controls" style="margin-bottom:16px;">
+        <input type="text" class="filter-input" placeholder="Character or spec..." id="public-roster-search" oninput="renderPublicRaidersDirectory()">
+        <select class="filter-select" id="public-roster-role-filter" onchange="renderPublicRaidersDirectory()">
+          <option value="">All Roles</option>
+          <option>Tank</option><option>Healer</option><option>Melee</option><option>Ranged</option>
+        </select>
+        <span style="font-size:12px;color:var(--text-dim);margin-left:auto;" id="public-roster-count"></span>
+      </div>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>Character / spec</th>
+              <th>Role</th>
+              <th>Roster</th>
+              <th>Level</th>
+            </tr>
+          </thead>
+          <tbody id="public-roster-tbody"></tbody>
+        </table>
+      </div>
+    </div>
   </div>
 
 </div>
@@ -5178,6 +5230,15 @@ function applyTabPermissions() {
   const appSidebar = document.getElementById('app-sidebar');
   if (publicHeader) publicHeader.style.display = inManageMode ? 'none' : '';
   if (appSidebar) appSidebar.style.display = inManageMode ? '' : 'none';
+
+  // Raiders: manager's full editing table vs. the public directory (see
+  // renderPublicRaidersDirectory) - same shell-swap idea as the header
+  // above, one tab at a time as each gets its visitor-focused pass.
+  const managerRosterView = document.getElementById('manager-roster-view');
+  const publicRosterView = document.getElementById('public-roster-view');
+  if (managerRosterView) managerRosterView.style.display = inManageMode ? '' : 'none';
+  if (publicRosterView) publicRosterView.style.display = inManageMode ? 'none' : '';
+  if (!inManageMode) renderPublicRaidersDirectory();
   const manageBtn = document.getElementById('manage-guild-btn');
   if (manageBtn) manageBtn.style.display = (!inManageMode && hasAnyRealEditAccess()) ? '' : 'none';
   const banner = document.getElementById('manage-mode-banner');
@@ -7557,7 +7618,7 @@ function showTab(tab, btn, opts) {
   const publicLink = document.querySelector(`.public-nav-link[data-tab="${tab}"]`);
   if (publicLink) publicLink.classList.add('active');
   if (tab === 'overview') renderOverview();
-  if (tab === 'roster') renderActiveRosterSubTab();
+  if (tab === 'roster') { renderActiveRosterSubTab(); renderPublicRaidersDirectory(); }
   if (tab === 'strats') renderStrats();
   if (tab === 'builder') renderBuilder();
   if (tab === 'guild-logs') renderGuildLogsTab();
@@ -8155,6 +8216,69 @@ function renderRoster() {
           <button class="btn btn-small btn-danger" onclick="confirmRemove(${p.id})">✕</button>
         </div>
       </td>
+    </tr>`;
+  }).join('');
+}
+
+// ======================================================
+// PUBLIC RAIDERS DIRECTORY (Design/preview/guild-raiders.html)
+// A curated, allowlisted presentation of the SAME live `roster` array
+// renderRoster() reads above - not a fixture, not a parallel model.
+// Deliberately narrower fields than the manager table (no Discord ID,
+// notes, attendance%, alt-of, or edit actions - content-visibility-
+// map.json's roster policy: "allowlisted name, class/spec, role as
+// configured"). Shown instead of #manager-roster-view when
+// !inManageMode; see the toggle in applyTabPermissions().
+// ======================================================
+function renderPublicRaidersDirectory() {
+  const unavailableEl = document.getElementById('public-roster-unavailable');
+  const contentEl = document.getElementById('public-roster-content');
+  if (!unavailableEl || !contentEl) return;
+
+  // Respects the same GM-configurable tabPermissions.raiders switch the
+  // manager table's own read-only mode already respects - "hidden"
+  // means hidden here too, not just dimmed. Safe-unavailable state per
+  // PUBLIC-SITE-VISUAL-HANDOFF.md, not an empty table.
+  if (!canView('raiders')) {
+    unavailableEl.style.display = '';
+    contentEl.style.display = 'none';
+    return;
+  }
+  unavailableEl.style.display = 'none';
+  contentEl.style.display = '';
+
+  const search = (document.getElementById('public-roster-search')?.value || '').toLowerCase().trim();
+  const roleFilter = document.getElementById('public-roster-role-filter')?.value || '';
+
+  const rows = roster.filter(p => {
+    if (roleFilter && p.role !== roleFilter) return false;
+    if (search && !p.name.toLowerCase().includes(search) && !(p.ms || '').toLowerCase().includes(search)) return false;
+    return true;
+  });
+
+  const countEl = document.getElementById('public-roster-count');
+  if (countEl) countEl.textContent = `${rows.length} raider${rows.length === 1 ? '' : 's'} shown`;
+
+  const tbody = document.getElementById('public-roster-tbody');
+  if (rows.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:32px;color:var(--text-dim);">No raiders match that search.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = rows.map(p => {
+    const cc = classColor(p.class);
+    return `<tr>
+      <td>
+        <div style="display:flex;align-items:center;gap:10px;">
+          ${classSpecIconHtml(p, 28)}
+          <div>
+            <div class="class-${cc}" style="font-weight:600;">${p.name}</div>
+            <div style="font-size:12px;color:var(--text-dim);">${p.ms || p.class}</div>
+          </div>
+        </div>
+      </td>
+      <td>${roleBadge(p.role)}</td>
+      <td>${statusBadge(p.status)}</td>
+      <td style="color:var(--text-dim);">${p.level || '—'}</td>
     </tr>`;
   }).join('');
 }
