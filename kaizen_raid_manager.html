@@ -2212,6 +2212,17 @@ a[href] > div > div[style*="line-height:1.6"] {
 }
 .pub-button:hover { background: var(--kz-hover); border-color: var(--kz-hover); }
 .pub-section { margin-bottom: 56px; }
+.pub-intro-grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 48px; align-items: start; }
+/* Grid tracks default to a min size of their content's max-content
+   width, not 0 - same gotcha as flex's min-width:auto. The calendar
+   card's one-line schedule string ("Tuesday - 6:30-9:30pm server...")
+   was long enough to force that track wider than its 1fr share,
+   visually inverting the intended 1.4fr:1fr split. min-width:0 lets
+   the fr ratio actually govern and the text wrap normally instead. */
+.pub-intro-grid > * { min-width: 0; }
+@media (max-width: 700px) {
+  .pub-intro-grid { grid-template-columns: 1fr; gap: 28px; }
+}
 .pub-rich-text { font-size: 16px; line-height: 1.7; color: var(--kz-text); }
 .pub-rich-text :is(strong, b) { color: var(--kz-text); }
 
@@ -7996,7 +8007,7 @@ function renderPublicOverview() {
     : '';
 
   contentEl.innerHTML = `
-    <div class="pub-section" style="display:grid;grid-template-columns:1.4fr 1fr;gap:48px;align-items:start;">
+    <div class="pub-section pub-intro-grid">
       <div>
         <div class="pub-eyebrow">Our guild</div>
         <div class="pub-rich-text">${guildInfo.about || ''}</div>
