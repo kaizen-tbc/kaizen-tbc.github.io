@@ -2172,7 +2172,38 @@ a[href] > div > div[style*="line-height:1.6"] {
 }
 .public-nav-link:hover { color: var(--kz-text); }
 .public-nav-link.active { color: var(--kz-text); border-color: var(--kz-accent); }
-#public-raid-groups { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+#public-raid-groups { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+
+/* ===== PUBLIC PAGE COMPONENTS (Codex creative review, 2026-09-10) =====
+   Dedicated classes, not the manager's .section-title/.section-header/
+   .filter-input/.filter-select/bare table - reusing those was the
+   review's finding #3: "inherited legacy rules... Cinzel... small-cap
+   fantasy headings... generic table rules from the legacy
+   application." Every public-facing render function should build with
+   these instead, the same way #landing-page never reaches for the
+   app's own .btn/.card/.section-title. Sizes/spacing match the
+   review's stated pass conditions (title clamp(40px,5vw,64px), body
+   16-18px, labels/spec text 14px, readiness number ~48-52px, 12px only
+   for genuinely secondary metadata) and content-width match the
+   reference's own width:min(1200px,calc(100% - 64px)). */
+.pub-container { width: min(1200px, calc(100% - 64px)); margin-inline: auto; }
+.pub-eyebrow { font-family: var(--kz-font-ui); font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--kz-link); margin-bottom: 8px; }
+.pub-title { font-family: var(--kz-font-display); font-weight: 400; font-style: normal; text-transform: none; letter-spacing: normal; font-size: clamp(32px, 4vw, 48px); line-height: 1.15; color: var(--kz-text); margin: 0 0 8px; }
+.pub-subtitle { font-family: var(--kz-font-ui); font-size: 16px; color: var(--kz-muted); margin: 0; }
+.pub-card { background: var(--kz-surface); border: 1px solid var(--kz-line); border-radius: 8px; padding: 24px; }
+.pub-input, .pub-select {
+  background: var(--kz-bg); border: 1px solid var(--kz-control); color: var(--kz-text);
+  padding: 11px 14px; border-radius: 4px; font-family: var(--kz-font-ui); font-size: 15px; outline: none;
+}
+.pub-input::placeholder { color: var(--kz-muted); }
+.pub-input:focus, .pub-select:focus { border-color: var(--kz-accent); }
+.pub-field-label { display: block; font-size: 12px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--kz-muted); margin-bottom: 6px; }
+.pub-table { width: 100%; border-collapse: collapse; }
+.pub-table th { text-align: left; padding: 12px 16px; font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--kz-muted); font-weight: 600; border-bottom: 1px solid var(--kz-line); white-space: nowrap; }
+.pub-table td { padding: 18px 16px; border-bottom: 1px solid var(--kz-line); font-size: 15px; vertical-align: middle; }
+.pub-table tr:last-child td { border-bottom: none; }
+.pub-meta { font-size: 14px; color: var(--kz-muted); }
+.pub-readiness-number { font-family: var(--kz-font-display); font-weight: 400; font-size: clamp(40px, 5vw, 52px); color: var(--kz-accent); line-height: 1; }
 
 /* ============================================================
    LANDING PAGE (krm.gg marketing homepage) - kaizen-brand-guide
@@ -2802,27 +2833,30 @@ body.landing-mode #landing-page { display: block; }
        visitors (see canView('raiders') in renderPublicRaidersDirectory)
        - "return a safe unavailable state on direct routes" per
        PUBLIC-SITE-VISUAL-HANDOFF.md, rather than an empty table. -->
-  <div id="public-roster-view" style="display:none;">
-    <div class="section-header">
-      <div>
-        <div class="section-title">Our raiders</div>
-        <div class="section-subtitle">The people you'll be raiding with</div>
-      </div>
-    </div>
-    <div id="public-roster-unavailable" style="display:none;padding:32px;text-align:center;color:var(--text-dim);">
+  <div id="public-roster-view" class="pub-container" style="display:none;padding-block:48px;">
+    <div class="pub-eyebrow">The guild</div>
+    <h1 class="pub-title">Our raiders.</h1>
+    <p class="pub-subtitle" style="margin-bottom:32px;">The people you'll be raiding with.</p>
+    <div id="public-roster-unavailable" style="display:none;padding:48px 0;color:var(--kz-muted);font-size:16px;">
       The roster isn't public for this guild right now.
     </div>
     <div id="public-roster-content" style="display:none;">
-      <div class="roster-controls" style="margin-bottom:16px;">
-        <input type="text" class="filter-input" placeholder="Character or spec..." id="public-roster-search" oninput="renderPublicRaidersDirectory()">
-        <select class="filter-select" id="public-roster-role-filter" onchange="renderPublicRaidersDirectory()">
-          <option value="">All Roles</option>
-          <option>Tank</option><option>Healer</option><option>Melee</option><option>Ranged</option>
-        </select>
-        <span style="font-size:12px;color:var(--text-dim);margin-left:auto;" id="public-roster-count"></span>
+      <div style="display:flex;gap:24px;align-items:flex-end;flex-wrap:wrap;margin-bottom:28px;">
+        <div style="flex:1;min-width:220px;">
+          <label class="pub-field-label" for="public-roster-search">Find a raider</label>
+          <input type="text" class="pub-input" style="width:100%;" placeholder="Character or spec" id="public-roster-search" oninput="renderPublicRaidersDirectory()">
+        </div>
+        <div>
+          <label class="pub-field-label" for="public-roster-role-filter">Role</label>
+          <select class="pub-select" id="public-roster-role-filter" onchange="renderPublicRaidersDirectory()">
+            <option value="">All roles</option>
+            <option>Tank</option><option>Healer</option><option>Melee</option><option>Ranged</option>
+          </select>
+        </div>
+        <span class="pub-meta" id="public-roster-count" style="margin-left:auto;padding-bottom:11px;"></span>
       </div>
       <div style="overflow-x:auto;">
-        <table>
+        <table class="pub-table">
           <thead>
             <tr>
               <th>Character / spec</th>
@@ -2952,28 +2986,25 @@ body.landing-mode #landing-page { display: block; }
        "remain supported in the manager and appear publicly only
        according to current permission policy," and there's no such
        policy/field for them yet, so omitting rather than guessing. -->
-  <div id="public-raids-view" style="display:none;">
-    <div class="section-header">
-      <div>
-        <div class="section-title">Raids</div>
-        <div class="section-subtitle">This week's raid nights</div>
-      </div>
-    </div>
-    <div id="public-raid-tabs" style="display:flex;gap:0;overflow-x:auto;margin-bottom:16px;border-bottom:1px solid var(--border);"></div>
-    <div id="public-raids-unavailable" style="display:none;padding:32px;text-align:center;color:var(--text-dim);">This guild hasn't published a raid lineup yet.</div>
+  <div id="public-raids-view" class="pub-container" style="display:none;padding-block:48px;">
+    <div class="pub-eyebrow">Raid nights</div>
+    <h1 class="pub-title">This week's raids.</h1>
+    <p class="pub-subtitle" style="margin-bottom:28px;">Scan the lineup and see who's set for each night.</p>
+    <div id="public-raid-tabs" style="display:flex;gap:28px;overflow-x:auto;margin-bottom:32px;border-bottom:1px solid var(--kz-line);"></div>
+    <div id="public-raids-unavailable" style="display:none;padding:48px 0;color:var(--kz-muted);font-size:16px;">This guild hasn't published a raid lineup yet.</div>
     <div id="public-raids-content" style="display:none;">
-      <div class="card" style="margin-bottom:16px;padding:18px 20px;display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
-        <div style="display:flex;align-items:baseline;gap:4px;flex-shrink:0;">
-          <span id="public-readiness-filled" style="font-family:'Cinzel',serif;font-size:36px;font-weight:700;color:var(--gold);line-height:1;">0</span>
-          <span id="public-readiness-total" style="font-size:16px;color:var(--text-dim);">/0</span>
+      <div class="pub-card" style="margin-bottom:32px;display:flex;align-items:center;gap:32px;flex-wrap:wrap;">
+        <div style="display:flex;align-items:baseline;gap:6px;flex-shrink:0;">
+          <span id="public-readiness-filled" class="pub-readiness-number">0</span>
+          <span id="public-readiness-total" style="font-size:18px;color:var(--kz-muted);">/0</span>
         </div>
         <div style="flex-shrink:0;">
-          <div style="font-size:13px;font-weight:600;color:var(--text-bright);">Roster slots filled</div>
-          <div id="public-readiness-status" style="font-size:12px;margin-top:2px;"></div>
+          <div style="font-size:16px;font-weight:600;color:var(--kz-text);">Roster slots filled</div>
+          <div id="public-readiness-status" style="font-size:14px;margin-top:4px;"></div>
         </div>
-        <div id="public-readiness-roles" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-left:auto;"></div>
+        <div id="public-readiness-roles" style="display:flex;gap:24px;align-items:center;flex-wrap:wrap;margin-left:auto;"></div>
       </div>
-      <div id="public-raid-groups" style="display:grid;gap:16px;"></div>
+      <div id="public-raid-groups" style="display:grid;gap:28px;"></div>
     </div>
   </div>
 </div>
@@ -8324,24 +8355,29 @@ function renderPublicRaidersDirectory() {
 
   const tbody = document.getElementById('public-roster-tbody');
   if (rows.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:32px;color:var(--text-dim);">No raiders match that search.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:32px;color:var(--kz-muted);">No raiders match that search.</td></tr>`;
     return;
   }
+  // Quiet textual role/status, not the manager's colored pill badges -
+  // creative review: "Do not use colored names, colored role pills and
+  // colored status pills as three competing signals on every row."
+  // The class-colored name stays (real class identity, the one signal
+  // worth keeping); role/status read as plain text here instead.
   tbody.innerHTML = rows.map(p => {
     const cc = classColor(p.class);
     return `<tr>
       <td>
-        <div style="display:flex;align-items:center;gap:10px;">
-          ${classSpecIconHtml(p, 28)}
+        <div style="display:flex;align-items:center;gap:14px;">
+          ${classSpecIconHtml(p, 36)}
           <div>
-            <div class="class-${cc}" style="font-weight:600;">${p.name}</div>
-            <div style="font-size:12px;color:var(--text-dim);">${p.ms || p.class}</div>
+            <div class="class-${cc}" style="font-weight:600;font-size:16px;">${p.name}</div>
+            <div style="font-size:14px;color:var(--kz-muted);">${p.ms || p.class}</div>
           </div>
         </div>
       </td>
-      <td>${roleBadge(p.role)}</td>
-      <td>${statusBadge(p.status)}</td>
-      <td style="color:var(--text-dim);">${p.level || '—'}</td>
+      <td style="color:var(--kz-text);">${p.role || '—'}</td>
+      <td style="color:var(--kz-muted);">${p.status || '—'}</td>
+      <td style="color:var(--kz-muted);">${p.level || '—'}</td>
     </tr>`;
   }).join('');
 }
@@ -9465,9 +9501,11 @@ function renderPublicRaidsView() {
   contentEl.style.display = '';
 
   const active = getActiveRaid();
+  // Plain, larger links (not the small tab-strip chrome) - a visitor
+  // scans raid nights as page content, not application navigation.
   tabsEl.innerHTML = raids.map(r => {
     const isActive = active && r.id === active.id;
-    return `<button class="public-nav-link${isActive ? ' active' : ''}" style="padding:10px 16px 14px;" onclick="switchRaid(${r.id})">${(r.name || '').replace(/"/g, '&quot;')}</button>`;
+    return `<button class="public-nav-link${isActive ? ' active' : ''}" style="padding:10px 0 14px;font-size:15px;" onclick="switchRaid(${r.id})">${(r.name || '').replace(/"/g, '&quot;')}</button>`;
   }).join('');
   if (!active) return;
 
@@ -9475,6 +9513,10 @@ function renderPublicRaidsView() {
   const roleCounts = { Tank: 0, Healer: 0, Melee: 0, Ranged: 0 };
   let filled = 0;
   const groupsHtml = [];
+  // Creative review finding #5: "reduce repeated borders and role
+  // badges"; role reads as quiet text here, matching the Raiders
+  // directory's own row treatment rather than the manager's colored
+  // pill (see roleBadge()).
   for (let g = 0; g < groupCount; g++) {
     const members = ((active.groups || [])[g] || []).map(pid => getPlayerById(pid)).filter(Boolean);
     filled += members.length;
@@ -9482,16 +9524,16 @@ function renderPublicRaidsView() {
       const role = (active.roleOverrides && active.roleOverrides[p.id]) || p.role;
       if (roleCounts[role] !== undefined) roleCounts[role]++;
       const cc = classColor(p.class);
-      return `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);">
+      return `<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px solid var(--kz-line);">
         <div style="min-width:0;">
-          <span class="class-${cc}" style="font-weight:600;font-size:13px;">${p.name}</span>
-          <div style="font-size:11px;color:var(--text-dim);">${p.class}</div>
+          <span class="class-${cc}" style="font-weight:600;font-size:15px;">${p.name}</span>
+          <span style="font-size:13px;color:var(--kz-muted);"> · ${p.class}</span>
         </div>
-        ${roleBadge(role)}
+        <span style="font-size:14px;color:var(--kz-muted);white-space:nowrap;">${role}</span>
       </div>`;
-    }).join('') || `<div style="padding:12px 0;color:var(--text-dim);font-size:12px;font-style:italic;">No one assigned yet.</div>`;
-    groupsHtml.push(`<div class="card" style="padding:14px 16px;">
-      <div style="font-family:'Cinzel',serif;font-size:13px;font-weight:600;color:var(--text-mid);margin-bottom:4px;">${((active.groupTitles || [])[g] || `Group ${g + 1}`).replace(/</g, '&lt;')}</div>
+    }).join('') || `<div style="padding:16px 0;color:var(--kz-muted);font-size:14px;font-style:italic;">No one assigned yet.</div>`;
+    groupsHtml.push(`<div class="pub-card" style="padding:20px 24px;">
+      <div style="font-family:var(--kz-font-display);font-size:18px;color:var(--kz-text);margin-bottom:4px;">${((active.groupTitles || [])[g] || `Group ${g + 1}`).replace(/</g, '&lt;')}</div>
       ${rows}
     </div>`);
   }
@@ -9504,21 +9546,19 @@ function renderPublicRaidsView() {
   const statusEl = document.getElementById('public-readiness-status');
   if (open > 0) {
     statusEl.textContent = `${open} open slot${open === 1 ? '' : 's'}`;
-    statusEl.style.color = 'var(--gold-light)';
+    statusEl.style.color = 'var(--kz-hover)';
   } else {
     statusEl.textContent = 'Roster full';
-    statusEl.style.color = 'var(--green-bright)';
+    statusEl.style.color = 'var(--kz-success)';
   }
+  // Quiet number+label pairs, not bordered/background badge boxes -
+  // same "reduce repeated borders" guidance.
   document.getElementById('public-readiness-roles').innerHTML = [
-    { role: 'Tank', icon: '🛡', color: 'var(--warrior)' },
-    { role: 'Healer', icon: '✚', color: 'var(--druid)' },
-    { role: 'Melee', icon: '⚔', color: 'var(--red-bright)' },
-    { role: 'Ranged', icon: '🏹', color: 'var(--hunter)' },
+    { role: 'Tank' }, { role: 'Healer' }, { role: 'Melee' }, { role: 'Ranged' },
   ].map(r => `
-    <div style="display:flex;align-items:center;gap:5px;padding:5px 10px;background:var(--bg-hover);border-radius:4px;border:1px solid var(--border);">
-      <span style="font-size:13px;">${r.icon}</span>
-      <span style="font-family:'Cinzel',serif;font-size:13px;font-weight:700;color:${r.color};">${roleCounts[r.role]}</span>
-      <span style="font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.05em;">${r.role}</span>
+    <div style="text-align:right;">
+      <div style="font-family:var(--kz-font-display);font-size:22px;color:var(--kz-text);line-height:1;">${roleCounts[r.role]}</div>
+      <div style="font-size:12px;color:var(--kz-muted);text-transform:uppercase;letter-spacing:0.05em;margin-top:2px;">${r.role}</div>
     </div>`).join('');
 }
 
