@@ -2142,6 +2142,26 @@ a[href] > div > div[style*="line-height:1.6"] {
    action button) - disable, don't hide, so the info stays visible. */
 .krm-readonly .krm-edit-disable { pointer-events: none !important; }
 
+/* ===== PUBLIC SITE HEADER (Design/preview/guild.html + guild-site.css) =====
+   Values match the reference 1:1 (padding-block:24px masthead,
+   gap:32px nav, 14px/18px link padding, 2px accent underline on the
+   active link) - the class names are new (public-* rather than
+   guild-site.css's guild-*) only so they never collide with anything
+   already in this stylesheet, same reasoning as #landing-page's own
+   naming. */
+.public-header { border-bottom: 1px solid var(--kz-line); background: var(--kz-bg); }
+.public-masthead { display: flex; align-items: center; gap: 24px; padding: 24px; }
+.public-wordmark { font-family: var(--kz-font-display); font-style: italic; font-weight: 700; font-size: 22px; color: var(--kz-text); }
+.public-edition { font-size: 14px; color: var(--kz-muted); }
+.public-nav { display: flex; gap: 32px; overflow-x: auto; padding: 0 24px; }
+.public-nav-link {
+  padding: 14px 0 18px; white-space: nowrap; background: none; border: none;
+  border-bottom: 2px solid transparent; color: var(--kz-muted); font-size: 14px;
+  font-family: var(--kz-font-ui); cursor: pointer; transition: color 0.15s, border-color 0.15s;
+}
+.public-nav-link:hover { color: var(--kz-text); }
+.public-nav-link.active { color: var(--kz-text); border-color: var(--kz-accent); }
+
 /* ============================================================
    LANDING PAGE (krm.gg marketing homepage) - kaizen-brand-guide
    v1.1. Shown only at the bare root path (see isLandingPage in
@@ -2455,16 +2475,53 @@ body.landing-mode #landing-page { display: block; }
 </footer>
 </div>
 
+<!-- ==================== PUBLIC SITE HEADER (Design/preview/guild.html) ====================
+     A visitor (inManageMode=false) gets this compact masthead + horizontal
+     nav instead of the manager's left sidebar - Design/preview/
+     PUBLIC-SITE-VISUAL-HANDOFF.md: "A compact guild masthead and
+     horizontal public navigation replace the manager sidebar outside
+     the editor." Toggled alongside #manage-mode-banner in
+     applyTabPermissions() (display:none by default here so an
+     authenticated GM's first paint isn't a flash of the wrong header).
+     Reuses the EXACT SAME showTab()/data-tab wiring as the sidebar nav -
+     this is a navigation-chrome swap, not a parallel content system;
+     every tab-panel below still renders the one real, permission-
+     checked, live-data-bound view regardless of which header pointed at
+     it. Labels here match the public reference's own naming for these
+     destinations (Weekly Roster -> "Raids", Strats -> "Encounter
+     plans", Guild Logs -> "Results") even though the underlying tab
+     keys/ids are unchanged. -->
+<header class="public-header" id="public-header" style="display:none;">
+  <div class="public-masthead">
+    <span class="public-wordmark">Kaizen</span>
+    <span class="public-edition">Horde · TBC Classic</span>
+  </div>
+  <!-- div, not <nav> - the app's own bare nav{flex-direction:column}
+       rule (for the sidebar's inner <nav>, further down) would
+       otherwise leak in here too, same tag-collision class as the
+       header/nav/main fix on the landing page. Confirmed live: without
+       this, these links stacked vertically instead of running in a
+       horizontal row. -->
+  <div class="public-nav" role="navigation" aria-label="Guild">
+    <button class="public-nav-link active" data-tab="overview" onclick="showTab('overview', this)">Overview</button>
+    <button class="public-nav-link" data-tab="roster" onclick="showTab('roster', this)">Raiders</button>
+    <button class="public-nav-link" data-tab="builder" onclick="showTab('builder', this)">Raids</button>
+    <button class="public-nav-link" data-tab="strats" onclick="showTab('strats', this)">Encounter plans</button>
+    <button class="public-nav-link" data-tab="guild-logs" onclick="showTab('guild-logs', this)">Results</button>
+  </div>
+</header>
+
 <!-- ==================== APP SHELL (kaizen-visual-handoff) ====================
-     Top nav -> left sidebar. <header> is now purely identity+navigation
-     (guild-brand + workspace nav); the account-action cluster that used
-     to live in the header's own .header-right moved into .app-content's
-     top bar (same class name, new location - see the CSS comment above
-     .app-shell for why this is a class, not the bare <header> tag).
-     Nothing inside either piece changed - every button below is the
-     exact same element/id/onclick as before, just relocated. -->
+     Top nav -> left sidebar, shown for the manager (inManageMode=true).
+     <header> is now purely identity+navigation (guild-brand + workspace
+     nav); the account-action cluster that used to live in the header's
+     own .header-right moved into .app-content's top bar (same class
+     name, new location - see the CSS comment above .app-shell for why
+     this is a class, not the bare <header> tag). Nothing inside either
+     piece changed - every button below is the exact same element/id/
+     onclick as before, just relocated. -->
 <div class="app-shell">
-<header class="app-sidebar">
+<header class="app-sidebar" id="app-sidebar">
   <div class="guild-brand">
     <div class="guild-icon">K</div>
     <div>
@@ -5113,6 +5170,14 @@ function applyTabPermissions() {
       ovSubtitle.textContent = 'Public guild page';
     }
   }
+  // Public masthead+horizontal-nav vs. manager sidebar - Design/preview/
+  // PUBLIC-SITE-VISUAL-HANDOFF.md's shell swap (see the #public-header/
+  // #app-sidebar markup comments). Same tab-panels/showTab() either way,
+  // this only decides which navigation chrome points at them.
+  const publicHeader = document.getElementById('public-header');
+  const appSidebar = document.getElementById('app-sidebar');
+  if (publicHeader) publicHeader.style.display = inManageMode ? 'none' : '';
+  if (appSidebar) appSidebar.style.display = inManageMode ? '' : 'none';
   const manageBtn = document.getElementById('manage-guild-btn');
   if (manageBtn) manageBtn.style.display = (!inManageMode && hasAnyRealEditAccess()) ? '' : 'none';
   const banner = document.getElementById('manage-mode-banner');
@@ -7481,10 +7546,16 @@ const VALID_TABS = ['overview', 'roster', 'builder', 'strats', 'guild-logs'];
 
 function showTab(tab, btn, opts) {
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.nav-btn, .public-nav-link').forEach(b => b.classList.remove('active'));
   document.getElementById('tab-' + tab).classList.add('active');
+  // Both navs get their matching link marked active regardless of which
+  // one is actually visible right now (see applyTabPermissions' sidebar/
+  // public-header toggle) - cheap, and means the right one is already
+  // correct the moment mode changes without a second sync pass.
   const targetBtn = btn || document.querySelector(`.nav-btn[data-tab="${tab}"]`);
   if (targetBtn) targetBtn.classList.add('active');
+  const publicLink = document.querySelector(`.public-nav-link[data-tab="${tab}"]`);
+  if (publicLink) publicLink.classList.add('active');
   if (tab === 'overview') renderOverview();
   if (tab === 'roster') renderActiveRosterSubTab();
   if (tab === 'strats') renderStrats();
