@@ -3452,30 +3452,43 @@ body.landing-mode #landing-page { display: block; }
 
 <!-- ==================== GUILD LOGS TAB ==================== -->
 <div class="tab-panel" id="tab-guild-logs">
+  <!-- Same lighter-touch pattern as Strats (see its long HTML comment) -
+       controls here were already krm-edit-only gated from earlier work,
+       so this is just the header label/typography swap + container
+       width for public mode. GENUINE gap, not styling, flagged in
+       CHANGELOG.md rather than papered over: this system is ephemeral
+       (fetch-on-demand from WCL, post-to-Discord), there's no persisted
+       "published report" record in the data model at all - a visitor
+       hitting this page sees nothing to look at regardless of styling,
+       since the fetch controls that would populate it are correctly
+       hidden from them. guild-results.html's own "chronological ledger"
+       implies a real feature (store what got published, show it here),
+       not a restyle - that's a data-model decision for the owner, not
+       something to invent unilaterally. -->
   <div class="section-header">
     <div>
-      <div style="display:flex;align-items:center;gap:6px;">
-        <div class="section-title" style="margin-bottom:0;">Guild Logs</div>
-        <button class="krm-edit-only" onclick="openGuildLogsSettings()" title="Guild Logs Settings"
-          style="background:var(--bg-hover);border:none;color:var(--text-dim);cursor:pointer;font-size:13px;padding:4px 6px;line-height:1;transition:all 0.15s;border-radius:3px;"
-          onmouseover="this.style.color='var(--gold)';this.style.background='var(--bg-card)'" onmouseout="this.style.color='var(--text-dim)';this.style.background='var(--bg-hover)'">⚙</button>
-      </div>
-      <div class="section-subtitle">Pick a report — top/bottom parses, attendance, post to Discord</div>
+      <div id="logs-header-title" class="section-title" style="margin-bottom:0;">Guild Logs</div>
+      <div id="logs-header-subtitle" class="section-subtitle">Pick a report — top/bottom parses, attendance, post to Discord</div>
     </div>
-    <div class="krm-edit-only" style="display:flex;gap:8px;align-items:stretch;">
-      <button class="btn" style="white-space:nowrap;flex-shrink:0;padding:9px 12px;" onclick="openOtherReportModal()" title="Fetch a report by link or code — not from this guild's own logs">🔗</button>
-      <select class="form-select" id="logs-report-select" style="min-width:240px;">
-        <option value="">Latest (most complete)</option>
-      </select>
-      <button class="btn btn-gold" style="white-space:nowrap;flex-shrink:0;padding:9px 16px;display:flex;align-items:center;gap:6px;" onclick="fetchSelectedLog()">⬇ Fetch</button>
-      <button class="btn" style="white-space:nowrap;flex-shrink:0;padding:9px 12px;" onclick="openPersonalReportPicker()" title="Generate a full personal report for one person, every fight this raid, sent as a private DM">✉ Personal Report</button>
-      <button class="btn" id="post-report-btn" style="white-space:nowrap;flex-shrink:0;padding:9px 16px;background:#5865F2;border-color:#4752c4;color:#fff;font-weight:700;" onclick="confirmPostFullReport()">🚀 Post Report to Discord</button>
-    </div>
+    <button class="krm-edit-only" onclick="openGuildLogsSettings()" title="Guild Logs Settings"
+      style="background:var(--bg-hover);border:none;color:var(--text-dim);cursor:pointer;font-size:13px;padding:4px 6px;line-height:1;transition:all 0.15s;border-radius:3px;flex-shrink:0;"
+      onmouseover="this.style.color='var(--gold)';this.style.background='var(--bg-card)'" onmouseout="this.style.color='var(--text-dim)';this.style.background='var(--bg-hover)'">⚙</button>
+  </div>
+  <div class="krm-edit-only" style="display:flex;gap:8px;align-items:stretch;margin-bottom:16px;">
+    <button class="btn" style="white-space:nowrap;flex-shrink:0;padding:9px 12px;" onclick="openOtherReportModal()" title="Fetch a report by link or code — not from this guild's own logs">🔗</button>
+    <select class="form-select" id="logs-report-select" style="min-width:240px;">
+      <option value="">Latest (most complete)</option>
+    </select>
+    <button class="btn btn-gold" style="white-space:nowrap;flex-shrink:0;padding:9px 16px;display:flex;align-items:center;gap:6px;" onclick="fetchSelectedLog()">⬇ Fetch</button>
+    <button class="btn" style="white-space:nowrap;flex-shrink:0;padding:9px 12px;" onclick="openPersonalReportPicker()" title="Generate a full personal report for one person, every fight this raid, sent as a private DM">✉ Personal Report</button>
+    <button class="btn" id="post-report-btn" style="white-space:nowrap;flex-shrink:0;padding:9px 16px;background:#5865F2;border-color:#4752c4;color:#fff;font-weight:700;" onclick="confirmPostFullReport()">🚀 Post Report to Discord</button>
   </div>
 
-  <div id="guild-logs-content">
-    <div class="empty-note" style="padding:32px;text-align:center;color:var(--text-dim);">
-      Pick a report above (or leave it on "Latest") and click "⬇ Fetch" — the fallout report generates automatically.
+  <div id="guild-logs-content-wrap">
+    <div id="guild-logs-content">
+      <div id="guild-logs-empty-note" class="empty-note" style="padding:32px;text-align:center;color:var(--text-dim);">
+        Pick a report above (or leave it on "Latest") and click "⬇ Fetch" — the fallout report generates automatically.
+      </div>
     </div>
   </div>
 </div>
@@ -5472,6 +5485,37 @@ function applyTabPermissions() {
   }
   const stratListWrap = document.getElementById('strat-list-wrap');
   if (stratListWrap) stratListWrap.classList.toggle('pub-container', !inManageMode);
+
+  // Guild Logs/Results - same lighter-touch pattern (header label +
+  // container width only, controls were already krm-edit-only gated).
+  const logsTitle = document.getElementById('logs-header-title');
+  const logsSubtitle = document.getElementById('logs-header-subtitle');
+  if (logsTitle && logsSubtitle) {
+    if (inManageMode) {
+      logsTitle.textContent = 'Guild Logs';
+      logsTitle.className = 'section-title';
+      logsTitle.style.fontSize = '';
+      logsSubtitle.textContent = 'Pick a report — top/bottom parses, attendance, post to Discord';
+      logsSubtitle.className = 'section-subtitle';
+    } else {
+      logsTitle.textContent = 'Results';
+      logsTitle.className = 'pub-title';
+      logsTitle.style.fontSize = 'clamp(28px, 3.4vw, 40px)';
+      logsSubtitle.textContent = 'Raid results shared by the guild.';
+      logsSubtitle.className = 'pub-subtitle';
+    }
+  }
+  const logsContentWrap = document.getElementById('guild-logs-content-wrap');
+  if (logsContentWrap) logsContentWrap.classList.toggle('pub-container', !inManageMode);
+  // Real state, not an invented one: nothing IS published yet in this
+  // system (see the HTML comment on #tab-guild-logs) - this only
+  // changes copy for the audience, not the underlying truth.
+  const logsEmptyNote = document.getElementById('guild-logs-empty-note');
+  if (logsEmptyNote && !logsEmptyNote.dataset.reportLoaded) {
+    logsEmptyNote.textContent = inManageMode
+      ? 'Pick a report above (or leave it on "Latest") and click "⬇ Fetch" — the fallout report generates automatically.'
+      : 'No results have been published yet.';
+  }
   const manageBtn = document.getElementById('manage-guild-btn');
   if (manageBtn) manageBtn.style.display = (!inManageMode && hasAnyRealEditAccess()) ? '' : 'none';
   const banner = document.getElementById('manage-mode-banner');
