@@ -332,9 +332,20 @@ nav {
 main {
   position: relative;
   z-index: 1;
+  width: 100%; /* must be explicit inside .app-content's flex column - a
+    flex item's auto margins (below) ABSORB free space instead of
+    stretching to fill it once there's no explicit width, so main was
+    collapsing to its own content's intrinsic width with the leftover
+    space dumped into these margins. Confirmed live: 513px wide,
+    centered inside a 1434px column, ~460px of dead space each side -
+    exactly Codex's public-layout review finding #2. width:100% first
+    means there's no free space left for the auto margins to eat -
+    max-width+margin:auto then centers it normally, same as before
+    .app-content existed. */
   max-width: 1600px;
   margin: 0 auto;
   padding: 24px;
+  box-sizing: border-box;
 }
 
 .tab-panel { display: none; }
