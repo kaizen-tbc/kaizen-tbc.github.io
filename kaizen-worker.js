@@ -513,14 +513,35 @@ async function handleGuildMembershipDecide(request, env) {
 // GET /api/public-state?guildId=1 - no auth at all, deliberately. This
 // is the "published guild page" read path (see the unauthenticated row
 // of tabPermissions in the frontend) - the whole point is being visible
-// to someone who never signed in. Returns the exact same blob a member
-// would get; which parts actually render is the frontend's call
-// (tabPermissions), not something enforced here - there's no per-tab
-// split in the data to enforce against (app_state is still one blob per
-// guild, see schema.sql's own notes on why). That's an acceptable gap
-// for a single small pilot guild, not something to carry forever: it
-// means a tab a GM sets to "hidden" for the public is still sitting in
-// the raw JSON response if anyone inspects it, just not rendered.
+// to someone who never signed in. Which TAB actually renders is still
+// the frontend's call (tabPermissions) - there's no per-tab split in
+// the data to enforce against (app_state is still one blob per guild,
+// see schema.sql's own notes on why), and that's an acceptable gap for
+// now (see Design/DECISIONS.md D02 / Design/preview/content-visibility-
+// map.json - full public/private tab-content scoping is an explicit
+// open product decision, not something to guess at here).
+//
+// What ISN'T acceptable regardless of tab settings: scrubPublicData
+// below strips the handful of fields content-visibility-map.json marks
+// "never in the public payload" no matter what - a real API credential
+// (raidHelperApiKey) and per-roster-row PII (discordUserId, officer
+// notes) were going out to any anonymous request that hit this
+// endpoint, whether or not the frontend ever rendered them. Hiding
+// them in the UI was never enough - anyone opening devtools' Network
+// tab could already read them straight off this response.
+function scrubPublicData(data) {
+  if (!data || typeof data !== 'object') return data;
+  const clean = { ...data };
+  delete clean.raidHelperApiKey;
+  if (Array.isArray(clean.roster)) {
+    clean.roster = clean.roster.map(p => {
+      const { discordUserId, notes, ...rest } = p;
+      return rest;
+    });
+  }
+  return clean;
+}
+
 async function handlePublicState(request, env) {
   const url = new URL(request.url);
   const guildId = parseInt(url.searchParams.get('guildId'), 10);
@@ -529,7 +550,7 @@ async function handlePublicState(request, env) {
     if (!env.kaizen_db) throw new Error('kaizen_db binding not configured.');
     const row = await env.kaizen_db.prepare('SELECT data, updated_at FROM app_state WHERE guild_id = ?').bind(guildId).first();
     if (!row) return corsResponse(JSON.stringify({ error: 'Guild not found.' }), 404);
-    return corsResponse(JSON.stringify({ data: JSON.parse(row.data), updatedAt: row.updated_at }), 200);
+    return corsResponse(JSON.stringify({ data: scrubPublicData(JSON.parse(row.data)), updatedAt: row.updated_at }), 200);
   } catch (err) {
     return corsResponse(JSON.stringify({ error: err.message }), 500);
   }
