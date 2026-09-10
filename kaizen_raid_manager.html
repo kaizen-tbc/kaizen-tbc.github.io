@@ -7,14 +7,34 @@
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Inter:wght@300;400;500;600;700&family=Share+Tech+Mono&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg-deep: #0a0b0d;
-  --bg-panel: #0f1115;
-  --bg-card: #13161b;
-  --bg-hover: #1a1e26;
-  --border: #1e2530;
-  --border-bright: #2a3344;
-  --gold: #c9a227;
-  --gold-light: #f0c040;
+  /* Neutral surfaces, borders, primary-action gold, and text now carry
+     the approved kaizen-visual-handoff values directly (tokens.json
+     v1.7's bg/surface/raised/line/accent/hover/text/muted) - these are
+     the CSS custom properties every existing .btn/.card/.modal/etc
+     rule (and every inline style="...var(--gold)..." throughout the
+     JS-generated HTML) already reads, so retheming the values here
+     cascades everywhere at once without editing each consumer.
+     text-mid and text-dim collapse onto the same --kz-muted value
+     (#B2BEC1) - the approved system has one secondary-text tier, not
+     two; worth a second look if that reads as a real hierarchy loss
+     once seen live.
+     Status/semantic colors (red/green/teal/purple) are deliberately
+     UNCHANGED in this pass: .btn-danger's hover fill
+     (background:var(--red); color:white) and similar solid-fill-with-
+     white-text patterns would lose real contrast if red became the
+     approved palette's soft danger pink (#FF9A96) without also
+     auditing every place that assumes a saturated fill color - that's
+     real per-context review, not a safe blanket swap, so it's staying
+     scoped out of this slice rather than risking a silent
+     accessibility regression. */
+  --bg-deep: #101619;
+  --bg-panel: #101619;
+  --bg-card: #192226;
+  --bg-hover: #243036;
+  --border: #3B4B51;
+  --border-bright: #3B4B51;
+  --gold: #D6B66F;
+  --gold-light: #E5CA90;
   --gold-dim: #6b5212;
   --teal: #1aafc0;
   --teal-dim: #0d4f58;
@@ -23,9 +43,9 @@
   --green: #27ae60;
   --green-bright: #2ecc71;
   --purple: #8e44ad;
-  --text-bright: #e8e0d0;
-  --text-mid: #cdd1e0;
-  --text-dim: #9aa0b8;
+  --text-bright: #F5F2E9;
+  --text-mid: #B2BEC1;
+  --text-dim: #B2BEC1;
 
   /* TBC class colors */
   --druid: #ff7d0a;
