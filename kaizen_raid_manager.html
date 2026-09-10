@@ -2161,6 +2161,7 @@ a[href] > div > div[style*="line-height:1.6"] {
 }
 .public-nav-link:hover { color: var(--kz-text); }
 .public-nav-link.active { color: var(--kz-text); border-color: var(--kz-accent); }
+#public-raid-groups { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
 
 /* ============================================================
    LANDING PAGE (krm.gg marketing homepage) - kaizen-brand-guide
@@ -2830,6 +2831,12 @@ body.landing-mode #landing-page { display: block; }
 <!-- ==================== GROUP BUILDER TAB ==================== -->
 <div class="tab-panel" id="tab-builder">
 
+  <!-- Manager editing view vs. #public-raids-view below - same pattern
+       as #manager-roster-view/#public-roster-view (Raiders): a visitor
+       gets Design/preview/guild-raid-karazhan.html's dedicated
+       composition (readiness above groups, no drag/edit affordances),
+       not this editor dimmed. Toggled in applyTabPermissions(). -->
+  <div id="manager-builder-view">
   <!-- Raid tabs row — browser tab style, + immediately after last tab -->
   <div style="display:flex;align-items:flex-end;margin-bottom:20px;border-bottom:1px solid var(--border);">
     <div id="raid-tabs" style="display:flex;gap:0;overflow-x:auto;"></div>
@@ -2920,6 +2927,42 @@ body.landing-mode #landing-page { display: block; }
         <div class="pool-box-label">Tentative</div>
         <div class="player-pool" id="tentative-pool" ondragover="event.preventDefault()" ondrop="onDropPoolBucket(event,'tentative')"></div>
       </div>
+    </div>
+  </div>
+  </div><!-- /#manager-builder-view -->
+
+  <!-- Public visitor view - Design/preview/guild-raids.html (index) +
+       guild-raid-karazhan.html (detail): "readiness above actual
+       groups... do not claim a missing role without configured
+       composition targets" - same honest-numbers reasoning as the
+       manager's own Roster Readiness card, reused here rather than
+       reinvented. Bench/absent/tentative are intentionally NOT shown
+       publicly - guild-raid-karazhan.html's own mapping row says they
+       "remain supported in the manager and appear publicly only
+       according to current permission policy," and there's no such
+       policy/field for them yet, so omitting rather than guessing. -->
+  <div id="public-raids-view" style="display:none;">
+    <div class="section-header">
+      <div>
+        <div class="section-title">Raids</div>
+        <div class="section-subtitle">This week's raid nights</div>
+      </div>
+    </div>
+    <div id="public-raid-tabs" style="display:flex;gap:0;overflow-x:auto;margin-bottom:16px;border-bottom:1px solid var(--border);"></div>
+    <div id="public-raids-unavailable" style="display:none;padding:32px;text-align:center;color:var(--text-dim);">This guild hasn't published a raid lineup yet.</div>
+    <div id="public-raids-content" style="display:none;">
+      <div class="card" style="margin-bottom:16px;padding:18px 20px;display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
+        <div style="display:flex;align-items:baseline;gap:4px;flex-shrink:0;">
+          <span id="public-readiness-filled" style="font-family:'Cinzel',serif;font-size:36px;font-weight:700;color:var(--gold);line-height:1;">0</span>
+          <span id="public-readiness-total" style="font-size:16px;color:var(--text-dim);">/0</span>
+        </div>
+        <div style="flex-shrink:0;">
+          <div style="font-size:13px;font-weight:600;color:var(--text-bright);">Roster slots filled</div>
+          <div id="public-readiness-status" style="font-size:12px;margin-top:2px;"></div>
+        </div>
+        <div id="public-readiness-roles" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-left:auto;"></div>
+      </div>
+      <div id="public-raid-groups" style="display:grid;gap:16px;"></div>
     </div>
   </div>
 </div>
@@ -5239,6 +5282,15 @@ function applyTabPermissions() {
   if (managerRosterView) managerRosterView.style.display = inManageMode ? '' : 'none';
   if (publicRosterView) publicRosterView.style.display = inManageMode ? 'none' : '';
   if (!inManageMode) renderPublicRaidersDirectory();
+
+  // Weekly Roster: manager's editable groups vs. the public Raids view
+  // (see renderPublicRaidsView) - same shell-swap idea, one tab at a
+  // time as each gets its visitor-focused pass.
+  const managerBuilderView = document.getElementById('manager-builder-view');
+  const publicRaidsView = document.getElementById('public-raids-view');
+  if (managerBuilderView) managerBuilderView.style.display = inManageMode ? '' : 'none';
+  if (publicRaidsView) publicRaidsView.style.display = inManageMode ? 'none' : '';
+  if (!inManageMode) renderPublicRaidsView();
   const manageBtn = document.getElementById('manage-guild-btn');
   if (manageBtn) manageBtn.style.display = (!inManageMode && hasAnyRealEditAccess()) ? '' : 'none';
   const banner = document.getElementById('manage-mode-banner');
@@ -7620,7 +7672,7 @@ function showTab(tab, btn, opts) {
   if (tab === 'overview') renderOverview();
   if (tab === 'roster') { renderActiveRosterSubTab(); renderPublicRaidersDirectory(); }
   if (tab === 'strats') renderStrats();
-  if (tab === 'builder') renderBuilder();
+  if (tab === 'builder') { renderBuilder(); renderPublicRaidsView(); }
   if (tab === 'guild-logs') renderGuildLogsTab();
 
   // URL sync - direct links, refresh, and back/forward all land on the
@@ -8446,6 +8498,7 @@ function switchRaid(id) {
   renderRaidTabs();
   renderBuilder();
   renderCoverage();
+  renderPublicRaidsView();
 }
 
 function openAddRaidModal() {
@@ -9371,6 +9424,91 @@ function renderCoverage() {
     // Re-init WoWHead tooltips
     if (window.$WowheadPower) window.$WowheadPower.refreshLinks();
   });
+}
+
+// ======================================================
+// PUBLIC RAIDS VIEW (Design/preview/guild-raids.html + guild-raid-
+// karazhan.html). Same honest-readiness reasoning as the manager's own
+// #roster-readiness-card (see renderCoverage above) - real filled/
+// total/open-slot numbers and real role counts, no fabricated "role
+// needed" claim, since there's no configured target composition in
+// the data model. Groups are read-only name/class/role rows - no
+// drag-drop, no remove buttons, no pool/bench (see the HTML comment on
+// #public-raids-view for why bench/absent/tentative stay manager-only
+// for now). Reads the same live raids/groups state renderBuilder()
+// does, not a parallel model.
+// ======================================================
+function renderPublicRaidsView() {
+  const tabsEl = document.getElementById('public-raid-tabs');
+  const unavailableEl = document.getElementById('public-raids-unavailable');
+  const contentEl = document.getElementById('public-raids-content');
+  if (!tabsEl) return;
+
+  if (!canView('weeklyRoster') || !raids.length) {
+    tabsEl.innerHTML = '';
+    unavailableEl.style.display = '';
+    contentEl.style.display = 'none';
+    return;
+  }
+  unavailableEl.style.display = 'none';
+  contentEl.style.display = '';
+
+  const active = getActiveRaid();
+  tabsEl.innerHTML = raids.map(r => {
+    const isActive = active && r.id === active.id;
+    return `<button class="public-nav-link${isActive ? ' active' : ''}" style="padding:10px 16px 14px;" onclick="switchRaid(${r.id})">${(r.name || '').replace(/"/g, '&quot;')}</button>`;
+  }).join('');
+  if (!active) return;
+
+  const groupCount = active.size === 10 ? 2 : 5;
+  const roleCounts = { Tank: 0, Healer: 0, Melee: 0, Ranged: 0 };
+  let filled = 0;
+  const groupsHtml = [];
+  for (let g = 0; g < groupCount; g++) {
+    const members = ((active.groups || [])[g] || []).map(pid => getPlayerById(pid)).filter(Boolean);
+    filled += members.length;
+    const rows = members.map(p => {
+      const role = (active.roleOverrides && active.roleOverrides[p.id]) || p.role;
+      if (roleCounts[role] !== undefined) roleCounts[role]++;
+      const cc = classColor(p.class);
+      return `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);">
+        <div style="min-width:0;">
+          <span class="class-${cc}" style="font-weight:600;font-size:13px;">${p.name}</span>
+          <div style="font-size:11px;color:var(--text-dim);">${p.class}</div>
+        </div>
+        ${roleBadge(role)}
+      </div>`;
+    }).join('') || `<div style="padding:12px 0;color:var(--text-dim);font-size:12px;font-style:italic;">No one assigned yet.</div>`;
+    groupsHtml.push(`<div class="card" style="padding:14px 16px;">
+      <div style="font-family:'Cinzel',serif;font-size:13px;font-weight:600;color:var(--text-mid);margin-bottom:4px;">${((active.groupTitles || [])[g] || `Group ${g + 1}`).replace(/</g, '&lt;')}</div>
+      ${rows}
+    </div>`);
+  }
+  document.getElementById('public-raid-groups').innerHTML = groupsHtml.join('');
+
+  const total = groupCount * 5;
+  const open = total - filled;
+  document.getElementById('public-readiness-filled').textContent = filled;
+  document.getElementById('public-readiness-total').textContent = `/${total}`;
+  const statusEl = document.getElementById('public-readiness-status');
+  if (open > 0) {
+    statusEl.textContent = `${open} open slot${open === 1 ? '' : 's'}`;
+    statusEl.style.color = 'var(--gold-light)';
+  } else {
+    statusEl.textContent = 'Roster full';
+    statusEl.style.color = 'var(--green-bright)';
+  }
+  document.getElementById('public-readiness-roles').innerHTML = [
+    { role: 'Tank', icon: '🛡', color: 'var(--warrior)' },
+    { role: 'Healer', icon: '✚', color: 'var(--druid)' },
+    { role: 'Melee', icon: '⚔', color: 'var(--red-bright)' },
+    { role: 'Ranged', icon: '🏹', color: 'var(--hunter)' },
+  ].map(r => `
+    <div style="display:flex;align-items:center;gap:5px;padding:5px 10px;background:var(--bg-hover);border-radius:4px;border:1px solid var(--border);">
+      <span style="font-size:13px;">${r.icon}</span>
+      <span style="font-family:'Cinzel',serif;font-size:13px;font-weight:700;color:${r.color};">${roleCounts[r.role]}</span>
+      <span style="font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.05em;">${r.role}</span>
+    </div>`).join('');
 }
 
 // ======================================================
