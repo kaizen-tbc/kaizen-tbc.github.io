@@ -1,0 +1,10 @@
+node_modules/
+.wrangler/
+.git/
+.dev.vars
+.dev.vars.*
+*.log
+kaizen-worker.js
+wrangler.toml
+pages-wrangler.jsonc
+schema.sql

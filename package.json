@@ -2,9 +2,10 @@
   "name": "kaizen-raid-manager",
   "private": true,
   "version": "1.0.0",
-  "description": "Deploy tooling for the kaizen-bot Cloudflare Worker. The site itself (kaizen_raid_manager.html, index.html) is plain HTML/JS with no build step - this package.json exists only for wrangler.",
+  "description": "Deploy tooling for the two kaizen-krm Cloudflare Workers. The frontend is plain HTML/JS with no real build step, but it has ONE required step: kaizen_raid_manager.html is the actual source file to edit; index.html is what the kaizen-krm Worker's single-page-application asset fallback actually serves to every visitor (any URL that isn't a literal static asset path falls back to index.html, regardless of what kaizen_raid_manager.html says). They are NOT kept in sync automatically - always use `npm run deploy:frontend`, never a bare `wrangler deploy --config pages-wrangler.jsonc`, or edits will sit invisibly undeployed (this happened for an entire session's worth of commits on 2026-09-10 before being caught).",
   "scripts": {
-    "deploy": "wrangler deploy"
+    "deploy": "wrangler deploy",
+    "deploy:frontend": "node -e \"require('fs').copyFileSync('kaizen_raid_manager.html','index.html')\" && wrangler deploy --config pages-wrangler.jsonc"
   },
   "devDependencies": {
     "wrangler": "^4"

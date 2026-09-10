@@ -2385,7 +2385,87 @@ body.landing-mode #landing-page { display: block; }
 @media (prefers-reduced-motion: reduce) {
   #landing-page * { transition: none !important; }
 }
-</style>
+
+/* KZ_STRATS_VISUAL_V1 — shared domain, distinct visitor assignment presentation. */
+#tab-strats{--strat-map-height:560px;width:100%;font-family:var(--kz-font-ui);color:var(--kz-text)}
+#tab-strats>.section-header{padding:24px 0 32px;border:0;align-items:flex-start}
+#tab-strats .section-title{font:400 clamp(36px,4vw,52px)/1.12 var(--kz-font-display);text-transform:none;letter-spacing:-.025em}
+#tab-strats .section-subtitle{font:16px/1.6 var(--kz-font-ui);margin-top:12px;color:var(--kz-muted)}
+#tab-strats .strat-header-row{padding:18px 0;gap:24px;border-top:1px solid var(--kz-line)}
+#tab-strats .strat-back-link{font:14px var(--kz-font-ui);min-height:44px;color:var(--kz-link)}
+#tab-strats .strat-tabs{margin-bottom:24px;gap:12px}
+#tab-strats .strat-tab-btn{font:500 14px var(--kz-font-ui);min-height:48px;padding:14px 18px;text-transform:none;letter-spacing:0}
+#tab-strats .strat-context{display:flex;justify-content:space-between;gap:24px;align-items:baseline;margin:12px 0 24px}
+#tab-strats .strat-context h2{font:400 32px/1.2 var(--kz-font-display);margin:4px 0 0;letter-spacing:-.02em}
+#tab-strats .strat-context p{font:14px/1.5 var(--kz-font-ui);color:var(--kz-muted);margin:0}
+#tab-strats .strat-context small{font:12px/1.5 var(--kz-font-ui);color:var(--kz-link);letter-spacing:.08em;text-transform:uppercase}
+#tab-strats .strat-content-wrap{display:grid!important;grid-template-columns:minmax(0,1fr) 360px;align-items:start;gap:28px}
+#tab-strats .strat-content-wrap:has(>.trash-guide-panel){display:block!important}
+#tab-strats .strat-map-column{min-width:0}
+#tab-strats .strat-image-wrap{height:var(--strat-map-height);min-height:0;padding:16px;background:#101619;border:1px solid var(--kz-line);border-radius:8px;overflow:hidden}
+/* Keep the pin layer exactly fitted to the rendered image. Never crop or stretch the coordinate plane. */
+#tab-strats .strat-image-wrap .map-pin-layer>img{max-height:calc(var(--strat-map-height) - 34px)!important;max-width:100%;width:auto;height:auto;object-fit:contain}
+#tab-strats .map-toolbar{border:0;border-bottom:1px solid var(--kz-line);border-radius:0;background:transparent;padding:0 0 16px;margin-bottom:16px;gap:10px}
+#tab-strats .map-toolbar .btn{min-height:36px;font-size:13px;text-transform:none;letter-spacing:0}
+#tab-strats .assigns-panel{min-width:0!important;max-width:none!important;width:100%;padding:24px;background:var(--kz-surface);border:1px solid var(--kz-line);border-radius:8px;gap:12px!important}
+#tab-strats .assignment-heading{padding-bottom:18px;margin-bottom:6px;border-bottom:1px solid var(--kz-line)}
+#tab-strats .assignment-heading h3{font:400 26px/1.2 var(--kz-font-display);margin:0 0 8px}
+#tab-strats .assignment-heading p{font:14px/1.5 var(--kz-font-ui);color:var(--kz-muted);margin:0}
+#tab-strats .section-menu-item{padding:16px 8px;min-height:76px;background:transparent;border:0;border-bottom:1px solid var(--kz-line);border-radius:0}
+#tab-strats .section-menu-item-label{font:600 15px/1.4 var(--kz-font-ui);color:var(--kz-text)}
+#tab-strats .section-menu-item-badge{font-size:13px;margin-top:5px}
+#tab-strats .section-label-input{font:600 16px var(--kz-font-ui)}
+#tab-strats .assigns-row-card{border:1px solid var(--kz-line);background:var(--kz-bg);border-radius:4px}
+#tab-strats .row-card-blade{padding:14px 12px;min-height:64px}
+#tab-strats .row-card-value{font-size:14px;color:var(--kz-text)}
+#tab-strats .row-card-label{font-size:13px;color:var(--kz-muted)}
+#tab-strats .public-assignment-section{padding:12px 0;border-bottom:1px solid var(--kz-line)}
+#tab-strats .public-assignment-section h4{display:flex;align-items:center;gap:10px;font:600 15px/1.5 var(--kz-font-ui);margin:0 0 12px;color:var(--kz-text)}
+#tab-strats .public-assignment-section .row-card-icon{width:28px;height:28px;flex-shrink:0}
+#tab-strats .public-assignment-row{padding:12px 0;margin:0;border:0;border-radius:0;background:transparent;font:14px/1.6 var(--kz-font-ui);white-space:pre-wrap;overflow-wrap:anywhere;color:var(--kz-text)}
+#tab-strats .public-assignment-row.linked{background:var(--kz-raised);box-shadow:inset 3px 0 var(--kz-accent);padding-left:12px}
+#tab-strats .public-assignment-person{display:inline-flex;align-items:center;gap:8px;vertical-align:middle}
+#tab-strats .public-assignment-arrow{color:var(--kz-link);padding:0 8px}
+#tab-strats .public-assignment-empty{color:var(--kz-muted)}
+#tab-strats .assigns-panel.public-assignments{max-height:var(--strat-map-height);overflow:auto;scrollbar-gutter:stable}
+#tab-strats button:focus-visible,#tab-strats summary:focus-visible{outline:2px solid var(--kz-accent);outline-offset:4px}
+@media(max-width:1100px){#tab-strats .strat-content-wrap{grid-template-columns:minmax(0,1fr) 320px;gap:20px}#tab-strats .assigns-panel{padding:18px}}
+@media(max-width:850px){#tab-strats{--strat-map-height:440px}#tab-strats .strat-content-wrap{grid-template-columns:1fr}#tab-strats .assigns-panel.public-assignments{max-height:none;overflow:visible}#tab-strats .strat-context{align-items:start;flex-direction:column;gap:8px}}
+@media(max-width:480px){#tab-strats{--strat-map-height:320px}#tab-strats .strat-header-row{flex-wrap:wrap}#tab-strats .strat-context h2{font-size:28px}#tab-strats .strat-image-wrap{padding:8px}#tab-strats .strat-image-wrap .map-pin-layer>img{max-height:calc(var(--strat-map-height) - 18px)!important}}
+
+#tab-strats.strat-detail-active>.section-header{padding:0 0 12px;margin-bottom:0}
+#tab-strats.strat-detail-active>.section-header .section-title{font-size:24px}
+#tab-strats.strat-detail-active>.section-header .section-subtitle{display:none}
+#tab-strats.strat-detail-active.strat-visitor>.section-header{display:none}
+#tab-strats .strat-header-row{margin-bottom:0}
+#tab-strats .strat-context h2{font-size:36px}
+#tab-strats .strat-guide{margin-top:28px;padding:28px;background:var(--kz-surface,#11151b);border:1px solid var(--kz-line,#29313b);border-radius:16px}
+#tab-strats .strat-guide-heading{display:flex;justify-content:space-between;gap:24px;align-items:flex-start;margin-bottom:22px}
+#tab-strats .strat-guide-heading small,#tab-strats .strat-guide-boss span{font:11px/1.4 var(--kz-font-ui);letter-spacing:.12em;text-transform:uppercase;color:var(--kz-link,#d7b56d)}
+#tab-strats .strat-guide-heading h3{font:400 30px/1.15 var(--kz-font-display);margin:7px 0 7px;color:var(--kz-text,#f1eee7)}
+#tab-strats .strat-guide-heading p{margin:0;max-width:650px;color:var(--kz-muted,#9aa2ad);font:14px/1.55 var(--kz-font-ui)}
+#tab-strats .strat-guide-source{font:12px/1.4 var(--kz-font-ui);color:var(--kz-link,#d7b56d);white-space:nowrap;text-decoration:none}
+#tab-strats .strat-guide-hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(240px,.7fr);gap:14px;margin-bottom:14px}
+#tab-strats .strat-guide-boss{min-height:180px;display:flex;align-items:flex-end;gap:16px;padding:18px;border-radius:12px;overflow:hidden;background:radial-gradient(circle at 68% 20%,rgba(104,139,183,.36),transparent 42%),linear-gradient(135deg,#1a232e,#0d1117)}
+#tab-strats .strat-guide-boss img{width:132px;height:132px;object-fit:cover;border-radius:10px;filter:saturate(.86);box-shadow:0 12px 30px rgba(0,0,0,.35)}
+#tab-strats .strat-guide-boss strong{display:block;font:400 25px/1.2 var(--kz-font-display);color:var(--kz-text,#f1eee7);margin-top:5px}
+#tab-strats .strat-guide-video{min-height:180px;border:1px dashed var(--kz-line,#34404c);border-radius:12px;overflow:hidden;background:#0c1015}
+#tab-strats .strat-guide-video iframe{width:100%;height:100%;border:0;min-height:180px}
+#tab-strats .video-placeholder{height:100%;min-height:180px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:6px;color:var(--kz-muted,#9aa2ad);padding:20px}
+#tab-strats .video-placeholder span{font:11px/1.4 var(--kz-font-ui);letter-spacing:.12em;text-transform:uppercase;color:var(--kz-link,#d7b56d)}
+#tab-strats .video-placeholder strong{font:17px/1.25 var(--kz-font-display);font-weight:400;color:var(--kz-text,#f1eee7)}
+#tab-strats .video-placeholder small{font:12px/1.4 var(--kz-font-ui)}
+#tab-strats .strat-spell-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+#tab-strats .strat-spell-card{display:flex;gap:11px;padding:14px;border:1px solid var(--kz-line,#29313b);border-radius:10px;background:rgba(255,255,255,.018)}
+#tab-strats .strat-spell-card>img{width:38px;height:38px;border-radius:7px;object-fit:cover;flex:none}
+#tab-strats .strat-spell-card strong{display:block;font:15px/1.2 var(--kz-font-ui);color:var(--kz-text,#f1eee7)}
+#tab-strats .strat-spell-card span{display:block;margin-top:2px;font:11px/1.3 var(--kz-font-ui);color:var(--kz-link,#d7b56d);text-transform:uppercase;letter-spacing:.06em}
+#tab-strats .strat-spell-card p{margin:7px 0 0;font:12px/1.45 var(--kz-font-ui);color:var(--kz-muted,#9aa2ad)}
+#tab-strats .public-player-detail{margin-top:16px;padding:14px 15px;border-top:1px solid var(--kz-line,#29313b);font:12px/1.45 var(--kz-font-ui);color:var(--kz-muted,#9aa2ad)}
+#tab-strats .public-player-detail-head{display:flex;align-items:center;gap:10px}.public-player-detail-head strong{display:block;color:var(--kz-text,#f1eee7);font:15px/1.2 var(--kz-font-ui)}.public-player-detail-head span{display:block;margin-top:3px;font-size:11px}.public-player-detail-jobs{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}.public-player-detail-jobs span{padding:5px 8px;border:1px solid var(--kz-line,#29313b);border-radius:999px;color:var(--kz-text,#f1eee7);font-size:11px}
+@media(max-width:850px){#tab-strats .strat-guide-hero{grid-template-columns:1fr}#tab-strats .strat-spell-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:480px){#tab-strats .strat-guide{padding:18px}#tab-strats .strat-guide-heading{flex-direction:column;gap:10px}#tab-strats .strat-spell-grid{grid-template-columns:1fr}}
+#tab-strats .add-row-btn{width:auto!important;flex:1 1 0!important;min-width:0;padding:12px!important;font-size:13px;white-space:nowrap}#tab-strats .section-label-input{text-transform:none;letter-spacing:0}</style>
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8959237604087556" crossorigin="anonymous"></script>
   <script>const whTooltips = { colorLinks: true, iconizeLinks: false, renameLinks: false, iconSize: 'small' };</script>
   <script async src="https://wow.zamimg.com/js/tooltips.js"></script>
@@ -2586,7 +2666,18 @@ body.landing-mode #landing-page { display: block; }
          the manager topbar uses (see applyTabPermissions' account-entry
          relocation), just DOM-moved here while !inManageMode so Clerk's
          mounted widget never gets re-mounted twice. -->
-    <div id="public-masthead-account" style="margin-left:auto;display:flex;align-items:center;gap:10px;"></div>
+    <div id="public-masthead-account" style="margin-left:auto;display:flex;align-items:center;gap:10px;">
+      <!-- The actual "published page vs. CMS" door - only shown to
+           someone whose real role has edit access somewhere (see
+           hasAnyRealEditAccess), toggled in applyTabPermissions. Lives
+           HERE (not #header-right) because #header-right itself is
+           display:none outside manage mode - this button was orphaned
+           inside a hidden parent when the account entry moved into the
+           masthead (Codex review pass 2), so a signed-in GM/officer had
+           no visible way back into manage mode after signing in. Found
+           live 2026-09-10 while walking the manager view with the owner. -->
+      <button class="btn btn-small btn-gold" id="manage-guild-btn" onclick="location.href = '/' + currentGuildSlug + '/manage'" style="display:none;">⚙ Manage this Guild</button>
+    </div>
   </div>
   <!-- div, not <nav> - the app's own bare nav{flex-direction:column}
        rule (for the sidebar's inner <nav>, further down) would
@@ -2651,13 +2742,11 @@ body.landing-mode #landing-page { display: block; }
          Only makes sense signed in (the start call needs a Clerk
          session), so it toggles alongside sign-in-btn/clerk-user-button. -->
     <button class="btn btn-small" id="register-guild-btn" onclick="registerGuild()" title="Register a new guild by inviting the Kaizen bot to its Discord server" style="display:none;">+ Register Guild</button>
-    <!-- The actual "published page vs. CMS" door from the original krm.gg
-         design (see inManageMode/getPermLevel) - only shown on the public
-         page, and only to someone whose real role has edit access
-         somewhere (see hasAnyRealEditAccess) - a plain Member browsing
-         the public page has no reason to see a button that just bounces
-         them back to the exact same read-only view. -->
-    <button class="btn btn-small btn-gold" id="manage-guild-btn" onclick="location.href = '/' + currentGuildSlug + '/manage'" style="display:none;">⚙ Manage this Guild</button>
+    <!-- manage-guild-btn used to live here, but it's only ever shown
+         outside manage mode (see applyTabPermissions), and #header-right
+         itself is display:none outside manage mode - so it was
+         unreachable. Moved to #public-masthead-account, next to the
+         header markup above. -->
     <button class="btn btn-small btn-gold" id="sign-in-btn" onclick="openSignInGate()" style="display:none;">Sign In</button>
     <div id="clerk-user-button" style="display:none;align-items:center;"></div>
 </div>
@@ -10647,6 +10736,8 @@ function renderBossSelectRow(groups, activeGroupKey) {
 }
 
 function renderStrats() {
+  document.getElementById('tab-strats').classList.toggle('strat-detail-active', activeRaid != null);
+  document.getElementById('tab-strats').classList.toggle('strat-visitor', !canEdit('strats'));
   const list = document.getElementById('strat-list');
   if (!list) return;
 
@@ -10721,7 +10812,7 @@ function renderStrats() {
   const groupKeyEsc = activeGroup.groupKey.replace(/'/g, "\\'");
   // Drag-to-reorder (see onStratTabDragStart/onStratTabDrop below) - only
   // meaningful once there's more than one tab to reorder against.
-  const canReorder = activeGroup.members.length > 1;
+  const canReorder = canEdit('strats') && activeGroup.members.length > 1;
   const memberTabsHtml = activeGroup.members.map(m => {
     const isActive = (m.kind === 'strat' && activeTabKind === 'strat' && m.id === activeStratId) || (m.kind === 'trash' && activeTabKind === 'trash' && m.id === activeTrashId);
     const dragAttrs = canReorder ? `draggable="true" data-tab-key="${m.kind}:${m.id}"
@@ -10817,7 +10908,7 @@ function renderStrats() {
         <button class="btn btn-small" onclick="renameStrat(${active.id})" style="font-size:11px;">✏️ Rename</button>
       </div>
     </div>
-    <div id="needs-job-list-${active.id}">${renderNeedsJobList(active)}</div>` : '';
+    <div class="krm-edit-only" id="needs-job-list-${active.id}">${renderNeedsJobList(active)}</div>` : '';
 
   const assignsPanel = active ? buildAssignsPanel(active) : '';
   const trashPanel = activeGuide ? renderTrashGuidePanel(activeGuide) : '';
@@ -10835,14 +10926,16 @@ function renderStrats() {
       ${renderBossSelectRow(groups, activeGroup.groupKey)}
     </div>
     <div class="strat-tabs" id="strat-tabs-container" ondragover="onStratTabsContainerDragOver(event)" ondrop="onStratTabDrop(event,'${groupKeyEsc}')">${memberTabsHtml}</div>
-    <div class="strat-content-wrap">
+    ${active ? `<div class="strat-context"><div><small>${stratDisplayText(activeRaid)}</small><h2>${stratDisplayText(active.name)}</h2></div><p>${canEdit('strats') ? 'Position your raid. Assign each responsibility.' : 'Select a player on the map to highlight their assignments.'}</p></div>` : ''}
+    <div class="strat-content-wrap" ${activeTabKind === 'trash' ? 'style="display:block!important"' : ''}>
       ${activeTabKind === 'trash' ? trashPanel : `
-        <div style="flex:1;min-width:0;">
+        <div class="strat-map-column">
           ${imageArea}
         </div>
         ${assignsPanel}
       `}
-    </div>`;
+    </div>
+    ${active && activeTabKind !== 'trash' ? renderEncounterGuide(active) : ''}`;
   syncAutoAssignRaidSelect();
 }
 
@@ -13363,7 +13456,7 @@ function refreshNeedsJobList(sid) {
 function refreshAssignsPanel(sid) {
   const strat = getStrat(sid);
   const el = document.getElementById(`assigns-panel-${sid}`);
-  if (strat && el) { el.innerHTML = assignsPanelBody(strat); syncAutoAssignRaidSelect(); }
+  if (strat && el) { el.innerHTML = (canEdit('strats') ? '<div class="assignment-heading"><h3>Raid assignments</h3><p>Choose a section to plan each responsibility.</p></div>' : '') + assignsPanelBody(strat); syncAutoAssignRaidSelect(); applyRowCardHighlight(_highlightedPlayerId); }
 }
 
 // Toggling .linked directly via a matching data attribute, with no
@@ -13374,6 +13467,13 @@ function applyRowCardHighlight(playerId) {
   document.querySelectorAll('.assigns-row-card.linked').forEach(el => el.classList.remove('linked'));
   if (playerId != null) {
     document.querySelectorAll(`.assigns-row-card[data-actor-id="${playerId}"]`).forEach(el => el.classList.add('linked'));
+  }
+  const detail = document.querySelector('.public-player-detail');
+  if (detail && playerId != null) {
+    const player = getPlayerById(playerId);
+    const strat = activeStratId != null ? getStrat(activeStratId) : null;
+    const jobs = strat ? jobsForPlayer(strat, playerId) : [];
+    if (player) detail.innerHTML = `<div class="public-player-detail-head">${classSpecIconHtml(player,32)}<div><strong>${stratDisplayText(player.name)}</strong><span>${stratDisplayText(player.spec || player.role || 'Raider')}</span></div></div><div class="public-player-detail-jobs">${jobs.length ? jobs.map(j => `<span>${stratDisplayText(j.sectionLabel || 'Assignment')}: ${stratDisplayText(j.detail || 'Assigned')}</span>`).join('') : '<span>No assignment detail added yet.</span>'}</div>`;
   }
 }
 function applyPinHighlight(playerId) {
@@ -13538,6 +13638,7 @@ function renderOneMapPin(strat, pin) {
 }
 
 function renderMapPopover(strat, pin) {
+  if (!canEdit('strats')) return '';
   let title = 'Edit pin';
   let body = '';
 
@@ -14148,7 +14249,53 @@ function assignPlayerToCustomJob() {
 // Split so a scoped update (see refreshAssignsPanel) can rebuild just
 // this inner content without touching the outer .assigns-panel element
 // itself or anything outside it (the image, the map, the needs-list).
+function stratDisplayText(value) {
+  return String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+const ENCOUNTER_GUIDES = {
+  'Rage Winterchill': {
+    eyebrow: 'Hyjal Summit · Encounter brief',
+    summary: 'Keep the raid moving, make the stun visible, and keep every assignment close to the map.',
+    image: 'assets/boss-icons/hyjal-winterchill.png',
+    source: 'https://www.wowhead.com/tbc/guide/rage-winterchill-hyjal-summit-strategy-burning-crusade-classic',
+    spells: [
+      { slug:'spell_frost_frostbolt02', name:'Icebolt', cue:'Stun target', text:'Call the target immediately. Healers move their attention; the player uses the agreed break or trinket.' },
+      { slug:'spell_frost_frostnova', name:'Frost Nova', cue:'Dispel fast', text:'Clear the root quickly so the raid can return to its assignment.' },
+      { slug:'spell_shadow_deathanddecay', name:'Death and Decay', cue:'Move your feet', text:'Leave the ground effect as soon as it appears. The safest movement is the smallest movement out.' },
+    ],
+    videoUrl: ''
+  }
+};
+function encounterGuideFor(strat) {
+  const key = stratGroupKey(strat?.name || '');
+  return ENCOUNTER_GUIDES[key] || ENCOUNTER_GUIDES[strat?.name] || null;
+}
+function renderEncounterGuide(strat) {
+  const guide = encounterGuideFor(strat);
+  if (!guide) return '';
+  const icon = spell => `https://wow.zamimg.com/images/wow/icons/large/${spell.slug}.jpg`;
+  return `<section class="strat-guide" aria-labelledby="encounter-guide-title-${strat.id}">
+    <div class="strat-guide-heading"><div><small>${stratDisplayText(guide.eyebrow)}</small><h3 id="encounter-guide-title-${strat.id}">How to read this fight</h3><p>${stratDisplayText(guide.summary)}</p></div><a class="strat-guide-source" href="${guide.source}" target="_blank" rel="noreferrer">Open full guide ↗</a></div>
+    <div class="strat-guide-hero"><div class="strat-guide-boss"><img src="${guide.image}" alt="${stratDisplayText(strat.name)}"/><div><span>Encounter focus</span><strong>${stratDisplayText(strat.name)}</strong></div></div><div class="strat-guide-video">${guide.videoUrl ? `<iframe src="${stratDisplayText(guide.videoUrl)}" title="${stratDisplayText(strat.name)} explainer" loading="lazy" allowfullscreen></iframe>` : '<div class="video-placeholder"><span>30 sec</span><strong>Encounter explainer</strong><small>Add a short video from the guild page manager.</small></div>'}</div></div>
+    <div class="strat-spell-grid">${guide.spells.map(spell => `<article class="strat-spell-card"><img src="${icon(spell)}" alt="" data-wowhead="spell=${spell.slug}"/><div><strong>${stratDisplayText(spell.name)}</strong><span>${stratDisplayText(spell.cue)}</span><p>${stratDisplayText(spell.text)}</p></div></article>`).join('')}</div>
+  </section>`;
+}
+// Read-only projection of the SAME section/row records. No assignment mutation or parallel model.
+function renderPublicAssignments(strat) {
+  const cell = (type, value) => {
+    if (type === 'player') {
+      const player = value != null ? getPlayerById(value) : null;
+      return player ? `<span class="public-assignment-person">${classSpecIconHtml(player,24)}<span>${stratDisplayText(player.name)}</span></span>` : '<span class="public-assignment-empty">Not assigned</span>';
+    }
+    return value !== null && value !== undefined && String(value).trim() ? stratDisplayText(value) : '<span class="public-assignment-empty">No note added</span>';
+  };
+  const sections = strat.sections || [];
+  const body = sections.length ? sections.map(sec => `<section class="public-assignment-section"><h4><span class="row-card-icon">${rowCardIconHtml(sec)}</span>${stratDisplayText((sec.label || '').replace(/^[^\p{L}\p{N}]+/u,''))}</h4>${(sec.rows || []).map(row => `<div class="assigns-row-card public-assignment-row" ${rowActorId(row) != null ? `data-actor-id="${Number(rowActorId(row))}"` : ''}>${cell(row.typeA,row.valueA)}${row.typeB ? `${row.arrow ? '<span class="public-assignment-arrow">→</span>' : ' · '}${cell(row.typeB,row.valueB)}` : ''}</div>`).join('') || '<p class="public-assignment-empty">No assignments added.</p>'}</section>`).join('') : '<p class="public-assignment-empty">No assignments shared for this encounter.</p>';
+  return `<div class="assignment-heading"><h3>Raid assignments</h3><p>Responsibilities for this encounter.</p></div>${body}<div class="public-player-detail"><span>Select a player on the map to see their assignment here.</span></div>`;
+}
+
 function assignsPanelBody(strat) {
+  if (!canEdit('strats')) return renderPublicAssignments(strat);
   const sid = strat.id;
 
   // Auto-Assign lives right here - same width as the section list below
@@ -14184,7 +14331,8 @@ function assignsPanelBody(strat) {
 
 function buildAssignsPanel(strat) {
   if (!strat.sections) strat.sections = defaultSections();
-  return `<div class="assigns-panel" id="assigns-panel-${strat.id}" style="min-width:300px;max-width:340px;flex-shrink:0;display:flex;flex-direction:column;gap:10px;">
+  return `<div class="assigns-panel ${canEdit('strats') ? '' : 'public-assignments'}" id="assigns-panel-${strat.id}" style="min-width:300px;max-width:340px;flex-shrink:0;display:flex;flex-direction:column;gap:10px;">
+    ${canEdit('strats') ? '<div class="assignment-heading"><h3>Raid assignments</h3><p>Choose a section to plan each responsibility.</p></div>' : ''}
     ${assignsPanelBody(strat)}
   </div>`;
 }
@@ -14720,3 +14868,4 @@ setTimeout(() => {
 
 </body>
 </html>
+
