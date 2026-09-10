@@ -2161,10 +2161,19 @@ a[href] > div > div[style*="line-height:1.6"] {
    already in this stylesheet, same reasoning as #landing-page's own
    naming. */
 .public-header { border-bottom: 1px solid var(--kz-line); background: var(--kz-bg); }
-.public-masthead { display: flex; align-items: center; gap: 24px; padding: 24px; }
+/* Same horizontal inset as .pub-container (min(1200px,calc(100% - 64px)),
+   centered) rather than a flat padding:24px - Codex review pass 2,
+   finding #1: masthead/nav were starting at a different x-position
+   than the page content below them because padding:24px and
+   .pub-container's centered max-width don't compute to the same left
+   edge at most viewport widths. */
+.public-masthead {
+  display: flex; align-items: center; gap: 24px;
+  width: min(1200px, calc(100% - 64px)); margin-inline: auto; padding-block: 24px;
+}
 .public-wordmark { font-family: var(--kz-font-display); font-style: italic; font-weight: 700; font-size: 22px; color: var(--kz-text); }
 .public-edition { font-size: 14px; color: var(--kz-muted); }
-.public-nav { display: flex; gap: 32px; overflow-x: auto; padding: 0 24px; }
+.public-nav { display: flex; gap: 32px; overflow-x: auto; width: min(1200px, calc(100% - 64px)); margin-inline: auto; }
 .public-nav-link {
   padding: 14px 0 18px; white-space: nowrap; background: none; border: none;
   border-bottom: 2px solid transparent; color: var(--kz-muted); font-size: 14px;
@@ -2220,8 +2229,10 @@ a[href] > div > div[style*="line-height:1.6"] {
    visually inverting the intended 1.4fr:1fr split. min-width:0 lets
    the fr ratio actually govern and the text wrap normally instead. */
 .pub-intro-grid > * { min-width: 0; }
+.pub-progression-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px 32px; }
 @media (max-width: 700px) {
   .pub-intro-grid { grid-template-columns: 1fr; gap: 28px; }
+  .pub-progression-grid { grid-template-columns: 1fr; }
 }
 .pub-rich-text { font-size: 16px; line-height: 1.7; color: var(--kz-text); }
 .pub-rich-text :is(strong, b) { color: var(--kz-text); }
@@ -2559,6 +2570,13 @@ body.landing-mode #landing-page { display: block; }
   <div class="public-masthead">
     <span class="public-wordmark">Kaizen</span>
     <span class="public-edition">Horde · TBC Classic</span>
+    <!-- Account entry lives HERE for a visitor, not in a separate
+         full-width gear/Sign In strip - Codex review pass 2, finding
+         #1. #sign-in-btn/#clerk-user-button are the exact same elements
+         the manager topbar uses (see applyTabPermissions' account-entry
+         relocation), just DOM-moved here while !inManageMode so Clerk's
+         mounted widget never gets re-mounted twice. -->
+    <div id="public-masthead-account" style="margin-left:auto;display:flex;align-items:center;gap:10px;"></div>
   </div>
   <!-- div, not <nav> - the app's own bare nav{flex-direction:column}
        rule (for the sidebar's inner <nav>, further down) would
@@ -2585,7 +2603,7 @@ body.landing-mode #landing-page { display: block; }
      piece changed - every button below is the exact same element/id/
      onclick as before, just relocated. -->
 <div class="app-shell">
-<header class="app-sidebar" id="app-sidebar">
+<header class="app-sidebar" id="app-sidebar" style="display:none;">
   <div class="guild-brand">
     <div class="guild-icon">K</div>
     <div>
@@ -2603,7 +2621,7 @@ body.landing-mode #landing-page { display: block; }
 </header>
 
 <div class="app-content">
-<div class="header-right">
+<div class="header-right" id="header-right" style="display:none;">
     <button class="btn btn-small btn-gold" id="save-to-github-btn" onclick="saveAppData()" title="Save to the database" style="display:none;">💾 Save</button>
     <button class="btn btn-small" onclick="openSettings()" title="Settings">⚙</button>
     <!-- My Guilds switcher (Phase 3.5) - reuses the same .add-menu/
@@ -2683,7 +2701,7 @@ body.landing-mode #landing-page { display: block; }
        just the editor with inputs disabled. Same pattern as Raiders/
        Raids: a dedicated renderer fed by the same live guildInfo record,
        not a parallel content model. -->
-  <div id="manager-overview-view">
+  <div id="manager-overview-view" style="display:none;">
   <!-- CMS HEADER - "Overview Editor" only in manage mode; a read-only
        visitor (including a signed-out one) gets the guild's own name
        instead, set by applyTabPermissions(). This used to say "Overview
@@ -2779,7 +2797,7 @@ body.landing-mode #landing-page { display: block; }
        swap. Neither view duplicates roster data - #public-roster-view
        reads the same live `roster` array this one does, just presents
        a curated field subset (see renderPublicRaidersDirectory). -->
-  <div id="manager-roster-view">
+  <div id="manager-roster-view" style="display:none;">
   <div class="sub-nav" style="display:flex;gap:6px;margin-bottom:20px;border-bottom:1px solid var(--border);padding-bottom:0;">
     <button class="sub-nav-btn active" onclick="showRosterSubTab('guild-roster', this)">Guild Roster</button>
     <button class="sub-nav-btn" onclick="showRosterSubTab('attendance-ledger', this)">Attendance</button>
@@ -2923,7 +2941,7 @@ body.landing-mode #landing-page { display: block; }
        gets Design/preview/guild-raid-karazhan.html's dedicated
        composition (readiness above groups, no drag/edit affordances),
        not this editor dimmed. Toggled in applyTabPermissions(). -->
-  <div id="manager-builder-view">
+  <div id="manager-builder-view" style="display:none;">
   <!-- Raid tabs row — browser tab style, + immediately after last tab -->
   <div style="display:flex;align-items:flex-end;margin-bottom:20px;border-bottom:1px solid var(--border);">
     <div id="raid-tabs" style="display:flex;gap:0;overflow-x:auto;"></div>
@@ -5374,6 +5392,34 @@ function applyTabPermissions() {
   const appSidebar = document.getElementById('app-sidebar');
   if (publicHeader) publicHeader.style.display = inManageMode ? 'none' : '';
   if (appSidebar) appSidebar.style.display = inManageMode ? '' : 'none';
+  // Codex review pass 2, finding #1: the fixed Built/Saved debug footer
+  // has no business on a visitor-facing page - it's dev-only
+  // information, and it was overlapping real content in every
+  // inspected public screenshot.
+  const versionFooter = document.getElementById('version-footer');
+  if (versionFooter) versionFooter.style.display = inManageMode ? '' : 'none';
+  // Account entry (Sign In / the mounted Clerk user button) moves INTO
+  // the masthead for a visitor instead of sitting in its own separate
+  // full-width strip below public nav - Codex review pass 2, finding
+  // #1 ("a separate full-width gear/Sign in strip still sits below
+  // public navigation... remove manager integration-settings chrome
+  // from the visitor layout"). Physically relocating the same
+  // #sign-in-btn/#clerk-user-button DOM nodes (not cloning/remounting)
+  // so Clerk's already-mounted user-button widget keeps working
+  // wherever it currently lives. .header-right itself (Settings gear,
+  // Save, My Guilds, Register/Manage Guild - all manager-only) is
+  // hidden outright for a visitor rather than emptied out one button
+  // at a time.
+  const headerRight = document.getElementById('header-right') || document.querySelector('.header-right');
+  const mastheadAccount = document.getElementById('public-masthead-account');
+  const signInBtn = document.getElementById('sign-in-btn');
+  const clerkUserBtn = document.getElementById('clerk-user-button');
+  if (headerRight) headerRight.style.display = inManageMode ? '' : 'none';
+  if (mastheadAccount && signInBtn && clerkUserBtn) {
+    const target = inManageMode ? headerRight : mastheadAccount;
+    if (target && signInBtn.parentElement !== target) target.appendChild(signInBtn);
+    if (target && clerkUserBtn.parentElement !== target) target.appendChild(clerkUserBtn);
+  }
 
   // Raiders: manager's full editing table vs. the public directory (see
   // renderPublicRaidersDirectory) - same shell-swap idea as the header
@@ -8032,12 +8078,18 @@ function renderPublicOverview() {
     </div>`;
 
   const nextRaid = (guildInfo.raidSchedule || [])[0];
+  // 3-col desktop / 1-col mobile grid of real metric blocks, not a flat
+  // row-list - Codex review pass 2, finding #2: "misses the intended
+  // prominent progression treatment... 32-40px totals and clear raid
+  // labels... restrained top separators, not another wall of boxes."
+  // All six real records preserved, same source data, just laid out
+  // with actual visual weight instead of small right-aligned numbers.
   const progressionHtml = (guildInfo.progression || []).length
-    ? guildInfo.progression.map(p => `
-        <div style="display:flex;justify-content:space-between;align-items:baseline;padding:14px 0;border-bottom:1px solid var(--kz-line);">
-          <span style="font-size:16px;color:var(--kz-text);">${esc(p.label)}</span>
-          <span style="font-family:var(--kz-font-display);font-size:20px;color:var(--kz-accent);">${p.killed || 0}<span style="color:var(--kz-muted);font-size:15px;">/${p.total || 0}</span></span>
-        </div>`).join('')
+    ? `<div class="pub-progression-grid">${guildInfo.progression.map(p => `
+        <div style="border-top:2px solid var(--kz-line);padding-top:14px;">
+          <div style="font-size:15px;color:var(--kz-muted);margin-bottom:6px;">${esc(p.label)}</div>
+          <div style="font-family:var(--kz-font-display);font-size:clamp(32px,3.5vw,40px);color:var(--kz-accent);line-height:1;">${p.killed || 0}<span style="color:var(--kz-muted);font-size:0.55em;">/${p.total || 0}</span></div>
+        </div>`).join('')}</div>`
     : `<div style="color:var(--kz-muted);font-size:15px;">No progression published yet.</div>`;
 
   const toolsHtml = (guildInfo.tools || []).length
@@ -8529,6 +8581,13 @@ function renderPublicRaidersDirectory() {
   // colored status pills as three competing signals on every row."
   // The class-colored name stays (real class identity, the one signal
   // worth keeping); role/status read as plain text here instead.
+  // Name reads in ivory, not the raw class color, on this page - Codex
+  // review pass 2, finding #3: several class colors (Shaman especially)
+  // don't meet real contrast against these dark surfaces, and "class
+  // identity must not make player names harder to read." Class
+  // identity is still right there via the spec icon's class-colored
+  // border (classSpecIconHtml) plus this small dot - not lost, just no
+  // longer carried by low-contrast body text.
   tbody.innerHTML = rows.map(p => {
     const cc = classColor(p.class);
     return `<tr>
@@ -8536,7 +8595,7 @@ function renderPublicRaidersDirectory() {
         <div style="display:flex;align-items:center;gap:14px;">
           ${classSpecIconHtml(p, 36)}
           <div>
-            <div class="class-${cc}" style="font-weight:600;font-size:16px;">${p.name}</div>
+            <div style="font-weight:600;font-size:16px;color:var(--kz-text);"><span class="class-dot" style="background:var(--${cc});"></span>${p.name}</div>
             <div style="font-size:14px;color:var(--kz-muted);">${p.ms || p.class}</div>
           </div>
         </div>
@@ -9690,9 +9749,12 @@ function renderPublicRaidsView() {
       const role = (active.roleOverrides && active.roleOverrides[p.id]) || p.role;
       if (roleCounts[role] !== undefined) roleCounts[role]++;
       const cc = classColor(p.class);
+      // Ivory name + class-colored dot, not raw class-color text - same
+      // contrast fix as the Raiders directory (Codex review pass 2,
+      // finding #3).
       return `<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px solid var(--kz-line);">
         <div style="min-width:0;">
-          <span class="class-${cc}" style="font-weight:600;font-size:15px;">${p.name}</span>
+          <span style="font-weight:600;font-size:15px;color:var(--kz-text);"><span class="class-dot" style="background:var(--${cc});"></span>${p.name}</span>
           <span style="font-size:13px;color:var(--kz-muted);"> · ${p.class}</span>
         </div>
         <span style="font-size:14px;color:var(--kz-muted);white-space:nowrap;">${role}</span>
