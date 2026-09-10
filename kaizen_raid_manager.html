@@ -37,6 +37,37 @@
   --shaman: #0070de;
   --warlock: #9482c9;
   --warrior: #c79c6e;
+
+  /* ===== Approved visual system (kaizen-visual-handoff, tokens.json
+     v1.7) - namespaced --kz-* so nothing existing above breaks while
+     this rolls out feature-by-feature (see FEATURE-REVIEW.md's
+     suggested order: shell first, then Strats, Weekly Roster, Raiders,
+     Guild Logs, Overview). Once a surface is re-themed it switches from
+     var(--gold)/var(--bg-card)/etc to these; until then it keeps
+     looking exactly as it does today - that seam is deliberate, not a
+     bug, for as long as this migration is in progress. Dark values
+     only for now: a working light/dark toggle needs every surface
+     re-themed first (a sidebar in light mode next to dark-only tab
+     content would just look broken), so [data-theme="light"] isn't
+     wired to anything yet either. */
+  --kz-bg: #101619;
+  --kz-surface: #192226;
+  --kz-raised: #243036;
+  --kz-line: #3B4B51;
+  --kz-control: #778A90;
+  --kz-text: #F5F2E9;
+  --kz-muted: #B2BEC1;
+  --kz-accent: #D6B66F;
+  --kz-hover: #E5CA90;
+  --kz-onaccent: #171C1E;
+  --kz-link: #E2C789;
+  --kz-success: #8CD7AC;
+  --kz-warning: #F0C779;
+  --kz-danger: #FF9A96;
+  --kz-info: #94C9F0;
+  --kz-focus: #A7DDEB;
+  --kz-font-display: Georgia, 'Times New Roman', serif;
+  --kz-font-ui: 'Segoe UI', Arial, sans-serif;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -65,90 +96,114 @@ body::before {
   z-index: 0;
 }
 
-/* ===== HEADER ===== */
-header {
+/* ===== APP SHELL (kaizen-visual-handoff shell slice) =====
+   Top nav -> left sidebar, per the approved manager-preview.html. The
+   old <header> element is now the sidebar (class="app-sidebar" - a
+   class, not the bare `header` tag, on purpose: the krm.gg landing
+   page hit a real bug from an app-owned bare `header{}`/`nav{}`/
+   `main{}` rule leaking into its own same-named elements - see the
+   git history for that fix. Reusing bare tag selectors here for the
+   sidebar/topbar would risk the same thing in reverse). .guild-brand/
+   .guild-icon/.guild-name/.guild-realm keep their names (just restyled
+   for a vertical sidebar instead of a horizontal bar) since nothing
+   else needs to change to keep using them. */
+.app-shell { display: flex; align-items: stretch; min-height: 100vh; }
+.app-content { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+
+.app-sidebar {
+  width: 248px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--kz-bg);
+  border-right: 1px solid var(--kz-line);
   position: sticky;
   top: 0;
-  z-index: 100;
-  background: rgba(10,11,13,0.95);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--border-bright);
-  padding: 0 24px;
-  display: flex;
-  align-items: center;
-  gap: 0;
-  height: 56px;
+  height: 100vh;
+  overflow-y: auto;
 }
 
 .guild-brand {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding-right: 32px;
-  border-right: 1px solid var(--border-bright);
-  margin-right: 24px;
+  padding: 20px;
+  border-bottom: 1px solid var(--kz-line);
   text-decoration: none;
 }
 
 .guild-icon {
-  width: 28px;
-  height: 28px;
-  background: linear-gradient(135deg, var(--gold), var(--gold-dim));
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, var(--kz-accent), var(--kz-hover));
   border-radius: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: 'Cinzel', serif;
-  font-weight: 900;
-  font-size: 14px;
-  color: #0a0b0d;
+  font-family: var(--kz-font-display);
+  font-weight: 700;
+  font-style: italic;
+  font-size: 16px;
+  color: var(--kz-onaccent);
   flex-shrink: 0;
 }
 
 .guild-name {
-  font-family: 'Cinzel', serif;
+  font-family: var(--kz-font-display);
   font-size: 16px;
   font-weight: 700;
-  color: var(--gold);
-  letter-spacing: 0.05em;
-  line-height: 1;
+  color: var(--kz-text);
+  line-height: 1.2;
 }
 
 .guild-realm {
-  font-size: 13px;
-  color: var(--text-mid);
-  letter-spacing: 0.1em;
+  font-size: 11px;
+  color: var(--kz-muted);
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  line-height: 1;
+  line-height: 1.3;
 }
 
-nav { display: flex; gap: 2px; flex: 1; }
+nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  padding: 16px 12px;
+}
 
 .nav-btn {
-  padding: 0 16px;
-  height: 56px;
-  background: none;
-  border: none;
-  color: var(--text-mid);
-  font-family: 'Inter', sans-serif;
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  cursor: pointer;
-  border-bottom: 2px solid transparent;
-  transition: all 0.15s;
-  position: relative;
-}
-
-.nav-btn:hover { color: var(--text-bright); background: var(--bg-hover); }
-.nav-btn.active { color: var(--gold); border-bottom-color: var(--gold); }
-
-.header-right {
-  margin-left: auto;
   display: flex;
   align-items: center;
-  gap: 12px;
+  height: 38px;
+  padding: 0 12px;
+  background: none;
+  border: none;
+  border-radius: 4px;
+  color: var(--kz-muted);
+  font-family: var(--kz-font-ui);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.nav-btn:hover { color: var(--kz-text); background: var(--kz-surface); }
+.nav-btn.active { color: var(--kz-accent); background: var(--kz-surface); }
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 24px;
+  border-bottom: 1px solid var(--kz-line);
+  background: var(--kz-bg);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  justify-content: flex-end;
 }
 
 .raid-tier-badge {
@@ -215,21 +270,32 @@ nav { display: flex; gap: 2px; flex: 1; }
    row scroll horizontally keeps every tab reachable (a swipe, not a
    hidden hamburger menu) without touching any tab's actual content/logic. */
 @media (max-width: 850px) {
-  header {
-    flex-wrap: wrap;
+  /* Sidebar collapses back to a horizontal top bar - same scrolling-row
+     mobile pattern the old top nav already used, not a new mobile
+     pattern invented for this slice. A proper mobile drawer/rail is a
+     reasonable later polish pass, not required to land the desktop
+     sidebar shell now. */
+  .app-shell { flex-direction: column; min-height: 0; }
+  .app-sidebar {
+    width: auto;
     height: auto;
-    min-height: 56px;
+    position: static;
+    flex-direction: row;
+    flex-wrap: wrap;
     padding: 10px 14px;
     row-gap: 8px;
   }
   .guild-brand {
-    padding-right: 14px;
+    padding: 0 14px 0 0;
     margin-right: 14px;
+    border-bottom: none;
+    border-right: 1px solid var(--kz-line);
   }
   nav {
     flex: 1 1 100%;
-    order: 3;
+    flex-direction: row;
     height: auto;
+    padding: 0;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
   }
@@ -240,7 +306,6 @@ nav { display: flex; gap: 2px; flex: 1; }
     white-space: nowrap;
     flex-shrink: 0;
   }
-  .header-right { margin-left: 0; }
 }
 
 /* ===== MAIN LAYOUT ===== */
@@ -2370,7 +2435,16 @@ body.landing-mode #landing-page { display: block; }
 </footer>
 </div>
 
-<header>
+<!-- ==================== APP SHELL (kaizen-visual-handoff) ====================
+     Top nav -> left sidebar. <header> is now purely identity+navigation
+     (guild-brand + workspace nav); the account-action cluster that used
+     to live in the header's own .header-right moved into .app-content's
+     top bar (same class name, new location - see the CSS comment above
+     .app-shell for why this is a class, not the bare <header> tag).
+     Nothing inside either piece changed - every button below is the
+     exact same element/id/onclick as before, just relocated. -->
+<div class="app-shell">
+<header class="app-sidebar">
   <div class="guild-brand">
     <div class="guild-icon">K</div>
     <div>
@@ -2385,7 +2459,10 @@ body.landing-mode #landing-page { display: block; }
     <button class="nav-btn" onclick="showTab('strats', this)">Strats</button>
     <button class="nav-btn" onclick="showTab('guild-logs', this)">Guild Logs</button>
   </nav>
-  <div class="header-right">
+</header>
+
+<div class="app-content">
+<div class="header-right">
     <button class="btn btn-small btn-gold" id="save-to-github-btn" onclick="saveAppData()" title="Save to the database" style="display:none;">💾 Save</button>
     <button class="btn btn-small" onclick="openSettings()" title="Settings">⚙</button>
     <!-- My Guilds switcher (Phase 3.5) - reuses the same .add-menu/
@@ -2414,8 +2491,7 @@ body.landing-mode #landing-page { display: block; }
     <button class="btn btn-small btn-gold" id="manage-guild-btn" onclick="location.href = '/' + currentGuildSlug + '/manage'" style="display:none;">⚙ Manage this Guild</button>
     <button class="btn btn-small btn-gold" id="sign-in-btn" onclick="openSignInGate()" style="display:none;">Sign In</button>
     <div id="clerk-user-button" style="display:none;align-items:center;"></div>
-  </div>
-</header>
+</div>
 
 <!-- Manage-mode banner - the actual "is this the public page or the CMS"
      tell, since otherwise the two look identical apart from one header
@@ -3346,6 +3422,8 @@ body.landing-mode #landing-page { display: block; }
 </div>
 
 </main>
+</div><!-- /.app-content -->
+</div><!-- /.app-shell -->
 
 <!-- ==================== ADD / EDIT MODAL ==================== -->
 <div class="modal-overlay" id="modal-overlay" onclick="if(event.target===this)closeModal()">
