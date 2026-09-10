@@ -2095,6 +2095,17 @@ a[href] > div > div[style*="line-height:1.6"] {
   <div class="header-right">
     <button class="btn btn-small btn-gold" id="save-to-github-btn" onclick="saveAppData()" title="Save to the database" style="display:none;">💾 Save</button>
     <button class="btn btn-small" onclick="openSettings()" title="Settings">⚙</button>
+    <!-- My Guilds switcher (Phase 3.5) - reuses the same .add-menu/
+         data-add-menu-toggle mechanism the Strats "+" menus already use
+         (same open/close-on-outside-click handler, no new plumbing for
+         that part). Not the real krm.gg context-aware single button yet
+         (0 guilds -> "Join your Guild" vs. 1+ -> "My Guilds") - that
+         belongs with the actual landing page later; this is just the
+         switcher itself, always visible once signed in. -->
+    <span style="position:relative;display:inline-flex;" data-add-menu-toggle>
+      <button class="btn btn-small" id="my-guilds-btn" onclick="event.stopPropagation();toggleMyGuildsMenu()" style="display:none;">My Guilds ▾</button>
+      <div class="add-menu" id="my-guilds-menu" style="right:0;left:auto;"></div>
+    </span>
     <!-- Phase 2 MVP entry point - not the real krm.gg "Join your Guild"
          flow yet (see registerGuild()), just enough of a button to
          actually test the Discord bot-invite ownership flow end to end.
@@ -2240,6 +2251,20 @@ a[href] > div > div[style*="line-height:1.6"] {
         <button class="btn" onclick="openGuildPasteModal()">⬆ Import Guild Roster</button>
         <button class="btn btn-gold" onclick="openAddModal()">+ Add Member</button>
       </div>
+    </div>
+
+    <!-- Join Requests - GM/Officer only (see loadPendingRequests), fetched
+         when this sub-tab renders. Hidden entirely (not just empty) for
+         anyone else or when there's nothing pending - a card that's
+         always there just saying "no requests" is noise, not a queue
+         worth checking. Lives here, not tucked in Settings, since this
+         is where an officer's already looking when they think about who's
+         in the guild. -->
+    <div id="join-requests-card" class="cms-section" style="display:none;border-color:var(--gold-dim);">
+      <div class="cms-section-header">
+        <div class="cms-section-label">🔔 Join Requests</div>
+      </div>
+      <div id="pending-requests-list" style="display:flex;flex-direction:column;gap:8px;"></div>
     </div>
 
     <div class="stats-strip" id="roster-stats"></div>
@@ -2941,17 +2966,6 @@ a[href] > div > div[style*="line-height:1.6"] {
         <div style="font-size:11px;color:var(--text-dim);margin-top:6px;">
           Without this, you paste an event URL manually. With it, events auto-load.
         </div>
-      </div>
-
-      <!-- Members - only meaningful for a GM/Officer, and only fetched
-           when this modal opens (see openSettings/loadPendingRequests) -
-           no reason to hit this endpoint for every visitor, most of
-           whom would just get the 403 anyway. Hidden entirely (not just
-           empty) for anyone else, same "don't show a button that leads
-           nowhere" reasoning as manage-guild-btn. -->
-      <div id="members-settings-section" style="display:none;margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">
-        <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-dim);margin-bottom:10px;">Pending Membership Requests</div>
-        <div id="pending-requests-list" style="display:flex;flex-direction:column;gap:8px;"></div>
       </div>
     </div>
     <div class="modal-footer">
@@ -5815,13 +5829,27 @@ function renderJoinGuildUi() {
   }
 }
 
+// Clerk's own docs don't spell out the exact provider string for a
+// connected Discord account (verified while researching this - the
+// field that DOES matter, providerUserId, is documented; the value
+// `provider` holds for Discord specifically isn't). Checking both
+// candidates is harmless either way - this is purely a display
+// convenience for the approval queue (matching against
+// roster[].discordUserId), never used for anything security-relevant,
+// so a wrong guess just means no match shown, not a broken flow.
+function getMyDiscordId() {
+  const accounts = window.Clerk?.user?.externalAccounts || [];
+  const discordAccount = accounts.find(a => a.provider === 'discord' || a.provider === 'oauth_discord');
+  return discordAccount?.providerUserId || null;
+}
+
 async function requestToJoinGuild() {
   try {
     const displayName = window.Clerk?.user?.username || window.Clerk?.user?.fullName || null;
     const res = await fetch(`${APP_API_WORKER}/api/guild-membership/request`, {
       method: 'POST',
       headers: { ...(await clerkAuthHeader()), 'Content-Type': 'application/json' },
-      body: JSON.stringify({ guildId: CURRENT_GUILD_ID, displayName }),
+      body: JSON.stringify({ guildId: CURRENT_GUILD_ID, displayName, discordUserId: getMyDiscordId() }),
     });
     const result = await res.json();
     if (!res.ok) throw new Error(result.error || `Could not send request (${res.status})`);
@@ -5830,6 +5858,43 @@ async function requestToJoinGuild() {
     showToast(result.status === 'active' ? '✓ Already a member!' : '✓ Request sent - a GM or Officer needs to approve it.');
   } catch (err) {
     showToast(`✗ Could not request to join: ${err.message}`, true);
+  }
+}
+
+// My Guilds switcher - reuses the .add-menu/data-add-menu-toggle
+// mechanism (same outside-click-closes handler as the Strats "+" menus,
+// see the document click listener near addMenuHtml). Fetched fresh each
+// time it opens, not cached - a request just approved elsewhere
+// shouldn't need a full page reload to show up here next time you check.
+async function toggleMyGuildsMenu() {
+  document.querySelectorAll('.add-menu.open').forEach(el => { if (el.id !== 'my-guilds-menu') el.classList.remove('open'); });
+  const menu = document.getElementById('my-guilds-menu');
+  const willOpen = !menu.classList.contains('open');
+  menu.classList.toggle('open');
+  if (willOpen) await loadMyGuildsMenu();
+}
+
+async function loadMyGuildsMenu() {
+  const menu = document.getElementById('my-guilds-menu');
+  menu.innerHTML = `<div style="padding:8px 12px;font-size:12px;color:var(--text-dim);">Loading...</div>`;
+  try {
+    const res = await fetch(`${APP_API_WORKER}/api/my-guilds`, { headers: await clerkAuthHeader() });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || `Could not load guilds (${res.status})`);
+    // Rejected ones don't get listed - re-requesting happens from that
+    // guild's own page (see renderJoinGuildUi), not from this switcher.
+    const guilds = (result.guilds || []).filter(g => g.status !== 'rejected');
+    if (guilds.length === 0) {
+      menu.innerHTML = `<div style="padding:8px 12px;font-size:12px;color:var(--text-dim);max-width:220px;">Not a member of any guild yet. Visit a guild's page and request to join, or register your own.</div>`;
+      return;
+    }
+    menu.innerHTML = guilds.map(g => {
+      const label = g.status === 'pending' ? `${g.name} <span style="color:var(--gold-dim);">(pending)</span>` : `${g.name} <span style="color:var(--text-dim);">· ${g.role}</span>`;
+      const slug = g.slug.replace(/'/g, "\\'");
+      return `<button onclick="location.href='/${slug}'">${label}</button>`;
+    }).join('');
+  } catch (err) {
+    menu.innerHTML = `<div style="padding:8px 12px;font-size:12px;color:var(--red-bright);max-width:220px;">${err.message}</div>`;
   }
 }
 
@@ -7498,6 +7563,7 @@ function sortRoster(key) {
 }
 
 function renderRoster() {
+  loadPendingRequests();
   renderStats();
   const r = getFilteredRoster();
   document.getElementById('roster-count').textContent = `${r.length} members`;
@@ -10855,41 +10921,61 @@ function openSettings() {
   document.getElementById('rh-server-id-input').value  = rh.serverId;
   document.getElementById('rh-api-key-input').value    = rh.apiKey;
   document.getElementById('settings-modal-overlay').classList.add('open');
-
-  const membersSection = document.getElementById('members-settings-section');
-  const isApprover = myRole === 'gm' || myRole === 'officer';
-  membersSection.style.display = isApprover ? 'block' : 'none';
-  if (isApprover) loadPendingRequests();
 }
 
 // Fetched fresh every time Settings opens (not cached/pre-loaded on
 // every page load) - the approval queue only matters to a GM/Officer
 // actually looking at it, and hitting a membership-checked endpoint for
 // every visitor who never opens Settings would just be wasted calls.
+// Called every time the Guild Roster sub-tab renders (see renderRoster)
+// - not cached, so a request that comes in while you're already looking
+// at the roster still needs a fresh page-load/re-render to appear
+// (there's no live-push notification here, just "check next time you
+// look"). No-ops entirely for anyone who isn't an approver - the card
+// stays hidden, no wasted call.
 async function loadPendingRequests() {
-  const listEl = document.getElementById('pending-requests-list');
-  listEl.innerHTML = `<div style="font-size:12px;color:var(--text-dim);">Loading...</div>`;
+  const card = document.getElementById('join-requests-card');
+  if (!card) return;
+  if (myRole !== 'gm' && myRole !== 'officer') { card.style.display = 'none'; return; }
   try {
     const res = await fetch(`${APP_API_WORKER}/api/guild-membership/pending?guildId=${CURRENT_GUILD_ID}`, { headers: await clerkAuthHeader() });
     const result = await res.json();
     if (!res.ok) throw new Error(result.error || `Could not load requests (${res.status})`);
     renderPendingRequests(result.requests || []);
   } catch (err) {
-    listEl.innerHTML = `<div style="font-size:12px;color:var(--red-bright);">${err.message}</div>`;
+    card.style.display = 'flex';
+    document.getElementById('pending-requests-list').innerHTML = `<div style="font-size:12px;color:var(--red-bright);">${err.message}</div>`;
   }
 }
 
+// A pending request only carries a Discord id and a display name, not a
+// roster entry - this is the "character if we know it" cross-reference,
+// matching against the same roster[].discordUserId field the fallout-
+// report DM feature already relies on. No match just means it's someone
+// not on the roster yet (a brand new recruit, most likely) - not an error.
+function findRosterMatchByDiscordId(discordUserId) {
+  if (!discordUserId) return null;
+  return roster.find(p => p.discordUserId === discordUserId) || null;
+}
+
 function renderPendingRequests(requests) {
+  const card = document.getElementById('join-requests-card');
   const listEl = document.getElementById('pending-requests-list');
-  if (requests.length === 0) {
-    listEl.innerHTML = `<div style="font-size:12px;color:var(--text-dim);font-style:italic;">No pending requests.</div>`;
-    return;
-  }
+  if (requests.length === 0) { card.style.display = 'none'; return; }
+  card.style.display = 'flex';
+  card.style.flexDirection = 'column';
   listEl.innerHTML = requests.map(r => {
     const uid = r.user_id.replace(/'/g, "\\'");
     const name = (r.display_name || r.user_id).replace(/</g, '&lt;');
+    const match = findRosterMatchByDiscordId(r.discord_user_id);
+    const matchHtml = match
+      ? `<span style="font-size:11px;color:var(--teal);">🎮 Matches roster: ${match.name} (${match.class})</span>`
+      : `<span style="font-size:11px;color:var(--text-dim);font-style:italic;">No roster match yet</span>`;
     return `<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg-hover);border-radius:3px;border:1px solid var(--border);">
-      <span style="flex:1;font-size:13px;font-weight:600;color:var(--text-bright);">${name}</span>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13px;font-weight:600;color:var(--text-bright);">${name}</div>
+        ${matchHtml}
+      </div>
       <select id="role-pick-${r.user_id}" class="form-select" style="font-size:11px;padding:4px 6px;">
         <option value="member">Member</option>
         <option value="officer">Officer</option>
@@ -13311,6 +13397,7 @@ window.addEventListener('load', async function () {
     document.getElementById('clerk-user-button').style.display = isSignedIn ? 'flex' : 'none';
     document.getElementById('save-to-github-btn').style.display = isSignedIn ? '' : 'none';
     document.getElementById('register-guild-btn').style.display = isSignedIn ? '' : 'none';
+    document.getElementById('my-guilds-btn').style.display = isSignedIn ? '' : 'none';
 
     if (isSignedIn) {
       closeSignInGate();

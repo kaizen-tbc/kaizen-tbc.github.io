@@ -426,7 +426,7 @@ async function handleGuildMembershipRequest(request, env) {
   const auth = await verifyAuth(request, env);
   if (!auth) return corsResponse(JSON.stringify({ error: 'Unauthorized' }), 401);
   if (!env.kaizen_db) return corsResponse(JSON.stringify({ error: 'kaizen_db binding not configured.' }), 500);
-  const { guildId, displayName } = await request.json();
+  const { guildId, displayName, discordUserId } = await request.json();
   if (!guildId) return corsResponse(JSON.stringify({ error: 'Missing guildId.' }), 400);
 
   const guild = await env.kaizen_db.prepare('SELECT id FROM guilds WHERE id = ?').bind(guildId).first();
@@ -442,10 +442,10 @@ async function handleGuildMembershipRequest(request, env) {
 
   const now = new Date().toISOString();
   await env.kaizen_db.prepare(
-    `INSERT INTO guild_memberships (guild_id, user_id, role, status, requested_at, display_name)
-     VALUES (?, ?, 'member', 'pending', ?, ?)
-     ON CONFLICT(guild_id, user_id) DO UPDATE SET status='pending', requested_at=excluded.requested_at, display_name=excluded.display_name, decided_at=NULL, decided_by=NULL`
-  ).bind(guildId, auth.sub, now, displayName || null).run();
+    `INSERT INTO guild_memberships (guild_id, user_id, role, status, requested_at, display_name, discord_user_id)
+     VALUES (?, ?, 'member', 'pending', ?, ?, ?)
+     ON CONFLICT(guild_id, user_id) DO UPDATE SET status='pending', requested_at=excluded.requested_at, display_name=excluded.display_name, discord_user_id=excluded.discord_user_id, decided_at=NULL, decided_by=NULL`
+  ).bind(guildId, auth.sub, now, displayName || null, discordUserId || null).run();
 
   return corsResponse(JSON.stringify({ status: 'pending' }), 200);
 }
@@ -469,7 +469,7 @@ async function handleGuildMembershipPending(request, env) {
   }
 
   const { results } = await env.kaizen_db.prepare(
-    `SELECT user_id, display_name, requested_at FROM guild_memberships WHERE guild_id = ? AND status = 'pending' ORDER BY requested_at ASC`
+    `SELECT user_id, display_name, discord_user_id, requested_at FROM guild_memberships WHERE guild_id = ? AND status = 'pending' ORDER BY requested_at ASC`
   ).bind(guildId).all();
   return corsResponse(JSON.stringify({ requests: results }), 200);
 }
