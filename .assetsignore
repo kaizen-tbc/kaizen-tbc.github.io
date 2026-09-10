@@ -1,6 +1,7 @@
 node_modules/
 .wrangler/
 .git/
+.claude/
 .dev.vars
 .dev.vars.*
 *.log
@@ -8,3 +9,11 @@ kaizen-worker.js
 wrangler.toml
 pages-wrangler.jsonc
 schema.sql
+migrate-to-multitenant.sql
+package.json
+package-lock.json
+register-commands.js
+Kaizen Terminal.bat
+node
+.gitignore
+.assetsignore
