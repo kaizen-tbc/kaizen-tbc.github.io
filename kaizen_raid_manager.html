@@ -2053,6 +2053,137 @@ a[href] > div > div[style*="line-height:1.6"] {
    (a spec/role pill showing "who's playing what," not just a bare
    action button) - disable, don't hide, so the info stays visible. */
 .krm-readonly .krm-edit-disable { pointer-events: none !important; }
+
+/* ============================================================
+   LANDING PAGE (krm.gg marketing homepage) - kaizen-brand-guide
+   v1.1. Shown only at the bare root path (see isLandingPage in
+   resolveGuildFromUrl) - every real guild, Kaizen included, now
+   lives at /<slug>. Every selector below is prefixed with
+   #landing-page so it always outranks the app's own plain-element
+   `*`/`body` rules above without needing !important, and none of
+   the app's existing classes leak in the other direction either.
+   Tokens/measurements are copied straight from the brand guide's
+   tokens.json/styles.css, just renamed with an lp- prefix. */
+body.landing-mode > header,
+body.landing-mode > #manage-mode-banner,
+body.landing-mode > #join-guild-banner,
+body.landing-mode > main,
+body.landing-mode > #version-footer { display: none !important; }
+body.landing-mode #landing-page { display: block; }
+
+#landing-page {
+  --lp-bg: #101619; --lp-surface: #192226; --lp-raised: #243036; --lp-line: #3B4B51;
+  --lp-control: #778A90; --lp-text: #F5F2E9; --lp-muted: #B2BEC1; --lp-accent: #D6B66F;
+  --lp-hover: #E5CA90; --lp-onaccent: #171C1E; --lp-link: #E2C789; --lp-success: #8CD7AC;
+  --lp-warning: #F0C779; --lp-danger: #FF9A96; --lp-focus: #A7DDEB;
+  --lp-font-display: Georgia, 'Times New Roman', serif;
+  --lp-font-ui: 'Segoe UI', Arial, sans-serif;
+  display: none; /* toggled on via body.landing-mode above, once isLandingPage is known */
+  background: var(--lp-bg);
+  color: var(--lp-text);
+  font: 16px/1.6 var(--lp-font-ui);
+}
+#landing-page[data-theme="light"] {
+  --lp-bg: #F4F2EB; --lp-surface: #FFFFFF; --lp-raised: #E9EDE9; --lp-line: #CCD3CF;
+  --lp-control: #718079; --lp-text: #192226; --lp-muted: #53615C;
+  --lp-link: #705014; --lp-success: #216B45; --lp-warning: #805008; --lp-danger: #AE343B; --lp-focus: #16677B;
+}
+#landing-page * { box-sizing: border-box; }
+#landing-page h1, #landing-page h2, #landing-page h3, #landing-page p { margin: 0 0 16px; }
+#landing-page h1, #landing-page h2 { font-family: var(--lp-font-display); font-weight: 400; line-height: 1.08; letter-spacing: -0.035em; }
+#landing-page h1 { font-size: clamp(38px, 6vw, 80px); }
+#landing-page h2 { font-size: clamp(28px, 4vw, 48px); }
+#landing-page h3 { font-size: 20px; line-height: 1.3; margin: 0 0 8px; }
+#landing-page p { max-width: 68ch; }
+#landing-page a { color: var(--lp-link); text-underline-offset: 4px; }
+#landing-page button, #landing-page input, #landing-page select { font: inherit; }
+#landing-page button, #landing-page .lp-button {
+  min-height: 44px; padding: 11px 22px; border: 1px solid var(--lp-control); border-radius: 2px;
+  background: transparent; color: var(--lp-text); font-size: 14px; font-weight: 600;
+  text-decoration: none; display: inline-flex; align-items: center; justify-content: center;
+  gap: 8px; cursor: pointer; transition: background .16s, color .16s;
+}
+#landing-page button:hover, #landing-page .lp-button:hover { background: var(--lp-raised); }
+#landing-page .lp-primary { background: var(--lp-accent); color: var(--lp-onaccent); border-color: var(--lp-accent); }
+#landing-page .lp-primary:hover { background: var(--lp-hover); border-color: var(--lp-hover); }
+#landing-page img { display: block; max-width: 100%; }
+#landing-page svg { max-width: 100%; }
+#landing-page a:focus-visible, #landing-page button:focus-visible { outline: 3px solid var(--lp-focus); outline-offset: 4px; }
+#landing-page .lp-wrap { width: min(1200px, calc(100% - 64px)); margin: auto; }
+#landing-page .lp-top { position: sticky; top: 0; z-index: 20; border-bottom: 1px solid var(--lp-line); background: var(--lp-bg); }
+#landing-page .lp-nav { min-height: 76px; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+#landing-page .lp-wordmark { font: italic bold 29px Georgia, serif; color: var(--lp-text); text-decoration: none; letter-spacing: -1px; }
+#landing-page .lp-wordmark i { color: var(--lp-danger); font-style: normal; }
+#landing-page .lp-navlinks { display: flex; align-items: center; gap: 24px; }
+#landing-page .lp-navlinks a, #landing-page .lp-navlinks .lp-linklike {
+  font-size: 13px; text-decoration: none; color: var(--lp-muted); background: none; border: none;
+  min-height: auto; padding: 0; font-weight: 400;
+}
+#landing-page .lp-eyebrow { font: 600 12px/1.5 var(--lp-font-ui); letter-spacing: .18em; text-transform: uppercase; color: var(--lp-link); margin-bottom: 20px; }
+#landing-page .lp-muted { color: var(--lp-muted); }
+#landing-page .lp-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
+#landing-page .lp-hero {
+  min-height: 620px; display: grid; place-items: center; text-align: center; color: #F5F2E9;
+  background: linear-gradient(180deg, #10161950, #101619c9), url('assets/brand/karazhan-minimal.png') center/cover;
+  padding: 90px 24px;
+}
+#landing-page .lp-hero h1 { font-size: clamp(40px, 6.2vw, 88px); max-width: 900px; margin-inline: auto; text-shadow: 0 2px 24px #0008; }
+#landing-page .lp-hero p { max-width: 570px; margin-inline: auto; color: #E0E6E4; }
+#landing-page .lp-hero .lp-eyebrow { color: #E2C789; }
+#landing-page .lp-hero .lp-actions { justify-content: center; }
+#landing-page .lp-hero .lp-button:not(.lp-primary) { color: #F5F2E9; border-color: #B2BEC1; background: #10161980; }
+#landing-page .lp-feature-band { padding: 88px 0; }
+#landing-page .lp-feature-band.lp-alt { background: var(--lp-surface); }
+#landing-page .lp-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
+#landing-page .lp-feature-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center; }
+#landing-page .lp-feature-grid p { color: var(--lp-muted); }
+#landing-page .lp-editorial img { width: 100%; aspect-ratio: 16/9; object-fit: cover; border-radius: 2px; }
+#landing-page .lp-editorial h3 { margin: 16px 0 8px; }
+#landing-page .lp-editorial p { color: var(--lp-muted); font-size: 14px; }
+#landing-page .lp-cinematic {
+  background: linear-gradient(90deg, #10161940, #101619ed), url('assets/brand/outland-minimal.png') center/cover;
+  color: #F5F2E9; padding: 140px 0;
+}
+#landing-page .lp-cinematic .lp-copy { max-width: 480px; margin-left: auto; }
+#landing-page .lp-cinematic p { color: #D6DFDC; }
+#landing-page .lp-raid-ring { aspect-ratio: 1; border-radius: 50%; object-fit: cover; border: 1px solid var(--lp-accent); padding: 10px; max-width: 480px; width: 100%; }
+#landing-page .lp-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 24px 0; }
+#landing-page .lp-tabs button { padding: 8px 14px; }
+#landing-page .lp-tabs button[aria-pressed="true"] { background: var(--lp-accent); color: var(--lp-onaccent); border-color: var(--lp-accent); }
+#landing-page .lp-icon-list { display: flex; gap: 24px; flex-wrap: wrap; margin: 24px 0; }
+#landing-page .lp-icon-item { display: grid; gap: 8px; justify-items: center; font-size: 12px; }
+#landing-page .lp-icon { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+#landing-page .lp-themeboard { padding: 28px; background: var(--lp-bg); color: var(--lp-text); border: 1px solid var(--lp-line); border-radius: 8px; }
+#landing-page .lp-event { display: flex; align-items: center; gap: 16px; border-block: 1px solid var(--lp-line); padding: 18px 0; margin: 20px 0; }
+#landing-page .lp-date { padding: 6px 14px; text-align: center; background: var(--lp-raised); border-radius: 4px; font-size: 12px; }
+#landing-page .lp-date strong { display: block; font-size: 26px; line-height: 1.2; }
+#landing-page .lp-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; padding: 4px 10px; border: 1px solid currentColor; border-radius: 99px; color: var(--lp-success); }
+#landing-page .lp-badge.lp-warning { color: var(--lp-warning); }
+#landing-page .lp-statusrow { display: flex; gap: 10px; flex-wrap: wrap; }
+#landing-page .lp-progress { height: 6px; background: var(--lp-raised); margin: 16px 0; border-radius: 4px; overflow: hidden; }
+#landing-page .lp-progress span { display: block; height: 100%; background: var(--lp-success); }
+#landing-page .lp-demo-note { font-size: 12px; color: var(--lp-muted); }
+#landing-page .lp-footer { padding: 36px 0; border-top: 1px solid var(--lp-line); font-size: 12px; color: var(--lp-muted); }
+#landing-page .lp-footer .lp-nav { min-height: auto; padding-bottom: 20px; }
+@media (max-width: 900px) {
+  #landing-page .lp-feature-grid { grid-template-columns: 1fr; gap: 32px; }
+  #landing-page .lp-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 640px) {
+  #landing-page .lp-wrap { width: calc(100% - 32px); }
+  #landing-page .lp-nav { min-height: 68px; gap: 12px; }
+  #landing-page .lp-navlinks { gap: 8px; }
+  #landing-page .lp-navlinks a.lp-hide-mobile { display: none; }
+  #landing-page .lp-grid, #landing-page .lp-feature-grid { grid-template-columns: 1fr; }
+  #landing-page .lp-hero { min-height: 540px; padding: 60px 20px; }
+  #landing-page .lp-cinematic { padding: 80px 0; }
+  #landing-page .lp-feature-band { padding: 48px 0; }
+  #landing-page .lp-feature-grid .lp-raid-ring { margin: auto; }
+  #landing-page .lp-actions .lp-button, #landing-page .lp-actions button { flex: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #landing-page * { transition: none !important; }
+}
 </style>
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8959237604087556" crossorigin="anonymous"></script>
   <script>const whTooltips = { colorLinks: true, iconizeLinks: false, renameLinks: false, iconSize: 'small' };</script>
@@ -2076,6 +2207,148 @@ a[href] > div > div[style*="line-height:1.6"] {
     type="text/javascript"
   ></script>
 </head><body>
+
+<!-- ==================== KRM MARKETING HOMEPAGE ====================
+     Shown only at the bare root path (see isLandingPage/resolveGuildFromUrl
+     and window.load below) - every guild, including Kaizen, lives at
+     /<slug> now. Adapted from kaizen-brand-guide-v1.1/homepage.html: same
+     structure and copy, but every CTA is wired to the real Clerk sign-in
+     gate this app already has (see openSignInGate/goToMyGuildOrRegister)
+     instead of the brand guide's local-only prototype form. -->
+<div id="landing-page">
+<a href="#landing-main" style="position:absolute;left:-9999px;" onfocus="this.style.left='16px'" onblur="this.style.left='-9999px'">Skip to content</a>
+<header class="lp-top">
+  <nav class="lp-wrap lp-nav" aria-label="Main navigation">
+    <a class="lp-wordmark" href="/">Kaizen<i> /</i></a>
+    <div class="lp-navlinks">
+      <a href="#features">Features</a>
+      <a href="#raids" class="lp-hide-mobile">Raids</a>
+      <button type="button" class="lp-linklike" id="lp-nav-signin" onclick="openSignInGate()">Sign In</button>
+      <button type="button" class="lp-linklike" id="lp-nav-continue" style="display:none;" onclick="goToMyGuildOrRegister()">Continue →</button>
+      <button type="button" id="lp-theme-toggle" aria-label="Switch to light mode">Light mode</button>
+    </div>
+  </nav>
+</header>
+<main id="landing-main">
+<section class="lp-hero">
+  <div>
+    <div class="lp-eyebrow">Kaizen raid manager / The Burning Crusade</div>
+    <h1>Your guild.<br><em>Ready for the next pull.</em></h1>
+    <p>Bring your schedule, roster, and encounter plans together. Spend raid night playing with your guild.</p>
+    <div class="lp-actions">
+      <a class="lp-button lp-primary" href="#" onclick="openSignInGate();return false;">Create your account</a>
+      <a class="lp-button" href="#features">Explore Kaizen</a>
+    </div>
+  </div>
+</section>
+<section class="lp-feature-band lp-alt" id="features">
+  <div class="lp-wrap">
+    <div class="lp-eyebrow">Before the first pull</div>
+    <h2 style="margin-bottom:36px">A little preparation. A better raid.</h2>
+    <div class="lp-grid">
+      <article class="lp-editorial">
+        <img src="assets/brand/karazhan-minimal.png" alt="Minimal layered illustration of a wizard tower beneath a peach moon">
+        <div class="lp-eyebrow" style="margin:16px 0 8px">01 / Schedule</div>
+        <h3>Give raid night a home.</h3>
+        <p>Put the time, raid, and signup details where everyone can find them.</p>
+      </article>
+      <article class="lp-editorial">
+        <img src="assets/brand/temple-minimal.png" alt="Minimal teal temple illustration beneath a pale gold moon">
+        <div class="lp-eyebrow" style="margin:16px 0 8px">02 / Roster</div>
+        <h3>Know who's ready.</h3>
+        <p>See the roles you have, the spots you need, and who is on the bench.</p>
+      </article>
+      <article class="lp-editorial">
+        <img src="assets/brand/outland-minimal.png" alt="Minimal illustration of floating islands and ruined spires at sunset">
+        <div class="lp-eyebrow" style="margin:16px 0 8px">03 / Strategy</div>
+        <h3>Arrive with a plan.</h3>
+        <p>Give your raiders a shared place for encounter notes and assignments.</p>
+      </article>
+    </div>
+  </div>
+</section>
+<section class="lp-feature-band">
+  <div class="lp-wrap lp-feature-grid">
+    <div>
+      <div class="lp-eyebrow">Build your group</div>
+      <h2>Every role.<br><em>One ready roster.</em></h2>
+      <p>Bring the right people to the same plan. Make availability visible before the invites go out.</p>
+      <div class="lp-icon-list">
+        <div class="lp-icon-item"><svg class="lp-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4 6v6c0 5 8 9 8 9s8-4 8-9V6z"/><path d="M12 7v10M8 12h8"/></svg>Tank</div>
+        <div class="lp-icon-item"><svg class="lp-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6v6h6v6h-6v6H9v-6H3V9h6z"/></svg>Healer</div>
+        <div class="lp-icon-item"><svg class="lp-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 19 14-14M13 5h6v6M3 15l6 6M4 20l-1 1"/></svg>Damage</div>
+      </div>
+      <a class="lp-button lp-primary" href="#" onclick="openSignInGate();return false;">Start organizing</a>
+    </div>
+    <div>
+      <div class="lp-themeboard">
+        <div class="lp-eyebrow">Roster preview</div>
+        <h3>Your next raid</h3>
+        <div class="lp-event">
+          <div class="lp-date">SEP<strong>12</strong></div>
+          <div><h3>Karazhan</h3><small class="lp-muted">Saturday · 8:00 PM · America/New_York</small></div>
+        </div>
+        <div class="lp-statusrow">
+          <span class="lp-badge">✓ Confirmed</span>
+          <span class="lp-badge lp-warning">! 1 healer needed</span>
+        </div>
+        <div class="lp-progress" role="img" aria-label="9 of 10 roster slots filled"><span style="width:90%"></span></div>
+        <p><strong>9 / 10</strong> <span class="lp-muted">roster slots filled</span></p>
+        <div class="lp-actions">
+          <a class="lp-button lp-primary" href="#" onclick="openSignInGate();return false;">Create your raid</a>
+          <a class="lp-button" href="#raids">View raids</a>
+        </div>
+      </div>
+      <p class="lp-demo-note" style="margin-top:12px">Illustrative product preview · not live raid data</p>
+    </div>
+  </div>
+</section>
+<section class="lp-cinematic">
+  <div class="lp-wrap">
+    <div class="lp-copy">
+      <div class="lp-eyebrow" style="color:#E2C789">Plan the encounter</div>
+      <h2>Fewer questions.<br><em>Cleaner pulls.</em></h2>
+      <p>Keep assignments and encounter notes close to the roster. Let everyone arrive knowing their part.</p>
+      <a class="lp-button lp-primary" href="#" onclick="openSignInGate();return false;">Build your first raid</a>
+    </div>
+  </div>
+</section>
+<section class="lp-feature-band" id="raids">
+  <div class="lp-wrap lp-feature-grid">
+    <div>
+      <div class="lp-eyebrow">Beginning in Outland</div>
+      <h2>Your next<br><em>raid night awaits.</em></h2>
+      <p>Start with The Burning Crusade. Give every raid a consistent place to gather, prepare, and improve.</p>
+      <div class="lp-tabs" role="group" aria-label="Raid artwork selector">
+        <button type="button" data-raid="karazhan" aria-pressed="true">Karazhan</button>
+        <button type="button" data-raid="outland" aria-pressed="false">Outland</button>
+        <button type="button" data-raid="temple" aria-pressed="false">Black Temple</button>
+      </div>
+      <p id="lp-raid-description" aria-live="polite">Karazhan · A shared plan for your ten-player raid.</p>
+    </div>
+    <img id="lp-raid-art" class="lp-raid-ring" src="assets/brand/karazhan-minimal.png" alt="Minimal layered illustration of a wizard tower beneath a peach moon">
+  </div>
+</section>
+<section class="lp-feature-band lp-alt" id="signup">
+  <div class="lp-wrap" style="max-width:540px;text-align:center;">
+    <div class="lp-eyebrow">Your next raid starts here</div>
+    <h2>Gather your guild.</h2>
+    <p class="lp-muted" style="margin-inline:auto;">Create a place for your next raid night, or join one that's already running.</p>
+    <div class="lp-actions" style="justify-content:center;">
+      <a class="lp-button lp-primary" href="#" onclick="openSignInGate();return false;">Create your account</a>
+    </div>
+  </div>
+</section>
+</main>
+<footer class="lp-footer">
+  <div class="lp-wrap">
+    <div class="lp-nav">
+      <a class="lp-wordmark" href="/">Kaizen<i> /</i></a>
+    </div>
+    <p>Independent raid management service concept for World of Warcraft players. Not an official Blizzard product. Original AI-generated concept illustrations.</p>
+  </div>
+</footer>
+</div>
 
 <header>
   <div class="guild-brand">
@@ -5694,6 +5967,13 @@ const APP_API_WORKER = 'https://krm-hosted-bot.dsd030708.workers.dev';
 // bypass that, it just decides which guild to even ask about.
 let CURRENT_GUILD_ID = 1;
 
+// True only for the bare root path ("/") - the krm.gg marketing homepage
+// (see #landing-page markup + body.landing-mode CSS), not a guild at
+// all. Every real guild, Kaizen included, now lives at /<slug> - see
+// resolveGuildFromUrl. Gates the window.load handler below away from
+// ever calling initFromJson()/fetching guild data on this path.
+let isLandingPage = false;
+
 // true on /<slug>/manage, false on a bare /<slug> (or no path at all).
 // This is the actual "published page vs. CMS" switch from the original
 // krm.gg design - canEdit() below caps every permission at 'view' when
@@ -5716,7 +5996,7 @@ let currentGuildSlug = 'kaizen';
 // default guild instead of the one you meant.
 async function resolveGuildFromUrl() {
   const parts = window.location.pathname.split('/').filter(Boolean); // ["", "flying-hellfish", "manage"] -> ["flying-hellfish", "manage"]
-  if (parts.length === 0) return; // bare pilot URL - keep the Kaizen default, manage mode off
+  if (parts.length === 0) { isLandingPage = true; document.body.classList.add('landing-mode'); return; } // bare root - the marketing homepage now, not a guild
   inManageMode = parts[1] === 'manage';
   const slug = parts[0];
   try {
@@ -13390,7 +13670,8 @@ async function initFromJson() {
 // role/data) but NOT on every incidental listener fire in between.
 let _lastAuthState;
 window.addEventListener('load', async function () {
-  await resolveGuildFromUrl(); // decides CURRENT_GUILD_ID/inManageMode before anything else touches either
+  await resolveGuildFromUrl(); // decides CURRENT_GUILD_ID/inManageMode/isLandingPage before anything else touches any of them
+  if (isLandingPage) initLandingPage(); // theme toggle + raid picker - independent of Clerk/auth state
   await Clerk.load({ ui: { ClerkUI: window.__internal_ClerkUICtor } });
 
   Clerk.addListener(({ user }) => {
@@ -13400,6 +13681,10 @@ window.addEventListener('load', async function () {
     document.getElementById('save-to-github-btn').style.display = isSignedIn ? '' : 'none';
     document.getElementById('register-guild-btn').style.display = isSignedIn ? '' : 'none';
     document.getElementById('my-guilds-btn').style.display = isSignedIn ? '' : 'none';
+    if (isLandingPage) {
+      document.getElementById('lp-nav-signin').style.display = isSignedIn ? 'none' : '';
+      document.getElementById('lp-nav-continue').style.display = isSignedIn ? '' : 'none';
+    }
 
     if (isSignedIn) {
       closeSignInGate();
@@ -13412,13 +13697,80 @@ window.addEventListener('load', async function () {
 
     if (isSignedIn !== _lastAuthState) {
       _lastAuthState = isSignedIn;
-      initFromJson().then(checkRegisterGuildReturn); // after, not before - showToast only ever shows one toast at a time, and initFromJson's own "Loaded" would otherwise stomp this one within milliseconds
+      // On the landing page there's no guild to load - a fresh sign-in
+      // there means "take me in": send them straight to their guild (or
+      // into the join/register flow if they don't have one yet). See
+      // goToMyGuildOrRegister. Signing out on the landing page needs no
+      // extra handling - the nav toggle above already covers it.
+      if (isLandingPage) { if (isSignedIn) goToMyGuildOrRegister(); }
+      else initFromJson().then(checkRegisterGuildReturn); // after, not before - showToast only ever shows one toast at a time, and initFromJson's own "Loaded" would otherwise stomp this one within milliseconds
     }
   });
 });
 
 function openSignInGate() { document.getElementById('auth-gate').style.display = 'flex'; }
 function closeSignInGate() { document.getElementById('auth-gate').style.display = 'none'; }
+
+// Landing-page-only: what "you're signed in now" means when there's no
+// guild in the URL to begin with. Mirrors loadMyGuildsMenu()'s own
+// fetch/shape (rejected memberships don't count) - one guild sends you
+// straight there, none at all sends you into the same Discord-invite
+// registration flow the header's "+ Register Guild" button uses (today's
+// stand-in for the real krm.gg "Join your Guild" flow - see the
+// isApproverRole/registerGuild comments), more than one just picks the
+// first for now (the header's own "My Guilds ▾" switcher already exists
+// once you're inside any guild, for actually switching between them).
+async function goToMyGuildOrRegister() {
+  try {
+    const res = await fetch(`${APP_API_WORKER}/api/my-guilds`, { headers: await clerkAuthHeader() });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || `Could not load your guilds (${res.status})`);
+    const guilds = (result.guilds || []).filter(g => g.status !== 'rejected');
+    if (guilds.length === 0) { registerGuild(); return; }
+    window.location.href = '/' + guilds[0].slug;
+  } catch (err) {
+    showToast(`✗ Could not continue: ${err.message}`, true);
+  }
+}
+
+// Landing-page-only bootstrap: theme toggle (scoped to #landing-page's
+// own data-theme, never document.documentElement - this never touches
+// the app's own look) and the Karazhan/Outland/Black Temple artwork
+// picker. Ported from kaizen-brand-guide-v1.1/guide.js; asset paths
+// updated to this repo's assets/brand/ copies. Independent of Clerk/auth
+// - runs immediately once isLandingPage is known, not gated on sign-in.
+function initLandingPage() {
+  const lp = document.getElementById('landing-page');
+  const toggle = document.getElementById('lp-theme-toggle');
+  const preference = window.matchMedia('(prefers-color-scheme: dark)');
+  let explicit = null;
+  try { explicit = localStorage.getItem('kaizen-landing-theme'); } catch {}
+  function setTheme(theme) {
+    lp.dataset.theme = theme;
+    toggle.textContent = theme === 'dark' ? 'Light mode' : 'Dark mode';
+    toggle.setAttribute('aria-label', 'Switch to ' + (theme === 'dark' ? 'light' : 'dark') + ' mode');
+  }
+  setTheme(['light', 'dark'].includes(explicit) ? explicit : (preference.matches ? 'dark' : 'light'));
+  toggle.addEventListener('click', () => {
+    explicit = lp.dataset.theme === 'dark' ? 'light' : 'dark';
+    setTheme(explicit);
+    try { localStorage.setItem('kaizen-landing-theme', explicit); } catch {}
+  });
+  preference.addEventListener('change', e => { if (!explicit) setTheme(e.matches ? 'dark' : 'light'); });
+
+  const raids = {
+    karazhan: ['Karazhan · A shared plan for your ten-player raid.', 'Minimal layered illustration of a wizard tower beneath a peach moon'],
+    outland: ['Outland · Bring the group together for the challenges ahead.', 'Minimal illustration of floating islands and ruined spires at sunset'],
+    temple: ['Black Temple · Prepare your roster for the next challenge.', 'Minimal teal temple illustration beneath a pale gold moon'],
+  };
+  document.querySelectorAll('#landing-page [data-raid]').forEach(button => button.addEventListener('click', () => {
+    const key = button.dataset.raid;
+    document.querySelectorAll('#landing-page [data-raid]').forEach(b => b.setAttribute('aria-pressed', String(b === button)));
+    document.getElementById('lp-raid-art').src = 'assets/brand/' + key + '-minimal.png';
+    document.getElementById('lp-raid-art').alt = raids[key][1];
+    document.getElementById('lp-raid-description').textContent = raids[key][0];
+  }));
+}
 
 // One-time migration: ensure all roster entries have a level field
 // Runs after load so existing JSON entries get defaulted immediately
