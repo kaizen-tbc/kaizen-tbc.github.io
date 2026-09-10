@@ -44,6 +44,9 @@ export default {
     if (url.pathname === '/api/register-guild/callback' && request.method === 'GET') {
       return handleRegisterGuildCallback(request, env);
     }
+    if (url.pathname === '/api/guild-by-slug' && request.method === 'GET') {
+      return handleGuildBySlug(request, env);
+    }
 
     // ── Current WCL rate-limit status, read-only diagnostic ── /wcl-status
     if (url.pathname === '/wcl-status' && request.method === 'GET') {
@@ -353,6 +356,23 @@ async function handleMyGuilds(request, env) {
      WHERE m.user_id = ?`
   ).bind(auth.sub).all();
   return corsResponse(JSON.stringify({ guilds: results }), 200);
+}
+
+// GET /api/guild-by-slug?slug=flying-hellfish - no auth at all, on
+// purpose. Resolving a slug to a guild id is exactly as public as the
+// URL itself (krm.gg/flying-hellfish) - the actual data access it leads
+// to (public-state vs. the real membership-checked state) is gated
+// separately. This is the one lookup the frontend's routing (see
+// resolveGuildFromUrl) does before it knows which guildId to ask
+// anything else about.
+async function handleGuildBySlug(request, env) {
+  const url = new URL(request.url);
+  const slug = url.searchParams.get('slug');
+  if (!slug) return corsResponse(JSON.stringify({ error: 'Missing slug.' }), 400);
+  if (!env.kaizen_db) return corsResponse(JSON.stringify({ error: 'kaizen_db binding not configured.' }), 500);
+  const row = await env.kaizen_db.prepare('SELECT id, slug, name FROM guilds WHERE slug = ?').bind(slug).first();
+  if (!row) return corsResponse(JSON.stringify({ error: 'No guild registered at this address.' }), 404);
+  return corsResponse(JSON.stringify(row), 200);
 }
 
 // GET /api/public-state?guildId=1 - no auth at all, deliberately. This

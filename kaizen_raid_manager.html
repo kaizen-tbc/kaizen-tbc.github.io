@@ -2101,6 +2101,13 @@ a[href] > div > div[style*="line-height:1.6"] {
          Only makes sense signed in (the start call needs a Clerk
          session), so it toggles alongside sign-in-btn/clerk-user-button. -->
     <button class="btn btn-small" id="register-guild-btn" onclick="registerGuild()" title="Register a new guild by inviting the Kaizen bot to its Discord server" style="display:none;">+ Register Guild</button>
+    <!-- The actual "published page vs. CMS" door from the original krm.gg
+         design (see inManageMode/getPermLevel) - only shown on the public
+         page, and only to someone whose real role has edit access
+         somewhere (see hasAnyRealEditAccess) - a plain Member browsing
+         the public page has no reason to see a button that just bounces
+         them back to the exact same read-only view. -->
+    <button class="btn btn-small btn-gold" id="manage-guild-btn" onclick="location.href = '/' + currentGuildSlug + '/manage'" style="display:none;">⚙ Manage this Guild</button>
     <button class="btn btn-small btn-gold" id="sign-in-btn" onclick="openSignInGate()" style="display:none;">Sign In</button>
     <div id="clerk-user-button" style="display:none;align-items:center;"></div>
   </div>
@@ -2134,7 +2141,7 @@ a[href] > div > div[style*="line-height:1.6"] {
       <div style="font-family:'Cinzel',serif;font-size:18px;font-weight:700;color:var(--text-bright);">Overview Editor</div>
       <div style="font-size:12px;color:var(--text-dim);margin-top:2px;">Changes publish to the guild page when you Save</div>
     </div>
-    <a href="https://kaizen-tbc.github.io" target="_blank" class="btn btn-small" style="font-size:11px;">↗ View Published Page</a>
+    <a id="view-published-link" href="#" target="_blank" class="btn btn-small" style="font-size:11px;">↗ View Published Page</a>
   </div>
 
   <!-- SECTION: HERO -->
@@ -4578,10 +4585,25 @@ let tabPermissions = {
 let myRole = 'unauthenticated';
 
 function getPermLevel(tab) {
-  return (tabPermissions[tab] && tabPermissions[tab][myRole]) || 'hidden';
+  const level = (tabPermissions[tab] && tabPermissions[tab][myRole]) || 'hidden';
+  // Outside /manage, this is the published guild page - always read-only,
+  // even for a GM, even though their real role would normally say 'edit'.
+  // 'hidden' stays hidden either way; this only ever caps 'edit' down to
+  // 'view', never opens up something that was already hidden.
+  return (!inManageMode && level === 'edit') ? 'view' : level;
 }
 function canEdit(tab) { return getPermLevel(tab) === 'edit'; }
 function canView(tab) { return getPermLevel(tab) !== 'hidden'; }
+
+// Reads the RAW matrix directly, bypassing getPermLevel's inManageMode
+// cap on purpose - this is "does this person's real role have edit
+// access ANYWHERE," used only to decide whether the public page even
+// shows a "Manage this Guild" door. A Member has no real edit access no
+// matter which URL they're on, so there's no reason to show them a
+// button that would just bounce them right back to this same page.
+function hasAnyRealEditAccess() {
+  return Object.keys(tabPermissions).some(tab => (tabPermissions[tab] && tabPermissions[tab][myRole]) === 'edit');
+}
 
 // Toggles .krm-readonly on each tab-panel container per myRole - once,
 // after myRole is known (see initFromJson) - not something individual
@@ -4602,6 +4624,12 @@ function applyTabPermissions() {
     const el = document.getElementById(panelId);
     if (el) el.classList.toggle('krm-readonly', !canEdit(permKey));
   }
+  // Header links/buttons that depend on which guild/mode we're actually
+  // on - same idea as the tab-panel classes above, just not CSS-driven.
+  const publishedLink = document.getElementById('view-published-link');
+  if (publishedLink) publishedLink.href = `/${currentGuildSlug}`;
+  const manageBtn = document.getElementById('manage-guild-btn');
+  if (manageBtn) manageBtn.style.display = (!inManageMode && hasAnyRealEditAccess()) ? '' : 'none';
 }
 
 // Resolved display names for the above (e.g. "logs-archive") — purely
@@ -5604,13 +5632,50 @@ const RH_API     = 'https://raid-helper.xyz/api/v4';
 // own save/load data went through this Worker instead.
 const APP_API_WORKER = 'https://krm-hosted-bot.dsd030708.workers.dev';
 
-// Which guild's data this page loads/saves - hardcoded to Kaizen (guild
-// id 1, see migrate-to-multitenant.sql) until a real guild-switcher/
-// registration flow exists to pick this dynamically. Every /api/state
-// call is scoped by this - the Worker still checks you're an active
-// member of whichever guildId you send, this constant doesn't bypass
-// that, it just means there's only one to pick from today.
-const CURRENT_GUILD_ID = 1;
+// Which guild's data this page loads/saves - resolved from the URL now
+// (see resolveGuildFromUrl), not hardcoded. Defaults to Kaizen (guild id
+// 1) for a bare pilot URL with no path, same as before this existed.
+// Every /api/state call is scoped by this - the Worker still checks
+// you're an active member of whichever guildId gets sent, this doesn't
+// bypass that, it just decides which guild to even ask about.
+let CURRENT_GUILD_ID = 1;
+
+// true on /<slug>/manage, false on a bare /<slug> (or no path at all).
+// This is the actual "published page vs. CMS" switch from the original
+// krm.gg design - canEdit() below caps every permission at 'view' when
+// this is false, regardless of tabPermissions/myRole, so even a GM
+// landing on the plain public URL sees the read-only page first and has
+// to deliberately go to /manage to get edit access.
+let inManageMode = false;
+
+// The slug itself, for building links back to this guild's own public/
+// manage URLs (see the "Manage this Guild"/"View Published Page"
+// buttons) - "kaizen" is the bare-URL default, matching CURRENT_GUILD_ID.
+let currentGuildSlug = 'kaizen';
+
+// Parses the current URL into a guild slug + manage/public mode, then
+// resolves that slug to a real guildId via the Worker (no auth needed -
+// see handleGuildBySlug). Falls back to Kaizen/CURRENT_GUILD_ID's
+// existing default on a bare path, or on any lookup failure (a typo'd
+// slug, the API being briefly unreachable, etc.) - never blocks the app
+// from loading over a routing problem, worst case you just land on the
+// default guild instead of the one you meant.
+async function resolveGuildFromUrl() {
+  const parts = window.location.pathname.split('/').filter(Boolean); // ["", "flying-hellfish", "manage"] -> ["flying-hellfish", "manage"]
+  if (parts.length === 0) return; // bare pilot URL - keep the Kaizen default, manage mode off
+  inManageMode = parts[1] === 'manage';
+  const slug = parts[0];
+  try {
+    const res = await fetch(`${APP_API_WORKER}/api/guild-by-slug?slug=${encodeURIComponent(slug)}`);
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || `Lookup failed (${res.status})`);
+    CURRENT_GUILD_ID = result.id;
+    currentGuildSlug = result.slug;
+  } catch (err) {
+    console.log(`Could not resolve guild slug "${slug}", staying on the default guild:`, err.message);
+    inManageMode = false;
+  }
+}
 
 // ======================================================
 // APP STATE (D1, via the Worker's /api/state) - see wrangler.toml/
@@ -13067,6 +13132,7 @@ async function initFromJson() {
 // role/data) but NOT on every incidental listener fire in between.
 let _lastAuthState;
 window.addEventListener('load', async function () {
+  await resolveGuildFromUrl(); // decides CURRENT_GUILD_ID/inManageMode before anything else touches either
   await Clerk.load({ ui: { ClerkUI: window.__internal_ClerkUICtor } });
 
   Clerk.addListener(({ user }) => {
