@@ -2113,6 +2113,16 @@ a[href] > div > div[style*="line-height:1.6"] {
   </div>
 </header>
 
+<!-- Manage-mode banner - the actual "is this the public page or the CMS"
+     tell, since otherwise the two look identical apart from one header
+     button changing (confirmed confusing live - not obvious at all
+     which one you're on without this). Shown/hidden in applyTabPermissions
+     alongside manage-guild-btn, same inManageMode check. -->
+<div id="manage-mode-banner" style="display:none;background:var(--gold);color:#0a0b0d;padding:8px 20px;font-size:12px;font-weight:700;align-items:center;justify-content:space-between;">
+  <span>🔧 Managing <span id="manage-mode-guild-name">this guild</span> - changes here are real, not a preview</span>
+  <a id="back-to-published-link" href="#" style="color:#0a0b0d;text-decoration:underline;font-weight:700;">← Back to published page</a>
+</div>
+
 <!-- Sign-in panel (see the Clerk bootstrap script near the bottom of the
      file) - NOT a hard gate anymore. An unauthenticated visitor sees the
      app right away in read-only mode (see myRole/canEdit -
@@ -4630,6 +4640,14 @@ function applyTabPermissions() {
   if (publishedLink) publishedLink.href = `/${currentGuildSlug}`;
   const manageBtn = document.getElementById('manage-guild-btn');
   if (manageBtn) manageBtn.style.display = (!inManageMode && hasAnyRealEditAccess()) ? '' : 'none';
+  const banner = document.getElementById('manage-mode-banner');
+  if (banner) {
+    banner.style.display = inManageMode ? 'flex' : 'none';
+    if (inManageMode) {
+      document.getElementById('manage-mode-guild-name').textContent = guildInfo?.guildName || currentGuildSlug;
+      document.getElementById('back-to-published-link').href = `/${currentGuildSlug}`;
+    }
+  }
 }
 
 // Resolved display names for the above (e.g. "logs-archive") — purely
