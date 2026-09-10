@@ -2473,11 +2473,11 @@ body.landing-mode #landing-page { display: block; }
     </div>
   </div>
   <nav>
-    <button class="nav-btn active" onclick="showTab('overview', this)">Overview</button>
-    <button class="nav-btn" onclick="showTab('roster', this)">Raiders</button>
-    <button class="nav-btn" onclick="showTab('builder', this)">Weekly Roster</button>
-    <button class="nav-btn" onclick="showTab('strats', this)">Strats</button>
-    <button class="nav-btn" onclick="showTab('guild-logs', this)">Guild Logs</button>
+    <button class="nav-btn active" data-tab="overview" onclick="showTab('overview', this)">Overview</button>
+    <button class="nav-btn" data-tab="roster" onclick="showTab('roster', this)">Raiders</button>
+    <button class="nav-btn" data-tab="builder" onclick="showTab('builder', this)">Weekly Roster</button>
+    <button class="nav-btn" data-tab="strats" onclick="showTab('strats', this)">Strats</button>
+    <button class="nav-btn" data-tab="guild-logs" onclick="showTab('guild-logs', this)">Guild Logs</button>
   </nav>
 </header>
 
@@ -7472,17 +7472,55 @@ const ATT_CLASS = { present: 'present', absent: 'absent', excused: 'excused' };
 // ======================================================
 // TAB NAVIGATION
 // ======================================================
-function showTab(tab, btn) {
+// tab keys here (overview/roster/builder/strats/guild-logs) are the
+// existing internal identifiers (TAB_PERM_MAP, #tab-* ids) - reused
+// directly as URL hash values rather than invented public-facing
+// route names, per PUBLIC-SITE-IA.md's "these are page
+// responsibilities, not a mandate for exact route strings."
+const VALID_TABS = ['overview', 'roster', 'builder', 'strats', 'guild-logs'];
+
+function showTab(tab, btn, opts) {
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('tab-' + tab).classList.add('active');
-  if (btn) btn.classList.add('active');
+  const targetBtn = btn || document.querySelector(`.nav-btn[data-tab="${tab}"]`);
+  if (targetBtn) targetBtn.classList.add('active');
   if (tab === 'overview') renderOverview();
   if (tab === 'roster') renderActiveRosterSubTab();
   if (tab === 'strats') renderStrats();
   if (tab === 'builder') renderBuilder();
   if (tab === 'guild-logs') renderGuildLogsTab();
+
+  // URL sync - direct links, refresh, and back/forward all land on the
+  // actual tab instead of always Overview (PUBLIC-SITE-IA.md: "give
+  // destinations distinct navigable URLs/state... including direct
+  // links, refresh, and back/forward behavior"). opts.fromHash means
+  // this call originated FROM a popstate/initial-load hash read - don't
+  // push a redundant history entry for the navigation that just
+  // happened.
+  if (!(opts && opts.fromHash) && location.hash.slice(1) !== tab) {
+    history.pushState(null, '', '#' + tab);
+  }
 }
+
+// Runs on load (after resolveGuildFromUrl) and on back/forward - reads
+// whatever's actually in location.hash right now and shows that tab
+// instead of always defaulting to Overview. An invalid/missing hash is
+// not an error, it's just "nothing to restore" - Overview stays the
+// default the same way it always was.
+function showTabFromHash() {
+  const tab = location.hash.slice(1);
+  if (!VALID_TABS.includes(tab)) return;
+  showTab(tab, null, { fromHash: true });
+}
+window.addEventListener('popstate', showTabFromHash);
+// popstate alone misses a same-document hash-only navigation that
+// never touches history.pushState - a manually edited address-bar
+// hash, or a future plain <a href="#strats"> link. hashchange catches
+// those too. Both firing for the same real change (e.g. actual
+// back/forward) is harmless - showTab() no-ops the history write when
+// the hash already matches.
+window.addEventListener('hashchange', showTabFromHash);
 
 function showRosterSubTab(subtab, btn) {
   document.querySelectorAll('#tab-roster .sub-tab-panel').forEach(p => p.classList.remove('active'));
@@ -13904,7 +13942,7 @@ window.addEventListener('load', async function () {
       // Signing out on the landing page needs no extra handling - the
       // nav toggle above already covers it.
       if (isLandingPage) { if (isSignedIn && _authResolvedOnce) goToMyGuildOrRegister(); }
-      else initFromJson().then(checkRegisterGuildReturn); // after, not before - showToast only ever shows one toast at a time, and initFromJson's own "Loaded" would otherwise stomp this one within milliseconds
+      else initFromJson().then(checkRegisterGuildReturn).then(showTabFromHash); // after data's loaded, not before - every tab's render function (renderStrats/renderBuilder/etc) reads global state initFromJson just populated
     }
     _authResolvedOnce = true;
   });
