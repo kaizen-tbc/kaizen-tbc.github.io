@@ -2556,11 +2556,17 @@ body.landing-mode #landing-page { display: block; }
 <!-- ==================== OVERVIEW TAB ==================== -->
 <div class="tab-panel active" id="tab-overview">
 
-  <!-- CMS HEADER -->
+  <!-- CMS HEADER - "Overview Editor" only in manage mode; a read-only
+       visitor (including a signed-out one) gets the guild's own name
+       instead, set by applyTabPermissions(). This used to say "Overview
+       Editor" / "Changes publish..." unconditionally, even on the
+       actual public /kaizen page with no edit access at all - real bug,
+       not just a visual nit: it made the read-only guild page LOOK like
+       a broken half-disabled CMS instead of a real public page. -->
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid var(--border);">
     <div>
-      <div style="font-family:'Cinzel',serif;font-size:18px;font-weight:700;color:var(--text-bright);">Overview Editor</div>
-      <div style="font-size:12px;color:var(--text-dim);margin-top:2px;">Changes publish to the guild page when you Save</div>
+      <div id="overview-header-title" style="font-family:'Cinzel',serif;font-size:18px;font-weight:700;color:var(--text-bright);">Overview Editor</div>
+      <div id="overview-header-subtitle" style="font-size:12px;color:var(--text-dim);margin-top:2px;">Changes publish to the guild page when you Save</div>
     </div>
     <a id="view-published-link" href="#" target="_blank" class="btn btn-small" style="font-size:11px;">↗ View Published Page</a>
   </div>
@@ -5064,7 +5070,26 @@ function applyTabPermissions() {
   // Header links/buttons that depend on which guild/mode we're actually
   // on - same idea as the tab-panel classes above, just not CSS-driven.
   const publishedLink = document.getElementById('view-published-link');
-  if (publishedLink) publishedLink.href = `/${currentGuildSlug}`;
+  if (publishedLink) {
+    publishedLink.href = `/${currentGuildSlug}`;
+    // Pointless on the page it already points to - only useful from
+    // inside manage mode, same as the CMS-only copy below.
+    publishedLink.style.display = inManageMode ? '' : 'none';
+  }
+  // See the CMS HEADER comment in tab-overview's markup - this is the
+  // fix for the read-only /kaizen page having said "Overview Editor"
+  // regardless of mode.
+  const ovTitle = document.getElementById('overview-header-title');
+  const ovSubtitle = document.getElementById('overview-header-subtitle');
+  if (ovTitle && ovSubtitle) {
+    if (inManageMode) {
+      ovTitle.textContent = 'Overview Editor';
+      ovSubtitle.textContent = 'Changes publish to the guild page when you Save';
+    } else {
+      ovTitle.textContent = guildInfo?.guildName || currentGuildSlug;
+      ovSubtitle.textContent = 'Public guild page';
+    }
+  }
   const manageBtn = document.getElementById('manage-guild-btn');
   if (manageBtn) manageBtn.style.display = (!inManageMode && hasAnyRealEditAccess()) ? '' : 'none';
   const banner = document.getElementById('manage-mode-banner');
