@@ -2204,6 +2204,16 @@ a[href] > div > div[style*="line-height:1.6"] {
 .pub-table tr:last-child td { border-bottom: none; }
 .pub-meta { font-size: 14px; color: var(--kz-muted); }
 .pub-readiness-number { font-family: var(--kz-font-display); font-weight: 400; font-size: clamp(40px, 5vw, 52px); color: var(--kz-accent); line-height: 1; }
+.pub-button {
+  display: inline-flex; align-items: center; gap: 8px; padding: 13px 24px; border-radius: 2px;
+  background: var(--kz-accent); color: var(--kz-onaccent); font-family: var(--kz-font-ui);
+  font-size: 14px; font-weight: 600; text-decoration: none; border: 1px solid var(--kz-accent);
+  cursor: pointer; transition: background 0.15s;
+}
+.pub-button:hover { background: var(--kz-hover); border-color: var(--kz-hover); }
+.pub-section { margin-bottom: 56px; }
+.pub-rich-text { font-size: 16px; line-height: 1.7; color: var(--kz-text); }
+.pub-rich-text :is(strong, b) { color: var(--kz-text); }
 
 /* ============================================================
    LANDING PAGE (krm.gg marketing homepage) - kaizen-brand-guide
@@ -2656,6 +2666,13 @@ body.landing-mode #landing-page { display: block; }
 <!-- ==================== OVERVIEW TAB ==================== -->
 <div class="tab-panel active" id="tab-overview">
 
+  <!-- Manager editing view vs. #public-overview-view below - creative
+       review 2026-09-10, finding #1 (highest priority): the read-only
+       CMS form was never actually the reference's visitor presentation,
+       just the editor with inputs disabled. Same pattern as Raiders/
+       Raids: a dedicated renderer fed by the same live guildInfo record,
+       not a parallel content model. -->
+  <div id="manager-overview-view">
   <!-- CMS HEADER - "Overview Editor" only in manage mode; a read-only
        visitor (including a signed-out one) gets the guild's own name
        instead, set by applyTabPermissions(). This used to say "Overview
@@ -2723,6 +2740,20 @@ body.landing-mode #landing-page { display: block; }
       <button class="btn btn-small" onclick="openAddToolModal()">+ Add Tool</button>
     </div>
     <div id="ov-tools" style="display:flex;flex-direction:column;gap:8px;"></div>
+  </div>
+
+  </div><!-- /#manager-overview-view -->
+
+  <!-- Public visitor overview - Design/preview/guild.html: masthead/nav
+       (already handled by #public-header) -> guild hero -> introduction
+       with next raid -> progression -> recruitment/guild information.
+       "Pass condition: ...zero editor labels, form fields, formatting
+       toolbars, add/remove actions, 'Image set' indicators... No giant
+       bordered card around the hero." Fed by the same live guildInfo
+       object the manager editor reads/writes - see renderPublicOverview. -->
+  <div id="public-overview-view" style="display:none;">
+    <div id="public-overview-hero"></div>
+    <div class="pub-container" id="public-overview-content" style="padding-block:48px;"></div>
   </div>
 
 </div>
@@ -5333,6 +5364,15 @@ function applyTabPermissions() {
   if (managerBuilderView) managerBuilderView.style.display = inManageMode ? '' : 'none';
   if (publicRaidsView) publicRaidsView.style.display = inManageMode ? 'none' : '';
   if (!inManageMode) renderPublicRaidsView();
+
+  // Overview: manager's CMS editor vs. the public hero/intro/progression
+  // view (see renderPublicOverview) - same shell-swap idea, highest
+  // priority per the 2026-09-10 creative review (finding #1).
+  const managerOverviewView = document.getElementById('manager-overview-view');
+  const publicOverviewView = document.getElementById('public-overview-view');
+  if (managerOverviewView) managerOverviewView.style.display = inManageMode ? '' : 'none';
+  if (publicOverviewView) publicOverviewView.style.display = inManageMode ? 'none' : '';
+  if (!inManageMode) renderPublicOverview();
   const manageBtn = document.getElementById('manage-guild-btn');
   if (manageBtn) manageBtn.style.display = (!inManageMode && hasAnyRealEditAccess()) ? '' : 'none';
   const banner = document.getElementById('manage-mode-banner');
@@ -7711,7 +7751,7 @@ function showTab(tab, btn, opts) {
   if (targetBtn) targetBtn.classList.add('active');
   const publicLink = document.querySelector(`.public-nav-link[data-tab="${tab}"]`);
   if (publicLink) publicLink.classList.add('active');
-  if (tab === 'overview') renderOverview();
+  if (tab === 'overview') { renderOverview(); renderPublicOverview(); }
   if (tab === 'roster') { renderActiveRosterSubTab(); renderPublicRaidersDirectory(); }
   if (tab === 'strats') renderStrats();
   if (tab === 'builder') { renderBuilder(); renderPublicRaidsView(); }
@@ -7907,6 +7947,79 @@ function renderOverview() {
         }).join('');
   }
 }
+
+// ======================================================
+// PUBLIC OVERVIEW (Design/preview/guild.html) - creative review
+// finding #1, highest priority: a dedicated visitor renderer fed by
+// the same live guildInfo record the manager editor above reads/
+// writes, not a parallel content model. Sequence per the reference:
+// masthead/nav (handled by #public-header) -> hero -> introduction
+// with next raid -> progression -> recruitment/loot/resources. No
+// editor chrome (buildRTE's toolbar, "Image set" indicators, Add/
+// Remove buttons) anywhere in this function - recruitment/lootRules
+// are rendered directly as the trusted HTML string they already are
+// (same content, same trust boundary as the manager's own RTE output),
+// never through buildRTE.
+// ======================================================
+function renderPublicOverview() {
+  const heroEl = document.getElementById('public-overview-hero');
+  const contentEl = document.getElementById('public-overview-content');
+  if (!heroEl || !contentEl) return;
+
+  const esc = s => (s || '').replace(/</g, '&lt;');
+  const bannerUrl = guildInfo.banner || 'assets/brand/karazhan-minimal.png';
+
+  heroEl.innerHTML = `
+    <div style="min-height:60vh;display:flex;align-items:flex-end;background:linear-gradient(180deg,rgba(16,22,25,0.1),rgba(16,22,25,0.92)),url('${bannerUrl}') center/cover;padding:64px 0 56px;">
+      <div class="pub-container">
+        ${guildInfo.realm ? `<div class="pub-eyebrow" style="color:#E2C789;">${esc(guildInfo.realm)}</div>` : ''}
+        <h1 style="font-family:var(--kz-font-display);font-weight:400;font-size:clamp(44px,7vw,80px);color:#F5F2E9;margin:0 0 16px;line-height:1.05;text-shadow:0 2px 24px rgba(0,0,0,0.5);">${esc(guildInfo.guildName || 'Guild')}</h1>
+        <button class="pub-button" onclick="showTab('builder')">See our raid nights →</button>
+      </div>
+    </div>`;
+
+  const nextRaid = (guildInfo.raidSchedule || [])[0];
+  const progressionHtml = (guildInfo.progression || []).length
+    ? guildInfo.progression.map(p => `
+        <div style="display:flex;justify-content:space-between;align-items:baseline;padding:14px 0;border-bottom:1px solid var(--kz-line);">
+          <span style="font-size:16px;color:var(--kz-text);">${esc(p.label)}</span>
+          <span style="font-family:var(--kz-font-display);font-size:20px;color:var(--kz-accent);">${p.killed || 0}<span style="color:var(--kz-muted);font-size:15px;">/${p.total || 0}</span></span>
+        </div>`).join('')
+    : `<div style="color:var(--kz-muted);font-size:15px;">No progression published yet.</div>`;
+
+  const toolsHtml = (guildInfo.tools || []).length
+    ? guildInfo.tools.map(t => `
+        <a href="${(t.url || '#').replace(/"/g, '&quot;')}" target="_blank" rel="noopener" style="display:block;padding:14px 0;border-bottom:1px solid var(--kz-line);text-decoration:none;">
+          <div style="font-size:15px;font-weight:600;color:${t.color || 'var(--kz-text)'};">${esc(t.name)}</div>
+          <div style="font-size:14px;color:var(--kz-muted);margin-top:2px;">${esc(t.desc)}</div>
+        </a>`).join('')
+    : '';
+
+  contentEl.innerHTML = `
+    <div class="pub-section" style="display:grid;grid-template-columns:1.4fr 1fr;gap:48px;align-items:start;">
+      <div>
+        <div class="pub-eyebrow">Our guild</div>
+        <div class="pub-rich-text">${guildInfo.about || ''}</div>
+        ${guildInfo.discord ? `<a href="${guildInfo.discord.replace(/"/g, '&quot;')}" target="_blank" rel="noopener" class="pub-button" style="margin-top:24px;">Join our Discord →</a>` : ''}
+      </div>
+      <div class="pub-card">
+        <div class="pub-eyebrow">Next on the calendar</div>
+        ${nextRaid ? `
+          <div style="font-family:var(--kz-font-display);font-size:22px;color:var(--kz-text);margin-bottom:6px;">${esc(nextRaid.content || nextRaid.day)}</div>
+          <div class="pub-meta">${esc(nextRaid.day)}${nextRaid.time ? ' · ' + esc(nextRaid.time) : ''}</div>
+        ` : `<div style="color:var(--kz-muted);font-size:15px;">No raid schedule published yet.</div>`}
+      </div>
+    </div>
+    <div class="pub-section">
+      <div class="pub-eyebrow">Progression</div>
+      ${progressionHtml}
+    </div>
+    ${guildInfo.recruitment ? `<div class="pub-section"><div class="pub-eyebrow">Recruitment</div><div class="pub-rich-text">${guildInfo.recruitment}</div></div>` : ''}
+    ${guildInfo.lootRules ? `<div class="pub-section"><div class="pub-eyebrow">Loot</div><div class="pub-rich-text">${guildInfo.lootRules}</div></div>` : ''}
+    ${toolsHtml ? `<div class="pub-section"><div class="pub-eyebrow">Resources</div>${toolsHtml}</div>` : ''}
+  `;
+}
+
 function addScheduleEntry() {
   if (!guildInfo.raidSchedule) guildInfo.raidSchedule = [];
   guildInfo.raidSchedule.push({ day: '', content: '', time: '', note: '' });
