@@ -3,3 +3,15 @@ node_modules/
 .dev.vars
 .dev.vars.*
 *.log
+
+# index.html is a generated deploy artifact, never hand-edited - it's an
+# exact copy of kaizen_raid_manager.html (the real source file), made by
+# `npm run deploy:frontend` right before every deploy. It used to be
+# tracked in git as its own file, which is exactly how it silently
+# drifted out of sync with kaizen_raid_manager.html for an entire session
+# (2026-09-10) - every commit in that arc was real and correct, but the
+# live site kept serving this file's stale, untouched copy the whole
+# time. Untracking it removes the possibility of that drift recurring;
+# it's regenerated fresh on every deploy, so it never needs to be a
+# source file at all. See CHANGELOG.md's top entry.
+index.html
