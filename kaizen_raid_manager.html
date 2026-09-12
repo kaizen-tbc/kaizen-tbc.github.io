@@ -183,6 +183,16 @@ body::before {
   overflow-y: auto;
 }
 
+/* Big wordmark above the guild-identity card, matching Design/preview/
+   manager-preview.html's sidebar exactly - same treatment as the
+   marketing page's own "Kaizen /" and this guild's public masthead
+   wordmark, just stacked above .guild-brand instead of standing alone. */
+.app-sidebar-wordmark {
+  display: block; padding: 20px 20px 0; font: italic bold 22px var(--kz-font-display);
+  color: var(--kz-text); text-decoration: none;
+}
+.app-sidebar-wordmark i { color: var(--red-bright); font-style: normal; }
+
 .guild-brand {
   display: flex;
   align-items: center;
@@ -191,6 +201,15 @@ body::before {
   border-bottom: 1px solid var(--kz-line);
   text-decoration: none;
 }
+
+/* "Workspace" section label above the nav list - reference's own
+   nav-caption, distinguishing the guild-identity card above from the
+   actual navigation below it. */
+.nav-caption {
+  padding: 16px 12px 4px; font-size: 11px; font-weight: 700; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--kz-muted);
+}
+.nav-icon { display: inline-block; width: 20px; text-align: center; margin-right: 8px; font-size: 14px; flex-shrink: 0; }
 
 .guild-icon {
   width: 32px;
@@ -229,7 +248,7 @@ nav {
   flex-direction: column;
   gap: 2px;
   flex: 1;
-  padding: 16px 12px;
+  padding: 4px 12px 16px;
 }
 
 .nav-btn {
@@ -263,8 +282,14 @@ nav {
   position: sticky;
   top: 0;
   z-index: 100;
-  justify-content: flex-end;
+  /* space-between, not flex-end - matches Design/preview/manager-
+     preview.html's app-topbar: a persistent current-tab breadcrumb on
+     the left, account/utility cluster on the right, not just a right-
+     aligned button row. */
+  justify-content: space-between;
 }
+#current-workspace-label { font-size: 14px; font-weight: 600; color: var(--kz-text); }
+.header-right-controls { display: flex; align-items: center; gap: 10px; }
 
 .raid-tier-badge {
   font-size: 13px;
@@ -2874,6 +2899,20 @@ body.landing-mode #landing-page { display: block; }
      onclick as before, just relocated. -->
 <div class="app-shell">
 <header class="app-sidebar" id="app-sidebar" style="display:none;">
+  <!-- Matches Design/preview/manager-preview.html's sidebar exactly:
+       a real wordmark up top (same "Kaizen /" treatment as the
+       marketing page and this same guild's own public masthead), a
+       distinct guild-identity mini-card below it, a "Workspace"
+       section label, then icon-led nav in the reference's own order
+       (Weekly Roster, Strats, Raiders, Guild Logs, then Overview -
+       relabeled "Guild Page" to match, last rather than first). Tab
+       keys/ids (data-tab="overview" etc.) are unchanged - only the
+       visible label and position moved, so nothing that reads the tab
+       key itself (hash routing, applyTabPermissions, etc.) needed to
+       change. Icons are the reference's own plain glyphs (▦◈◉▤⌂), not
+       new SVGs - matching exactly what Codex specified rather than a
+       reinterpretation. -->
+  <a class="app-sidebar-wordmark" href="/">Kaizen<i>/</i></a>
   <div class="guild-brand">
     <div class="guild-icon">K</div>
     <div>
@@ -2881,17 +2920,33 @@ body.landing-mode #landing-page { display: block; }
       <div class="guild-realm">Horde · TBC Classic</div>
     </div>
   </div>
+  <div class="nav-caption">Workspace</div>
   <nav>
-    <button class="nav-btn active" data-tab="overview" onclick="showTab('overview', this)">Overview</button>
-    <button class="nav-btn" data-tab="roster" onclick="showTab('roster', this)">Raiders</button>
-    <button class="nav-btn" data-tab="builder" onclick="showTab('builder', this)">Weekly Roster</button>
-    <button class="nav-btn" data-tab="strats" onclick="showTab('strats', this)">Strats</button>
-    <button class="nav-btn" data-tab="guild-logs" onclick="showTab('guild-logs', this)">Guild Logs</button>
+    <button class="nav-btn" data-tab="builder" onclick="showTab('builder', this)"><span class="nav-icon">▦</span>Weekly Roster</button>
+    <button class="nav-btn" data-tab="strats" onclick="showTab('strats', this)"><span class="nav-icon">◈</span>Strats</button>
+    <button class="nav-btn" data-tab="roster" onclick="showTab('roster', this)"><span class="nav-icon">◉</span>Raiders</button>
+    <button class="nav-btn" data-tab="guild-logs" onclick="showTab('guild-logs', this)"><span class="nav-icon">▤</span>Guild Logs</button>
+    <button class="nav-btn active" data-tab="overview" onclick="showTab('overview', this)"><span class="nav-icon">⌂</span>Guild Page</button>
   </nav>
 </header>
 
 <div class="app-content">
-<div class="header-right guild-account-controls" id="header-right" style="display:none;">
+<div class="header-right" id="header-right" style="display:none;">
+  <!-- Persistent current-tab breadcrumb (Design/preview/manager-
+       preview.html's #current-workspace) - was ONLY shown inside the
+       Overview tab's own header before ("View Published Page"), not a
+       real always-visible bar. Text kept in sync in showTab() (see
+       NAV_TAB_LABELS). -->
+  <span id="current-workspace-label"></span>
+  <div class="header-right-controls guild-account-controls">
+    <!-- Persistent "View guild page" - was only inside the Overview
+         tab's own header before (id="view-published-link" further
+         down), reachable only from that one tab. Same real link/
+         behavior (applyTabPermissions sets its href and manage-mode-
+         only visibility), just always in view now, matching the
+         reference. The old per-tab one was removed to avoid showing
+         two of the same link when on the Overview tab. -->
+    <a id="view-published-link" href="#" target="_blank" class="btn btn-small" style="font-size:11px;">View guild page ↗</a>
     <!-- Save/Settings/My Guilds/Register Guild are real manager-only
          tools that don't fit the approved shared header's minimal
          "Manage Guild / theme / avatar" shape (that reference has no
@@ -2928,6 +2983,7 @@ body.landing-mode #landing-page { display: block; }
     <button type="button" class="guild-circle theme-toggle-btn" onclick="toggleTheme()" aria-label="Switch theme"></button>
     <button class="btn btn-small btn-gold" id="sign-in-btn" onclick="openSignInGate()" style="display:none;">Sign In</button>
     <div id="clerk-user-button" style="display:none;align-items:center;"></div>
+  </div>
 </div>
 
 <!-- Manage-mode banner - the actual "is this the public page or the CMS"
@@ -2987,12 +3043,13 @@ body.landing-mode #landing-page { display: block; }
        actual public /kaizen page with no edit access at all - real bug,
        not just a visual nit: it made the read-only guild page LOOK like
        a broken half-disabled CMS instead of a real public page. -->
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid var(--border);">
-    <div>
-      <div id="overview-header-title" style="font-family:'Cinzel',serif;font-size:18px;font-weight:700;color:var(--text-bright);">Overview Editor</div>
-      <div id="overview-header-subtitle" style="font-size:12px;color:var(--text-dim);margin-top:2px;">Changes publish to the guild page when you Save</div>
-    </div>
-    <a id="view-published-link" href="#" target="_blank" class="btn btn-small" style="font-size:11px;">↗ View Published Page</a>
+  <!-- "View Published Page" used to live here, only reachable from
+       this one tab - it's the persistent #view-published-link in the
+       app-topbar now (see the app-shell markup above), visible from
+       every tab, matching the reference. -->
+  <div style="margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid var(--border);">
+    <div id="overview-header-title" style="font-family:'Cinzel',serif;font-size:18px;font-weight:700;color:var(--text-bright);">Overview Editor</div>
+    <div id="overview-header-subtitle" style="font-size:12px;color:var(--text-dim);margin-top:2px;">Changes publish to the guild page when you Save</div>
   </div>
 
   <!-- SECTION: HERO -->
@@ -8268,8 +8325,18 @@ const ATT_CLASS = { present: 'present', absent: 'absent', excused: 'excused' };
 // responsibilities, not a mandate for exact route strings."
 const VALID_TABS = ['overview', 'roster', 'builder', 'strats', 'guild-logs'];
 
+// Manager sidebar's real nav labels (Guild Logs/Guild Page/etc), keyed
+// by the same tab strings showTab() already uses - matches Design/
+// preview/manager-preview.html's app-topbar breadcrumb (#current-
+// workspace), not a new naming scheme of its own.
+const MANAGER_TAB_LABELS = {
+  overview: 'Guild Page', roster: 'Raiders', builder: 'Weekly Roster',
+  strats: 'Strats', 'guild-logs': 'Guild Logs',
+};
 function showTab(tab, btn, opts) {
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  const breadcrumb = document.getElementById('current-workspace-label');
+  if (breadcrumb) breadcrumb.textContent = MANAGER_TAB_LABELS[tab] || '';
   document.querySelectorAll('.nav-btn, .public-nav-link').forEach(b => b.classList.remove('active'));
   document.getElementById('tab-' + tab).classList.add('active');
   // Both navs get their matching link marked active regardless of which
