@@ -2233,9 +2233,17 @@ a[href] > div > div[style*="line-height:1.6"] {
 }
 .guild-circle:hover { border-color: var(--kz-accent); }
 .guild-circle img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+/* Clerk's mounted UserButton avatar - same 40px/34px circle as the
+   theme toggle (see mountUserButton's appearance.elements option,
+   which hooks this exact class name onto Clerk's own avatar element -
+   their documented theming surface, not an external override fighting
+   Clerk's own generated styles). !important because Clerk's own inline
+   sizing on this element otherwise wins on specificity. */
+.kz-clerk-avatar { width: 40px !important; height: 40px !important; }
 @media (max-width: 650px) {
   .guild-account-controls { gap: 6px; }
   .guild-circle { width: 34px; height: 34px; min-height: 34px; }
+  .kz-clerk-avatar { width: 34px !important; height: 34px !important; }
 }
 @media (max-width: 460px) {
   /* Realm/faction is secondary at this width - drop it before the
@@ -15408,7 +15416,15 @@ window.addEventListener('load', async function () {
     if (isSignedIn) {
       closeSignInGate();
       const userBtnEl = document.getElementById('clerk-user-button');
-      if (!userBtnEl.hasChildNodes()) Clerk.mountUserButton(userBtnEl);
+      // Match the theme-toggle circle (.guild-circle, 40px/34px at
+      // narrow widths) - Clerk's own official theming surface
+      // (appearance.elements, keyed by their documented class hooks),
+      // not fighting it with external CSS overrides that would need
+      // !important against Clerk's own generated styles and could
+      // silently stop working on a Clerk version bump.
+      if (!userBtnEl.hasChildNodes()) Clerk.mountUserButton(userBtnEl, {
+        appearance: { elements: { userButtonAvatarBox: 'kz-clerk-avatar' } },
+      });
     } else {
       const signInEl = document.getElementById('clerk-sign-in');
       if (!signInEl.hasChildNodes()) Clerk.mountSignIn(signInEl);
