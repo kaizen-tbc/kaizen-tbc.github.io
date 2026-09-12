@@ -2389,7 +2389,17 @@ body.landing-mode #landing-page { display: block; }
 #landing-page .lp-wordmark { font: italic bold 29px Georgia, serif; color: var(--lp-text); text-decoration: none; letter-spacing: -1px; white-space: nowrap; flex-shrink: 0; }
 #landing-page .lp-wordmark i { color: var(--lp-danger); font-style: normal; }
 #landing-page .lp-navlinks { display: flex; align-items: center; gap: 24px; }
-#landing-page .lp-navlinks a, #landing-page .lp-navlinks .lp-linklike {
+/* :not(.lp-button) - the header's primary CTA (#lp-nav-cta) is also a
+   plain <a> inside .lp-navlinks, and needs to stay a real pill button
+   (padding/min-height/background from .lp-button.lp-primary above),
+   not get flattened to a plain text link like "The overview". Without
+   this exclusion, the more specific ".lp-navlinks a" selector would
+   silently strip the button's own padding/min-height/font-weight - its
+   background color would still look right, so it'd read as "slightly
+   off" rather than obviously broken. Caught before deploying, not
+   live - checking selector specificity against the new markup, not
+   waiting to see it render wrong first. */
+#landing-page .lp-navlinks a:not(.lp-button), #landing-page .lp-navlinks .lp-linklike {
   font-size: 13px; text-decoration: none; color: var(--lp-muted); background: none; border: none;
   min-height: auto; padding: 0; font-weight: 400;
 }
@@ -2638,17 +2648,25 @@ body.landing-mode #landing-page { display: block; }
 <div class="lp-top" role="banner">
   <div class="lp-wrap lp-nav" role="navigation" aria-label="Main navigation">
     <a class="lp-wordmark" href="/">Kaizen<i> /</i></a>
+    <!-- Matches Design/preview/homepage.html's header exactly: wordmark,
+         one nav link ("The overview" -> #product, the hero section
+         itself), the theme toggle, one primary CTA - not five items.
+         Sign In/Continue as SEPARATE header buttons are gone on
+         purpose (Codex's approved design has no dedicated header
+         sign-in slot) - real capability isn't lost, it's consolidated:
+         lp-nav-cta IS the same real openSignInGate()/
+         goToMyGuildOrRegister() behavior the old two buttons had,
+         just one element that swaps between them (see the Clerk
+         listener below) instead of two elements toggling visibility. -->
     <div class="lp-navlinks">
-      <a href="#features">Features</a>
-      <a href="#raids" class="lp-hide-mobile">Raids</a>
-      <button type="button" class="lp-linklike" id="lp-nav-signin" onclick="openSignInGate()">Sign In</button>
-      <button type="button" class="lp-linklike" id="lp-nav-continue" style="display:none;" onclick="goToMyGuildOrRegister()">Continue →</button>
+      <a href="#product">The overview</a>
       <button type="button" id="lp-theme-toggle" aria-label="Switch to light mode">Light mode</button>
+      <a class="lp-button lp-primary" id="lp-nav-cta" href="#" onclick="openSignInGate();return false;">Get started</a>
     </div>
   </div>
 </div>
 <div id="landing-main" role="main">
-<section class="lp-hero">
+<section class="lp-hero" id="product">
   <div>
     <div class="lp-eyebrow">Kaizen raid manager / The Burning Crusade</div>
     <h1>Your guild.<br><em>Ready for the next pull.</em></h1>
@@ -15458,9 +15476,21 @@ window.addEventListener('load', async function () {
     document.getElementById('save-to-github-btn').style.display = isSignedIn ? '' : 'none';
     document.getElementById('register-guild-btn').style.display = isSignedIn ? '' : 'none';
     document.getElementById('my-guilds-btn').style.display = isSignedIn ? '' : 'none';
+    // Single header CTA now (see the lp-nav markup comment) - was two
+    // separate elements (lp-nav-signin/lp-nav-continue) toggling
+    // visibility; same real behavior, just one element whose label/
+    // action swaps instead.
     if (isLandingPage) {
-      document.getElementById('lp-nav-signin').style.display = isSignedIn ? 'none' : '';
-      document.getElementById('lp-nav-continue').style.display = isSignedIn ? '' : 'none';
+      const cta = document.getElementById('lp-nav-cta');
+      if (cta) {
+        if (isSignedIn) {
+          cta.textContent = 'Continue →';
+          cta.onclick = (e) => { e.preventDefault(); goToMyGuildOrRegister(); };
+        } else {
+          cta.textContent = 'Get started';
+          cta.onclick = (e) => { e.preventDefault(); openSignInGate(); };
+        }
+      }
     }
 
     if (isSignedIn) {
