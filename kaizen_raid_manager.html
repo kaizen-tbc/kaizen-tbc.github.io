@@ -90,6 +90,46 @@
   --kz-font-ui: 'Segoe UI', Arial, sans-serif;
 }
 
+/* Real light theme - values transcribed directly from the approved
+   brand guide (Design/preview/index.html's token table, tokens.json
+   v1.7), not invented. Overrides both the kz-prefixed tokens AND the
+   legacy bg/border/gold/text names, since most of this file's inline
+   styles still read the legacy names directly rather than the kz ones
+   (see the root comment above on why those two sets carry the
+   same values in dark mode) - light mode needs both redefined or half
+   the UI would silently stay dark. Deliberately NOT touching --teal/
+   --red/--red-bright/--green/--green-bright/--purple (class colors,
+   .btn-danger, etc.) - same scoping decision as the original dark
+   retheme: a solid-fill-plus-white-text control can lose real contrast
+   swapped blind, and that's real per-control review this pass didn't
+   do. Toggled by [data-theme="light"] on <html> - see initTheme()/
+   toggleTheme() near the Clerk bootstrap. */
+[data-theme="light"] {
+  --kz-bg: #F4F2EB;
+  --kz-surface: #FFFFFF;
+  --kz-raised: #E9EDE9;
+  --kz-line: #CCD3CF;
+  --kz-control: #718079;
+  --kz-text: #192226;
+  --kz-muted: #53615C;
+  --kz-onaccent: #171C1E;
+  --kz-link: #705014;
+  --kz-success: #216B45;
+  --kz-warning: #805008;
+  --kz-danger: #AE343B;
+  --kz-info: #215D87;
+  --kz-focus: #16677B;
+  --bg-deep: #F4F2EB;
+  --bg-panel: #F4F2EB;
+  --bg-card: #FFFFFF;
+  --bg-hover: #E9EDE9;
+  --border: #CCD3CF;
+  --border-bright: #CCD3CF;
+  --text-bright: #192226;
+  --text-mid: #53615C;
+  --text-dim: #53615C;
+}
+
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 /* overflow-x lives on <html>, not <body> - see below for why this
@@ -2178,6 +2218,25 @@ a[href] > div > div[style*="line-height:1.6"] {
    its own, reused as-is from the manager topbar's .btn class. */
 #public-masthead-account { flex-shrink: 0; }
 #public-masthead-account .btn { white-space: nowrap; }
+/* Shared account-header cluster - same class/structure the approved
+   reference (Design/preview/account-header.css) uses, applied here to
+   the real header (this masthead instance) and again below to the
+   manager topbar's own instance. Order is DOM order = visual order =
+   keyboard order: Manage Guild/Sign in, then theme circle, then
+   avatar - see the owner-approved "header control order" decision. */
+.guild-account-controls { display: flex; align-items: center; gap: 10px; }
+.guild-circle {
+  width: 40px; height: 40px; min-height: 40px; border-radius: 50%; padding: 0;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  border: 1px solid var(--kz-line); background: var(--kz-surface); color: var(--kz-text);
+  cursor: pointer; transition: border-color 0.15s, background 0.15s;
+}
+.guild-circle:hover { border-color: var(--kz-accent); }
+.guild-circle img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+@media (max-width: 650px) {
+  .guild-account-controls { gap: 6px; }
+  .guild-circle { width: 34px; height: 34px; min-height: 34px; }
+}
 @media (max-width: 460px) {
   /* Realm/faction is secondary at this width - drop it before the
      wordmark+account row is forced to wrap or overflow. */
@@ -2529,6 +2588,19 @@ body.landing-mode #landing-page { display: block; }
     src="https://polished-mule-5604.clerk.accounts.dev/npm/@clerk/clerk-js@6/dist/clerk.browser.js"
     type="text/javascript"
   ></script>
+  <!-- Synchronous, inline, and in <head> on purpose - sets data-theme
+       before <body> paints anything, so there's no dark->light flash on
+       a light-mode visitor's first frame. A user's explicit choice
+       (localStorage) wins; otherwise this follows the OS preference
+       live (matches it now AND if the OS setting changes later - see
+       the media-query listener in initThemeToggle further down). -->
+  <script>(function(){
+    try {
+      var saved = localStorage.getItem('kz-theme');
+      var theme = saved || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+      document.documentElement.setAttribute('data-theme', theme);
+    } catch (e) {}
+  })();</script>
 </head><body>
 
 <!-- ==================== KRM MARKETING HOMEPAGE ====================
@@ -2708,7 +2780,7 @@ body.landing-mode #landing-page { display: block; }
          the manager topbar uses (see applyTabPermissions' account-entry
          relocation), just DOM-moved here while !inManageMode so Clerk's
          mounted widget never gets re-mounted twice. -->
-    <div id="public-masthead-account" style="margin-left:auto;display:flex;align-items:center;gap:10px;">
+    <div id="public-masthead-account" class="guild-account-controls" style="margin-left:auto;">
       <!-- The actual "published page vs. CMS" door - only shown to
            someone whose real role has edit access somewhere (see
            hasAnyRealEditAccess), toggled in applyTabPermissions. Lives
@@ -2717,8 +2789,15 @@ body.landing-mode #landing-page { display: block; }
            inside a hidden parent when the account entry moved into the
            masthead (Codex review pass 2), so a signed-in GM/officer had
            no visible way back into manage mode after signing in. Found
-           live 2026-09-10 while walking the manager view with the owner. -->
-      <button class="btn btn-small btn-gold" id="manage-guild-btn" onclick="location.href = '/' + currentGuildSlug + '/manage'" style="display:none;">⚙ Manage this Guild</button>
+           live 2026-09-10 while walking the manager view with the owner.
+           Text now matches the approved shared-header spec ("Manage
+           Guild", not "⚙ Manage this Guild") - same button/id/behavior. -->
+      <button class="btn btn-small btn-gold guild-manage-link" id="manage-guild-btn" onclick="location.href = '/' + currentGuildSlug + '/manage'" style="display:none;">Manage Guild</button>
+      <!-- Shared theme toggle - see toggleTheme()/syncThemeToggleIcon().
+           One real circle per header instance (this one + the manager
+           topbar's own below), not a single shared DOM node - each
+           needs to exist in its own header's flow. -->
+      <button type="button" class="guild-circle theme-toggle-btn" onclick="toggleTheme()" aria-label="Switch theme"></button>
     </div>
   </div>
   <!-- div, not <nav> - the app's own bare nav{flex-direction:column}
@@ -2764,7 +2843,16 @@ body.landing-mode #landing-page { display: block; }
 </header>
 
 <div class="app-content">
-<div class="header-right" id="header-right" style="display:none;">
+<div class="header-right guild-account-controls" id="header-right" style="display:none;">
+    <!-- Save/Settings/My Guilds/Register Guild are real manager-only
+         tools that don't fit the approved shared header's minimal
+         "Manage Guild / theme / avatar" shape (that reference has no
+         equivalent for any of these) - kept here as plain utility
+         buttons ahead of the theme/avatar cluster rather than dropped,
+         so no existing capability is lost while the fuller "Guild
+         settings" destination (see Design/DECISIONS.md's proposed
+         manager IA) isn't built yet. Revisit once that page exists -
+         Settings especially belongs there instead of a header icon. -->
     <button class="btn btn-small btn-gold" id="save-to-github-btn" onclick="saveAppData()" title="Save to the database" style="display:none;">💾 Save</button>
     <button class="btn btn-small" onclick="openSettings()" title="Settings">⚙</button>
     <!-- My Guilds switcher (Phase 3.5) - reuses the same .add-menu/
@@ -2789,6 +2877,7 @@ body.landing-mode #landing-page { display: block; }
          itself is display:none outside manage mode - so it was
          unreachable. Moved to #public-masthead-account, next to the
          header markup above. -->
+    <button type="button" class="guild-circle theme-toggle-btn" onclick="toggleTheme()" aria-label="Switch theme"></button>
     <button class="btn btn-small btn-gold" id="sign-in-btn" onclick="openSignInGate()" style="display:none;">Sign In</button>
     <div id="clerk-user-button" style="display:none;align-items:center;"></div>
 </div>
@@ -12378,6 +12467,53 @@ function getRHConfig() {
     apiKey:   raidHelperApiKey   || localStorage.getItem(RH_APIKEY_KEY) || '',
   };
 }
+
+// Real light/dark - not a fake control (see the [data-theme="light"]
+// CSS block near :root, values transcribed from the approved brand
+// guide). A user's explicit click is remembered (localStorage) and
+// wins from then on; until they click it, this stays live-synced to
+// the OS setting via the media-query listener below, matching the
+// guide's stated default ("Default to the operating system
+// preference... saved locally when storage is available").
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme') || 'dark';
+  const next = current === 'light' ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', next);
+  try { localStorage.setItem('kz-theme', next); } catch (e) {}
+  syncThemeToggleIcon();
+}
+function syncThemeToggleIcon() {
+  const btns = document.querySelectorAll('.theme-toggle-btn');
+  const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+  // Same two hand-drawn SVG glyphs as the approved reference (sun when
+  // dark/showing "switch to light", moon when light/showing "switch to
+  // dark") - not emoji, so it's never at the mercy of a platform font's
+  // text-vs-emoji presentation default.
+  const sunSvg = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"/></svg>';
+  const moonSvg = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 13A8.5 8.5 0 0 1 11 3.5 8.5 8.5 0 1 0 20.5 13Z"/></svg>';
+  btns.forEach(btn => {
+    btn.innerHTML = isLight ? moonSvg : sunSvg;
+    btn.title = isLight ? 'Switch to dark mode' : 'Switch to light mode';
+    btn.setAttribute('aria-label', btn.title);
+  });
+}
+// Live-follows the OS setting until the visitor makes their own explicit
+// choice (see toggleTheme) - matches every other reference page's stated
+// theme behavior, not just a one-time read at load.
+(function initThemeMediaListener() {
+  try {
+    window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', e => {
+      if (localStorage.getItem('kz-theme')) return; // explicit choice already made - OS changes no longer apply
+      document.documentElement.setAttribute('data-theme', e.matches ? 'light' : 'dark');
+      syncThemeToggleIcon();
+    });
+  } catch (e) {}
+})();
+// The toggle buttons are static markup already in the DOM by the time
+// this script tag runs (it's near the end of <body>) - no need to wait
+// for a load/DOMContentLoaded event, just paint the right icon now for
+// whatever data-theme the inline <head> script already set.
+syncThemeToggleIcon();
 
 function openSettings() {
   const cfg = getGHConfig();
