@@ -3330,15 +3330,19 @@ body.landing-mode #landing-page { display: block; }
         <div style="font-size:11px;color:var(--text-dim);margin-top:5px;">Right-click the channel in Discord &#x2192; Copy Channel ID (Developer Mode required)</div>
       </div>
       <!-- Target composition - what "roster readiness" actually compares
-           against. Optional on purpose: leaving every field at 0 means
-           "not configured," and the readiness card/public page fall back
-           to real filled/total with no invented "role needed" claim (see
-           renderCoverage). Set it and the four numbers must sum to this
-           raid's own size - a 10-man and a 25-man just have different
-           totals to hit, not a different shape. -->
+           against. Tank/Healer/DPS, matching the approved design's role
+           model everywhere it's displayed (Melee/Ranged stay real,
+           separate data internally - see roleCounts in renderCoverage -
+           DPS here is just Melee+Ranged combined for THIS comparison).
+           Optional on purpose: leaving every field at 0 means "not
+           configured," and the readiness card/public page fall back to
+           real filled/total with no invented "role needed" claim. Set it
+           and the three numbers must sum to this raid's own size - a
+           10-man and a 25-man just have a different total to hit, never
+           a different shape. -->
       <div class="form-group">
         <label class="form-label">Target Composition <span style="font-weight:400;color:var(--text-dim);">(optional - leave at 0 to skip)</span></label>
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;">
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
           <div>
             <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px;">🛡 Tank</div>
             <input type="number" min="0" class="form-input" id="rs-target-tank" value="0" oninput="updateTargetSumHint()" style="text-align:center;padding:8px 4px;">
@@ -3348,12 +3352,8 @@ body.landing-mode #landing-page { display: block; }
             <input type="number" min="0" class="form-input" id="rs-target-healer" value="0" oninput="updateTargetSumHint()" style="text-align:center;padding:8px 4px;">
           </div>
           <div>
-            <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px;">⚔ Melee</div>
-            <input type="number" min="0" class="form-input" id="rs-target-melee" value="0" oninput="updateTargetSumHint()" style="text-align:center;padding:8px 4px;">
-          </div>
-          <div>
-            <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px;">🏹 Ranged</div>
-            <input type="number" min="0" class="form-input" id="rs-target-ranged" value="0" oninput="updateTargetSumHint()" style="text-align:center;padding:8px 4px;">
+            <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px;">⚔ DPS</div>
+            <input type="number" min="0" class="form-input" id="rs-target-dps" value="0" oninput="updateTargetSumHint()" style="text-align:center;padding:8px 4px;">
           </div>
         </div>
         <div id="rs-target-sum-hint" style="font-size:11px;color:var(--text-dim);margin-top:6px;"></div>
@@ -5429,10 +5429,14 @@ function defaultRaid(name = 'Tuesday 25', size = 25) {
     // Unset -> the readiness card/public page show only real filled/total
     // counts, same as before this field existed (never fabricate a "role
     // needed" claim with nothing to compare against - see D08/renderCoverage).
-    // Set -> {tank,healer,melee,ranged} integers, validated (see
-    // saveRaidSettings) to sum to r.size at save time - the actual answer to
-    // "what happens for a 10-man vs a 25-man": there is no fixed shape, the
-    // 4 numbers just have to add up to whatever THIS raid's real size is.
+    // Set -> {tank,healer,dps} integers (Tank/Healer/DPS, matching the
+    // approved design's role model everywhere it's shown - real per-
+    // player roles stay Melee/Ranged internally, see roleCounts in
+    // renderCoverage, DPS here is just that pair combined for this
+    // comparison), validated (see saveRaidSettings) to sum to r.size at
+    // save time - the actual answer to "what happens for a 10-man vs a
+    // 25-man": there is no fixed shape, the 3 numbers just have to add
+    // up to whatever THIS raid's real size is.
     targets: null,
   };
 }
@@ -9127,22 +9131,22 @@ function openRaidSettings() {
   const t = r.targets;
   document.getElementById('rs-target-tank').value   = t ? t.tank   : 0;
   document.getElementById('rs-target-healer').value = t ? t.healer : 0;
-  document.getElementById('rs-target-melee').value  = t ? t.melee  : 0;
-  document.getElementById('rs-target-ranged').value = t ? t.ranged : 0;
+  document.getElementById('rs-target-dps').value    = t ? t.dps    : 0;
   updateTargetSumHint();
   const delBtn = document.getElementById('rs-delete-btn');
   if (delBtn) { delBtn.title = `Delete ${r.name}`; delBtn.setAttribute('aria-label', `Delete ${r.name}`); }
   document.getElementById('raid-settings-overlay').classList.add('open');
 }
 
-// Live sum feedback while editing target composition - the four numbers
-// have to add up to THIS raid's own size (10-man and 25-man just have
-// different targets to hit, not a different editor). All-zero is valid
-// too - that's how a GM explicitly leaves this raid's readiness unconfigured.
+// Live sum feedback while editing target composition - the three
+// numbers have to add up to THIS raid's own size (10-man and 25-man
+// just have different targets to hit, not a different editor). All-zero
+// is valid too - that's how a GM explicitly leaves this raid's readiness
+// unconfigured.
 function updateTargetSumHint() {
   const r = getActiveRaid();
   const size = r ? (parseInt(document.getElementById('rs-size-input').value) || r.size) : 25;
-  const sum = ['tank','healer','melee','ranged'].reduce((s, role) =>
+  const sum = ['tank','healer','dps'].reduce((s, role) =>
     s + (parseInt(document.getElementById(`rs-target-${role}`).value) || 0), 0);
   const hint = document.getElementById('rs-target-sum-hint');
   if (!hint) return;
@@ -9167,18 +9171,20 @@ function saveRaidSettings() {
   if (!r) return;
   const newSize = parseInt(document.getElementById('rs-size-input').value) || 25;
 
-  // Target composition: all-zero means "unset" (explicitly cleared), any
-  // other total must match the raid size being saved - a 10-man and a
-  // 25-man just have a different number to hit, never a different rule.
+  // Target composition: Tank/Healer/DPS, matching the approved design's
+  // role model (Melee/Ranged stay separate, real data internally - see
+  // roleCounts in renderCoverage - this is just the comparison target).
+  // All-zero means "unset" (explicitly cleared); any other total must
+  // match the raid size being saved - a 10-man and a 25-man just have a
+  // different number to hit, never a different rule.
   const targets = {
     tank:   parseInt(document.getElementById('rs-target-tank').value)   || 0,
     healer: parseInt(document.getElementById('rs-target-healer').value) || 0,
-    melee:  parseInt(document.getElementById('rs-target-melee').value)  || 0,
-    ranged: parseInt(document.getElementById('rs-target-ranged').value) || 0,
+    dps:    parseInt(document.getElementById('rs-target-dps').value)    || 0,
   };
-  const targetSum = targets.tank + targets.healer + targets.melee + targets.ranged;
+  const targetSum = targets.tank + targets.healer + targets.dps;
   if (targetSum !== 0 && targetSum !== newSize) {
-    showToast(`Target composition adds up to ${targetSum}, not ${newSize} - fix it or set all four to 0 to skip.`, true);
+    showToast(`Target composition adds up to ${targetSum}, not ${newSize} - fix it or set all three to 0 to skip.`, true);
     return;
   }
 
@@ -9998,22 +10004,27 @@ function renderCoverage() {
     });
   }
 
-  // Role summary strip - shows a real "X needed" only when this raid has
-  // an actual configured target for that role (see raid.targets/
+  // Role summary strip - Tank/Healer/DPS, matching the approved design's
+  // role model (the reference readiness strip shows exactly these 3,
+  // never a separate Melee/Ranged breakdown here). roleCounts itself
+  // stays real 4-way data above (needed elsewhere - buff coverage,
+  // per-group composition) - dpsCount is just Melee+Ranged combined for
+  // THIS display. Shows a real "X needed" only when this raid has an
+  // actual configured target for that role (see raid.targets/
   // saveRaidSettings); with no target set it's just the honest count,
   // exactly as before targets existed at all.
   const activeRaidForTargets = getActiveRaid();
   const targets = activeRaidForTargets && activeRaidForTargets.targets;
-  const targetKeyByRole = { Tank: 'tank', Healer: 'healer', Melee: 'melee', Ranged: 'ranged' };
+  const displayCounts = { Tank: roleCounts.Tank, Healer: roleCounts.Healer, DPS: roleCounts.Melee + roleCounts.Ranged };
+  const targetKeyByRole = { Tank: 'tank', Healer: 'healer', DPS: 'dps' };
   const roleStrip = [
     { role: 'Tank',   icon: '🛡', color: 'var(--warrior)' },
     { role: 'Healer', icon: '✚', color: 'var(--druid)' },
-    { role: 'Melee',  icon: '⚔', color: 'var(--red-bright)' },
-    { role: 'Ranged', icon: '🏹', color: 'var(--hunter)' },
+    { role: 'DPS',    icon: '⚔', color: 'var(--red-bright)' },
   ].map(r => {
     const target = targets ? targets[targetKeyByRole[r.role]] : null;
-    const needed = target != null ? Math.max(0, target - roleCounts[r.role]) : null;
-    const countText = target != null ? `${roleCounts[r.role]}/${target}` : String(roleCounts[r.role]);
+    const needed = target != null ? Math.max(0, target - displayCounts[r.role]) : null;
+    const countText = target != null ? `${displayCounts[r.role]}/${target}` : String(displayCounts[r.role]);
     return `
     <div style="display:flex;align-items:center;gap:5px;padding:5px 10px;background:var(--bg-hover);border-radius:4px;border:1px solid ${needed > 0 ? 'var(--gold)' : 'var(--border)'};">
       <span style="font-size:13px;">${r.icon}</span>
@@ -10061,7 +10072,7 @@ function renderCoverage() {
   if (totalCountEl) totalCountEl.textContent = `/${readinessTotal}`;
   if (openStatusEl) {
     const neededRoles = targets ? Object.entries(targetKeyByRole)
-      .map(([role, key]) => ({ role, needed: Math.max(0, targets[key] - roleCounts[role]) }))
+      .map(([role, key]) => ({ role, needed: Math.max(0, targets[key] - displayCounts[role]) }))
       .filter(x => x.needed > 0) : [];
     if (readinessTotal === 0) {
       openStatusEl.textContent = 'No groups yet';
@@ -10168,10 +10179,14 @@ function renderPublicRaidsView() {
   // Same real-targets upgrade as the manager readiness card: with no
   // configured target composition this stays exactly the honest
   // filled/open behavior it always was.
+  // Tank/Healer/DPS rollup, matching the approved design and the
+  // manager readiness strip - roleCounts above stays real 4-way data,
+  // pubDisplayCounts.DPS is just Melee+Ranged combined for this display.
+  const pubDisplayCounts = { Tank: roleCounts.Tank, Healer: roleCounts.Healer, DPS: roleCounts.Melee + roleCounts.Ranged };
   const pubTargets = active.targets;
-  const pubTargetKey = { Tank: 'tank', Healer: 'healer', Melee: 'melee', Ranged: 'ranged' };
+  const pubTargetKey = { Tank: 'tank', Healer: 'healer', DPS: 'dps' };
   const pubNeeded = pubTargets ? Object.entries(pubTargetKey)
-    .map(([role, key]) => ({ role, needed: Math.max(0, pubTargets[key] - roleCounts[role]) }))
+    .map(([role, key]) => ({ role, needed: Math.max(0, pubTargets[key] - pubDisplayCounts[role]) }))
     .filter(x => x.needed > 0) : [];
   if (pubTargets && pubNeeded.length > 0) {
     statusEl.textContent = pubNeeded.map(x => `${x.needed} ${x.role.toLowerCase()}${x.needed === 1 ? '' : 's'} needed`).join(' · ');
@@ -10190,12 +10205,12 @@ function renderPublicRaidsView() {
   // same "reduce repeated borders" guidance. Shows "/target" once this
   // raid has one configured, same as the manager strip.
   document.getElementById('public-readiness-roles').innerHTML = [
-    { role: 'Tank' }, { role: 'Healer' }, { role: 'Melee' }, { role: 'Ranged' },
+    { role: 'Tank' }, { role: 'Healer' }, { role: 'DPS' },
   ].map(r => {
     const t = pubTargets ? pubTargets[pubTargetKey[r.role]] : null;
     return `
     <div style="text-align:right;">
-      <div style="font-family:var(--kz-font-display);font-size:22px;color:var(--kz-text);line-height:1;">${roleCounts[r.role]}${t != null ? `<span style="font-size:14px;color:var(--kz-muted);">/${t}</span>` : ''}</div>
+      <div style="font-family:var(--kz-font-display);font-size:22px;color:var(--kz-text);line-height:1;">${pubDisplayCounts[r.role]}${t != null ? `<span style="font-size:14px;color:var(--kz-muted);">/${t}</span>` : ''}</div>
       <div style="font-size:12px;color:var(--kz-muted);text-transform:uppercase;letter-spacing:0.05em;margin-top:2px;">${r.role}</div>
     </div>`;
   }).join('');
