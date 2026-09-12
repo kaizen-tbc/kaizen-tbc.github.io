@@ -3276,27 +3276,24 @@ body.landing-mode #landing-page { display: block; }
        "remain supported in the manager and appear publicly only
        according to current permission policy," and there's no such
        policy/field for them yet, so omitting rather than guessing. -->
+  <!-- Rebuilt to match Design/preview/guild-raids.html 1:1 (owner
+       feedback 2026-09-12: this was a tab-switcher showing one raid's
+       groups, a different content model from the approved dated-
+       schedule design). Now a vertical list of THIS week's real
+       scheduled raids (see getScheduledRaidsThisWeek) - each card is
+       real data: real date/time in guild + server time, real confirmed
+       count and Tank/Healer/DPS gaps (same computation as the manager
+       readiness strip), a real "Encounter plans" link when the raid's
+       linked to one, and a real Discord signup CTA. A raid tab with no
+       scheduleDay set (see Raid Settings) simply never appears here -
+       that's the intended way a one-off "Pug 25" tab stays off the
+       public schedule without a separate visibility flag. -->
   <div id="public-raids-view" class="pub-container" style="display:none;padding-block:48px;">
     <div class="pub-eyebrow">Raid nights</div>
     <h1 class="pub-title">This week's raids.</h1>
-    <p class="pub-subtitle" style="margin-bottom:28px;">Scan the lineup and see who's set for each night.</p>
-    <div id="public-raid-tabs" style="display:flex;gap:28px;overflow-x:auto;margin-bottom:32px;border-bottom:1px solid var(--kz-line);"></div>
-    <div id="public-raids-unavailable" style="display:none;padding:48px 0;color:var(--kz-muted);font-size:16px;">This guild hasn't published a raid lineup yet.</div>
-    <div id="public-raids-content" style="display:none;">
-      <div class="pub-card" style="margin-bottom:32px;display:flex;align-items:center;gap:32px;flex-wrap:wrap;">
-        <div style="display:flex;align-items:baseline;gap:6px;flex-shrink:0;">
-          <span id="public-readiness-filled" class="pub-readiness-number">0</span>
-          <span id="public-readiness-total" style="font-size:18px;color:var(--kz-muted);">/0</span>
-        </div>
-        <div style="flex-shrink:0;">
-          <div style="font-size:16px;font-weight:600;color:var(--kz-text);">Roster slots filled</div>
-          <div id="public-readiness-status" style="font-size:14px;margin-top:4px;"></div>
-        </div>
-        <div id="public-readiness-roles" style="display:flex;gap:24px;align-items:center;flex-wrap:wrap;"></div>
-        <a id="public-raid-signup-cta" href="#" target="_blank" rel="noopener" class="pub-button" style="display:none;flex-shrink:0;margin-left:auto;">Sign up on Discord →</a>
-      </div>
-      <div id="public-raid-groups" style="display:grid;gap:28px;"></div>
-    </div>
+    <p class="pub-subtitle" id="public-raids-week-range" style="margin-bottom:28px;"></p>
+    <div id="public-raids-unavailable" style="display:none;padding:48px 0;color:var(--kz-muted);font-size:16px;">No raids are on the schedule yet.</div>
+    <div id="public-raid-schedule-list" style="display:flex;flex-direction:column;"></div>
   </div>
 </div>
 
@@ -3357,6 +3354,33 @@ body.landing-mode #landing-page { display: block; }
           </div>
         </div>
         <div id="rs-target-sum-hint" style="font-size:11px;color:var(--text-dim);margin-top:6px;"></div>
+      </div>
+      <!-- Real weekly recurrence - what makes this tab a real "raid
+           night" the public Raids page can list with an actual date
+           (see getScheduledRaidsThisWeek/renderPublicRaidsView).
+           Optional: a one-off tab like "Pug 25" just leaves Day at
+           "Not scheduled" and never appears there. -->
+      <div class="form-group" style="margin-top:14px;">
+        <label class="form-label">Weekly Schedule <span style="font-weight:400;color:var(--text-dim);">(optional - shows this raid on the public Raids page)</span></label>
+        <div style="display:grid;grid-template-columns:1.2fr 1fr;gap:8px;">
+          <select class="form-input" id="rs-schedule-day">
+            <option value="">Not scheduled</option>
+            <option value="0">Sunday</option>
+            <option value="1">Monday</option>
+            <option value="2">Tuesday</option>
+            <option value="3">Wednesday</option>
+            <option value="4">Thursday</option>
+            <option value="5">Friday</option>
+            <option value="6">Saturday</option>
+          </select>
+          <input type="time" class="form-input" id="rs-schedule-time">
+        </div>
+        <div style="margin-top:8px;">
+          <label class="form-label">Encounter <span style="font-weight:400;color:var(--text-dim);">(optional - real artwork + Encounter plans link on the public card)</span></label>
+          <select class="form-input" id="rs-encounter-raid">
+            <option value="">None set</option>
+          </select>
+        </div>
       </div>
     </div>
     <div class="modal-footer">
@@ -5309,6 +5333,21 @@ let guildInfo = {
     { label: 'Zul\'Aman', killed: 0, total: 6, image: '' },
     { label: 'Sunwell Plateau', killed: 0, total: 6, image: '' },
   ],
+  // Real IANA zone the GM/officers actually operate in - used to format
+  // every scheduled raid time (see getScheduledRaidsThisWeek) via the
+  // real Intl timezone database, not a hardcoded "ET" assumption.
+  timezone: 'America/New_York',
+  // "Server time" has no real IANA timezone entry (it's a private TBC
+  // Classic server, not a real place) - a GM-editable label plus a
+  // signed hour offset FROM the guild's own timezone (e.g. -2 = server
+  // is 2 hours behind) is the honest mechanism here, matching
+  // Design/DECISIONS.md's own fallback ("ask for a timezone rather than
+  // silently guessing") instead of pretending to resolve a real zone
+  // from realm metadata that doesn't exist for a custom server. This
+  // deliberately does NOT attempt DST-aware absolute-UTC math for the
+  // server side - just a fixed relative offset the GM states directly.
+  serverTimezoneLabel: '',
+  serverOffsetFromGuildHours: null,
 };
 
 // Preset roster from guild screenshots + Excel data
@@ -5438,6 +5477,22 @@ function defaultRaid(name = 'Tuesday 25', size = 25) {
     // 25-man": there is no fixed shape, the 3 numbers just have to add
     // up to whatever THIS raid's real size is.
     targets: null,
+    // Real weekly recurrence - what makes this tab a "raid night" the
+    // public Raids page can actually list with a real date, not just an
+    // editing tab. scheduleDay: 0(Sun)-6(Sat), null = not scheduled (this
+    // raid simply doesn't appear on the public dated schedule - most
+    // common for a one-off "Pug 25" tab). scheduleTime: 24h "HH:MM" in
+    // the GUILD's own timezone (guildInfo.timezone) - stored once,
+    // formatted for display in both guild-local and server time (see
+    // getScheduledRaidsThisWeek). encounterRaid: optional link to a real
+    // RAID_INSTANCES entry, purely so the public schedule card can show
+    // real artwork and a real "Encounter plans" deep link instead of a
+    // generic placeholder - a GM raiding Black Temple on their "Tuesday
+    // 25" tab sets this explicitly; unset stays honest/generic rather
+    // than guessing from the tab's free-text name.
+    scheduleDay: null,
+    scheduleTime: '',
+    encounterRaid: '',
   };
 }
 
@@ -8264,6 +8319,29 @@ function renderOverview() {
           <input type="text" class="form-input" value="${(guildInfo.realm||'').replace(/"/g,'&quot;')}" placeholder="Horde · TBC Classic · PvE"
             onchange="guildInfo.realm=this.value;renderOverview()">
         </div>
+        <!-- Drives real dates/times on the public Raids page (see
+             getScheduledRaidsThisWeek/formatGuildTime/formatServerTime) -
+             not just cosmetic. "Server time" has no real timezone
+             entry (private classic server, not a real place), so it's
+             a plain GM-stated label + hour offset from guild time
+             rather than a fake IANA zone - see the field notes. -->
+        <div class="form-group">
+          <label class="form-label">Guild Timezone</label>
+          <select class="form-input" onchange="guildInfo.timezone=this.value;renderPublicRaidsView()">
+            ${['America/New_York','America/Chicago','America/Denver','America/Los_Angeles','Europe/London','Europe/Berlin','Australia/Sydney'].map(tz =>
+              `<option value="${tz}" ${guildInfo.timezone === tz ? 'selected' : ''}>${tz.replace('_',' ')}</option>`).join('')}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Server Time Label <span style="font-weight:400;color:var(--text-dim);">(e.g. "Dreamscythe")</span></label>
+          <input type="text" class="form-input" value="${(guildInfo.serverTimezoneLabel||'').replace(/"/g,'&quot;')}" placeholder="Leave blank to hide server time"
+            onchange="guildInfo.serverTimezoneLabel=this.value;renderPublicRaidsView()">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Server Time Offset <span style="font-weight:400;color:var(--text-dim);">(hours from guild time, e.g. -2)</span></label>
+          <input type="number" class="form-input" value="${guildInfo.serverOffsetFromGuildHours != null ? guildInfo.serverOffsetFromGuildHours : ''}" placeholder="0"
+            onchange="guildInfo.serverOffsetFromGuildHours=this.value===''?null:parseFloat(this.value);renderPublicRaidsView()">
+        </div>
         <div class="form-group" style="grid-column:1/-1;">
           <label class="form-label">About (tagline shown under guild name)</label>
           ${buildRTE('about', guildInfo.about||'')}
@@ -9133,6 +9211,17 @@ function openRaidSettings() {
   document.getElementById('rs-target-healer').value = t ? t.healer : 0;
   document.getElementById('rs-target-dps').value    = t ? t.dps    : 0;
   updateTargetSumHint();
+  document.getElementById('rs-schedule-day').value = r.scheduleDay != null ? String(r.scheduleDay) : '';
+  document.getElementById('rs-schedule-time').value = r.scheduleTime || '';
+  const encEl = document.getElementById('rs-encounter-raid');
+  if (encEl.options.length <= 1) {
+    RAID_INSTANCES.forEach(raidName => {
+      const opt = document.createElement('option');
+      opt.value = raidName; opt.textContent = raidName;
+      encEl.appendChild(opt);
+    });
+  }
+  encEl.value = r.encounterRaid || '';
   const delBtn = document.getElementById('rs-delete-btn');
   if (delBtn) { delBtn.title = `Delete ${r.name}`; delBtn.setAttribute('aria-label', `Delete ${r.name}`); }
   document.getElementById('raid-settings-overlay').classList.add('open');
@@ -9200,6 +9289,10 @@ function saveRaidSettings() {
   r.rhChannelId          = document.getElementById('rs-rh-channel-input').value.trim();
   r.discordChannelId = document.getElementById('rs-discord-channel-input').value.trim();
   r.targets = targetSum === 0 ? null : targets;
+  const dayVal = document.getElementById('rs-schedule-day').value;
+  r.scheduleDay = dayVal === '' ? null : parseInt(dayVal);
+  r.scheduleTime = document.getElementById('rs-schedule-time').value || '';
+  r.encounterRaid = document.getElementById('rs-encounter-raid').value || '';
   closeRaidSettings();
   renderRaidTabs();
   renderBuilder();
@@ -10114,128 +10207,174 @@ function renderCoverage() {
 // for now). Reads the same live raids/groups state renderBuilder()
 // does, not a parallel model.
 // ======================================================
-function renderPublicRaidsView() {
-  const tabsEl = document.getElementById('public-raid-tabs');
-  const unavailableEl = document.getElementById('public-raids-unavailable');
-  const contentEl = document.getElementById('public-raids-content');
-  if (!tabsEl) return;
+// Real day-of-week names, Sunday-first to match JS Date/getDay() and the
+// Raid Settings day picker (see the rs-schedule-day <select>).
+const WEEKDAY_NAMES = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 
-  if (!canView('weeklyRoster') || !raids.length) {
-    tabsEl.innerHTML = '';
+// Guild-timezone-aware "what weekday/date is it right now" - deliberately
+// NOT the visitor's own browser timezone (a raid's day-of-week should
+// read the same for every visitor, not shift near midnight depending on
+// who's looking) and not the server's fictional one either (see
+// serverOffsetFromGuildHours below for why that's a separate, simpler
+// mechanism). Real IANA conversion via Intl, not a hardcoded offset.
+function getGuildNowParts() {
+  const tz = guildInfo.timezone || 'America/New_York';
+  const fmt = new Intl.DateTimeFormat('en-US', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit', weekday: 'short', hour: '2-digit', minute: '2-digit', hour12: false });
+  const map = {};
+  fmt.formatToParts(new Date()).forEach(p => { map[p.type] = p.value; });
+  const weekdayIdx = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].indexOf(map.weekday);
+  return { year: parseInt(map.year), month: parseInt(map.month), day: parseInt(map.day), weekdayIdx, hour: parseInt(map.hour), minute: parseInt(map.minute) };
+}
+
+// For each scheduled raid (raid.scheduleDay set - see Raid Settings),
+// finds its next real occurrence (today if it's later today, else the
+// next matching weekday within 6 days) and formats a real calendar date/
+// time - not a fixture, not a hardcoded week. Sorted soonest-first.
+function getScheduledRaidsThisWeek() {
+  const now = getGuildNowParts();
+  const todayAsDate = new Date(now.year, now.month - 1, now.day);
+  return raids
+    .filter(r => r.scheduleDay != null && r.scheduleTime)
+    .map(r => {
+      let dayDiff = (r.scheduleDay - now.weekdayIdx + 7) % 7;
+      // If it's today but the scheduled time already passed, this
+      // occurrence is done - show next week's instead of a stale "today".
+      if (dayDiff === 0 && r.scheduleTime) {
+        const [h, m] = r.scheduleTime.split(':').map(Number);
+        if (h < now.hour || (h === now.hour && m <= now.minute)) dayDiff = 7;
+      }
+      const occursOn = new Date(todayAsDate);
+      occursOn.setDate(occursOn.getDate() + dayDiff);
+      return { raid: r, occursOn };
+    })
+    .sort((a, b) => a.occursOn - b.occursOn);
+}
+
+// Guild-local time formatted 12h with the real IANA zone abbreviation
+// (e.g. "8:00 PM EST") for the given calendar date - a real abbreviation,
+// not a hardcoded "ET", and DST-correct since it's derived from an actual
+// Date via Intl rather than a fixed offset.
+function formatGuildTime(occursOn, scheduleTime) {
+  const [h, m] = scheduleTime.split(':').map(Number);
+  const probe = new Date(occursOn.getFullYear(), occursOn.getMonth(), occursOn.getDate(), h, m);
+  const tz = guildInfo.timezone || 'America/New_York';
+  return new Intl.DateTimeFormat('en-US', { timeZone: tz, hour: 'numeric', minute: '2-digit', hour12: true, timeZoneName: 'short' }).format(probe);
+}
+
+// "Server time" - a plain, GM-stated hour offset FROM guild time (see
+// guildInfo.serverOffsetFromGuildHours), not a real timezone conversion.
+// Returns '' (omit entirely) when the GM hasn't set an offset/label -
+// never guess at a fake server timezone.
+function formatServerTime(scheduleTime) {
+  if (guildInfo.serverOffsetFromGuildHours == null || !guildInfo.serverTimezoneLabel) return '';
+  const [h, m] = scheduleTime.split(':').map(Number);
+  let totalMin = h * 60 + m + guildInfo.serverOffsetFromGuildHours * 60;
+  totalMin = ((totalMin % 1440) + 1440) % 1440;
+  const sh = Math.floor(totalMin / 60), sm = totalMin % 60;
+  const period = sh >= 12 ? 'PM' : 'AM';
+  const h12 = sh % 12 === 0 ? 12 : sh % 12;
+  return `${h12}:${String(sm).padStart(2, '0')} ${period} ${guildInfo.serverTimezoneLabel}`;
+}
+
+// Real per-raid readiness - same Tank/Healer/DPS rollup and target-gap
+// math as the manager readiness strip/renderCoverage, just computed for
+// an arbitrary raid rather than always the active one (a scheduled-raids
+// list shows several at once, none of them necessarily "active").
+function computeRaidReadiness(r) {
+  const groupCount = r.size === 10 ? 2 : 5;
+  const roleCounts = { Tank: 0, Healer: 0, Melee: 0, Ranged: 0 };
+  let filled = 0;
+  for (let g = 0; g < groupCount; g++) {
+    ((r.groups || [])[g] || []).forEach(pid => {
+      const p = getPlayerById(pid);
+      if (!p) return;
+      filled++;
+      const role = (r.roleOverrides && r.roleOverrides[p.id]) || p.role;
+      if (roleCounts[role] !== undefined) roleCounts[role]++;
+    });
+  }
+  const displayCounts = { Tank: roleCounts.Tank, Healer: roleCounts.Healer, DPS: roleCounts.Melee + roleCounts.Ranged };
+  const total = groupCount * 5;
+  const targets = r.targets;
+  const targetKey = { Tank: 'tank', Healer: 'healer', DPS: 'dps' };
+  const needed = targets ? Object.entries(targetKey)
+    .map(([role, key]) => ({ role, needed: Math.max(0, targets[key] - displayCounts[role]) }))
+    .filter(x => x.needed > 0) : [];
+  return { filled, total, displayCounts, targets, targetKey, needed };
+}
+
+function renderPublicRaidsView() {
+  const unavailableEl = document.getElementById('public-raids-unavailable');
+  const listEl = document.getElementById('public-raid-schedule-list');
+  const rangeEl = document.getElementById('public-raids-week-range');
+  if (!listEl) return;
+
+  const scheduled = canView('weeklyRoster') ? getScheduledRaidsThisWeek() : [];
+
+  if (rangeEl) {
+    if (scheduled.length) {
+      const fmt = d => d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+      rangeEl.textContent = scheduled.length === 1
+        ? fmt(scheduled[0].occursOn)
+        : `${fmt(scheduled[0].occursOn)} – ${fmt(scheduled[scheduled.length - 1].occursOn)}`;
+    } else {
+      rangeEl.textContent = '';
+    }
+  }
+
+  if (!scheduled.length) {
+    listEl.innerHTML = '';
     unavailableEl.style.display = '';
-    contentEl.style.display = 'none';
     return;
   }
   unavailableEl.style.display = 'none';
-  contentEl.style.display = '';
 
-  const active = getActiveRaid();
-  // Plain, larger links (not the small tab-strip chrome) - a visitor
-  // scans raid nights as page content, not application navigation.
-  tabsEl.innerHTML = raids.map(r => {
-    const isActive = active && r.id === active.id;
-    return `<button class="public-nav-link${isActive ? ' active' : ''}" style="padding:10px 0 14px;font-size:15px;" onclick="switchRaid(${r.id})">${(r.name || '').replace(/"/g, '&quot;')}</button>`;
-  }).join('');
-  if (!active) return;
+  listEl.innerHTML = scheduled.map(({ raid: r, occursOn }) => {
+    const readiness = computeRaidReadiness(r);
+    const img = r.encounterRaid ? raidCardImage(r.encounterRaid) : '';
+    const dayLabel = WEEKDAY_NAMES[occursOn.getDay()];
+    const dateLabel = occursOn.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    const guildTime = formatGuildTime(occursOn, r.scheduleTime);
+    const serverTime = formatServerTime(r.scheduleTime);
 
-  const groupCount = active.size === 10 ? 2 : 5;
-  const roleCounts = { Tank: 0, Healer: 0, Melee: 0, Ranged: 0 };
-  let filled = 0;
-  const groupsHtml = [];
-  // Creative review finding #5: "reduce repeated borders and role
-  // badges"; role reads as quiet text here, matching the Raiders
-  // directory's own row treatment rather than the manager's colored
-  // pill (see roleBadge()).
-  for (let g = 0; g < groupCount; g++) {
-    const members = ((active.groups || [])[g] || []).map(pid => getPlayerById(pid)).filter(Boolean);
-    filled += members.length;
-    const rows = members.map(p => {
-      const role = (active.roleOverrides && active.roleOverrides[p.id]) || p.role;
-      if (roleCounts[role] !== undefined) roleCounts[role]++;
-      const cc = classColor(p.class);
-      // Ivory name + class-colored dot, not raw class-color text - same
-      // contrast fix as the Raiders directory (Codex review pass 2,
-      // finding #3).
-      return `<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px solid var(--kz-line);">
-        <div style="min-width:0;">
-          <span style="font-weight:600;font-size:15px;color:var(--kz-text);"><span class="class-dot" style="background:var(--${cc});"></span>${p.name}</span>
-          <span style="font-size:13px;color:var(--kz-muted);"> · ${p.class}</span>
-        </div>
-        <span style="font-size:14px;color:var(--kz-muted);white-space:nowrap;">${role}</span>
+    const roleRows = [
+      { role: 'Tank', icon: '🛡' }, { role: 'Healer', icon: '✚' }, { role: 'DPS', icon: '⚔' },
+    ].map(rr => {
+      const target = readiness.targets ? readiness.targets[readiness.targetKey[rr.role]] : null;
+      const gap = readiness.needed.find(n => n.role === rr.role);
+      if (target == null) return ''; // no target set for this raid - honest omission, not a fabricated "0 needed"
+      return `<div style="display:flex;align-items:center;gap:10px;padding:6px 0;">
+        <span style="font-size:14px;width:20px;">${rr.icon}</span>
+        <span style="flex:1;font-size:13px;color:${gap ? 'var(--kz-text)' : 'var(--kz-muted)'};">${gap ? `${gap.needed} ${rr.role.toLowerCase()}${gap.needed === 1 ? '' : 's'} needed` : `${rr.role} full`}</span>
+        <span style="font-size:13px;color:var(--kz-muted);">${readiness.displayCounts[rr.role]}/${target}</span>
       </div>`;
-    }).join('') || `<div style="padding:16px 0;color:var(--kz-muted);font-size:14px;font-style:italic;">No one assigned yet.</div>`;
-    groupsHtml.push(`<div class="pub-card" style="padding:20px 24px;">
-      <div style="font-family:var(--kz-font-display);font-size:18px;color:var(--kz-text);margin-bottom:4px;">${((active.groupTitles || [])[g] || `Group ${g + 1}`).replace(/</g, '&lt;')}</div>
-      ${rows}
-    </div>`);
-  }
-  document.getElementById('public-raid-groups').innerHTML = groupsHtml.join('');
+    }).join('');
 
-  const total = groupCount * 5;
-  const open = total - filled;
-  document.getElementById('public-readiness-filled').textContent = filled;
-  document.getElementById('public-readiness-total').textContent = `/${total}`;
-  const statusEl = document.getElementById('public-readiness-status');
-  // Same real-targets upgrade as the manager readiness card: with no
-  // configured target composition this stays exactly the honest
-  // filled/open behavior it always was.
-  // Tank/Healer/DPS rollup, matching the approved design and the
-  // manager readiness strip - roleCounts above stays real 4-way data,
-  // pubDisplayCounts.DPS is just Melee+Ranged combined for this display.
-  const pubDisplayCounts = { Tank: roleCounts.Tank, Healer: roleCounts.Healer, DPS: roleCounts.Melee + roleCounts.Ranged };
-  const pubTargets = active.targets;
-  const pubTargetKey = { Tank: 'tank', Healer: 'healer', DPS: 'dps' };
-  const pubNeeded = pubTargets ? Object.entries(pubTargetKey)
-    .map(([role, key]) => ({ role, needed: Math.max(0, pubTargets[key] - pubDisplayCounts[role]) }))
-    .filter(x => x.needed > 0) : [];
-  if (pubTargets && pubNeeded.length > 0) {
-    statusEl.textContent = pubNeeded.map(x => `${x.needed} ${x.role.toLowerCase()}${x.needed === 1 ? '' : 's'} needed`).join(' · ');
-    statusEl.style.color = 'var(--kz-hover)';
-  } else if (pubTargets) {
-    statusEl.textContent = 'Ready to pull';
-    statusEl.style.color = 'var(--kz-success)';
-  } else if (open > 0) {
-    statusEl.textContent = `${open} open slot${open === 1 ? '' : 's'}`;
-    statusEl.style.color = 'var(--kz-hover)';
-  } else {
-    statusEl.textContent = 'Roster full';
-    statusEl.style.color = 'var(--kz-success)';
-  }
-  // Quiet number+label pairs, not bordered/background badge boxes -
-  // same "reduce repeated borders" guidance. Shows "/target" once this
-  // raid has one configured, same as the manager strip.
-  document.getElementById('public-readiness-roles').innerHTML = [
-    { role: 'Tank' }, { role: 'Healer' }, { role: 'DPS' },
-  ].map(r => {
-    const t = pubTargets ? pubTargets[pubTargetKey[r.role]] : null;
-    return `
-    <div style="text-align:right;">
-      <div style="font-family:var(--kz-font-display);font-size:22px;color:var(--kz-text);line-height:1;">${pubDisplayCounts[r.role]}${t != null ? `<span style="font-size:14px;color:var(--kz-muted);">/${t}</span>` : ''}</div>
-      <div style="font-size:12px;color:var(--kz-muted);text-transform:uppercase;letter-spacing:0.05em;margin-top:2px;">${r.role}</div>
+    const encounterLink = r.encounterRaid
+      ? `<a href="#" onclick="event.preventDefault();showTab('strats',null);setActiveRaid('${r.encounterRaid.replace(/'/g, "\\'")}');" style="font-size:14px;color:var(--kz-link);text-decoration:none;">Encounter plans →</a>`
+      : '';
+    const signupCta = (r.rhChannelId && guildInfo.discord)
+      ? `<a href="${guildInfo.discord}" target="_blank" rel="noopener" class="pub-button" style="margin-top:16px;display:inline-block;">Sign up on Discord →</a>`
+      : '';
+
+    return `<div style="display:flex;gap:24px;padding:32px 0;border-top:1px solid var(--kz-line);flex-wrap:wrap;">
+      ${img ? `<div style="width:160px;height:100px;flex-shrink:0;border-radius:6px;background:url('${img.replace(/'/g, "\\'")}') center/cover;"></div>` : ''}
+      <div style="flex:1;min-width:240px;">
+        <div style="font-size:12px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--kz-accent);">${dayLabel} · ${dateLabel}</div>
+        <div style="font-family:var(--kz-font-display);font-size:28px;color:var(--kz-text);margin:4px 0 8px;">${(r.name || '').replace(/</g, '&lt;')}</div>
+        <div style="font-size:14px;color:var(--kz-muted);">${guildTime}${serverTime ? ` · ${serverTime}` : ''}</div>
+        ${encounterLink ? `<div style="margin-top:8px;">${encounterLink}</div>` : ''}
+      </div>
+      <div style="min-width:220px;">
+        <div style="display:flex;align-items:baseline;gap:6px;">
+          <span style="font-family:var(--kz-font-display);font-size:28px;color:var(--kz-text);">${readiness.filled}</span>
+          <span style="font-size:14px;color:var(--kz-muted);">/ ${readiness.total} confirmed</span>
+        </div>
+        ${roleRows}
+        ${signupCta}
+      </div>
     </div>`;
   }).join('');
-
-  // Discord signup CTA - only shown when this raid actually has a real
-  // signup/import source channel configured (rhChannelId, the one Raid
-  // Helper posts to). There's no stored Discord guild/server ID anywhere
-  // in this app's data (guildInfo.discord is an invite URL, not a guild
-  // ID), so an exact discord.com/channels/<guild>/<channel> deep link
-  // genuinely cannot be constructed honestly right now - rather than
-  // fabricate one, this links to the guild's real invite instead, which
-  // is a true, working link, just not a same-click jump to the specific
-  // channel. See Design/DECISIONS.md's Discord-signup log entry: an
-  // invented URL is explicitly worse than an honestly generic one.
-  const signupEl = document.getElementById('public-raid-signup-cta');
-  if (signupEl) {
-    if (active.rhChannelId && guildInfo.discord) {
-      signupEl.style.display = '';
-      signupEl.href = guildInfo.discord;
-      signupEl.textContent = 'Sign up on Discord →';
-      signupEl.title = `Raid Helper posts this raid's signup in a Discord channel - find it after joining.`;
-    } else {
-      signupEl.style.display = 'none';
-    }
-  }
 }
 
 // ======================================================
