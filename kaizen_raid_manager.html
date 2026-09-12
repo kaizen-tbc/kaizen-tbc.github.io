@@ -3190,22 +3190,22 @@ body.landing-mode #landing-page { display: block; }
     <div style="flex:1;"></div>
   </div>
 
-  <!-- Active raid header -->
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:8px;">
-    <div style="display:flex;align-items:center;gap:8px;">
-      <div>
-        <div style="display:flex;align-items:center;gap:6px;">
-          <div class="section-title" id="active-raid-title" style="margin-bottom:0;">Weekly Roster</div>
-          <button class="krm-edit-only" onclick="openRaidSettings()" title="Raid Settings"
-            style="background:var(--bg-hover);border:none;color:var(--text-dim);cursor:pointer;font-size:13px;padding:4px 6px;line-height:1;transition:all 0.15s;border-radius:3px;"
-            onmouseover="this.style.color='var(--gold)';this.style.background='var(--bg-card)'" onmouseout="this.style.color='var(--text-dim)';this.style.background='var(--bg-hover)'">⚙</button>
-        </div>
-        <div class="section-subtitle" id="active-raid-subtitle" style="margin:0;">Select or add a raid tab above</div>
-      </div>
+  <!-- Active raid header - matches Design/preview/manager-preview.html's
+       three-separate-buttons row (Raid settings / Import roster /
+       Preview Discord post) instead of a gear icon inline with the
+       title plus two buttons. "Preview Discord post" (not "Post to
+       Discord") since confirmPublishRoster() already opens a real
+       confirm dialog first - the label was inaccurate before this,
+       not just differently styled. -->
+  <div style="margin-bottom:20px;">
+    <div style="display:flex;align-items:center;gap:6px;">
+      <div class="section-title" id="active-raid-title" style="margin-bottom:0;">Weekly Roster</div>
     </div>
-    <div class="krm-edit-only" style="display:flex;gap:6px;align-items:center;">
-      <button class="btn btn-small" style="background:rgba(88,101,242,0.15);border-color:#5865F2;color:#7289da;" onclick="openRaidHelperImport()">⬇ Import Roster</button>
-      <button class="btn btn-small" style="background:#5865F2;border-color:#4752c4;color:#fff;font-weight:700;" onclick="confirmPublishRoster()">↑ Post to Discord</button>
+    <div class="section-subtitle" id="active-raid-subtitle" style="margin:0 0 12px;">Select or add a raid tab above</div>
+    <div class="krm-edit-only" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+      <button class="btn btn-small" onclick="openRaidSettings()">Raid settings</button>
+      <button class="btn btn-small" style="background:rgba(88,101,242,0.15);border-color:#5865F2;color:#7289da;" onclick="openRaidHelperImport()">Import roster</button>
+      <button class="btn btn-small btn-gold" onclick="confirmPublishRoster()">Preview Discord post →</button>
     </div>
   </div>
 
@@ -3232,19 +3232,28 @@ body.landing-mode #landing-page { display: block; }
       <div style="font-size:13px;font-weight:600;color:var(--text-bright);">Roster slots filled</div>
       <div id="readiness-open-status" style="font-size:12px;margin-top:2px;"></div>
     </div>
-    <div id="role-count-strip" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-left:auto;"></div>
+    <div id="role-count-strip" style="display:flex;flex-direction:column;margin-left:auto;min-width:200px;"></div>
   </div>
 
-  <!-- Coverage buff icons -->
-  <div id="builder-coverage" style="margin-bottom:16px;"></div>
+  <!-- Coverage buff icons - collapsible disclosure (Design/preview/
+       manager-preview.html: "▸ Buff coverage / Review assigned classes
+       & specs"), not always-open. Populated in renderCoverage(); the
+       <details> element itself needs no JS to open/close. -->
+  <details id="buff-coverage-details" style="margin-bottom:16px;">
+    <summary style="cursor:pointer;font-size:13px;font-weight:600;color:var(--text-bright);list-style:none;display:flex;align-items:center;gap:6px;">
+      <span class="buff-coverage-arrow" style="display:inline-block;transition:transform 0.15s;">▸</span> Buff coverage
+      <span style="font-weight:400;color:var(--text-dim);font-size:12px;">Review assigned classes &amp; specs</span>
+    </summary>
+    <div id="builder-coverage" style="margin-top:10px;"></div>
+  </details>
 
-  <!-- Secondary actions -->
-  <div class="krm-edit-only" style="display:flex;gap:6px;align-items:center;margin-bottom:14px;flex-wrap:wrap;">
-    <button class="btn btn-small" onclick="openGuildieModal()">+ Guildie</button>
-    <button class="btn btn-small" onclick="openPugModal()">+ Pug</button>
-    <button class="btn btn-small" onclick="clearGroupsToPool()">Clear</button>
-    <button class="btn btn-small btn-gold" onclick="autoFillGroups()">Auto-Fill</button>
-  </div>
+  <!-- Secondary actions - "+ Add ▾" (Guildie/Pug, was two separate
+       buttons) + Clear groups + Auto-Fill + helper text, matching
+       Design/preview/manager-preview.html. Populated by
+       renderWeeklyRosterActions() (see renderBuilder) since the +Add
+       dropdown reuses the addMenuHtml() component, which builds its
+       HTML at render time rather than living as static markup. -->
+  <div class="krm-edit-only" id="weekly-roster-actions" style="display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap;"></div>
 
   <div class="groups-container" id="groups-container"></div>
 
@@ -9339,6 +9348,7 @@ function renderBuilder() {
   // syncGroupsToActiveRaid's comment. Every group edit funnels through
   // this function, so this is the one place that guarantees it happens.
   syncGroupsToActiveRaid();
+  renderWeeklyRosterActions();
 
   const groupCount = getGroupCount();
   const container = document.getElementById('groups-container');
@@ -10118,19 +10128,25 @@ function renderCoverage() {
   const targets = activeRaidForTargets && activeRaidForTargets.targets;
   const displayCounts = { Tank: roleCounts.Tank, Healer: roleCounts.Healer, DPS: roleCounts.Melee + roleCounts.Ranged };
   const targetKeyByRole = { Tank: 'tank', Healer: 'healer', DPS: 'dps' };
-  const roleStrip = [
-    { role: 'Tank',   icon: '🛡', color: 'var(--warrior)' },
-    { role: 'Healer', icon: '✚', color: 'var(--druid)' },
-    { role: 'DPS',    icon: '⚔', color: 'var(--red-bright)' },
+  // Plain list rows, not pill badges - matches Design/preview/
+  // manager-preview.html's readiness treatment (and the public Raids
+  // page's own roleRows, for the same reason: consistency). Only shown
+  // once a target exists at all - with no target configured, this
+  // stays empty and the readiness-open-status line below carries the
+  // (honest, non-role-specific) open-slot count alone, same as before
+  // targets existed.
+  const roleStrip = !targets ? '' : [
+    { role: 'Tank',   icon: '🛡' },
+    { role: 'Healer', icon: '✚' },
+    { role: 'DPS',    icon: '⚔' },
   ].map(r => {
-    const target = targets ? targets[targetKeyByRole[r.role]] : null;
-    const needed = target != null ? Math.max(0, target - displayCounts[r.role]) : null;
-    const countText = target != null ? `${displayCounts[r.role]}/${target}` : String(displayCounts[r.role]);
+    const target = targets[targetKeyByRole[r.role]];
+    const needed = Math.max(0, target - displayCounts[r.role]);
     return `
-    <div style="display:flex;align-items:center;gap:5px;padding:5px 10px;background:var(--bg-hover);border-radius:4px;border:1px solid ${needed > 0 ? 'var(--gold)' : 'var(--border)'};">
-      <span style="font-size:13px;">${r.icon}</span>
-      <span style="font-family:'Cinzel',serif;font-size:13px;font-weight:700;color:${needed > 0 ? 'var(--gold)' : r.color};">${countText}</span>
-      <span style="font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.05em;">${r.role}${needed > 0 ? ` · ${needed} needed` : ''}</span>
+    <div style="display:flex;align-items:center;gap:10px;padding:3px 0;">
+      <span style="font-size:13px;width:18px;">${r.icon}</span>
+      <span style="flex:1;font-size:13px;color:${needed > 0 ? 'var(--gold)' : 'var(--text-dim)'};">${needed > 0 ? `${needed} ${r.role.toLowerCase()}${needed === 1 ? '' : 's'} needed` : `${r.role} full`}</span>
+      <span style="font-size:12px;color:var(--text-dim);">${displayCounts[r.role]}/${target}</span>
     </div>`;
   }).join('');
 
@@ -11140,6 +11156,34 @@ document.addEventListener('click', (e) => {
     document.querySelectorAll('.add-menu.open').forEach(el => el.classList.remove('open'));
   }
 });
+
+// Weekly Roster's "▸ Buff coverage" disclosure arrow - the <details>
+// element itself needs no JS to open/close, just this cosmetic rotate.
+document.getElementById('buff-coverage-details')?.addEventListener('toggle', function () {
+  const arrow = this.querySelector('.buff-coverage-arrow');
+  if (arrow) arrow.style.transform = this.open ? 'rotate(90deg)' : '';
+});
+
+// "+ Add ▾" (Guildie/Pug) + Clear groups + Auto-Fill + helper text -
+// Design/preview/manager-preview.html's consolidated action row,
+// replacing four separate always-visible buttons. Rendered via JS (not
+// static markup) because the +Add dropdown reuses addMenuHtml(), which
+// builds its HTML at render time. Called from renderBuilder() so it
+// stays in sync with whatever raid is active (though nothing here
+// actually varies per-raid yet - kept as its own function since it's
+// a distinct visual unit, not because the content depends on activeRaid).
+function renderWeeklyRosterActions() {
+  const el = document.getElementById('weekly-roster-actions');
+  if (!el) return;
+  const addMenu = addMenuHtml('weekly-roster-add', [
+    { label: '+ Guildie', onclick: 'openGuildieModal()' },
+    { label: '+ Pug', onclick: 'openPugModal()' },
+  ], `<button class="btn btn-small" onclick="%TOGGLE%">+ Add ▾</button>`);
+  el.innerHTML = `${addMenu}
+    <button class="btn btn-small" onclick="clearGroupsToPool()">Clear groups</button>
+    <button class="btn btn-small btn-gold" onclick="autoFillGroups()">Auto-Fill</button>
+    <span style="font-size:12px;color:var(--text-dim);">Drag players, or select one to edit &amp; move.</span>`;
+}
 
 // The Strats landing page - one big card per RAID_INSTANCES entry,
 // always all 7, never disabled (unlike the old raid-pill row this
