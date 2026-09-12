@@ -13614,11 +13614,20 @@ function renderMapToolbar(strat) {
     onclick: `addMarkMapPin(${strat.id},'${m.key}')`,
   })), `<button class="btn btn-small" onclick="%TOGGLE%" title="Add a raid target marker (skull, star, etc.)">＋ Mark</button>`);
 
+  // + Group - one entry per role color, same convention as the Generic
+  // row's plain unassigned-role pins, just creating a real named/membered
+  // pin instead of a live filter (see addGroupMapPin).
+  const groupMenuHtml = addMenuHtml('group', MAP_PIN_ROLES.map(r => ({
+    label: `${mapRoleIconHtml(r.key, '16')} ${r.key} group`,
+    onclick: `addGroupMapPin(${strat.id},'${r.key}')`,
+  })), `<button class="btn btn-small" onclick="%TOGGLE%" title="Place a named assignment group - real membership, not just a generic role marker">＋ Group</button>`);
+
   return `<div class="map-toolbar krm-edit-only">
     <span style="font-size:11px;color:var(--text-dim);">Generic:</span>
     ${roleBtns}
     <div class="divider"></div>
     <button class="btn btn-small" onclick="openPickerForNewPin(${strat.id})" title="Place a specific person on the map">＋ Player</button>
+    ${groupMenuHtml}
     <button class="btn btn-small" onclick="addTextMapPin(${strat.id})" title="Drop a free text label">＋ Text</button>
     ${mobMenuHtml}
     ${markMenuHtml}
@@ -13769,6 +13778,20 @@ function renderOneMapPin(strat, pin) {
     // shows on hover via the title tooltip.
     labelHtml = '';
     title = `${pin.role} - generic marker, ${count} currently unassigned`;
+  } else if (pin.kind === 'group') {
+    // Same icon language as a plain 'role' pin (so the role reads at a
+    // glance) but SOLID-filled and always labeled - "make the pin visibly
+    // identifiable as a group... do not make generic role art the only
+    // identifying information" (see Design/DECISIONS.md's group-
+    // assignments spec). The member count is the same small corner badge
+    // a mob pin's phase count uses, not a repeated "(3)" in the label.
+    role = pin.role;
+    iconHtml = mapRoleIconHtml(pin.role, '100%');
+    const meta = pinRoleMeta(pin.role);
+    badgeStyle = `background:${meta.color};border-color:${meta.color};`;
+    labelHtml = pin.label || 'Group';
+    const memberCount = (pin.memberIds || []).length;
+    title = `${pin.label || 'Group'} (${pin.role}) - ${memberCount} member${memberCount === 1 ? '' : 's'}${pin.instruction ? ': ' + pin.instruction : ''}`;
   } else if (pin.kind === 'mob') {
     // No inline overflow:hidden on the badge itself here (unlike player
     // pins) - the facing handle below needs to poke slightly past the
@@ -13821,22 +13844,80 @@ function renderOneMapPin(strat, pin) {
   // way to quiet just one of them.
   const labelStyle = pin.kind === 'mob' ? (pin.showLabel === false ? 'display:none;' : 'display:block;') : '';
 
+  // Member-count corner badge - same small absolute-positioned treatment
+  // as the boss-portrait row's phase count, just for how many real
+  // roster members this group pin actually has.
+  const groupCountHtml = pin.kind === 'group' && (pin.memberIds || []).length > 0
+    ? `<div style="position:absolute;top:-4px;right:-4px;min-width:15px;height:15px;padding:0 3px;border-radius:8px;background:var(--gold);color:#0a0b0d;font-size:9px;font-weight:800;display:flex;align-items:center;justify-content:center;">${pin.memberIds.length}</div>`
+    : '';
+
   return `<div class="map-pin ${isFocused ? 'focused' : 'idle'} ${filled ? 'filled' : ''} ${isLinked ? 'linked' : ''}"
     data-role="${role}" data-kind="${pin.kind}" data-id="${pin.id}" ${pin.kind === 'player' && pin.playerId != null ? `data-player-id="${pin.playerId}"` : ''}
     style="left:${pin.x}%;top:${pin.y}%;"
     title="${title.replace(/"/g, '&quot;')}"
     onpointerdown="onMapPinPointerDown(event, ${strat.id}, ${pin.id})">
-    <div class="map-pin-badge" style="${badgeStyle}">${iconHtml}${facingHtml}</div>
+    <div class="map-pin-badge" style="${badgeStyle};position:relative;">${iconHtml}${facingHtml}${groupCountHtml}</div>
     ${labelHtml ? `<div class="map-pin-label" style="${labelStyle}">${labelHtml}</div>` : ''}
   </div>${isFocused ? renderMapPopover(strat, pin) : ''}`;
 }
 
 function renderMapPopover(strat, pin) {
-  if (!canEdit('strats')) return '';
+  // Every other pin kind stays fully edit-only, same as always - a group
+  // pin is the one exception, on purpose: "Clicking the generic ranged
+  // pin selects Group 2 and shows its shared instruction and member
+  // list" is real, intended VISITOR behavior (see Design/DECISIONS.md's
+  // group-assignments spec), not an editing surface. The public branch
+  // below is read-only (no label/role/instruction inputs, no delete
+  // button, no membership checkboxes) - see the canEdit check further
+  // down inside the popover shell itself.
+  if (!canEdit('strats') && pin.kind !== 'group') return '';
   let title = 'Edit pin';
   let body = '';
 
-  if (pin.kind === 'player') {
+  if (pin.kind === 'group') {
+    const meta = pinRoleMeta(pin.role);
+    const members = (pin.memberIds || []).map(id => getPlayerById(id)).filter(Boolean);
+    if (!canEdit('strats')) {
+      // Read-only visitor view - name, role, shared instruction, and
+      // exactly who's in it. No edit affordances at all.
+      title = pin.label || 'Group';
+      body = `
+        <div style="font-size:11px;color:${meta.color};font-weight:700;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:8px;">${pin.role}</div>
+        ${pin.instruction ? `<div style="font-size:13px;color:var(--text-bright);margin-bottom:12px;line-height:1.4;">${pin.instruction.replace(/</g, '&lt;')}</div>` : ''}
+        <div class="map-popover-list">
+          ${members.length
+            ? members.map(p => `<div class="map-popover-list-item">${p.name}</div>`).join('')
+            : `<div class="map-popover-list-item" style="color:var(--text-dim);">No members assigned yet.</div>`}
+        </div>`;
+    } else {
+      // Manager editor - name it, pick its role/color, write the shared
+      // instruction, then pick real roster members. Membership list
+      // scrolls independently so a big roster doesn't blow out the
+      // popover's height (same idea as the mob-pin popover's own
+      // scoped-width override below).
+      const allRoster = getActiveRaiders();
+      const memberIdSet = new Set((pin.memberIds || []).map(Number));
+      const roleBtns = MAP_PIN_ROLES.map(r => `<button class="map-role-btn"
+          style="border-color:${r.color};color:${pin.role === r.key ? '#fff' : r.color};background:${pin.role === r.key ? r.color : 'transparent'};"
+          title="${r.key}" onclick="setGroupPinRole(${strat.id},${pin.id},'${r.key}')">${mapRoleIconHtml(r.key, '16')}</button>`).join('');
+      title = pin.label || 'Group';
+      body = `
+        <input type="text" class="form-input" style="width:100%;margin-bottom:10px;" value="${(pin.label || '').replace(/"/g, '&quot;')}"
+          placeholder="Group name" onchange="setGroupPinLabel(${strat.id},${pin.id},this.value)"
+          onkeydown="if(event.key==='Enter') this.blur();">
+        <div style="display:flex;gap:8px;justify-content:center;margin-bottom:12px;">${roleBtns}</div>
+        <textarea class="form-input" style="width:100%;min-height:50px;resize:vertical;margin-bottom:12px;font-size:12px;" placeholder="Shared instruction, e.g. &quot;DPS from this position&quot;"
+          onchange="setGroupPinInstruction(${strat.id},${pin.id},this.value)">${(pin.instruction || '').replace(/</g, '&lt;')}</textarea>
+        <div style="font-size:10.5px;color:var(--text-dim);margin-bottom:6px;">Members (${members.length})</div>
+        <div class="map-popover-list" style="max-height:160px;overflow-y:auto;">
+          ${allRoster.length ? allRoster.map(p => `
+            <label style="display:flex;align-items:center;gap:7px;padding:4px 0;font-size:12px;color:var(--text-mid);cursor:pointer;">
+              <input type="checkbox" ${memberIdSet.has(Number(p.id)) ? 'checked' : ''} onchange="toggleGroupPinMember(${strat.id},${pin.id},${p.id})">
+              ${p.name.replace(/</g, '&lt;')}
+            </label>`).join('') : `<div class="map-popover-list-item" style="color:var(--text-dim);">No roster loaded for this raid yet.</div>`}
+        </div>`;
+    }
+  } else if (pin.kind === 'player') {
     // Deliberately no assignment/job preview here anymore - focusing this
     // pin already highlights the matching row-card on the right (see
     // applyRowCardHighlight), which shows the real, editable thing
@@ -13989,11 +14070,17 @@ function renderMapPopover(strat, pin) {
   // Mob's and text's popovers carry more controls than any other kind - a
   // bit wider so that list doesn't feel squeezed inside the same 230px
   // every other, sparser popover uses.
-  const popoverWidth = (pin.kind === 'mob' || pin.kind === 'text') ? 270 : 230;
+  const popoverWidth = (pin.kind === 'mob' || pin.kind === 'text' || pin.kind === 'group') ? 270 : 230;
+  // Delete only ever shown to someone who can actually edit - a visitor
+  // viewing a group pin's read-only detail gets no destructive control
+  // at all, same as every other public-visible piece of this popover.
+  const deleteBtnHtml = canEdit('strats')
+    ? `<button style="background:none;border:none;color:var(--red-bright);cursor:pointer;font-size:18px;line-height:1;padding:2px;" onclick="removeMapPin(${strat.id},${pin.id})" title="Delete pin">🗑</button>`
+    : '';
   return `<div class="map-popover" style="left:calc(${pin.x}% + 24px);top:calc(${pin.y}% - 10px);width:${popoverWidth}px;" onpointerdown="event.stopPropagation()">
     <div class="map-popover-head">
       <span class="map-popover-title">${title}</span>
-      <button style="background:none;border:none;color:var(--red-bright);cursor:pointer;font-size:18px;line-height:1;padding:2px;" onclick="removeMapPin(${strat.id},${pin.id})" title="Delete pin">🗑</button>
+      ${deleteBtnHtml}
     </div>
     ${body}
   </div>`;
@@ -14110,6 +14197,48 @@ function addRoleMapPin(sid, role) {
   addMapPin(sid, 'role', { role });
   refreshMapPins(sid);
   showToast(`📍 ${role} pin dropped in the center - drag it into position.`);
+}
+
+// A named assignment group - real membership (memberIds, actual roster
+// player ids), not a decorative role marker. Distinct on purpose from a
+// plain 'role' pin (which just live-filters "who's currently unassigned
+// in this role" - see unassignedPlayersInRole): a group is an assignable
+// entity someone actually belongs to, same as a specific player pin, just
+// shared by several people at once. Also distinct from a WoW raid party -
+// "Group 2" here has no relationship to raid party 2 unless a manager
+// explicitly puts those same people in it. Lands focused so its popover
+// (label/role/instruction/membership) opens immediately, same as a fresh
+// text pin - there's nothing useful to look at until it's actually named.
+function addGroupMapPin(sid, role) {
+  const pin = addMapPin(sid, 'group', { role, label: `Group`, instruction: '', memberIds: [] });
+  if (!pin) return;
+  _mapFocusedPinId = pin.id;
+  refreshMapPins(sid);
+  showToast(`📍 Group pin dropped - name it and pick its members.`);
+}
+
+function setGroupPinLabel(sid, pinId, val) {
+  const pin = getPin(sid, pinId);
+  if (pin) pin.label = val;
+}
+function setGroupPinInstruction(sid, pinId, val) {
+  const pin = getPin(sid, pinId);
+  if (pin) pin.instruction = val;
+}
+function setGroupPinRole(sid, pinId, role) {
+  const pin = getPin(sid, pinId);
+  if (!pin) return;
+  pin.role = role;
+  refreshMapPins(sid); // icon color depends on role
+}
+function toggleGroupPinMember(sid, pinId, playerId) {
+  const pin = getPin(sid, pinId);
+  if (!pin) return;
+  if (!pin.memberIds) pin.memberIds = [];
+  const pid = Number(playerId);
+  const i = pin.memberIds.indexOf(pid);
+  if (i === -1) pin.memberIds.push(pid); else pin.memberIds.splice(i, 1);
+  refreshMapPins(sid); // member count badge
 }
 // A real floating text block (see renderTextMapPin), not a note-pin you
 // click to open a popover - defaults land it already in edit mode with
