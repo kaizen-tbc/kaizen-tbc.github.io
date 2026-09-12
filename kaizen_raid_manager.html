@@ -2224,7 +2224,12 @@ a[href] > div > div[style*="line-height:1.6"] {
    manager topbar's own instance. Order is DOM order = visual order =
    keyboard order: Manage Guild/Sign in, then theme circle, then
    avatar - see the owner-approved "header control order" decision. */
-.guild-account-controls { display: flex; align-items: center; gap: 10px; }
+.guild-account-controls { display: flex; align-items: center; gap: 16px; }
+/* Matches the 40px/34px circles (.guild-circle) in height, per the
+   approved reference's own min-height:40px spec for this button - it
+   was quietly relying on .btn/.btn-small's plain text padding before,
+   which comes out shorter than either circle next to it. */
+.guild-manage-link { height: 40px; display: flex; align-items: center; box-sizing: border-box; }
 .guild-circle {
   width: 40px; height: 40px; min-height: 40px; border-radius: 50%; padding: 0;
   display: flex; align-items: center; justify-content: center; flex-shrink: 0;
@@ -2241,8 +2246,9 @@ a[href] > div > div[style*="line-height:1.6"] {
    sizing on this element otherwise wins on specificity. */
 .kz-clerk-avatar { width: 40px !important; height: 40px !important; }
 @media (max-width: 650px) {
-  .guild-account-controls { gap: 6px; }
+  .guild-account-controls { gap: 10px; }
   .guild-circle { width: 34px; height: 34px; min-height: 34px; }
+  .guild-manage-link { height: 34px; }
   .kz-clerk-avatar { width: 34px !important; height: 34px !important; }
 }
 @media (max-width: 460px) {
