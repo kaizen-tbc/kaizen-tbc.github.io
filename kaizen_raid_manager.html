@@ -3203,7 +3203,8 @@ body.landing-mode #landing-page { display: block; }
           <div style="font-size:16px;font-weight:600;color:var(--kz-text);">Roster slots filled</div>
           <div id="public-readiness-status" style="font-size:14px;margin-top:4px;"></div>
         </div>
-        <div id="public-readiness-roles" style="display:flex;gap:24px;align-items:center;flex-wrap:wrap;margin-left:auto;"></div>
+        <div id="public-readiness-roles" style="display:flex;gap:24px;align-items:center;flex-wrap:wrap;"></div>
+        <a id="public-raid-signup-cta" href="#" target="_blank" rel="noopener" class="pub-button" style="display:none;flex-shrink:0;margin-left:auto;">Sign up on Discord →</a>
       </div>
       <div id="public-raid-groups" style="display:grid;gap:28px;"></div>
     </div>
@@ -3224,7 +3225,7 @@ body.landing-mode #landing-page { display: block; }
       </div>
       <div class="form-group" style="margin-bottom:14px;">
         <label class="form-label">Size</label>
-        <select class="form-input" id="rs-size-input">
+        <select class="form-input" id="rs-size-input" onchange="updateTargetSumHint()">
           <option value="25">25-Man</option>
           <option value="10">10-Man</option>
         </select>
@@ -3234,14 +3235,43 @@ body.landing-mode #landing-page { display: block; }
         <input type="text" class="form-input" id="rs-rh-channel-input" placeholder="Discord channel ID where RH posts this raid">
         <div style="font-size:11px;color:var(--text-dim);margin-top:5px;">Right-click the channel in Discord &#x2192; Copy Channel ID (requires Developer Mode)</div>
       </div>
-      <div class="form-group">
+      <div class="form-group" style="margin-bottom:14px;">
         <label class="form-label">Post-to Discord Channel ID</label>
         <input type="text" class="form-input" id="rs-discord-channel-input" placeholder="Discord channel ID where roster will be posted">
         <div style="font-size:11px;color:var(--text-dim);margin-top:5px;">Right-click the channel in Discord &#x2192; Copy Channel ID (Developer Mode required)</div>
       </div>
+      <!-- Target composition - what "roster readiness" actually compares
+           against. Optional on purpose: leaving every field at 0 means
+           "not configured," and the readiness card/public page fall back
+           to real filled/total with no invented "role needed" claim (see
+           renderCoverage). Set it and the four numbers must sum to this
+           raid's own size - a 10-man and a 25-man just have different
+           totals to hit, not a different shape. -->
+      <div class="form-group">
+        <label class="form-label">Target Composition <span style="font-weight:400;color:var(--text-dim);">(optional - leave at 0 to skip)</span></label>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;">
+          <div>
+            <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px;">🛡 Tank</div>
+            <input type="number" min="0" class="form-input" id="rs-target-tank" value="0" oninput="updateTargetSumHint()" style="text-align:center;padding:8px 4px;">
+          </div>
+          <div>
+            <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px;">✚ Healer</div>
+            <input type="number" min="0" class="form-input" id="rs-target-healer" value="0" oninput="updateTargetSumHint()" style="text-align:center;padding:8px 4px;">
+          </div>
+          <div>
+            <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px;">⚔ Melee</div>
+            <input type="number" min="0" class="form-input" id="rs-target-melee" value="0" oninput="updateTargetSumHint()" style="text-align:center;padding:8px 4px;">
+          </div>
+          <div>
+            <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px;">🏹 Ranged</div>
+            <input type="number" min="0" class="form-input" id="rs-target-ranged" value="0" oninput="updateTargetSumHint()" style="text-align:center;padding:8px 4px;">
+          </div>
+        </div>
+        <div id="rs-target-sum-hint" style="font-size:11px;color:var(--text-dim);margin-top:6px;"></div>
+      </div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-danger btn-small" onclick="deleteActiveRaid()" style="margin-right:auto;">Delete Raid</button>
+      <button class="btn btn-danger btn-small" id="rs-delete-btn" onclick="deleteActiveRaid()" style="margin-right:auto;width:34px;padding:0;display:flex;align-items:center;justify-content:center;font-size:14px;" title="Delete raid" aria-label="Delete raid">🗑</button>
       <button class="btn" onclick="closeRaidSettings()">Cancel</button>
       <button class="btn btn-gold" onclick="saveRaidSettings()">Save</button>
     </div>
@@ -5305,6 +5335,16 @@ function defaultRaid(name = 'Tuesday 25', size = 25) {
     // even though they were never actually added to that tab's own pool.
     // Per-raid now, matching everything else above.
     guildies: [],
+    // Target role composition for THIS raid - null means "not configured,"
+    // which must stay a real, distinct state from "configured as zero."
+    // Unset -> the readiness card/public page show only real filled/total
+    // counts, same as before this field existed (never fabricate a "role
+    // needed" claim with nothing to compare against - see D08/renderCoverage).
+    // Set -> {tank,healer,melee,ranged} integers, validated (see
+    // saveRaidSettings) to sum to r.size at save time - the actual answer to
+    // "what happens for a 10-man vs a 25-man": there is no fixed shape, the
+    // 4 numbers just have to add up to whatever THIS raid's real size is.
+    targets: null,
   };
 }
 
@@ -8995,7 +9035,38 @@ function openRaidSettings() {
   document.getElementById('rs-size-input').value            = String(r.size);
   document.getElementById('rs-rh-channel-input').value      = r.rhChannelId || '';
   document.getElementById('rs-discord-channel-input').value = r.discordChannelId || '';
+  const t = r.targets;
+  document.getElementById('rs-target-tank').value   = t ? t.tank   : 0;
+  document.getElementById('rs-target-healer').value = t ? t.healer : 0;
+  document.getElementById('rs-target-melee').value  = t ? t.melee  : 0;
+  document.getElementById('rs-target-ranged').value = t ? t.ranged : 0;
+  updateTargetSumHint();
+  const delBtn = document.getElementById('rs-delete-btn');
+  if (delBtn) { delBtn.title = `Delete ${r.name}`; delBtn.setAttribute('aria-label', `Delete ${r.name}`); }
   document.getElementById('raid-settings-overlay').classList.add('open');
+}
+
+// Live sum feedback while editing target composition - the four numbers
+// have to add up to THIS raid's own size (10-man and 25-man just have
+// different targets to hit, not a different editor). All-zero is valid
+// too - that's how a GM explicitly leaves this raid's readiness unconfigured.
+function updateTargetSumHint() {
+  const r = getActiveRaid();
+  const size = r ? (parseInt(document.getElementById('rs-size-input').value) || r.size) : 25;
+  const sum = ['tank','healer','melee','ranged'].reduce((s, role) =>
+    s + (parseInt(document.getElementById(`rs-target-${role}`).value) || 0), 0);
+  const hint = document.getElementById('rs-target-sum-hint');
+  if (!hint) return;
+  if (sum === 0) {
+    hint.textContent = 'Not configured - readiness will show real filled/total only.';
+    hint.style.color = 'var(--text-dim)';
+  } else if (sum === size) {
+    hint.textContent = `${sum} / ${size} - matches raid size.`;
+    hint.style.color = 'var(--green)';
+  } else {
+    hint.textContent = `${sum} / ${size} - must equal raid size (or all 0 to skip) before saving.`;
+    hint.style.color = 'var(--red-bright)';
+  }
 }
 
 function closeRaidSettings() {
@@ -9005,9 +9076,25 @@ function closeRaidSettings() {
 function saveRaidSettings() {
   const r = getActiveRaid();
   if (!r) return;
+  const newSize = parseInt(document.getElementById('rs-size-input').value) || 25;
+
+  // Target composition: all-zero means "unset" (explicitly cleared), any
+  // other total must match the raid size being saved - a 10-man and a
+  // 25-man just have a different number to hit, never a different rule.
+  const targets = {
+    tank:   parseInt(document.getElementById('rs-target-tank').value)   || 0,
+    healer: parseInt(document.getElementById('rs-target-healer').value) || 0,
+    melee:  parseInt(document.getElementById('rs-target-melee').value)  || 0,
+    ranged: parseInt(document.getElementById('rs-target-ranged').value) || 0,
+  };
+  const targetSum = targets.tank + targets.healer + targets.melee + targets.ranged;
+  if (targetSum !== 0 && targetSum !== newSize) {
+    showToast(`Target composition adds up to ${targetSum}, not ${newSize} - fix it or set all four to 0 to skip.`, true);
+    return;
+  }
+
   const newName = document.getElementById('rs-name-input').value.trim();
   if (newName) r.name = newName;
-  const newSize = parseInt(document.getElementById('rs-size-input').value) || 25;
   if (newSize !== r.size) {
     r.size = newSize;
     const count = newSize === 10 ? 2 : 5;
@@ -9017,22 +9104,33 @@ function saveRaidSettings() {
   }
   r.rhChannelId          = document.getElementById('rs-rh-channel-input').value.trim();
   r.discordChannelId = document.getElementById('rs-discord-channel-input').value.trim();
+  r.targets = targetSum === 0 ? null : targets;
   closeRaidSettings();
   renderRaidTabs();
   renderBuilder();
+  renderCoverage();
+  renderPublicRaidsView();
   showToast('Raid settings saved.');
 }
 
 function deleteActiveRaid() {
   if (raids.length <= 1) { showToast('Cannot delete the last raid tab.', true); return; }
   const r = getActiveRaid();
-  if (!confirm(`Delete "${r.name}"? This cannot be undone.`)) return;
+  // Explicit about what this does and doesn't touch (Codex's ask: name the
+  // raid, and don't imply this also deletes its Discord channel/messages/
+  // historical reports/guild members - it only removes this app's own
+  // roster/groups/pools/overrides for this one raid tab).
+  const msg = `Delete "${r.name}"?\n\nThis removes its roster, groups, bench/absent/tentative pools, role overrides, and target composition from Kaizen. It does NOT delete its Discord channel, past messages, or any guild members - those are untouched. Other raid tabs are unaffected. This cannot be undone.`;
+  if (!confirm(msg)) return;
   raids = raids.filter(x => x.id !== r.id);
   activeRaidId = raids[0].id;
   syncActiveRaid();
   closeRaidSettings();
   renderRaidTabs();
   renderBuilder();
+  renderCoverage();
+  renderPublicRaidsView();
+  showToast(`"${r.name}" deleted.`);
 }
 
 function getGroupCount() {
@@ -9811,18 +9909,29 @@ function renderCoverage() {
     });
   }
 
-  // Role summary strip
+  // Role summary strip - shows a real "X needed" only when this raid has
+  // an actual configured target for that role (see raid.targets/
+  // saveRaidSettings); with no target set it's just the honest count,
+  // exactly as before targets existed at all.
+  const activeRaidForTargets = getActiveRaid();
+  const targets = activeRaidForTargets && activeRaidForTargets.targets;
+  const targetKeyByRole = { Tank: 'tank', Healer: 'healer', Melee: 'melee', Ranged: 'ranged' };
   const roleStrip = [
     { role: 'Tank',   icon: '🛡', color: 'var(--warrior)' },
     { role: 'Healer', icon: '✚', color: 'var(--druid)' },
     { role: 'Melee',  icon: '⚔', color: 'var(--red-bright)' },
     { role: 'Ranged', icon: '🏹', color: 'var(--hunter)' },
-  ].map(r => `
-    <div style="display:flex;align-items:center;gap:5px;padding:5px 10px;background:var(--bg-hover);border-radius:4px;border:1px solid var(--border);">
+  ].map(r => {
+    const target = targets ? targets[targetKeyByRole[r.role]] : null;
+    const needed = target != null ? Math.max(0, target - roleCounts[r.role]) : null;
+    const countText = target != null ? `${roleCounts[r.role]}/${target}` : String(roleCounts[r.role]);
+    return `
+    <div style="display:flex;align-items:center;gap:5px;padding:5px 10px;background:var(--bg-hover);border-radius:4px;border:1px solid ${needed > 0 ? 'var(--gold)' : 'var(--border)'};">
       <span style="font-size:13px;">${r.icon}</span>
-      <span style="font-family:'Cinzel',serif;font-size:13px;font-weight:700;color:${r.color};">${roleCounts[r.role]}</span>
-      <span style="font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.05em;">${r.role}</span>
-    </div>`).join('');
+      <span style="font-family:'Cinzel',serif;font-size:13px;font-weight:700;color:${needed > 0 ? 'var(--gold)' : r.color};">${countText}</span>
+      <span style="font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.05em;">${r.role}${needed > 0 ? ` · ${needed} needed` : ''}</span>
+    </div>`;
+  }).join('');
 
   // Raid-wide buff icon strip
   const raidBuffStrip = TBC_BUFFS.raid.map(b => {
@@ -9849,10 +9958,11 @@ function renderCoverage() {
   const roleStripEl = document.getElementById('role-count-strip');
   if (roleStripEl) roleStripEl.innerHTML = roleStrip;
 
-  // Roster Readiness card - real filled/total + real open-slot count, no
-  // fabricated "role needed" claim (see the HTML comment on
-  // #roster-readiness-card for why: no per-raid target composition
-  // exists in the data model to compare against).
+  // Roster Readiness card - real filled/total always; the status line
+  // upgrades from a generic open-slot count to a real per-role "needed"
+  // summary once this raid has a configured target composition (see
+  // raid.targets above) - still never a fabricated claim, since it's
+  // reading an explicit GM-set number, not guessing.
   const readinessTotal = groupCount * 5;
   const readinessOpen = readinessTotal - filled;
   const filledCountEl = document.getElementById('readiness-filled-count');
@@ -9861,9 +9971,18 @@ function renderCoverage() {
   if (filledCountEl) filledCountEl.textContent = filled;
   if (totalCountEl) totalCountEl.textContent = `/${readinessTotal}`;
   if (openStatusEl) {
+    const neededRoles = targets ? Object.entries(targetKeyByRole)
+      .map(([role, key]) => ({ role, needed: Math.max(0, targets[key] - roleCounts[role]) }))
+      .filter(x => x.needed > 0) : [];
     if (readinessTotal === 0) {
       openStatusEl.textContent = 'No groups yet';
       openStatusEl.style.color = 'var(--text-dim)';
+    } else if (targets && neededRoles.length > 0) {
+      openStatusEl.textContent = neededRoles.map(x => `${x.needed} ${x.role.toLowerCase()}${x.needed === 1 ? '' : 's'} needed`).join(' · ');
+      openStatusEl.style.color = 'var(--gold-light)';
+    } else if (targets) {
+      openStatusEl.textContent = 'Ready to pull';
+      openStatusEl.style.color = 'var(--green-bright)';
     } else if (readinessOpen > 0) {
       openStatusEl.textContent = `${readinessOpen} open slot${readinessOpen === 1 ? '' : 's'}`;
       openStatusEl.style.color = 'var(--gold-light)';
@@ -9957,7 +10076,21 @@ function renderPublicRaidsView() {
   document.getElementById('public-readiness-filled').textContent = filled;
   document.getElementById('public-readiness-total').textContent = `/${total}`;
   const statusEl = document.getElementById('public-readiness-status');
-  if (open > 0) {
+  // Same real-targets upgrade as the manager readiness card: with no
+  // configured target composition this stays exactly the honest
+  // filled/open behavior it always was.
+  const pubTargets = active.targets;
+  const pubTargetKey = { Tank: 'tank', Healer: 'healer', Melee: 'melee', Ranged: 'ranged' };
+  const pubNeeded = pubTargets ? Object.entries(pubTargetKey)
+    .map(([role, key]) => ({ role, needed: Math.max(0, pubTargets[key] - roleCounts[role]) }))
+    .filter(x => x.needed > 0) : [];
+  if (pubTargets && pubNeeded.length > 0) {
+    statusEl.textContent = pubNeeded.map(x => `${x.needed} ${x.role.toLowerCase()}${x.needed === 1 ? '' : 's'} needed`).join(' · ');
+    statusEl.style.color = 'var(--kz-hover)';
+  } else if (pubTargets) {
+    statusEl.textContent = 'Ready to pull';
+    statusEl.style.color = 'var(--kz-success)';
+  } else if (open > 0) {
     statusEl.textContent = `${open} open slot${open === 1 ? '' : 's'}`;
     statusEl.style.color = 'var(--kz-hover)';
   } else {
@@ -9965,14 +10098,40 @@ function renderPublicRaidsView() {
     statusEl.style.color = 'var(--kz-success)';
   }
   // Quiet number+label pairs, not bordered/background badge boxes -
-  // same "reduce repeated borders" guidance.
+  // same "reduce repeated borders" guidance. Shows "/target" once this
+  // raid has one configured, same as the manager strip.
   document.getElementById('public-readiness-roles').innerHTML = [
     { role: 'Tank' }, { role: 'Healer' }, { role: 'Melee' }, { role: 'Ranged' },
-  ].map(r => `
+  ].map(r => {
+    const t = pubTargets ? pubTargets[pubTargetKey[r.role]] : null;
+    return `
     <div style="text-align:right;">
-      <div style="font-family:var(--kz-font-display);font-size:22px;color:var(--kz-text);line-height:1;">${roleCounts[r.role]}</div>
+      <div style="font-family:var(--kz-font-display);font-size:22px;color:var(--kz-text);line-height:1;">${roleCounts[r.role]}${t != null ? `<span style="font-size:14px;color:var(--kz-muted);">/${t}</span>` : ''}</div>
       <div style="font-size:12px;color:var(--kz-muted);text-transform:uppercase;letter-spacing:0.05em;margin-top:2px;">${r.role}</div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
+
+  // Discord signup CTA - only shown when this raid actually has a real
+  // signup/import source channel configured (rhChannelId, the one Raid
+  // Helper posts to). There's no stored Discord guild/server ID anywhere
+  // in this app's data (guildInfo.discord is an invite URL, not a guild
+  // ID), so an exact discord.com/channels/<guild>/<channel> deep link
+  // genuinely cannot be constructed honestly right now - rather than
+  // fabricate one, this links to the guild's real invite instead, which
+  // is a true, working link, just not a same-click jump to the specific
+  // channel. See Design/DECISIONS.md's Discord-signup log entry: an
+  // invented URL is explicitly worse than an honestly generic one.
+  const signupEl = document.getElementById('public-raid-signup-cta');
+  if (signupEl) {
+    if (active.rhChannelId && guildInfo.discord) {
+      signupEl.style.display = '';
+      signupEl.href = guildInfo.discord;
+      signupEl.textContent = 'Sign up on Discord →';
+      signupEl.title = `Raid Helper posts this raid's signup in a Discord channel - find it after joining.`;
+    } else {
+      signupEl.style.display = 'none';
+    }
+  }
 }
 
 // ======================================================
