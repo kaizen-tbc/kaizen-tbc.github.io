@@ -2812,6 +2812,14 @@ body.landing-mode #landing-page { display: block; }
 #tab-strats .ability-reference{font-size:12px;color:var(--kz-accent);display:inline-block;padding:6px 0}
 #tab-strats .public-raid-note{border-top:1px solid var(--kz-line);margin-top:18px;padding-top:12px;font:12px/1.6 var(--kz-font-ui)}
 #tab-strats .public-raid-note summary{cursor:pointer;color:var(--kz-muted);padding:4px 0}#tab-strats .public-raid-note p{white-space:pre-wrap;overflow-wrap:anywhere}
+/* Prominent trash-guide entry (Design/preview/guild-plan-winterchill.html's
+   own .raid-note block, ported 1:1) - distinct from .public-raid-note
+   above (an unrelated small collapsible note), and deliberately not
+   just another same-weight .strat-tab-btn pill. */
+#tab-strats .raid-note{display:flex;justify-content:space-between;align-items:center;gap:24px;border-top:1px solid var(--kz-line);padding-top:24px;margin-top:32px}
+#tab-strats .raid-note p{font:12px/1.5 var(--kz-font-ui);letter-spacing:.04em;text-transform:uppercase;color:var(--kz-muted);margin:0}
+#tab-strats .raid-note a{font:600 14px/1.4 var(--kz-font-ui);color:var(--kz-link,#d7b56d);text-decoration:none;white-space:nowrap}
+#tab-strats .raid-note a:hover{text-decoration:underline}
 
 
 /* Fixed player list/detail composition; only the player list scrolls. */
@@ -12327,7 +12335,16 @@ function renderPublicEncounterLibrary(){
  if(!raid){const focus=guildInfo.publicSite?.focusEncounter;const featureHtml=buildFocusEncounterCardHtml(focus);
  el.innerHTML=featureHtml+'<div class="library-section-head"><div><div class="eyebrow">The Burning Crusade</div><h2>Choose your battleground.</h2></div><span>08 raids / one shared playbook</span></div><div class="raid-library-grid">'+PUBLIC_ENCOUNTER_CATALOG.map((r,i)=>'<a href="#strats" class="raid-editorial-card" data-raid-index="'+i+'"><div class="raid-card-art"><img src="'+esc(art(r))+'" alt="" loading="lazy"><span>'+r.size+' players</span><b>↗</b></div><div class="raid-card-copy"><small>'+String(i+1).padStart(2,'0')+' / '+esc(r.kicker)+'</small><h3>'+esc(r.name)+'</h3><p>'+r.bosses.length+' encounters</p></div></a>').join('')+'</div>';
  el.querySelector('[data-focus]')?.addEventListener('click',e=>{e.preventDefault();const selected=strats.find(s=>String(s.id)===String(focus.stratId));if(selected){activeRaid=selected.raid;setActiveStat(selected.id);}});el.querySelectorAll('[data-raid-index]').forEach(a=>a.onclick=e=>{e.preventDefault();setActiveRaid(PUBLIC_ENCOUNTER_CATALOG[Number(a.dataset.raidIndex)].key);});
- }else{const groups=buildBossGroups(raid.key);el.innerHTML='<button class="library-back">← All encounter plans</button><div class="raid-library-hero" style="--raid-art:url(&quot;'+esc(art(raid))+'&quot;)"><div class="eyebrow">'+raid.size+' players · '+raid.bosses.length+' encounters</div><h1>'+esc(raid.name)+'</h1><p>'+esc(raid.kicker)+'.</p></div><div class="library-section-head"><h2>The encounters.</h2><span>Select a boss to read the guild plan</span></div><div class="boss-library-grid">'+groups.map((g,i)=>'<a href="#strats" class="boss-library-card" data-group-index="'+i+'"><span class="boss-number">'+String(i+1).padStart(2,'0')+'</span>'+bossPortraitFallbackHtml(g.portraitSlug)+'<div><h3>'+esc(g.name)+'</h3><p>'+g.members.length+' plan'+(g.members.length===1?'':'s')+' / Positions & assignments</p></div><span class="boss-go">→</span></a>').join('')+'</div>'+(!groups.length?'<div class="encounter-empty"><h2>No guild plans yet.</h2><p>Published encounter plans will appear here.</p></div>':'');el.querySelector('.library-back').onclick=()=>setActiveRaid(null);el.querySelectorAll('[data-group-index]').forEach(a=>a.onclick=e=>{e.preventDefault();openPublicEncounter(raid.key,groups[Number(a.dataset.groupIndex)].groupKey);});}
+ }else{const groups=buildBossGroups(raid.key);
+ // Prominent trash-guide entry, part 2 (see the .raid-note block on the
+ // encounter-plan page itself): a raid-wide banner above the boss grid
+ // when its first boss has a trash guide before it - ported 1:1 from
+ // Design/preview/encounter-library.js's own Hyjal-specific
+ // ".library-trash" markup, generalized to any raid whose first group
+ // actually has one rather than hardcoding Hyjal.
+ const firstTrash=groups[0]?.members.find(m=>m.kind==='trash');
+ const trashBannerHtml=firstTrash?'<a href="#strats" class="library-trash" data-first-trash><span><small>Before the first pull</small><strong>Trash waves &amp; bestiary</strong></span><span>Read the field notes →</span></a>':'';
+ el.innerHTML='<button class="library-back">← All encounter plans</button><div class="raid-library-hero" style="--raid-art:url(&quot;'+esc(art(raid))+'&quot;)"><div class="eyebrow">'+raid.size+' players · '+raid.bosses.length+' encounters</div><h1>'+esc(raid.name)+'</h1><p>'+esc(raid.kicker)+'.</p></div>'+trashBannerHtml+'<div class="library-section-head"><h2>The encounters.</h2><span>Select a boss to read the guild plan</span></div><div class="boss-library-grid">'+groups.map((g,i)=>'<a href="#strats" class="boss-library-card" data-group-index="'+i+'"><span class="boss-number">'+String(i+1).padStart(2,'0')+'</span>'+bossPortraitFallbackHtml(g.portraitSlug)+'<div><h3>'+esc(g.name)+'</h3><p>'+g.members.length+' plan'+(g.members.length===1?'':'s')+' / Positions & assignments</p></div><span class="boss-go">→</span></a>').join('')+'</div>'+(!groups.length?'<div class="encounter-empty"><h2>No guild plans yet.</h2><p>Published encounter plans will appear here.</p></div>':'');el.querySelector('.library-back').onclick=()=>setActiveRaid(null);el.querySelector('[data-first-trash]')?.addEventListener('click',e=>{e.preventDefault();activeRaid=raid.key;setActiveTrashTab(firstTrash.id);});el.querySelectorAll('[data-group-index]').forEach(a=>a.onclick=e=>{e.preventDefault();openPublicEncounter(raid.key,groups[Number(a.dataset.groupIndex)].groupKey);});}
 }
 function renderStrats(){
  if(inManageMode){renderStratsWorkspace();return;}
@@ -12522,6 +12539,20 @@ function renderStratsWorkspace() {
   const assignsPanel = active ? buildAssignsPanel(active) : '';
   const trashPanel = activeGuide ? renderTrashGuidePanel(activeGuide) : '';
   const poolSection = '';
+  // Prominent trash-guide entry (Design/DECISIONS.md: "the prominent
+  // trash-guide entry" - still named outstanding until now). The data
+  // was already there - buildBossGroups() puts a boss's trash guide in
+  // its own members array right alongside its strat phases - it just
+  // had no visible destination of its own beyond an equal-weight tab
+  // pill easy to miss among several phase tabs. Matches Design/preview/
+  // guild-plan-winterchill.html's own .raid-note block exactly: "Before
+  // the boss" / "Wave notes & bestiary →", placed after the encounter
+  // guide, reusing the same setActiveTrashTab() the trash tab pill
+  // itself already calls - not a new navigation path.
+  const trashMember = activeGroup?.members.find(m => m.kind === 'trash');
+  const trashNoteHtml = (active && activeTabKind !== 'trash' && trashMember)
+    ? `<div class="raid-note"><p>Before the boss</p><a href="#" onclick="event.preventDefault();setActiveTrashTab(${trashMember.id})">Wave notes &amp; bestiary →</a></div>`
+    : '';
 
   // The boss row sits permanently on the same line as "← All Raids" (not
   // a separate screen you drill into/back out of - see the validation
@@ -12544,7 +12575,8 @@ function renderStratsWorkspace() {
         ${assignsPanel}
       `}
     </div>
-    ${active && activeTabKind !== 'trash' ? renderEncounterGuide(active) : ''}`;
+    ${active && activeTabKind !== 'trash' ? renderEncounterGuide(active) : ''}
+    ${trashNoteHtml}`;
   syncAutoAssignRaidSelect();
 }
 
