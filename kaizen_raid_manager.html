@@ -16629,7 +16629,29 @@ window.addEventListener('load', async function () {
       // away from itself before anyone with a live session ever saw it.
       // Signing out on the landing page needs no extra handling - the
       // nav toggle above already covers it.
-      if (isLandingPage) { if (isSignedIn && (_authResolvedOnce || new URLSearchParams(location.search).has('onboarding'))) { history.replaceState(null,'',location.pathname); openGuildOnboarding(); } }
+      if (isLandingPage) {
+        // Discord's OAuth redirect (handleRegisterGuildCallback) always
+        // lands back at bare "/" with ?registered=<id>/?registerError=...,
+        // regardless of where "Register a guild" was actually clicked from
+        // - this is the landing page's FIRST-ever auth resolution for this
+        // load, same as any other first visit. Without checking for these
+        // params too, the _authResolvedOnce guard below (there specifically
+        // to stop an existing session from auto-redirecting away from a
+        // page load someone didn't ask to leave) also silently swallowed a
+        // real "I just finished registering" return - confirmed live: the
+        // registration succeeded in D1 every time, but the visitor just saw
+        // the plain marketing page with no feedback and nowhere to go.
+        const qp = new URLSearchParams(location.search);
+        const registered = qp.get('registered');
+        const registerError = qp.get('registerError');
+        const justReturnedFromRegistration = registered != null || registerError != null;
+        if (isSignedIn && (_authResolvedOnce || qp.has('onboarding') || justReturnedFromRegistration)) {
+          history.replaceState(null,'',location.pathname);
+          if (registered) showToast('✓ Guild registered — open it below.');
+          if (registerError) showToast(`✗ Guild registration failed: ${registerError}`, true);
+          openGuildOnboarding();
+        }
+      }
       else initFromJson().then(checkRegisterGuildReturn).then(showTabFromHash); // after data's loaded, not before - every tab's render function (renderStrats/renderBuilder/etc) reads global state initFromJson just populated
     }
     _authResolvedOnce = true;
