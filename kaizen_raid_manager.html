@@ -4236,8 +4236,48 @@ body.guild-public-mode #tab-strats .public-assignment-sheet .personal-detail>*{m
           onchange="updateStratsChannelId(this.value)">
         <div style="font-size:11px;color:var(--text-dim);margin-top:5px;">One dedicated channel — posting a strat clears whatever's there first, then posts the current strat's image and assignments.</div>
       </div>
+
+      <!-- Public Site: Featured Encounter - guildInfo.publicSite.focusEncounter,
+           read by renderPublicEncounterLibrary/buildFocusEncounterCardHtml.
+           One guild-wide pick, not per-strat, so it lives in this
+           guild-wide Strats settings modal rather than a control on every
+           individual strat row. -->
+      <div style="border-top:1px solid var(--border);margin-top:16px;padding-top:14px;">
+        <div style="font-size:12px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-dim);margin-bottom:10px;">Public Site — Featured Encounter</div>
+        <div class="form-group">
+          <label class="form-label">Featured strat</label>
+          <select class="form-input" id="fe-strat-select" onchange="updateFeaturedEncounterField('stratId', this.value)">
+            <option value="">None (hide the featured card)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Label <span style="font-weight:400;color:var(--text-dim);">(e.g. "This week")</span></label>
+          <input type="text" class="form-input" id="fe-label-input" onchange="updateFeaturedEncounterField('label', this.value)">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Summary</label>
+          <textarea class="form-input" id="fe-summary-input" style="min-height:60px;" onchange="updateFeaturedEncounterField('summary', this.value)"></textarea>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div class="form-group">
+            <label class="form-label">Raid lead</label>
+            <select class="form-input" id="fe-lead-select" onchange="updateFeaturedEncounterLeadName(this.value)">
+              <option value="">None</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Raid lead avatar</label>
+            <label class="btn btn-small" style="cursor:pointer;display:inline-block;">
+              🖼 <span id="fe-lead-avatar-label">Upload</span>
+              <input type="file" accept="image/*" onchange="uploadPublicSiteImage(event, v => { ensureFeaturedEncounterLead().avatar = v; renderFeaturedEncounterSettings(); }, 'raid-lead-avatar')" style="display:none;">
+            </label>
+          </div>
+        </div>
+        <div id="fe-preview" style="margin-top:10px;"></div>
+      </div>
     </div>
     <div class="modal-footer">
+      <button class="btn" onclick="previewFeaturedEncounter()">Preview on public site</button>
       <button class="btn btn-gold" onclick="closeStratsSettings()">Done</button>
     </div>
   </div>
@@ -10044,7 +10084,7 @@ function renderRaidTabs() {
   const subEl   = document.getElementById('active-raid-subtitle');
   if (titleEl) titleEl.textContent = active ? active.name : 'Weekly Roster';
   if (subEl) subEl.textContent = active
-    ? `${active.size}-man · ${active.rhChannelId ? '⚡ Raid Helper connected' : 'No Raid Helper channel set — add one in ⚙ Raid Settings'}`
+    ? `${active.size}-man · ${active.rhChannelId ? (active.rhEventDate ? `⚡ Synced from "${active.rhEventTitle || 'Raid Helper'}" (${active.rhEventDate})` : '⚡ Raid Helper connected — not imported yet') : 'No Raid Helper channel set — add one in ⚙ Raid Settings'}`
     : 'Add a raid tab to get started';
 }
 
@@ -11761,6 +11801,7 @@ let activeBossGroupKey = null;
 
 function openStratsSettings() {
   document.getElementById('strats-channel-input').value = stratsChannelId || '';
+  renderFeaturedEncounterSettings();
   document.getElementById('strats-settings-overlay').classList.add('open');
 }
 
@@ -11770,6 +11811,71 @@ function closeStratsSettings() {
 
 function updateStratsChannelId(value) {
   stratsChannelId = value.trim();
+}
+
+// ── Public Site: Featured Encounter (guildInfo.publicSite.focusEncounter) ──
+// Populates the settings-modal fields from current state every time the
+// modal opens (or an image finishes uploading) - same "re-render from the
+// single source of truth" pattern as renderOverview/renderPublicSiteEditor,
+// just scoped to this one small form instead of a whole tab.
+function ensureFeaturedEncounterLead() {
+  const site = ensurePublicSiteDefaults();
+  site.focusEncounter = site.focusEncounter || {};
+  site.focusEncounter.raidLead = site.focusEncounter.raidLead || { name: '', avatar: '' };
+  return site.focusEncounter.raidLead;
+}
+function updateFeaturedEncounterField(field, value) {
+  const site = ensurePublicSiteDefaults();
+  site.focusEncounter = site.focusEncounter || {};
+  site.focusEncounter[field] = value || '';
+  if (field === 'stratId' && !value) { site.focusEncounter = null; renderFeaturedEncounterSettings(); }
+}
+function updateFeaturedEncounterLeadName(name) {
+  const lead = ensureFeaturedEncounterLead();
+  lead.name = name || '';
+}
+function renderFeaturedEncounterSettings() {
+  const site = ensurePublicSiteDefaults();
+  const focus = site.focusEncounter || {};
+  const stratSelect = document.getElementById('fe-strat-select');
+  if (stratSelect) {
+    // Grouped by raid so a guild with many strats can still find one -
+    // same raid/name shape every other strat picker in this file uses.
+    const byRaid = {};
+    strats.forEach(s => { (byRaid[s.raid] = byRaid[s.raid] || []).push(s); });
+    stratSelect.innerHTML = '<option value="">None (hide the featured card)</option>' +
+      Object.entries(byRaid).map(([raid, list]) => `<optgroup label="${(raid||'').replace(/"/g,'&quot;')}">${
+        list.map(s => `<option value="${s.id}" ${String(focus.stratId)===String(s.id)?'selected':''}>${(s.name||'').replace(/"/g,'&quot;')}</option>`).join('')
+      }</optgroup>`).join('');
+  }
+  const labelInput = document.getElementById('fe-label-input');
+  if (labelInput) labelInput.value = focus.label || '';
+  const summaryInput = document.getElementById('fe-summary-input');
+  if (summaryInput) summaryInput.value = focus.summary || '';
+  const leadSelect = document.getElementById('fe-lead-select');
+  if (leadSelect) {
+    leadSelect.innerHTML = '<option value="">None</option>' +
+      roster.map(p => `<option value="${(p.name||'').replace(/"/g,'&quot;')}" ${focus.raidLead?.name===p.name?'selected':''}>${(p.name||'').replace(/"/g,'&quot;')}</option>`).join('');
+  }
+  const avatarLabel = document.getElementById('fe-lead-avatar-label');
+  if (avatarLabel) avatarLabel.textContent = focus.raidLead?.avatar ? 'Replace' : 'Upload';
+  document.getElementById('fe-preview').innerHTML = '';
+}
+// The exact shared card markup (buildFocusEncounterCardHtml, in the public
+// encounter library section) rendered inline in the settings modal - not a
+// second bespoke preview, the literal same function a real visitor's
+// renderPublicEncounterLibrary call would produce.
+function previewFeaturedEncounter() {
+  const focus = guildInfo.publicSite?.focusEncounter;
+  const html = buildFocusEncounterCardHtml(focus);
+  // Reused verbatim as its own real id, not a copy - #public-encounter-
+  // library's CSS is scoped to that exact ancestor id (see the public
+  // encounter library's own stylesheet), and this element only exists
+  // here while a visitor's own renderPublicEncounterLibrary isn't also
+  // in the DOM (manage mode never renders it), so there's no collision.
+  document.getElementById('fe-preview').innerHTML = html
+    ? '<div style="font-size:11px;color:var(--text-dim);margin-bottom:6px;">Preview — exactly what a visitor sees:</div><div id="public-encounter-library" style="max-width:640px;">' + html + '</div>'
+    : '<div style="font-size:12px;color:var(--text-dim);font-style:italic;">Pick a featured strat above to preview it.</div>';
 }
 
 // Assignments on a pug-heavy week can change right up until posting time,
@@ -12064,13 +12170,28 @@ function renderBossSelectRow(groups, activeGroupKey) {
 const PUBLIC_ENCOUNTER_CATALOG=[{"id":"karazhan","name":"Karazhan","size":10,"kicker":"Beyond the violet veil","art":"assets/brand/encounter-karazhan.png","bosses":[["Attumen the Huntsman","kara-attumen"],["Moroes","kara-moroes"],["Maiden of Virtue","kara-maiden"],["Opera Event","kara-bigbadwolf"],["The Curator","kara-curator"],["Shade of Aran","kara-aran"],["Terestian Illhoof","kara-illhoof"],["Netherspite","kara-netherspite"],["Chess Event","kara-chess"],["Prince Malchezaar","kara-malchezaar"],["Nightbane","kara-nightbane"]],"key":"Karazhan"},{"id":"gruul-magtheridon","name":"Gruul & Magtheridon","size":25,"kicker":"Lair of the giants","art":"assets/backgrounds/default/gruul-mag-gruul.jpg","bosses":[["High King Maulgar","gruul-mag-maulgar"],["Gruul the Dragonkiller","gruul-mag-gruul"],["Magtheridon","gruul-mag-magtheridon"]],"key":"Gruul's Lair & Magtheridon's Lair"},{"id":"serpentshrine","name":"Serpentshrine Cavern","size":25,"kicker":"Beneath the reservoir","art":"assets/backgrounds/default/ssc-vashj.jpg","bosses":[["Hydross the Unstable","ssc-hydross"],["The Lurker Below","ssc-lurker"],["Leotheras the Blind","ssc-leotheras"],["Fathom-Lord Karathress","ssc-karathress"],["Morogrim Tidewalker","ssc-morogrim"],["Lady Vashj","ssc-vashj"]],"key":"Serpentshrine Cavern"},{"id":"tempest-keep","name":"Tempest Keep","size":25,"kicker":"Eye of the storm","art":"assets/backgrounds/default/tk-kaelthas.jpg","bosses":[["Al’ar","tk-alar"],["Void Reaver","tk-voidreaver"],["High Astromancer Solarian","tk-solarian"],["Kael’thas Sunstrider","tk-kaelthas"]],"key":"The Eye"},{"id":"hyjal","name":"Hyjal Summit","size":25,"kicker":"Stand against the Legion","art":"assets/brand/encounter-winterchill-map.jpg","bosses":[["Rage Winterchill","hyjal-winterchill"],["Anetheron","hyjal-anetheron"],["Kaz’rogal","hyjal-kazrogal"],["Azgalor","hyjal-azgalor"],["Archimonde","hyjal-archimonde"]],"key":"Battle for Mount Hyjal"},{"id":"black-temple","name":"Black Temple","size":25,"kicker":"Into the Betrayer’s domain","art":"assets/brand/encounter-temple.png","bosses":[["High Warlord Naj’entus","bt-najentus"],["Supremus","bt-supremus"],["Shade of Akama","bt-akama"],["Teron Gorefiend","bt-gorefiend"],["Gurtogg Bloodboil","bt-bloodboil"],["Reliquary of Souls","bt-essence-anger"],["Mother Shahraz","bt-shahraz"],["The Illidari Council","bt-gathios"],["Illidan Stormrage","bt-illidan"]],"key":"Black Temple"},{"id":"zul-aman","name":"Zul’Aman","size":10,"kicker":"Echoes of the Amani","art":"assets/brand/encounter-outland-minimal.png","bosses":[["Nalorakk"],["Akil’zon"],["Jan’alai"],["Halazzi"],["Hex Lord Malacrass"],["Zul’jin"]],"key":"Zul'Aman"},{"id":"sunwell","name":"Sunwell Plateau","size":25,"kicker":"The final stand","art":"assets/backgrounds/default/swp-kiljaeden.jpg","bosses":[["Kalecgos","swp-kalecgos"],["Brutallus","swp-brutallus"],["Felmyst","swp-felmyst"],["Eredar Twins","swp-alythess"],["M’uru","swp-muru"],["Kil’jaeden","swp-kiljaeden"]],"key":"Sunwell Plateau"}];
 function publicEncounterRaid(raid){return PUBLIC_ENCOUNTER_CATALOG.find(r=>r.key===raid||r.name===raid);}
 function openPublicEncounter(raid,key){activeRaid=raid;activeBossGroupKey=key;openBossGroup(key);}
+function bossPortraitFallbackHtml(slug){return slug?'<img src="assets/boss-icons/'+publicText(slug)+'.png" alt="">':'<span class="boss-initial" aria-hidden="true">◇</span>';}
+// The featured-encounter card markup - shared by the real public library
+// (below) and the manager's own "Preview on public site" button (see
+// openFeaturedEncounterSettings/previewFeaturedEncounter in the Strats
+// section) so there is exactly one place this HTML is built, never a
+// second bespoke preview renderer that could drift from what visitors
+// actually see. Returns '' when there's no valid selection (unpublished
+// strat, or no focus configured at all) - the caller decides what to
+// show instead.
+function buildFocusEncounterCardHtml(focus){
+  const esc=publicText;
+  const selected=focus&&strats.find(s=>String(s.id)===String(focus.stratId));
+  if(!selected)return '';
+  return '<a href="#strats" class="encounter-feature" data-focus><img class="feature-terrain" src="'+esc(publicUrl(selected.image))+'" alt=""><div class="feature-copy"><span class="feature-label">In focus'+(focus.label?' / '+esc(focus.label):'')+'</span><p class="feature-raid">'+esc(selected.raid)+'</p><div class="feature-title">'+bossPortraitFallbackHtml(bossPortraitSlug(selected.raid,selected.name))+'<h1>'+esc(selected.name)+'</h1></div>'+(focus.summary?'<p>'+esc(focus.summary)+'</p>':'')+'<span class="feature-cta">View encounter plan ↗</span></div>'+(focus.raidLead?.name&&publicUrl(focus.raidLead.avatar)?'<div class="feature-stamp"><img src="'+esc(publicUrl(focus.raidLead.avatar))+'" alt=""><span>From your raid leader<br><strong>'+esc(focus.raidLead.name)+'</strong></span></div>':'')+'</a>';
+}
 function renderPublicEncounterLibrary(){
  const host=document.getElementById('strat-list');host.innerHTML='<div id="public-encounter-library"></div>';const el=host.firstElementChild;const raid=publicEncounterRaid(activeRaid);
- const esc=publicText;const art=r=>publicUrl(r.art);const portrait=(slug)=>slug?'<img src="assets/boss-icons/'+esc(slug)+'.png" alt="">':'<span class="boss-initial" aria-hidden="true">◇</span>';
- if(!raid){const focus=guildInfo.publicSite?.focusEncounter;const selected=focus&&strats.find(s=>String(s.id)===String(focus.stratId));
- el.innerHTML=(selected?'<a href="#strats" class="encounter-feature" data-focus><img class="feature-terrain" src="'+esc(publicUrl(selected.image))+'" alt=""><div class="feature-copy"><span class="feature-label">In focus'+(focus.label?' / '+esc(focus.label):'')+'</span><p class="feature-raid">'+esc(selected.raid)+'</p><div class="feature-title">'+portrait(bossPortraitSlug(selected.raid,selected.name))+'<h1>'+esc(selected.name)+'</h1></div>'+(focus.summary?'<p>'+esc(focus.summary)+'</p>':'')+'<span class="feature-cta">View encounter plan ↗</span></div>'+(focus.raidLead?.name&&publicUrl(focus.raidLead.avatar)?'<div class="feature-stamp"><img src="'+esc(publicUrl(focus.raidLead.avatar))+'" alt=""><span>From your raid leader<br><strong>'+esc(focus.raidLead.name)+'</strong></span></div>':'')+'</a>':'')+'<div class="library-section-head"><div><div class="eyebrow">The Burning Crusade</div><h2>Choose your battleground.</h2></div><span>08 raids / one shared playbook</span></div><div class="raid-library-grid">'+PUBLIC_ENCOUNTER_CATALOG.map((r,i)=>'<a href="#strats" class="raid-editorial-card" data-raid-index="'+i+'"><div class="raid-card-art"><img src="'+esc(art(r))+'" alt="" loading="lazy"><span>'+r.size+' players</span><b>↗</b></div><div class="raid-card-copy"><small>'+String(i+1).padStart(2,'0')+' / '+esc(r.kicker)+'</small><h3>'+esc(r.name)+'</h3><p>'+r.bosses.length+' encounters</p></div></a>').join('')+'</div>';
- el.querySelector('[data-focus]')?.addEventListener('click',e=>{e.preventDefault();activeRaid=selected.raid;setActiveStat(selected.id);});el.querySelectorAll('[data-raid-index]').forEach(a=>a.onclick=e=>{e.preventDefault();setActiveRaid(PUBLIC_ENCOUNTER_CATALOG[Number(a.dataset.raidIndex)].key);});
- }else{const groups=buildBossGroups(raid.key);el.innerHTML='<button class="library-back">← All encounter plans</button><div class="raid-library-hero" style="--raid-art:url(&quot;'+esc(art(raid))+'&quot;)"><div class="eyebrow">'+raid.size+' players · '+raid.bosses.length+' encounters</div><h1>'+esc(raid.name)+'</h1><p>'+esc(raid.kicker)+'.</p></div><div class="library-section-head"><h2>The encounters.</h2><span>Select a boss to read the guild plan</span></div><div class="boss-library-grid">'+groups.map((g,i)=>'<a href="#strats" class="boss-library-card" data-group-index="'+i+'"><span class="boss-number">'+String(i+1).padStart(2,'0')+'</span>'+portrait(g.portraitSlug)+'<div><h3>'+esc(g.name)+'</h3><p>'+g.members.length+' plan'+(g.members.length===1?'':'s')+' / Positions & assignments</p></div><span class="boss-go">→</span></a>').join('')+'</div>'+(!groups.length?'<div class="encounter-empty"><h2>No guild plans yet.</h2><p>Published encounter plans will appear here.</p></div>':'');el.querySelector('.library-back').onclick=()=>setActiveRaid(null);el.querySelectorAll('[data-group-index]').forEach(a=>a.onclick=e=>{e.preventDefault();openPublicEncounter(raid.key,groups[Number(a.dataset.groupIndex)].groupKey);});}
+ const esc=publicText;const art=r=>publicUrl(r.art);
+ if(!raid){const focus=guildInfo.publicSite?.focusEncounter;const featureHtml=buildFocusEncounterCardHtml(focus);
+ el.innerHTML=featureHtml+'<div class="library-section-head"><div><div class="eyebrow">The Burning Crusade</div><h2>Choose your battleground.</h2></div><span>08 raids / one shared playbook</span></div><div class="raid-library-grid">'+PUBLIC_ENCOUNTER_CATALOG.map((r,i)=>'<a href="#strats" class="raid-editorial-card" data-raid-index="'+i+'"><div class="raid-card-art"><img src="'+esc(art(r))+'" alt="" loading="lazy"><span>'+r.size+' players</span><b>↗</b></div><div class="raid-card-copy"><small>'+String(i+1).padStart(2,'0')+' / '+esc(r.kicker)+'</small><h3>'+esc(r.name)+'</h3><p>'+r.bosses.length+' encounters</p></div></a>').join('')+'</div>';
+ el.querySelector('[data-focus]')?.addEventListener('click',e=>{e.preventDefault();const selected=strats.find(s=>String(s.id)===String(focus.stratId));if(selected){activeRaid=selected.raid;setActiveStat(selected.id);}});el.querySelectorAll('[data-raid-index]').forEach(a=>a.onclick=e=>{e.preventDefault();setActiveRaid(PUBLIC_ENCOUNTER_CATALOG[Number(a.dataset.raidIndex)].key);});
+ }else{const groups=buildBossGroups(raid.key);el.innerHTML='<button class="library-back">← All encounter plans</button><div class="raid-library-hero" style="--raid-art:url(&quot;'+esc(art(raid))+'&quot;)"><div class="eyebrow">'+raid.size+' players · '+raid.bosses.length+' encounters</div><h1>'+esc(raid.name)+'</h1><p>'+esc(raid.kicker)+'.</p></div><div class="library-section-head"><h2>The encounters.</h2><span>Select a boss to read the guild plan</span></div><div class="boss-library-grid">'+groups.map((g,i)=>'<a href="#strats" class="boss-library-card" data-group-index="'+i+'"><span class="boss-number">'+String(i+1).padStart(2,'0')+'</span>'+bossPortraitFallbackHtml(g.portraitSlug)+'<div><h3>'+esc(g.name)+'</h3><p>'+g.members.length+' plan'+(g.members.length===1?'':'s')+' / Positions & assignments</p></div><span class="boss-go">→</span></a>').join('')+'</div>'+(!groups.length?'<div class="encounter-empty"><h2>No guild plans yet.</h2><p>Published encounter plans will appear here.</p></div>':'');el.querySelector('.library-back').onclick=()=>setActiveRaid(null);el.querySelectorAll('[data-group-index]').forEach(a=>a.onclick=e=>{e.preventDefault();openPublicEncounter(raid.key,groups[Number(a.dataset.groupIndex)].groupKey);});}
 }
 function renderStrats(){
  if(inManageMode){renderStratsWorkspace();return;}
