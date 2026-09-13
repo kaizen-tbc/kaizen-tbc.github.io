@@ -7073,6 +7073,8 @@ function renderLogPreview(data) {
       </div>
     </div>
 
+    <div class="card" id="public-results-publish-card" style="padding:16px 18px;margin-bottom:16px;"></div>
+
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
       <div class="card" style="padding:16px 18px;">
         <div class="section-title" style="font-size:14px;margin-bottom:8px;">⚔️ DPS</div>
@@ -7091,6 +7093,140 @@ function renderLogPreview(data) {
 
     <div id="fallout-report-area"></div>
   `;
+  renderPublicResultsPublishCard(data);
+}
+
+// ======================================================
+// PUBLIC RESULTS - publish/unpublish a fetched WCL report onto
+// guildInfo.publicSite.results.reports (read by renderPublicResults/
+// renderPublicRaidReport, which were already fully built with nothing
+// writing this record - see Design/DECISIONS.md's own note on this
+// being "a data-model decision... not something to invent
+// unilaterally," now resolved). Keyed by the report's own WCL code, so
+// re-fetching the same report later finds the same record instead of
+// creating a duplicate.
+// ======================================================
+function getActivePublishedReport() {
+  const report = _lastLogFetch?.report;
+  if (!report?.code) return null;
+  return ensurePublicSiteDefaults().results.reports.find(r => String(r.id) === String(report.code)) || null;
+}
+function publishReportToPublicResults() {
+  const report = _lastLogFetch?.report;
+  if (!report?.code) { showToast('No report loaded.', true); return; }
+  const site = ensurePublicSiteDefaults();
+  site.results.reports.push({
+    id: report.code, published: true, startTime: Number(report.startTime) || Date.now(),
+    title: report.title || '', raid: report.zone?.name || '', size: null,
+    image: '', icon: '', wclUrl: `https://www.warcraftlogs.com/reports/${report.code}`,
+  });
+  renderPublicResultsPublishCard(_lastLogFetch);
+  showToast('✓ Published — remember to Save so this shows up on the public page.');
+}
+function toggleReportPublished() {
+  const r = getActivePublishedReport(); if (!r) return;
+  r.published = !r.published;
+  renderPublicResultsPublishCard(_lastLogFetch);
+}
+function updatePublishedReportField(field, value) {
+  const r = getActivePublishedReport(); if (!r) return;
+  r[field] = value;
+}
+function renderPublicResultsPublishCard(data) {
+  const el = document.getElementById('public-results-publish-card');
+  if (!el) return;
+  const record = getActivePublishedReport();
+  if (!record) {
+    el.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
+        <div>
+          <div class="section-title" style="font-size:14px;margin-bottom:2px;">Public Results</div>
+          <div style="font-size:12px;color:var(--text-dim);">Not published to the guild's public Results page yet.</div>
+        </div>
+        <button class="btn btn-gold" onclick="publishReportToPublicResults()">Publish to public Results</button>
+      </div>`;
+    return;
+  }
+  el.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap;">
+      <div class="section-title" style="font-size:14px;">Public Results — ${record.published ? '<span style="color:var(--teal);">● Published</span>' : '<span style="color:var(--text-dim);">○ Unpublished</span>'}</div>
+      <button class="btn btn-small" onclick="toggleReportPublished()">${record.published ? 'Unpublish' : 'Republish'}</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
+      <input class="form-input" placeholder="Title" value="${(record.title||'').replace(/"/g,'&quot;')}" onchange="updatePublishedReportField('title', this.value)">
+      <input class="form-input" placeholder="Raid" value="${(record.raid||'').replace(/"/g,'&quot;')}" onchange="updatePublishedReportField('raid', this.value)">
+      <input class="form-input" type="number" placeholder="Raid size" value="${record.size ?? ''}" onchange="updatePublishedReportField('size', this.value===''?null:Number(this.value))">
+      <label class="btn btn-small" style="cursor:pointer;display:inline-flex;align-items:center;justify-content:center;">
+        🖼 ${record.image ? 'Replace image' : 'Upload image'}
+        <input type="file" accept="image/*" style="display:none;" onchange="uploadPublicSiteImage(event, v => updatePublishedReportField('image', v), 'result-image')">
+      </label>
+    </div>
+    <div id="ai-recap-area">${renderAiRecapSection(record)}</div>`;
+}
+
+// ── Public AI recap: a SEPARATE narrative from the private fallout
+// report above (see /logs/public-report vs /logs/fallout-report on the
+// Worker) - highlights/story only, no individual performance callouts,
+// safe to publish. Generation is never itself publication: aiReport is
+// created unpublished, an officer reviews/edits it, and "Publish AI
+// report" is its own independent toggle from the report's own
+// published flag. ──
+function renderAiRecapSection(record) {
+  if (!record.aiReport) return `<button class="btn" onclick="generatePublicRecap()">✨ Generate AI recap</button>`;
+  const ai = record.aiReport;
+  return `
+    <div style="border-top:1px solid var(--border);padding-top:12px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px;">
+        <div class="section-title" style="font-size:13px;">AI Recap (draft)</div>
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;">
+          <input type="checkbox" ${ai.published?'checked':''} onchange="updateAiRecapField('published', this.checked)"> Publish AI report
+        </label>
+      </div>
+      <input class="form-input" style="margin-bottom:6px;" placeholder="Title" value="${(ai.title||'').replace(/"/g,'&quot;')}" onchange="updateAiRecapField('title', this.value)">
+      <textarea class="form-input" style="margin-bottom:6px;min-height:50px;" placeholder="Summary" onchange="updateAiRecapField('summary', this.value)">${(ai.summary||'').replace(/</g,'&lt;')}</textarea>
+      ${(ai.sections||[]).map((s,i) => `
+        <div style="border:1px solid var(--border);border-radius:3px;padding:8px;margin-bottom:6px;">
+          <input class="form-input" style="margin-bottom:4px;" placeholder="Eyebrow" value="${(s.eyebrow||'').replace(/"/g,'&quot;')}" onchange="updateAiRecapSectionField(${i},'eyebrow',this.value)">
+          <input class="form-input" style="margin-bottom:4px;" placeholder="Section title" value="${(s.title||'').replace(/"/g,'&quot;')}" onchange="updateAiRecapSectionField(${i},'title',this.value)">
+          <textarea class="form-input" style="min-height:40px;" placeholder="Body" onchange="updateAiRecapSectionField(${i},'body',this.value)">${(s.body||'').replace(/</g,'&lt;')}</textarea>
+        </div>`).join('')}
+      ${ai.reviewedBy ? `<div style="font-size:11px;color:var(--text-dim);margin-bottom:6px;">Reviewed by ${ai.reviewedBy}</div>` : ''}
+      <button class="btn btn-small" onclick="generatePublicRecap()">↻ Regenerate</button>
+    </div>`;
+}
+function updateAiRecapField(field, value) {
+  const r = getActivePublishedReport(); if (!r?.aiReport) return;
+  r.aiReport[field] = value;
+  if (field === 'published' && value && !r.aiReport.reviewedBy) {
+    r.aiReport.reviewedBy = window.Clerk?.user?.fullName || window.Clerk?.user?.username || '';
+    renderPublicResultsPublishCard(_lastLogFetch);
+  }
+}
+function updateAiRecapSectionField(i, field, value) {
+  const r = getActivePublishedReport(); if (!r?.aiReport?.sections) return;
+  r.aiReport.sections[i][field] = value;
+}
+async function generatePublicRecap() {
+  const data = _lastLogFetch, report = data?.report;
+  const record = getActivePublishedReport();
+  if (!record) { showToast('Publish this report to public Results first.', true); return; }
+  const area = document.getElementById('ai-recap-area');
+  area.innerHTML = `<div style="padding:12px;text-align:center;color:var(--text-dim);">✨ Generating recap...</div>`;
+  try {
+    const killedNames = [...new Set((data.fights||[]).filter(f=>f.kill).map(f=>f.name))];
+    const notKilled = [...new Set((data.fights||[]).filter(f=>!f.kill).map(f=>f.name))].filter(n=>!killedNames.includes(n));
+    const res = await fetch(`${RH_WORKER}/logs/public-report`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: report.title, raid: report.zone?.name, killed: killedNames, notKilled, totalFights: (data.fights||[]).length, deathsCount: data.deaths?.count || 0 }),
+    });
+    const parsed = await res.json();
+    if (parsed.error) throw new Error(parsed.error);
+    record.aiReport = { published: false, title: parsed.title, summary: parsed.summary, sections: parsed.sections || [], reviewedBy: '' };
+    renderPublicResultsPublishCard(data);
+    showToast('✓ Draft generated — review before publishing.');
+  } catch (err) {
+    area.innerHTML = `<div style="color:var(--red-bright);font-size:12px;">✗ ${err.message}</div>`;
+  }
 }
 
 // Auto-generates as soon as a log is fetched — no separate button/click.

@@ -125,6 +125,17 @@ export default {
       return handleFalloutReport(request, env);
     }
 
+    // ── AI-generated PUBLIC raid recap - a separate, guild-facing-safe
+    // narrative for the public Results page (see Design/DECISIONS.md's
+    // Results contract: guildInfo.publicSite.results.reports[].aiReport).
+    // Deliberately its own endpoint/prompt/schema, never reusing
+    // handleFalloutReport - that one is written for private officer
+    // coaching DMs and names individuals; this one must never do either.
+    // ── /logs/public-report
+    if (url.pathname === '/logs/public-report' && request.method === 'POST') {
+      return handlePublicRaidRecap(request, env);
+    }
+
     // ── On-demand personal report for one player, every fight this raid -
     // /logs/personal-report
     if (url.pathname === '/logs/personal-report' && request.method === 'POST') {
@@ -2783,6 +2794,79 @@ function buildFalloutMarkdowns(parsed, dpsSurvivedBad, healersSurvivedBad) {
     });
 
   return { dpsText, healersText, dmTargets };
+}
+
+// ── Public raid recap (guild-facing, safe to publish) ──────────────
+// Aggregate/celebratory only - no player name, parse, death, or mistake
+// is ever tied to a specific person here, unlike buildFalloutPrompt
+// above. Input is deliberately minimal (encounter names + aggregate
+// counts) so there's nothing individually identifying for the model to
+// even reach for.
+const PUBLIC_RECAP_SCHEMA = {
+  type: 'object',
+  properties: {
+    title: { type: 'string' },
+    summary: { type: 'string' },
+    sections: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          eyebrow: { type: 'string' },
+          title: { type: 'string' },
+          body: { type: 'string' },
+        },
+        required: ['eyebrow', 'title', 'body'],
+        additionalProperties: false,
+      },
+    },
+  },
+  required: ['title', 'summary', 'sections'],
+  additionalProperties: false,
+};
+
+function buildPublicRecapPrompt({ title, raid, killed, notKilled, totalFights, deathsCount }) {
+  return `You are writing a short, celebratory PUBLIC recap of a World of Warcraft: TBC Classic raid night ("${title || 'Raid'}"${raid ? ` in ${raid}` : ''}) for the guild's own public website. This is aggregate/informational only: NEVER mention any specific player by name, NEVER reference an individual's parse, death, mistake, or performance in any way - only guild-wide facts.
+
+${TBC_VERSION_LOCK}
+
+Encounters killed this raid: ${killed.length ? killed.join(', ') : 'none'}
+Encounters attempted but not killed: ${notKilled.length ? notKilled.join(', ') : 'none'}
+Total pulls this raid: ${totalFights}
+Total deaths, raid-wide aggregate count only: ${deathsCount}
+
+Return:
+1. title - a short, upbeat headline for this raid night (under 8 words), no player names
+2. summary - 1-2 sentences on the overall story of the night
+3. sections - 2-3 short sections, each {eyebrow: a short label, title: a short heading, body: 2-3 sentences} - e.g. progress made, a highlight, what's next. Never name a specific player or reference anyone's individual stats, ever.
+
+Be factual and warm, never generic filler, never invent specifics not given above.`;
+}
+
+async function handlePublicRaidRecap(request, env) {
+  try {
+    if (!env.OPENAI_API_KEY) throw new Error('OpenAI API key not configured.');
+    const { title, raid, killed, notKilled, totalFights, deathsCount } = await request.json();
+    const res = await callOpenAIWithRetry({
+      model: OPENAI_MODEL,
+      input: buildPublicRecapPrompt({ title, raid, killed: killed || [], notKilled: notKilled || [], totalFights: totalFights || 0, deathsCount: deathsCount || 0 }),
+      text: {
+        format: {
+          type: 'json_schema',
+          name: 'public_raid_recap',
+          strict: true,
+          schema: PUBLIC_RECAP_SCHEMA,
+        },
+      },
+    }, env);
+    const data = await res.json();
+    const raw = extractOpenAIText(data);
+    if (!raw) throw new Error('OpenAI returned no text output.');
+    const parsed = JSON.parse(raw);
+    return corsResponse(JSON.stringify(parsed), 200);
+  } catch (err) {
+    return corsResponse(JSON.stringify({ error: err.message }), 500);
+  }
 }
 
 // The Responses API's output_text is an SDK convenience property, not
