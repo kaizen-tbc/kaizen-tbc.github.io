@@ -3574,6 +3574,77 @@ body.guild-public-mode #tab-strats .public-assignment-sheet .personal-detail>*{m
     <div id="ov-tools" style="display:flex;flex-direction:column;gap:8px;"></div>
   </div>
 
+  <!-- ============================================================
+       PUBLIC SITE - guildInfo.publicSite.*, read by renderPublicOverview
+       (hero override/tagline/widget visibility/rankings/recruitment/
+       announcements/recap). Nothing here duplicates the sections above -
+       these are ADDITIVE public-page-only overrides; leaving a field
+       blank/unchecked means the public page falls back to the plain
+       fields above or omits that widget, never a fabricated value. See
+       Design/DECISIONS.md's "Current overview adapter for Claude" note. -->
+  <div class="cms-section" style="margin-top:8px;border-top:2px solid var(--border-bright);padding-top:20px;">
+    <div class="cms-section-header">
+      <div class="cms-section-label">Public Site</div>
+      <div class="cms-section-hint">Overrides and extra widgets shown only on the published guild page</div>
+    </div>
+  </div>
+
+  <!-- SECTION: PUBLIC SITE IDENTITY + WIDGET VISIBILITY -->
+  <div class="cms-section">
+    <div class="cms-section-header">
+      <div class="cms-section-label">Identity &amp; Widgets</div>
+      <div class="cms-section-hint">Leave blank to use the fields above; toggle which sections appear</div>
+    </div>
+    <div id="ov-site-identity"></div>
+    <div id="ov-site-widgets" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-top:12px;"></div>
+  </div>
+
+  <!-- SECTION: RANKINGS -->
+  <div class="cms-section">
+    <div class="cms-section-header">
+      <div class="cms-section-label">Rankings</div>
+      <button class="btn btn-small krm-edit-only" onclick="addRankingRow()">+ Add Ranking</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px;" id="ov-rankings"></div>
+  </div>
+
+  <!-- SECTION: RECRUITMENT OPENINGS -->
+  <div class="cms-section">
+    <div class="cms-section-header">
+      <div class="cms-section-label">Recruitment Openings</div>
+      <button class="btn btn-small krm-edit-only" onclick="addRecruitmentOpening()">+ Add Opening</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Recruitment intro (public page)</label>
+      <input type="text" class="form-input" id="ov-recruitment-intro-input" placeholder="What we're looking for right now"
+        onchange="guildInfo.publicSite.recruitmentIntro=this.value">
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px;" id="ov-recruitment-openings"></div>
+  </div>
+
+  <!-- SECTION: ANNOUNCEMENTS -->
+  <div class="cms-section">
+    <div class="cms-section-header">
+      <div class="cms-section-label">Announcements</div>
+      <button class="btn btn-small krm-edit-only" onclick="addAnnouncement()">+ Add Announcement</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Channel label <span style="font-weight:400;color:var(--text-dim);">(shown next to "From the guild")</span></label>
+      <input type="text" class="form-input" id="ov-announcement-channel-input" placeholder="#announcements"
+        onchange="guildInfo.publicSite.announcementChannelLabel=this.value">
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px;" id="ov-announcements"></div>
+  </div>
+
+  <!-- SECTION: RECAP -->
+  <div class="cms-section">
+    <div class="cms-section-header">
+      <div class="cms-section-label">Latest Recap</div>
+      <div class="cms-section-hint">Featured raid-night writeup on the public overview</div>
+    </div>
+    <div id="ov-recap"></div>
+  </div>
+
   </div><!-- /#manager-overview-view -->
 
   <!-- Public visitor overview - Design/preview/guild.html: masthead/nav
@@ -5908,12 +5979,12 @@ let guildInfo = {
     { name: "Method Raid Tools", desc: "Essential raid leader addon. Tracks raid cooldowns, manages assignments, handles notes and reminders, and inspects raiders gear and specs. Required for officers, strongly recommended for all raiders. Install via CurseForge.", url: "https://www.curseforge.com/wow/addons/method-raid-tools", color: "#9b59b6" },
   ],
   progression: [
-    { label: 'Karazhan', killed: 10, total: 10, image: '' },
-    { label: "Gruul's / Magtheridon", killed: 3, total: 3, image: '' },
-    { label: 'SSC / TK', killed: 10, total: 10, image: '' },
-    { label: 'Black Temple / Hyjal', killed: 0, total: 14, image: '' },
-    { label: 'Zul\'Aman', killed: 0, total: 6, image: '' },
-    { label: 'Sunwell Plateau', killed: 0, total: 6, image: '' },
+    { id: 'karazhan', label: 'Karazhan', killed: 10, total: 10, image: '' },
+    { id: 'gruul-mag', label: "Gruul's / Magtheridon", killed: 3, total: 3, image: '' },
+    { id: 'ssc-tk', label: 'SSC / TK', killed: 10, total: 10, image: '' },
+    { id: 'bt-hyjal', label: 'Black Temple / Hyjal', killed: 0, total: 14, image: '' },
+    { id: 'zul-aman', label: 'Zul\'Aman', killed: 0, total: 6, image: '' },
+    { id: 'sunwell', label: 'Sunwell Plateau', killed: 0, total: 6, image: '' },
   ],
   // Real IANA zone the GM/officers actually operate in - used to format
   // every scheduled raid time (see getScheduledRaidsThisWeek) via the
@@ -5930,6 +6001,26 @@ let guildInfo = {
   // server side - just a fixed relative offset the GM states directly.
   serverTimezoneLabel: '',
   serverOffsetFromGuildHours: null,
+  // Optional public-guild-page overrides, all additive to the fields
+  // above (never replacing them) - see renderPublicOverview/
+  // renderPublicResults/renderPublicEncounterLibrary, which already read
+  // every one of these; the manager editor that WRITES them lives in
+  // renderOverview()'s "PUBLIC SITE" sections below. Missing/omitted
+  // content is meant to be omitted on the public page, never backfilled
+  // with invented values - see Design/DECISIONS.md's own contract note.
+  publicSite: {
+    banner: '',            // overrides guildInfo.banner on the public page only, when set
+    tagline: '',            // overrides guildInfo.about's opening line under the hero h1
+    widgets: {},            // { nextRaid, progression, rankings, recruitment, announcements, recap, basics } - false hides, default true
+    rankings: [],           // [{ progressionId, scope, category, world, region, realm, url, observedAt }]
+    recruitmentIntro: '',
+    recruitment: [],        // [{ role, class, spec, quantity, icon, roleLabel, active }]
+    announcementChannelLabel: '',
+    announcements: [],      // [{ pinned, dateLabel, title, excerpt, discordUrl, published }]
+    latestRecap: {},        // { title, titleLead, titleEmphasis, context, excerpt, image, url, credit, published }
+    focusEncounter: null,   // { stratId, label, summary, raidLead: { name, avatar } } - set in Strats (Phase 3)
+    results: { reports: [] },// [{ id, published, startTime, title, raid, size, image, icon, wclUrl, aiReport }] - set in Guild Logs (Phase 4)
+  },
 };
 
 // Preset roster from guild screenshots + Excel data
@@ -9062,6 +9153,208 @@ function renderOverview() {
             <button onclick="removeTool(${i})" style="background:none;border:none;color:var(--red-bright);cursor:pointer;font-size:13px;opacity:0.6;" title="Remove">✕</button>
           </div>`;
         }).join('');
+  }
+
+  renderPublicSiteEditor();
+}
+
+// ======================================================
+// PUBLIC SITE editor - the write path for guildInfo.publicSite.*, read
+// by renderPublicOverview/renderPublicResults/renderPublicEncounterLibrary
+// (see their own comments). Called from renderOverview() above; kept as
+// its own function purely so this one screenful of new fields doesn't
+// make an already-long function harder to scan. Every field here is
+// additive/optional - blank or unchecked means "fall back to the plain
+// field above, or omit that widget," matching Design/DECISIONS.md's
+// "Current overview adapter for Claude" contract note.
+// ======================================================
+function ensurePublicSiteDefaults() {
+  const s = guildInfo.publicSite = guildInfo.publicSite || {};
+  s.widgets = s.widgets || {};
+  s.rankings = Array.isArray(s.rankings) ? s.rankings : [];
+  s.recruitment = Array.isArray(s.recruitment) ? s.recruitment : [];
+  s.announcements = Array.isArray(s.announcements) ? s.announcements : [];
+  s.latestRecap = s.latestRecap || {};
+  s.results = s.results || {};
+  s.results.reports = Array.isArray(s.results.reports) ? s.results.reports : [];
+  // Rankings link to progression rows by id - older saves may predate
+  // stable ids on guildInfo.progression entries, so backfill from the
+  // label rather than leaving a ranking orphaned with nothing to match.
+  (guildInfo.progression || []).forEach((p, i) => { if (!p.id) p.id = (p.label || 'tier-' + i).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'tier-' + i; });
+  return s;
+}
+
+function renderPublicSiteEditor() {
+  const site = ensurePublicSiteDefaults();
+
+  // ── Identity + widget visibility ───────────────────────
+  const idEl = document.getElementById('ov-site-identity');
+  if (idEl) {
+    idEl.innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group">
+          <label class="form-label">Public banner override <span style="font-weight:400;color:var(--text-dim);">(optional)</span></label>
+          <label class="btn btn-small krm-edit-only" style="cursor:pointer;display:inline-block;">
+            🖼 ${site.banner ? 'Replace' : 'Upload'}
+            <input type="file" accept="image/*" onchange="uploadPublicSiteImage(event, v => guildInfo.publicSite.banner = v, 'site-banner')" style="display:none;">
+          </label>
+          ${site.banner ? `<button class="btn btn-small krm-edit-only" onclick="guildInfo.publicSite.banner='';renderOverview();">✕ Use main banner</button>` : ''}
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tagline override <span style="font-weight:400;color:var(--text-dim);">(shown under the guild name)</span></label>
+          <input type="text" class="form-input" value="${(site.tagline||'').replace(/"/g,'&quot;')}" placeholder="Leave blank to use About's plain text"
+            onchange="guildInfo.publicSite.tagline=this.value">
+        </div>
+      </div>`;
+  }
+  const widgetsEl = document.getElementById('ov-site-widgets');
+  if (widgetsEl) {
+    const items = [['nextRaid','Next raid'],['progression','Progression'],['rankings','Rankings'],['recruitment','Recruitment'],['announcements','Announcements'],['recap','Recap'],['basics','Guild basics']];
+    widgetsEl.innerHTML = items.map(([key,label]) => `
+      <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-mid);">
+        <input type="checkbox" ${site.widgets[key]===false?'':'checked'} onchange="guildInfo.publicSite.widgets['${key}']=this.checked"> ${label}
+      </label>`).join('');
+  }
+
+  // ── Rankings ───────────────────────────────────────────
+  const rankEl = document.getElementById('ov-rankings');
+  if (rankEl) {
+    rankEl.innerHTML = site.rankings.length === 0
+      ? `<div style="color:var(--text-dim);font-size:13px;font-style:italic;">No rankings added yet.</div>`
+      : site.rankings.map((r, i) => `
+        <div style="padding:12px 14px;background:var(--bg-hover);border-radius:3px;border:1px solid var(--border-bright);position:relative;">
+          <button class="krm-edit-only" onclick="removeRankingRow(${i})" style="position:absolute;top:8px;right:8px;background:none;border:none;color:var(--red-bright);cursor:pointer;font-size:12px;opacity:0.6;" title="Remove">✕</button>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <select class="form-input" onchange="guildInfo.publicSite.rankings[${i}].progressionId=this.value">
+              ${(guildInfo.progression||[]).map(p => `<option value="${p.id}" ${r.progressionId===p.id?'selected':''}>${(p.label||'').replace(/"/g,'&quot;')}</option>`).join('')}
+            </select>
+            <input class="form-input" placeholder="Category (e.g. All Star Points)" value="${(r.category||'').replace(/"/g,'&quot;')}" onchange="guildInfo.publicSite.rankings[${i}].category=this.value">
+            <input class="form-input" placeholder="Scope label (e.g. Black Temple)" value="${(r.scope||'').replace(/"/g,'&quot;')}" onchange="guildInfo.publicSite.rankings[${i}].scope=this.value">
+            <input class="form-input" type="number" placeholder="World rank" value="${r.world??''}" onchange="guildInfo.publicSite.rankings[${i}].world=this.value===''?null:Number(this.value)">
+            <input class="form-input" type="number" placeholder="Region rank" value="${r.region??''}" onchange="guildInfo.publicSite.rankings[${i}].region=this.value===''?null:Number(this.value)">
+            <input class="form-input" type="number" placeholder="Realm rank" value="${r.realm??''}" onchange="guildInfo.publicSite.rankings[${i}].realm=this.value===''?null:Number(this.value)">
+            <input class="form-input" placeholder="Warcraft Logs URL" value="${(r.url||'').replace(/"/g,'&quot;')}" onchange="guildInfo.publicSite.rankings[${i}].url=this.value">
+            <input class="form-input" placeholder="Observed (e.g. Sept 12)" value="${(r.observedAt||'').replace(/"/g,'&quot;')}" onchange="guildInfo.publicSite.rankings[${i}].observedAt=this.value">
+          </div>
+        </div>`).join('');
+  }
+
+  // ── Recruitment openings ───────────────────────────────
+  const introInput = document.getElementById('ov-recruitment-intro-input');
+  if (introInput && document.activeElement !== introInput) introInput.value = site.recruitmentIntro || '';
+  const openingsEl = document.getElementById('ov-recruitment-openings');
+  if (openingsEl) {
+    openingsEl.innerHTML = site.recruitment.length === 0
+      ? `<div style="color:var(--text-dim);font-size:13px;font-style:italic;">No openings added yet.</div>`
+      : site.recruitment.map((o, i) => `
+        <div style="padding:12px 14px;background:var(--bg-hover);border-radius:3px;border:1px solid var(--border-bright);position:relative;">
+          <button class="krm-edit-only" onclick="removeRecruitmentOpening(${i})" style="position:absolute;top:8px;right:8px;background:none;border:none;color:var(--red-bright);cursor:pointer;font-size:12px;opacity:0.6;" title="Remove">✕</button>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr) 90px;gap:8px;">
+            <select class="form-input" onchange="guildInfo.publicSite.recruitment[${i}].role=this.value">
+              ${['Tank','Healer','DPS'].map(v => `<option ${o.role===v?'selected':''}>${v}</option>`).join('')}
+            </select>
+            <input class="form-input" placeholder="Class" value="${(o.class||'').replace(/"/g,'&quot;')}" onchange="guildInfo.publicSite.recruitment[${i}].class=this.value">
+            <input class="form-input" placeholder="Spec" value="${(o.spec||'').replace(/"/g,'&quot;')}" onchange="guildInfo.publicSite.recruitment[${i}].spec=this.value">
+            <input class="form-input" type="number" min="1" placeholder="Qty" value="${o.quantity??1}" onchange="guildInfo.publicSite.recruitment[${i}].quantity=Number(this.value)||1">
+            <input class="form-input" style="grid-column:1/3;" placeholder="Role label (optional, e.g. Off-tank)" value="${(o.roleLabel||'').replace(/"/g,'&quot;')}" onchange="guildInfo.publicSite.recruitment[${i}].roleLabel=this.value">
+            <label style="grid-column:3/5;display:flex;align-items:center;gap:6px;font-size:12px;">
+              <input type="checkbox" ${o.active!==false?'checked':''} onchange="guildInfo.publicSite.recruitment[${i}].active=this.checked"> Active (shown publicly)
+            </label>
+          </div>
+        </div>`).join('');
+  }
+
+  // ── Announcements ──────────────────────────────────────
+  const channelInput = document.getElementById('ov-announcement-channel-input');
+  if (channelInput && document.activeElement !== channelInput) channelInput.value = site.announcementChannelLabel || '';
+  const annEl = document.getElementById('ov-announcements');
+  if (annEl) {
+    annEl.innerHTML = site.announcements.length === 0
+      ? `<div style="color:var(--text-dim);font-size:13px;font-style:italic;">No announcements added yet.</div>`
+      : site.announcements.map((a, i) => `
+        <div style="padding:12px 14px;background:var(--bg-hover);border-radius:3px;border:1px solid var(--border-bright);position:relative;">
+          <button class="krm-edit-only" onclick="removeAnnouncement(${i})" style="position:absolute;top:8px;right:8px;background:none;border:none;color:var(--red-bright);cursor:pointer;font-size:12px;opacity:0.6;" title="Remove">✕</button>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <input class="form-input" placeholder="Date label (e.g. Sept 12)" value="${(a.dateLabel||'').replace(/"/g,'&quot;')}" onchange="guildInfo.publicSite.announcements[${i}].dateLabel=this.value">
+            <label style="display:flex;align-items:center;gap:6px;font-size:12px;justify-self:end;">
+              <input type="checkbox" ${a.pinned?'checked':''} onchange="guildInfo.publicSite.announcements[${i}].pinned=this.checked"> Pinned
+            </label>
+            <input class="form-input" style="grid-column:1/-1;" placeholder="Title" value="${(a.title||'').replace(/"/g,'&quot;')}" onchange="guildInfo.publicSite.announcements[${i}].title=this.value">
+            <textarea class="form-input" style="grid-column:1/-1;min-height:60px;" placeholder="Excerpt" onchange="guildInfo.publicSite.announcements[${i}].excerpt=this.value">${(a.excerpt||'').replace(/</g,'&lt;')}</textarea>
+            <input class="form-input" placeholder="Discord link (optional)" value="${(a.discordUrl||'').replace(/"/g,'&quot;')}" onchange="guildInfo.publicSite.announcements[${i}].discordUrl=this.value">
+            <label style="display:flex;align-items:center;gap:6px;font-size:12px;">
+              <input type="checkbox" ${a.published?'checked':''} onchange="guildInfo.publicSite.announcements[${i}].published=this.checked"> Published (shown publicly)
+            </label>
+          </div>
+        </div>`).join('');
+  }
+
+  // ── Latest recap ───────────────────────────────────────
+  const recapEl = document.getElementById('ov-recap');
+  if (recapEl) {
+    const r = site.latestRecap;
+    recapEl.innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <input class="form-input" placeholder="Title (used unless Title lead+emphasis are both set)" value="${(r.title||'').replace(/"/g,'&quot;')}" onchange="guildInfo.publicSite.latestRecap.title=this.value">
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;justify-self:end;">
+          <input type="checkbox" ${r.published?'checked':''} onchange="guildInfo.publicSite.latestRecap.published=this.checked"> Published (shown publicly)
+        </label>
+        <input class="form-input" placeholder="Title lead (optional, e.g. 'Karazhan, ')" value="${(r.titleLead||'').replace(/"/g,'&quot;')}" onchange="guildInfo.publicSite.latestRecap.titleLead=this.value">
+        <input class="form-input" placeholder="Title emphasis (optional, e.g. 'cleared.')" value="${(r.titleEmphasis||'').replace(/"/g,'&quot;')}" onchange="guildInfo.publicSite.latestRecap.titleEmphasis=this.value">
+        <input class="form-input" style="grid-column:1/-1;" placeholder="Context line" value="${(r.context||'').replace(/"/g,'&quot;')}" onchange="guildInfo.publicSite.latestRecap.context=this.value">
+        <textarea class="form-input" style="grid-column:1/-1;min-height:70px;" placeholder="Excerpt" onchange="guildInfo.publicSite.latestRecap.excerpt=this.value">${(r.excerpt||'').replace(/</g,'&lt;')}</textarea>
+        <input class="form-input" placeholder="Read more URL (optional)" value="${(r.url||'').replace(/"/g,'&quot;')}" onchange="guildInfo.publicSite.latestRecap.url=this.value">
+        <input class="form-input" placeholder="Credit (optional, e.g. 'Written by Aerion')" value="${(r.credit||'').replace(/"/g,'&quot;')}" onchange="guildInfo.publicSite.latestRecap.credit=this.value">
+        <div class="form-group" style="grid-column:1/-1;">
+          <label class="btn btn-small krm-edit-only" style="cursor:pointer;display:inline-block;">
+            🖼 ${r.image ? 'Replace image' : 'Upload image'}
+            <input type="file" accept="image/*" onchange="uploadPublicSiteImage(event, v => guildInfo.publicSite.latestRecap.image = v, 'recap-image')" style="display:none;">
+          </label>
+          ${r.image ? `<span style="font-size:11px;color:var(--teal);margin-left:8px;">✓ Image set</span>` : ''}
+        </div>
+      </div>`;
+  }
+}
+
+function addRankingRow() { ensurePublicSiteDefaults().rankings.push({ progressionId: (guildInfo.progression||[])[0]?.id || '', scope: '', category: '', world: null, region: null, realm: null, url: '', observedAt: '' }); renderOverview(); }
+function removeRankingRow(i) { guildInfo.publicSite.rankings.splice(i,1); renderOverview(); }
+function addRecruitmentOpening() { ensurePublicSiteDefaults().recruitment.push({ role: 'DPS', class: '', spec: '', quantity: 1, roleLabel: '', active: true }); renderOverview(); }
+function removeRecruitmentOpening(i) { guildInfo.publicSite.recruitment.splice(i,1); renderOverview(); }
+function addAnnouncement() { ensurePublicSiteDefaults().announcements.unshift({ pinned: false, dateLabel: '', title: '', excerpt: '', discordUrl: '', published: false }); renderOverview(); }
+function removeAnnouncement(i) { guildInfo.publicSite.announcements.splice(i,1); renderOverview(); }
+
+// Generalized version of uploadOverviewImage/uploadProgressionImage's own
+// GitHub-Contents-API-or-base64-fallback upload, taking a setter callback
+// instead of a fixed guildInfo[field] write so every publicSite.* image
+// slot (banner override, recap image, published-report image/icon, raid-
+// lead avatar) can reuse the exact same upload path without copy-pasting
+// it again per field. `hint` only affects the GitHub filename/toast text.
+async function uploadPublicSiteImage(event, setter, hint) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const cfg = getGHConfig();
+  if (!cfg.token) {
+    const reader = new FileReader();
+    reader.onload = e => { setter(e.target.result); renderOverview(); };
+    reader.readAsDataURL(file);
+    return;
+  }
+  showToast(`⬆ Uploading ${hint}...`);
+  try {
+    const filename = `assets/${hint}-${Date.now()}.${file.name.split('.').pop()}`;
+    const arrayBuf = await file.arrayBuffer();
+    const bytes = new Uint8Array(arrayBuf);
+    let binary = ''; bytes.forEach(b => binary += String.fromCharCode(b));
+    const encoded = btoa(binary);
+    const apiUrl = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${filename}`;
+    const headers = { 'Authorization': `token ${cfg.token}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' };
+    const putRes = await fetch(apiUrl, { method: 'PUT', headers, body: JSON.stringify({ message: `${hint}: ${filename}`, content: encoded }) });
+    if (!putRes.ok) throw new Error('Upload failed');
+    setter(filename + '?v=' + Date.now());
+    renderOverview();
+    showToast(`✓ ${hint} uploaded.`);
+  } catch(err) {
+    showToast(`✗ Upload failed: ${err.message}`, true);
   }
 }
 
