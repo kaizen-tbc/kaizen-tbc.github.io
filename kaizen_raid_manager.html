@@ -16664,6 +16664,7 @@ function closeSignInGate() { document.getElementById('auth-gate').style.display 
 
 function onboardingThemeIcon(light){return light?'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 13A8.5 8.5 0 0 1 11 3.5 8.5 8.5 0 1 0 20.5 13Z"/></svg>':'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"/></svg>';}
 let onboardingPreview=false;
+let _obGuildsCache=[]; // backs the guild-list buttons in openGuildOnboarding - see its own comment
 function obEscape(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function obShow(html){const d=document.getElementById('guild-onboarding');document.getElementById('ob-content').innerHTML=html;if(!d.open)d.showModal();document.getElementById('ob-title')?.focus();}
 function obHeading(title,copy){return '<h2 id="ob-title" tabindex="-1" style="outline:none">'+title+'</h2><p>'+copy+'</p>';}
@@ -16678,10 +16679,43 @@ async function startMarketingAuth(mode){
  if(mode==='signup')Clerk.openSignUp(options);else Clerk.openSignIn(options);
 }
 async function obApi(route,body){const res=await fetch(APP_API_WORKER+route,{method:body?'POST':'GET',headers:{...await clerkAuthHeader(),'Content-Type':'application/json'},...(body?{body:JSON.stringify(body)}:{})});const data=await res.json();if(!res.ok)throw Error(data.error||'Please try again.');return data;}
+// Checks existing memberships BEFORE ever showing "Register a guild /
+// Join a guild" - confirmed live (owner report: "kept showing me the
+// guild registration... and the new guild edit me thing which
+// shouldn't be showing") that the previous version showed that chooser
+// unconditionally, every single sign-in, even for someone who already
+// has a real active guild - reading as "you have to register/join
+// again" instead of just taking them in. Mirrors goToMyGuildOrRegister's
+// original pre-chooser logic (one guild -> straight there, none at all
+// -> the register/join flow, more than one -> pick from a list) rather
+// than always leading with the two big options.
 async function openGuildOnboarding(){
- obShow(obHeading('Your people. Your next raid.','Start a home for your guild, or find the people you already raid with.')+'<div class="ob-choices"><button class="ob-choice" onclick="obRegister()"><small>FOR GUILD LEADERS</small><strong>Register a guild →</strong><small>Connect your Discord server and make a home for your raids.</small></button><button class="ob-choice" onclick="obJoin()"><small>FOR RAIDERS</small><strong>Join a guild →</strong><small>Find your guild and send a membership request.</small></button></div><div id="ob-guilds" aria-live="polite">Loading your guilds…</div>');
- const target=document.getElementById('ob-guilds');
- try{const data=onboardingPreview?{guilds:[]}:await obApi('/api/my-guilds');if(!target.isConnected)return;target.textContent='';for(const guild of data.guilds||[]){const b=document.createElement('button');b.className='ob-choice';b.style.width='100%';b.style.marginTop='10px';b.innerHTML='<strong>'+obEscape(guild.name)+'</strong><small>'+({active:'Member · Open guild',pending:'Pending approval · Check status',rejected:'Request declined · View options'}[guild.status]||'View membership')+'</small>';b.onclick=()=>obMembership(guild,guild.status);target.append(b);}}catch(e){if(target.isConnected)target.innerHTML='<p>'+obEscape(e.message)+'</p><button class="ob-action" onclick="openGuildOnboarding()">Retry</button>';}
+ obShow(obHeading('Loading your guilds…','One moment.'));
+ let guilds = [], loadError = null;
+ if (onboardingPreview) { guilds = []; }
+ else { try { guilds = (await obApi('/api/my-guilds')).guilds || []; } catch(e) { loadError = e.message; } }
+ const active = guilds.filter(g => g.status === 'active');
+ // Exactly one real home already, no ambiguity - skip the chooser
+ // entirely and just take them in. Signing in isn't "start over."
+ if (active.length === 1 && !onboardingPreview) {
+   document.getElementById('guild-onboarding').close();
+   location.href = '/' + encodeURIComponent(active[0].slug);
+   return;
+ }
+ const chooserHtml = '<div class="ob-choices"><button class="ob-choice" onclick="obRegister()"><small>FOR GUILD LEADERS</small><strong>Register a guild →</strong><small>Connect your Discord server and make a home for your raids.</small></button><button class="ob-choice" onclick="obJoin()"><small>FOR RAIDERS</small><strong>Join a guild →</strong><small>Find your guild and send a membership request.</small></button></div>';
+ // Plain array + index, not JSON serialized into the onclick attribute -
+ // avoids re-escaping a guild name that itself contains a quote.
+ _obGuildsCache = guilds;
+ const guildListHtml = guilds.map((guild,i) => '<button class="ob-choice" style="width:100%;margin-top:10px;" onclick="obMembership(_obGuildsCache['+i+'],_obGuildsCache['+i+'].status)"><strong>'+obEscape(guild.name)+'</strong><small>'+({active:'Member · Open guild',pending:'Pending approval · Check status',rejected:'Request declined · View options'}[guild.status]||'View membership')+'</small></button>').join('');
+ if (loadError) {
+   obShow(obHeading('Your people. Your next raid.','Start a home for your guild, or find the people you already raid with.')+chooserHtml+'<p style="margin-top:16px;">'+obEscape(loadError)+'</p><button class="ob-action" onclick="openGuildOnboarding()">Retry loading your guilds</button>');
+ } else if (guilds.length) {
+   // Already has at least one relationship to a guild (active-but-plural,
+   // pending, and/or rejected) - lead with THOSE, "start another" second.
+   obShow(obHeading('Your guilds.','Open one below, or start another.')+guildListHtml+'<div style="margin-top:20px;">'+chooserHtml+'</div>');
+ } else {
+   obShow(obHeading('Your people. Your next raid.','Start a home for your guild, or find the people you already raid with.')+chooserHtml);
+ }
 }
 function obRegister(){obShow(obHeading('Give your guild a home.','Connect the Discord server you manage. Discord will ask you to select a server and review the bot permissions before registration.')+'<div class="ob-choice"><small>WHAT HAPPENS NEXT</small><strong>One home for every raid.</strong><small>Your guild page, roster and encounter plans stay together. You can configure your raid channels and guild details in management.</small></div><button id="ob-register" class="ob-action">Connect Discord server →</button>'+obBack());document.getElementById('ob-register').onclick=async function(){if(onboardingPreview){obShow(obHeading('Discord connection','In the live app, Discord opens here to select your server and grant permission.')+obBack());return;}this.disabled=true;await registerGuild();this.disabled=false;};}
 function obJoin(){obShow(obHeading('Find your guild.','Paste your guild’s Kaizen page link or enter its address name. Your GM will review your request.')+'<form id="ob-search"><label for="ob-slug">Guild link or address</label><input id="ob-slug" required maxlength="250" placeholder="kaizen" autocomplete="off"><button class="ob-action">Find guild →</button><div role="status" id="ob-error"></div></form>'+obBack());document.getElementById('ob-search').onsubmit=async function(e){e.preventDefault();const button=this.querySelector('button'),error=document.getElementById('ob-error');button.disabled=true;error.textContent='';try{let slug=document.getElementById('ob-slug').value.trim();if(/^https?:/i.test(slug))slug=new URL(slug).pathname;slug=slug.replace(/^\/+|\/+$/g,'');if(!/^[a-zA-Z0-9-]+$/.test(slug))throw Error('Use a guild page link or its address name, such as kaizen.');const g=onboardingPreview?{id:1,name:'Kaizen',slug:'kaizen'}:await obApi('/api/guild-by-slug?slug='+encodeURIComponent(slug));const member=onboardingPreview?{status:null}:await obApi('/api/guild-membership/mine?guildId='+encodeURIComponent(g.id));if(button.isConnected)obMembership(g,member.status);}catch(e){error.textContent=e.message;}finally{button.disabled=false;}};}
