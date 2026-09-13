@@ -2410,10 +2410,11 @@ body.landing-mode #landing-page { display: block; }
    used position:sticky before this landing page did, which is why that
    pre-existing rule never surfaced the bug until now. */
 #landing-page .lp-top { position: sticky; top: 0; z-index: 20; border-bottom: 1px solid var(--lp-line); background: var(--lp-bg); }
-#landing-page .lp-nav { min-height: 76px; display: flex; align-items: center; justify-content: space-between; gap: 12px 24px; flex-wrap: wrap; padding-block: 12px; }
+#landing-page .lp-nav { min-height: 76px; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
 #landing-page .lp-wordmark { font: italic bold 29px Georgia, serif; color: var(--lp-text); text-decoration: none; letter-spacing: -1px; white-space: nowrap; flex-shrink: 0; }
-#landing-page .lp-wordmark i { color: var(--lp-danger); font-style: normal; }
+#landing-page .lp-wordmark i { color: var(--lp-danger); }
 #landing-page .lp-navlinks { display: flex; align-items: center; gap: 24px; }
+#landing-page .lp-navlinks .lp-button { font-size:13px; }
 /* :not(.lp-button) - the header's primary CTA (#lp-nav-cta) is also a
    plain <a> inside .lp-navlinks, and needs to stay a real pill button
    (padding/min-height/background from .lp-button.lp-primary above),
@@ -2489,6 +2490,204 @@ body.landing-mode #landing-page { display: block; }
 #landing-page .lp-demo-note { font-size: 12px; color: var(--lp-muted); }
 #landing-page .lp-footer { padding: 36px 0; border-top: 1px solid var(--lp-line); font-size: 12px; color: var(--lp-muted); }
 #landing-page .lp-footer .lp-nav { min-height: auto; padding-bottom: 20px; }
+
+/* ===== Marketing page content - ported from Design/preview/product.css
+   (var(--muted)->var(--lp-muted) etc, every selector scoped under
+   #landing-page - see the HTML comment on #landing-main for why this
+   is safe even where a bare class name, like .personal-plan or
+   .group-label, already means something else elsewhere in the app). */
+#landing-page .product-home .hero-copy, #landing-page .hero-copy { text-align: center; max-width: 760px; margin: 0 auto 64px; }
+#landing-page .product-hero { padding: 80px 0 72px; }
+#landing-page .product-hero h1 { font-size: clamp(54px, 7.5vw, 100px); line-height: 1.02; }
+#landing-page .hero-copy > p { font-size: 20px; color: var(--lp-muted); margin: 24px auto; }
+#landing-page .hero-copy .actions { justify-content: center; align-items: center; }
+#landing-page .actions { display: flex; gap: 16px; flex-wrap: wrap; }
+#landing-page .quiet-link { font-size: 14px; text-decoration: none; padding: 12px; color: var(--lp-muted); }
+#landing-page .product-window { border: 1px solid var(--lp-line); background: var(--lp-surface); border-radius: 10px; overflow: hidden; box-shadow: 0 24px 60px #00000012; scroll-margin-top: 100px; }
+#landing-page .window-bar { display: flex; align-items: center; gap: 32px; padding: 18px 28px; border-bottom: 1px solid var(--lp-line); font-size: 13px; color: var(--lp-muted); }
+#landing-page .window-bar .lp-wordmark { font-size: 22px; }
+#landing-page .saved { margin-left: auto; color: var(--lp-success); }
+#landing-page .product-content { padding: 32px; }
+#landing-page .raid-heading { display: flex; justify-content: space-between; align-items: center; gap: 20px; margin-bottom: 32px; }
+#landing-page .product-home .raid-heading h2, #landing-page .raid-heading h2 { font: 600 30px/1.2 var(--lp-font-ui); letter-spacing: -0.03em; margin: 8px 0 0; }
+#landing-page .roster-layout { display: grid; grid-template-columns: 1fr 260px; gap: 36px; }
+#landing-page .group-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+#landing-page .group-label { display: flex; justify-content: space-between; border-bottom: 1px solid var(--lp-line); padding-bottom: 12px; font-size: 12px; color: var(--lp-muted); font-family: inherit; letter-spacing: normal; }
+#landing-page .member { display: flex; align-items: center; gap: 12px; min-height: 66px; border-bottom: 1px solid var(--lp-line); }
+#landing-page .avatar { display: grid; place-items: center; width: 32px; height: 32px; border: 1px solid var(--lp-line); border-radius: 50%; color: var(--lp-muted); font-size: 12px; }
+#landing-page .member strong { font-size: 14px; font-weight: 600; display: block; }
+#landing-page .member small { font-size: 12px; display: block; }
+#landing-page .member-role { margin-left: auto; color: var(--lp-muted); font-size: 12px; }
+#landing-page .open-slot { height: 66px; display: flex; gap: 16px; align-items: center; font-size: 13px; color: var(--lp-warning); }
+#landing-page .open-slot > span { width: 32px; text-align: center; }
+#landing-page .readiness { border-left: 1px solid var(--lp-line); padding-left: 28px; }
+#landing-page .big-number { font: 400 64px/1.1 var(--lp-font-ui); letter-spacing: -0.06em; font-variant-numeric: tabular-nums; }
+#landing-page .big-number span { font-size: 24px; color: var(--lp-muted); letter-spacing: -0.03em; }
+#landing-page .readiness p { font-size: 13px; }
+#landing-page .readiness dl { font-size: 13px; margin: 24px 0; }
+#landing-page .readiness dl div { display: flex; justify-content: space-between; margin-bottom: 12px; }
+#landing-page .readiness dt { color: var(--lp-muted); }
+#landing-page .readiness dd { margin: 0; font-variant-numeric: tabular-nums; }
+#landing-page .readiness dd.warning, #landing-page .warning { color: var(--lp-warning); }
+#landing-page .remaining { border-top: 1px solid var(--lp-line); padding-top: 16px; }
+#landing-page .spec-caption { font-size: 12px; color: var(--lp-muted); text-align: center; margin: 16px auto 0; }
+#landing-page .product-section { padding: 100px 0; }
+#landing-page .focus-layout { display: grid; grid-template-columns: 0.8fr 1.2fr; gap: 100px; align-items: center; }
+#landing-page .product-home h2, #landing-page .product-section h2, #landing-page .closing-section h2 { font-size: clamp(38px, 4.5vw, 60px); }
+#landing-page .focus-copy > p, #landing-page .assignment-intro > p { font-size: 18px; color: var(--lp-muted); margin-top: 24px; }
+#landing-page .assignments-section { background: var(--lp-surface); }
+#landing-page .assignment-intro { text-align: center; margin-bottom: 56px; }
+#landing-page .assignment-intro > p { margin-inline: auto; }
+#landing-page .closing-section { padding: 110px 0; }
+#landing-page .closing-layout { display: grid; grid-template-columns: 1.1fr 1fr; gap: 100px; align-items: center; }
+#landing-page .closing-art img { width: 100%; aspect-ratio: 1.3; object-fit: cover; object-position: 70% center; border-radius: 2px; }
+#landing-page .closing-art > p { font: 32px/1.2 Georgia, serif; margin-top: 24px; }
+#landing-page .closing-layout .signup { width: 100%; }
+#landing-page .closing-layout .signup h2 { text-align: left; font-size: 40px; }
+#landing-page .closing-layout .signup > p, #landing-page .closing-layout .signup .lp-eyebrow { text-align: left !important; }
+#landing-page .footer { padding: 36px 0; border-top: 1px solid var(--lp-line); font-size: 12px; color: var(--lp-muted); }
+#landing-page .footer-line { display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+#landing-page .footer-line small { font-size: 12px; }
+/* Encounter-plan mockup (position map + player-choices sidebar) */
+#landing-page .preview-switch { display: flex; justify-content: center; gap: 8px; margin: 0 0 24px; }
+#landing-page .plan-heading { display: flex; justify-content: space-between; align-items: center; gap: 24px; padding: 24px 28px; }
+#landing-page .plan-heading h3 { font-size: 24px; margin: 4px 0 0; }
+#landing-page .plan-heading > span { font-size: 13px; }
+#landing-page .plan-layout { display: grid; grid-template-columns: 1fr 290px; border-top: 1px solid var(--lp-line); align-items: start; }
+#landing-page .position-map { position: relative; min-width: 0; height: 520px; background: #192226; isolation: isolate; }
+#landing-page .position-map > img { width: 100%; height: 100%; position: absolute; object-fit: cover; inset: 0; object-position: center; }
+#landing-page .position-pin { position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column; gap: 2px; z-index: 2; border: 0; padding: 4px; min-width: 44px; background: transparent !important; color: #fff; cursor: pointer; }
+#landing-page .position-pin > .spec-pin { display: grid; place-items: center; width: 34px; height: 34px; background: #192226; border: 2px solid #F5F2E9; border-radius: 50%; font-size: 12px; overflow: hidden; }
+#landing-page .spec-pin img { width: 100%; height: 100%; object-fit: cover; }
+#landing-page .position-pin > b { background: #101619; font-size: 12px; padding: 1px 7px; border-radius: 2px; }
+#landing-page .position-pin[aria-pressed="true"] > .spec-pin { outline: 3px solid #F5F2E9; outline-offset: 2px; border-color: #D6B66F; }
+#landing-page .boss-marker { position: absolute; left: 50%; top: 47%; transform: translate(-50%, -50%); font-size: 12px; color: #F5F2E9; background: #101619; padding: 4px 8px; border: 1px solid #B2BEC1; }
+#landing-page .personal-plan { padding: 24px; background: var(--lp-surface); height: 520px; overflow-y: auto; box-sizing: border-box; }
+#landing-page .personal-plan .lp-eyebrow { font-size: 12px; letter-spacing: 0.08em; }
+#landing-page .player-choices { display: grid; gap: 4px; }
+#landing-page .player-choices button { display: flex; gap: 10px; align-items: center; justify-content: space-between; text-align: left; padding: 10px 12px; border: 0; font-size: 13px; border-left: 2px solid transparent; background: transparent; cursor: pointer; width: 100%; }
+#landing-page .player-choices button > img { width: 28px; height: 28px; border-radius: 3px; }
+#landing-page .player-choices .choice-name { flex: 1; min-width: 0; }
+#landing-page .choice-name strong, #landing-page .choice-name small { display: block; }
+#landing-page .choice-name strong { color: var(--lp-text); }
+#landing-page .choice-name small { font-size: 11px; font-weight: 400; margin-top: 2px; color: var(--lp-muted); }
+#landing-page .choice-target { font-size: 11px !important; color: var(--lp-muted); }
+#landing-page .player-choices [aria-pressed="true"] { background: var(--lp-raised); border-left-color: var(--lp-accent); }
+#landing-page .personal-detail { border-top: 1px solid var(--lp-line); margin-top: 24px; padding-top: 20px; }
+#landing-page .personal-detail h3 { margin: 6px 0; font-size: 20px; }
+#landing-page .personal-detail p { font-size: 14px; color: var(--lp-muted); margin: 0; }
+#landing-page .assigned-job { display: flex; align-items: center; gap: 10px; margin: 16px 0; }
+#landing-page .assigned-job > img { width: 32px; height: 32px; border-radius: 4px; }
+#landing-page .assigned-job strong, #landing-page .assigned-job span { display: block; font-size: 13px; }
+#landing-page .assigned-job span { color: var(--lp-muted); }
+#landing-page #lp-ability-reference { margin-top: 16px; font-size: 12px; }
+#landing-page #lp-ability-reference > a { display: inline-block; min-height: 32px; color: var(--lp-link); }
+#landing-page #lp-ability-reference details { margin-top: 8px; }
+#landing-page #lp-ability-reference summary { cursor: pointer; min-height: 36px; }
+#landing-page #lp-ability-reference details p { font-size: 12px; margin: 8px 0; color: var(--lp-muted); }
+#landing-page .strat-proof { width: min(1000px, calc(100% - 64px)); margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 64px; border-top: 1px solid var(--lp-line); padding: 32px 0; }
+#landing-page .strat-proof p { color: var(--lp-muted); font-size: 15px; margin: 0; }
+#landing-page .strat-proof strong { display: block; color: var(--lp-text); font-weight: 600; margin-bottom: 8px; }
+/* Weekly roster mockup */
+#landing-page .roster-spotlight { background: var(--lp-surface); margin-top: 48px; }
+#landing-page .roster-story { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center; margin-bottom: 48px; }
+#landing-page .roster-story > p { font-size: 18px; color: var(--lp-muted); max-width: 44ch; }
+#landing-page .roster-spotlight .product-window { background: var(--lp-bg); box-shadow: none; }
+#landing-page .roster-footnote { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; margin-top: 32px; }
+#landing-page .roster-footnote p { font-size: 14px; color: var(--lp-muted); margin: 0; }
+#landing-page .roster-footnote strong { display: block; color: var(--lp-text); margin-bottom: 8px; }
+#landing-page .badge { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; padding: 4px 10px; border: 1px solid currentColor; border-radius: 99px; color: var(--lp-warning); }
+#landing-page .coverage-note { border-top: 1px solid var(--lp-line); padding-top: 16px; margin-top: 16px; }
+#landing-page .coverage-note p { line-height: 1.9; margin: 8px 0 0; font-size: 12px; color: var(--lp-muted); }
+#landing-page .attendance-proof { display: grid; grid-template-columns: 1.1fr 1fr; gap: 16px 36px; border-top: 1px solid var(--lp-line); margin-top: 32px; padding-top: 24px; }
+#landing-page .attendance-proof .lp-eyebrow { margin-bottom: 8px; }
+#landing-page .attendance-proof p { font-size: 14px; color: var(--lp-muted); margin: 0 0 8px; }
+#landing-page .attendance-proof small { font-size: 12px; color: var(--lp-muted); }
+#landing-page .attendance-proof dl { margin: 0; font-size: 13px; }
+#landing-page .attendance-proof dl div { display: flex; justify-content: space-between; gap: 24px; padding: 8px 0; }
+#landing-page .attendance-proof dt { color: var(--lp-muted); }
+#landing-page .attendance-proof dd { margin: 0; font-variant-numeric: tabular-nums; }
+#landing-page .attendance-proof .attendance-note { grid-column: 1 / -1; font-size: 12px; margin: 0; color: var(--lp-muted); }
+/* Discord + Warcraft Logs mockups */
+#landing-page .discord-object { min-width: 0; }
+#landing-page .channel-name { font-size: 16px; border-bottom: 1px solid var(--lp-line); padding: 16px 0; display: flex; justify-content: space-between; gap: 16px; }
+#landing-page .channel-name span { font-size: 12px; color: var(--lp-muted); }
+#landing-page .message-author { display: flex; align-items: center; gap: 10px; margin: 24px 0 16px; }
+#landing-page .bot-avatar { display: grid; place-items: center; width: 32px; height: 32px; background: var(--lp-raised); border-radius: 50%; font: italic 20px Georgia, serif; }
+#landing-page .message-author small { font-size: 10px; border: 1px solid var(--lp-line); padding: 0 4px; }
+#landing-page .discord-embed { margin-left: 42px; border-left: 3px solid var(--lp-accent); padding: 24px; background: var(--lp-surface); border-radius: 0 4px 4px 0; }
+#landing-page .discord-embed h3 { margin: 10px 0; }
+#landing-page .discord-embed > p { font-size: 14px; color: var(--lp-muted); }
+#landing-page .message-assignment { display: grid; grid-template-columns: 90px 1fr; gap: 12px; margin: 16px 0; font-size: 13px; }
+#landing-page .message-assignment span { color: var(--lp-muted); }
+#landing-page .message-foot { border-top: 1px solid var(--lp-line); padding-top: 16px; margin: 24px 0 0; font-size: 12px !important; color: var(--lp-muted); }
+#landing-page .debrief-object { max-width: 980px; margin: auto; border: 1px solid var(--lp-line); border-radius: 8px; background: var(--lp-bg); }
+#landing-page .debrief-heading { display: flex; justify-content: space-between; align-items: center; gap: 20px; border-bottom: 1px solid var(--lp-line); padding: 24px 32px; }
+#landing-page .debrief-heading h3 { margin: 8px 0 0; font-size: 24px; }
+#landing-page .debrief-heading > span { font-size: 12px; }
+#landing-page .debrief-body { display: grid; grid-template-columns: 1fr 1fr; }
+#landing-page .debrief-body > div { padding: 32px; }
+#landing-page .debrief-body > div + div { border-left: 1px solid var(--lp-line); }
+#landing-page .debrief-body p { font-size: 15px; color: var(--lp-muted); }
+#landing-page .evidence-line { font-size: 12px; border-top: 1px solid var(--lp-line); padding-top: 16px; color: var(--lp-muted); }
+/* Guild-home mockup */
+#landing-page .guild-entry { font-size: 14px !important; }
+#landing-page .guild-page-preview { border: 1px solid var(--lp-line); border-radius: 8px; overflow: hidden; background: var(--lp-surface); }
+#landing-page .guild-page-art { min-height: 190px; display: flex; align-items: end; padding: 24px; color: #F5F2E9; background: linear-gradient(0deg, #101619e6, #10161933), url(assets/brand/karazhan-minimal.png) 70% center/cover; }
+#landing-page .guild-page-art small { color: #F5F2E9; }
+#landing-page .guild-page-art h3 { font: 36px Georgia, serif; margin: 8px 0; }
+#landing-page .guild-page-art span { font-size: 12px; }
+#landing-page .guild-page-body { padding: 8px 24px; }
+#landing-page .guild-page-body > div { padding: 16px 0; border-bottom: 1px solid var(--lp-line); }
+#landing-page .guild-page-body > div:last-child { border: 0; }
+#landing-page .guild-page-body strong, #landing-page .guild-page-body span { display: block; }
+#landing-page .guild-page-body strong { font-size: 16px; margin: 4px 0; }
+#landing-page .guild-page-body span { font-size: 13px; color: var(--lp-muted); }
+#landing-page .guild-page-preview > .spec-caption { padding: 0 20px 20px; }
+@media (max-width: 1000px) {
+  #landing-page .focus-layout, #landing-page .closing-layout { gap: 40px; }
+  #landing-page .roster-layout { grid-template-columns: 1fr 210px; gap: 24px; }
+  #landing-page .member-role { display: none; }
+  #landing-page .product-content { padding: 24px; }
+  #landing-page .readiness { padding-left: 20px; }
+}
+@media (max-width: 800px) {
+  #landing-page .plan-layout { grid-template-columns: 1fr; }
+  #landing-page .position-map { height: 340px; }
+  #landing-page .personal-plan { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; height: auto; overflow-y: visible; }
+  #landing-page .personal-plan > .lp-eyebrow { grid-column: 1 / -1; margin: 0; }
+  #landing-page .personal-detail { border-top: 0; border-left: 1px solid var(--lp-line); padding: 12px 0 0 20px; margin: 0; }
+  #landing-page .debrief-body { grid-template-columns: 1fr; }
+  #landing-page .debrief-body > div + div { border-left: 0; border-top: 1px solid var(--lp-line); }
+  #landing-page .debrief-heading { align-items: start; flex-direction: column; }
+}
+@media (max-width: 700px) {
+  #landing-page .product-hero { padding-top: 48px; }
+  #landing-page .product-home .hero-copy, #landing-page .hero-copy { margin-bottom: 40px; }
+  #landing-page .hero-copy > p { font-size: 18px; }
+  #landing-page .product-content { padding: 20px; }
+  #landing-page .roster-layout { grid-template-columns: 1fr; }
+  #landing-page .readiness { border-left: 0; border-top: 1px solid var(--lp-line); padding: 20px 0 0; }
+  #landing-page .readiness .big-number { font-size: 48px; }
+  #landing-page .readiness dl { display: flex; gap: 24px; flex-wrap: wrap; }
+  #landing-page .group-pair { gap: 16px; }
+  #landing-page .avatar { display: none; }
+  #landing-page .raid-heading { align-items: start; flex-direction: column; gap: 12px; margin-bottom: 24px; }
+  #landing-page .focus-layout, #landing-page .closing-layout { grid-template-columns: 1fr; gap: 32px; }
+  #landing-page .product-section, #landing-page .closing-section { padding: 64px 0; }
+  #landing-page .footer-line { flex-wrap: wrap; }
+  #landing-page .closing-art img { aspect-ratio: 2; }
+  #landing-page .closing-art > p { font-size: 26px; }
+  #landing-page .window-bar { padding: 16px 20px; gap: 16px; }
+  #landing-page .roster-story, #landing-page .roster-footnote { grid-template-columns: 1fr; gap: 24px; }
+}
+@media (max-width: 480px) {
+  #landing-page .personal-plan { display: block; padding: 20px; }
+  #landing-page .position-map { height: 300px; }
+  #landing-page .discord-embed { margin-left: 0; padding: 20px; }
+  #landing-page .debrief-body > div { padding: 24px; }
+  #landing-page .debrief-heading { padding: 24px; }
+}
 @media (max-width: 900px) {
   #landing-page .lp-feature-grid { grid-template-columns: 1fr; gap: 32px; }
   #landing-page .lp-grid { grid-template-columns: repeat(2, 1fr); }
@@ -2497,6 +2696,8 @@ body.landing-mode #landing-page { display: block; }
   #landing-page .lp-wrap { width: calc(100% - 32px); }
   #landing-page .lp-nav { min-height: 68px; gap: 12px; }
   #landing-page .lp-navlinks { gap: 8px; }
+  #landing-page .lp-navlinks .lp-button { padding:8px 12px; }
+  #landing-page .lp-navlinks button { font-size:12px; padding:8px 12px; }
   #landing-page .lp-navlinks a.lp-hide-mobile { display: none; }
   #landing-page .lp-circle { width: 34px; height: 34px; min-height: 34px; }
   #landing-page .lp-grid, #landing-page .lp-feature-grid { grid-template-columns: 1fr; }
@@ -2631,6 +2832,169 @@ body.landing-mode #landing-page { display: block; }
 #tab-strats .brief-edit-label textarea{display:block;width:100%;margin-top:6px;resize:vertical;line-height:1.6}
 @media(max-width:850px){#tab-strats .assigns-panel.public-assignments{height:560px}#tab-strats .guild-brief-grid{grid-template-columns:1fr}}
 
+/* Guild overview: scoped from the locked guild-overview.css reference. */
+body.guild-public-mode main:has(#tab-overview.active){max-width:none;padding:0}
+
+#public-overview-view{--bg:var(--kz-bg);--surface:var(--kz-surface);--raised:var(--kz-raised);--line:var(--kz-line);--control:var(--kz-control);--text:var(--kz-text);--muted:var(--kz-muted);--accent:var(--kz-accent);--hover:var(--kz-hover);--onAccent:var(--kz-onaccent);--link:var(--kz-link);--warning:var(--kz-warning);--font-display:var(--kz-font-display);--font-ui:var(--kz-font-ui);font:16px/1.6 var(--font-ui);color:var(--text)}
+#public-overview-view *{box-sizing:border-box}
+#public-overview-view h1,#public-overview-view h2,#public-overview-view h3,#public-overview-view p{margin:0 0 16px}
+#public-overview-view h1,#public-overview-view h2{font-family:var(--font-display);font-weight:400;line-height:1.08;letter-spacing:-.035em;color:var(--text)}
+#public-overview-view h1{font-size:clamp(44px,6vw,80px)}
+#public-overview-view h2{font-size:clamp(32px,4vw,48px)}
+#public-overview-view h3{font-size:20px;line-height:1.3;color:var(--text)}
+#public-overview-view p{max-width:68ch}
+#public-overview-view a{color:var(--link);text-underline-offset:4px}
+#public-overview-view .button{min-height:44px;padding:11px 22px;border:1px solid var(--control);border-radius:2px;background:transparent;color:var(--text);font:600 14px/1.6 var(--font-ui);text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:8px;cursor:pointer}
+#public-overview-view .button:hover{background:var(--raised)}
+#public-overview-view .primary{background:var(--accent);color:var(--onAccent);border-color:var(--accent)}
+#public-overview-view .primary:hover{background:var(--hover)}
+#public-overview-view img{display:block;max-width:100%}
+#public-overview-view svg{max-width:100%}
+#public-overview-view .wrap{width:min(1200px,calc(100% - 64px));margin:auto}
+#public-overview-view .eyebrow{font:600 12px/1.5 var(--font-ui);letter-spacing:.18em;text-transform:uppercase;color:var(--link);margin-bottom:20px}
+#public-overview-view small{color:var(--muted)}
+#public-overview-view .overview-hero h1{color:#F5F2E9}
+#public-overview-view summary{cursor:pointer;padding:16px 0}
+#public-overview-view [hidden]{display:none!important}
+#public-overview-view .filled-role{color:var(--muted)}
+#public-overview-view .pub-rich-text{font:inherit;color:var(--muted)}
+#public-overview-content{padding-block:0 64px!important}
+@media(max-width:640px){#public-overview-view .wrap{width:calc(100% - 32px)}}
+
+#public-overview-view .overview-demo{border-bottom:1px solid var(--line);font-size:12px;color:var(--muted)}#public-overview-view .overview-demo>.wrap{display:flex;justify-content:space-between;align-items:center;gap:16px}#public-overview-view .overview-demo button{font-size:12px;border:0;padding:8px 0}#public-overview-view .widget-controls{padding-block:20px;border-bottom:1px solid var(--line)}#public-overview-view .widget-controls>div{display:flex;flex-wrap:wrap;gap:24px}#public-overview-view .widget-controls label{display:flex;gap:8px;align-items:center}#public-overview-view .widget-controls input{width:18px;min-height:18px}#public-overview-view .widget-controls p{font-size:13px}#public-overview-view .overview-hero{padding:88px 0 100px;background:linear-gradient(90deg,#101619ed 10%,#10161970 70%),url('assets/brand/outland-minimal.png') center 48%/cover;color:#F5F2E9}#public-overview-view .overview-hero h1{font-size:clamp(64px,8vw,108px);margin:12px 0 20px}#public-overview-view .overview-hero p{font-size:20px;color:#e0e6e4}#public-overview-view .overview-hero .eyebrow,#public-overview-view .overview-hero a{color:#e2c789}#public-overview-view .overview-hero a{display:inline-block;padding-top:12px}#public-overview-view .overview-content em{color:var(--muted);font-weight:400}#public-overview-view .overview-content{padding-bottom:64px}#public-overview-view .next-raid{display:grid;grid-template-columns:1.2fr 1fr;gap:64px;padding:48px;background:var(--surface);border-top:2px solid var(--accent);margin-top:-32px;position:relative}#public-overview-view .next-story h2{font-size:clamp(38px,4.6vw,56px);margin:16px 0 24px}#public-overview-view .next-story small{display:block;color:var(--muted);font-size:12px}#public-overview-view .next-story .button{margin-top:10px}#public-overview-view .next-readiness{border-left:1px solid var(--line);padding-left:48px}#public-overview-view .readiness-title{display:flex;justify-content:space-between;color:var(--muted);font-size:12px}#public-overview-view .roster-total{font:88px/1.2 Georgia;margin:10px 0}#public-overview-view .roster-total>span{font-size:36px;color:var(--muted)}#public-overview-view .role-track{display:flex;gap:5px;margin-bottom:24px}#public-overview-view .role-track i{height:5px;background:var(--accent);flex:1}#public-overview-view .role-track .vacant{background:var(--raised);border:1px solid var(--control)}#public-overview-view .role-gap,#public-overview-view .recruit-role{display:flex;align-items:center;gap:14px}#public-overview-view .role-gap img,#public-overview-view .recruit-role img{height:36px;width:36px;border-radius:4px}#public-overview-view .role-gap strong,#public-overview-view .recruit-role strong{display:block;font-size:18px}#public-overview-view .role-gap span,#public-overview-view .recruit-role span{display:block;font-size:12px;color:var(--muted)}#public-overview-view .role-gap strong{color:var(--warning)}#public-overview-view .role-totals{display:flex;justify-content:space-between;border-top:1px solid var(--line);margin:24px 0 12px;padding-top:16px}#public-overview-view .role-totals dt{font-size:12px;color:var(--muted)}#public-overview-view .role-totals dd{margin:4px 0;font-size:18px}#public-overview-view .needed dd{color:var(--warning)}#public-overview-view .fine{font-size:12px;color:var(--muted);line-height:1.6}#public-overview-view .overview-section{padding:88px 0}#public-overview-view .overview-heading{display:flex;justify-content:space-between;align-items:end;gap:28px;margin-bottom:32px}#public-overview-view .overview-heading h2{margin-bottom:0}#public-overview-view .overview-heading>p{color:var(--muted);font-size:14px}#public-overview-view .overview-heading a{display:inline-block;margin-top:12px}#public-overview-view .progression-grid{display:grid;grid-template-columns:1fr 1fr;gap:64px}#public-overview-view .progression-grid article{border-top:1px solid var(--line);padding-top:24px}#public-overview-view .tier-caption{font-size:12px;color:var(--muted);margin-bottom:6px}#public-overview-view .progression-grid h3{font:24px Georgia}#public-overview-view .clear-total{font:40px Georgia;margin:24px 0 16px}#public-overview-view .clear-total span{font:14px var(--font-ui);color:var(--muted)}#public-overview-view .clear-track{height:4px;background:var(--raised);margin-bottom:12px}#public-overview-view .clear-track>span{display:block;height:100%;background:var(--accent)}#public-overview-view .ranking{margin-top:30px;display:grid;grid-template-columns:1fr 1fr;gap:12px 28px}#public-overview-view .ranking-label{grid-column:1/-1;color:var(--muted);font-size:12px}#public-overview-view .world-rank>span{display:block;font-size:12px;color:var(--muted)}#public-overview-view .world-rank strong{font:48px Georgia;display:block}#public-overview-view .rank-sub{display:flex;gap:32px;margin:0;align-items:center}#public-overview-view .rank-sub dt{font-size:12px;color:var(--muted)}#public-overview-view .rank-sub dd{font-size:20px;margin:0}#public-overview-view .ranking-foot{margin-top:28px;max-width:none}#public-overview-view .community-grid{display:grid;grid-template-columns:1fr 1.1fr;gap:80px;border-top:1px solid var(--line);padding:64px 0 80px}#public-overview-view .recruitment>p{color:var(--muted)}#public-overview-view .recruit-role{margin:28px 0 12px}#public-overview-view .recruitment button{margin-top:12px}#public-overview-view .announcements .overview-heading{align-items:center}#public-overview-view .announcements h2{font-size:40px}#public-overview-view .channel-label{font-size:12px;color:var(--muted)}#public-overview-view .pinned-note{background:var(--surface);border-left:2px solid var(--accent);padding:24px;margin-bottom:12px}#public-overview-view .pinned-note small,#public-overview-view .pinned-note>span{font-size:12px;color:var(--muted)}#public-overview-view .pinned-note h3{font:24px Georgia;margin:10px 0}#public-overview-view .pinned-note p{font-size:14px}#public-overview-view .announcements details{border-bottom:1px solid var(--line)}#public-overview-view .announcements summary{font-size:14px}#public-overview-view .announcements summary span{font-size:12px;color:var(--muted);margin-right:16px}#public-overview-view .announcements details p{font-size:14px;padding:0 16px}#public-overview-view .announcements>.fine{margin-top:16px}#public-overview-view .recap-section{display:grid;grid-template-columns:1fr 1fr;background:var(--surface);min-height:360px}#public-overview-view .recap-art{background:url('assets/brand/karazhan-minimal.png') center/cover}#public-overview-view .recap-copy{padding:44px}#public-overview-view .recap-copy p{color:var(--muted);font-size:14px}#public-overview-view .recap-copy small{display:block;font-size:11px;color:var(--muted);margin-top:16px}#public-overview-view .guild-basics{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:64px;padding-top:64px}#public-overview-view .guild-basics h3{font:20px Georgia}#public-overview-view .guild-basics p,#public-overview-view .guild-basics a,#public-overview-view .guild-basics summary{font-size:14px}#public-overview-view .guild-basics p{color:var(--muted)}#public-overview-view .member-arrival{margin-top:20px;border-left:2px solid var(--accent);padding-left:16px}#public-overview-view .member-arrival>span{font-size:10px;letter-spacing:.1em;color:var(--muted)}#public-overview-view .member-arrival p{font-size:14px;margin:4px 0}#public-overview-view .member-arrival a{font-size:12px}
+@media(max-width:900px){#public-overview-view .next-raid{gap:28px;padding:32px}#public-overview-view .next-readiness{padding-left:28px}#public-overview-view .community-grid{gap:36px}#public-overview-view .progression-grid{gap:32px}#public-overview-view .rank-sub{gap:16px}#public-overview-view .ranking{gap:12px}#public-overview-view .guild-basics{gap:28px}#public-overview-view .recap-copy{padding:32px}}
+@media(max-width:640px){#public-overview-view .overview-demo>.wrap{flex-wrap:wrap;gap:0;padding-top:8px}#public-overview-view .overview-hero{padding:56px 0 72px}#public-overview-view .next-raid{grid-template-columns:1fr;padding:24px}#public-overview-view .next-readiness{border-left:0;padding-left:0;border-top:1px solid var(--line);padding-top:24px}#public-overview-view .overview-section{padding:56px 0}#public-overview-view .overview-heading{align-items:start;flex-direction:column;gap:16px}#public-overview-view .progression-grid,#public-overview-view .community-grid,#public-overview-view .recap-section,#public-overview-view .guild-basics{grid-template-columns:1fr}#public-overview-view .community-grid{padding:40px 0;gap:48px}#public-overview-view .announcements .overview-heading{align-items:start}#public-overview-view .recap-art{min-height:240px}#public-overview-view .guild-basics{padding-top:40px}#public-overview-view .ranking{grid-template-columns:1fr 1fr}#public-overview-view .widget-controls>div{flex-direction:column;gap:12px}#public-overview-view .guild-masthead{gap:12px}}#public-overview-view .community-grid>section{min-width:0}#public-overview-view .recruit-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:28px 0 12px;padding:18px 0;border-block:1px solid var(--line)}#public-overview-view .recruit-summary>div{display:flex;align-items:baseline;gap:8px}#public-overview-view .recruit-summary dd{font:32px Georgia;margin:0}#public-overview-view .recruit-summary dt{font-size:13px;color:var(--muted)}#public-overview-view .recruit-openings{list-style:none;padding:0;margin:0}#public-overview-view .recruit-openings li{display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid var(--line)}#public-overview-view .recruit-openings img{width:32px;height:32px;border-radius:4px}#public-overview-view .recruit-openings li>div{flex:1;min-width:0}#public-overview-view .recruit-openings strong{font-size:14px;font-weight:600}#public-overview-view .recruit-openings strong span{font-weight:400;color:var(--muted)}#public-overview-view .recruit-openings small{display:block;font-size:12px;color:var(--muted);margin-top:2px}#public-overview-view .recruit-openings b{font-size:14px;font-weight:500;white-space:nowrap}#public-overview-view .recruit-openings b span{font-size:12px;color:var(--muted);font-weight:400}#public-overview-view .announcement-excerpt{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden;overflow-wrap:anywhere}#public-overview-view .discord-source{display:inline-block;font-size:12px;color:var(--accent);padding:8px 0}#public-overview-view .recent-note{padding:16px 0;border-bottom:1px solid var(--line)}#public-overview-view .recent-note>small{font-size:12px;color:var(--muted)}#public-overview-view .recent-note h3{font:20px Georgia;margin:8px 0}#public-overview-view .recent-note p{font-size:14px;margin:8px 0;-webkit-line-clamp:2}#public-overview-view .community-grid:has(.announcements[hidden]){grid-template-columns:1fr}#public-overview-view .community-grid:has(.announcements[hidden]) .recruitment{max-width:640px}#public-overview-view .role-needs{display:grid;gap:12px}#public-overview-view .role-needs .role-gap{gap:12px;min-height:40px}#public-overview-view .role-needs .need-icon{width:36px;height:36px;display:grid;place-items:center;border-radius:4px;background:var(--raised);flex:none}#public-overview-view .need-icon svg{width:23px;height:23px}#public-overview-view .role-needs .tank{color:#c79c6e}#public-overview-view .role-needs .healer{color:#82bb91}#public-overview-view .role-needs .damage{color:#d89080}#public-overview-view .role-needs strong{font-size:17px;flex:1}#public-overview-view .role-needs .need-count{font-size:13px;white-space:nowrap;font-variant-numeric:tabular-nums}#public-overview-view .next-readiness>.fine{border-top:1px solid var(--line);padding-top:14px;margin-top:18px}
+
+#landing-page .member .avatar{flex-shrink:0;overflow:hidden}#landing-page .member .avatar img{width:100%;height:100%;object-fit:cover;display:block}
+
+
+
+/* Guild overview: final reference alignment, without manager chrome leakage. */
+body.guild-public-mode::before{display:none}
+.public-header{font-family:var(--kz-font-ui)}
+.public-wordmark{font-size:29px;letter-spacing:-1px;text-decoration:none}
+#public-masthead-account{gap:12px}
+#public-masthead-account .btn{min-height:40px;padding:8px 16px;border:1px solid var(--kz-control);border-radius:4px;background:transparent;color:var(--kz-text);font:600 12px/1.6 var(--kz-font-ui);text-transform:none;letter-spacing:0;margin-right:6px}
+#public-masthead-account .guild-circle svg{width:20px;height:20px;display:block}
+#public-overview-view{background:var(--bg)}
+#public-overview-view .overview-hero h1{overflow-wrap:anywhere}
+#public-overview-view .next-story,#public-overview-view .next-readiness,#public-overview-view .progression-grid article,#public-overview-view .recap-copy,#public-overview-view .guild-basics>div{min-width:0}
+#public-overview-view .overview-content h2,#public-overview-view .overview-content h3,#public-overview-view .pub-rich-text{overflow-wrap:anywhere}
+#public-overview-view .pub-rich-text p:last-child{margin-bottom:0}
+#public-overview-view .community-grid:has(>.recruitment:only-child)>.recruitment{max-width:640px}
+#public-overview-view .guild-basics>div>a{display:inline-block;margin-bottom:12px}
+#public-overview-view .filled-role{color:var(--muted)!important}
+#public-overview-view .overview-footer{border-top:1px solid var(--line);padding:28px 0;font:12px/1.6 var(--font-ui);color:var(--muted)}
+#public-overview-view .overview-footer p{margin:0}
+#public-overview-view .recap-copy h2 em{display:block}
+#public-overview-view .recruit-openings img{object-fit:cover;flex:none}
+@media(max-width:900px){.public-edition{display:none}}
+@media(max-width:650px){.public-masthead{padding-block:16px}.public-masthead,.public-nav{width:calc(100% - 32px)}#public-masthead-account{gap:8px}#public-masthead-account .btn{min-height:34px;height:34px;padding:6px 12px}.public-nav{gap:24px}}
+
+
+/* Public directory and schedule — approved guild reference surfaces. */
+body.guild-public-mode main:has(#tab-roster.active),body.guild-public-mode main:has(#tab-builder.active){max-width:none;padding:0}
+:is(#public-roster-view,#public-raids-view){padding-block:56px 88px!important;min-height:65vh;font:16px/1.6 var(--kz-font-ui)}
+:is(#public-roster-view,#public-raids-view) .pub-title{font:400 clamp(40px,5vw,64px)/1.08 var(--kz-font-display);letter-spacing:-.035em;margin-bottom:16px}
+:is(#public-roster-view,#public-raids-view) .pub-eyebrow{letter-spacing:.18em;margin-bottom:14px}
+:is(#public-roster-view,#public-raids-view) .pub-subtitle{font-size:18px;margin-bottom:40px!important}
+#public-roster-view .pub-field-label{font:16px/1.6 var(--kz-font-ui);letter-spacing:0;text-transform:none;color:var(--kz-text)}
+#public-roster-view .pub-table th{font:600 14px/1.6 var(--kz-font-ui);text-transform:none;letter-spacing:0}
+#public-roster-view .pub-table td{padding-block:20px;font-size:16px}
+#public-roster-view .pub-table tr:last-child td{border-bottom:1px solid var(--kz-line)}
+:is(#public-roster-view,#public-raids-view) .character{display:flex;align-items:center;gap:14px;min-width:0}
+:is(#public-roster-view,#public-raids-view) .character img{width:36px;height:36px;border-radius:4px;object-fit:cover;flex:none}
+:is(#public-roster-view,#public-raids-view) .character strong,:is(#public-roster-view,#public-raids-view) .character small{display:block}
+:is(#public-roster-view,#public-raids-view) .character small{font-size:14px;color:var(--kz-muted)}
+#public-raids-view .raid-listing{display:grid;grid-template-columns:200px minmax(0,1fr) 260px;gap:32px;align-items:center;padding:28px 0;border-bottom:1px solid var(--kz-line)}
+#public-raids-view .raid-listing:first-child{border-top:1px solid var(--kz-line)}
+#public-raids-view .raid-listing>img{width:200px;aspect-ratio:4/3;object-fit:cover;border-radius:4px}
+#public-raids-view h2{font:400 40px/1.08 var(--kz-font-display);letter-spacing:-.035em;margin:10px 0 16px;overflow-wrap:anywhere}
+#public-raids-view p{margin:0 0 16px}#public-raids-view small{font-size:12px;color:var(--kz-muted)}
+#public-raids-view .raid-needs-heading{display:flex;align-items:baseline;gap:14px}
+#public-raids-view .raid-needs-heading>strong{font:32px Georgia}#public-raids-view .raid-needs-heading strong small{font:21px Georgia}#public-raids-view .raid-needs-heading>span{font-size:11px;color:var(--kz-muted)}
+#public-raids-view .raid-role-needs{list-style:none;padding:0;margin:14px 0 18px}
+#public-raids-view .raid-role-needs li{display:flex;align-items:center;gap:9px;font-size:12px;padding:7px 0}
+#public-raids-view .raid-role-needs li>span:nth-child(2){flex:1}#public-raids-view .needs-role{color:var(--kz-warning)}#public-raids-view .role-filled{color:var(--kz-muted)}
+#public-raids-view .raid-role-symbol svg{width:18px;height:18px;display:block}#public-raids-view .raid-signup{font-size:12px;width:100%;min-height:40px;padding:8px 12px;justify-content:center}
+#public-raids-view .raid-text-link{background:transparent;border:0;color:var(--kz-link);font:14px/1.6 var(--kz-font-ui);text-transform:none;letter-spacing:0;text-decoration:underline;text-underline-offset:4px;padding:8px 0;display:inline-block;margin-right:20px;cursor:pointer}
+#public-raids-view .readiness-public{display:flex;justify-content:space-between;align-items:center;gap:32px;padding:28px 32px;background:var(--kz-surface);border-top:2px solid var(--kz-accent);margin:24px 0 40px}
+#public-raids-view .readiness-public strong{font:52px Georgia}#public-raids-view .readiness-public strong span{font-size:28px;color:var(--kz-muted)}#public-raids-view dl{display:flex;gap:40px}#public-raids-view dt{font-size:14px;color:var(--kz-muted)}#public-raids-view dd{font-size:28px;margin:0}
+#public-raids-view .lineup-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:48px}
+#public-raids-view .lineup-group-heading{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:16px}#public-raids-view h3{font:24px Georgia}
+#public-raids-view .lineup-row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 0;border-bottom:1px solid var(--kz-line)}#public-raids-view .lineup-row>span:last-child{font-size:14px;color:var(--kz-muted)}#public-raids-view .open-position{color:var(--kz-muted);min-height:76px}
+@media(max-width:1000px){#public-raids-view .raid-listing{grid-template-columns:150px minmax(0,1fr)}#public-raids-view .raid-listing>img{width:150px}#public-raids-view .raid-count{grid-column:2;max-width:320px;width:100%}}
+@media(max-width:640px){:is(#public-roster-view,#public-raids-view){width:calc(100% - 32px)}#public-roster-view .pub-table{min-width:520px}#public-raids-view .raid-listing,#public-raids-view .lineup-grid{grid-template-columns:1fr;gap:18px}#public-raids-view .raid-listing>img{width:100%;aspect-ratio:2/1}#public-raids-view .raid-count{grid-column:1;max-width:none}#public-raids-view .readiness-public{flex-wrap:wrap;padding:24px}#public-raids-view dl{gap:28px}}
+
+#public-encounter-library .library-heading{display:flex;justify-content:space-between;align-items:flex-end;gap:40px;margin:12px 0 40px}#public-encounter-library .library-heading h1{font:clamp(42px,5vw,68px)/1.04 Georgia;margin:16px 0 0;letter-spacing:-.04em}#public-encounter-library .library-heading>p{font-size:14px;line-height:1.7;color:var(--muted);margin:0 0 5px}#public-encounter-library .encounter-feature{position:relative;display:block;isolation:isolate;min-height:460px;overflow:hidden;background:#15221c;color:#f5f2e9;text-decoration:none;border-radius:8px}#public-encounter-library .feature-terrain{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:-2;filter:saturate(.8)}#public-encounter-library .encounter-feature:before{content:'';position:absolute;inset:0;background:linear-gradient(90deg,#091511f2 0%,#091511be 38%,#09151110 80%),linear-gradient(0deg,#07140cd9,transparent 50%);z-index:-1}#public-encounter-library .feature-copy{padding:40px 44px;max-width:550px}#public-encounter-library .feature-label{color:#e2c789;text-transform:uppercase;font-size:10px;letter-spacing:.14em}#public-encounter-library .feature-label>span{color:#d0d7c8}#public-encounter-library .feature-raid{font-size:12px;margin:30px 0 12px;color:#c5cec1}#public-encounter-library .feature-copy h1{font:58px/.99 Georgia;letter-spacing:-.035em;margin:0 0 22px}#public-encounter-library .feature-copy>p:last-of-type{font-size:14px;line-height:1.65;color:#d8dfd4;max-width:340px}#public-encounter-library .feature-cta{display:inline-flex;gap:40px;align-items:center;border-bottom:1px solid #d6b66f80;padding:10px 0;font-size:13px;color:#e2c789}#public-encounter-library .feature-stamp{position:absolute;right:32px;bottom:32px;display:flex;align-items:center;gap:12px;font-size:11px;color:#c6d2c4}#public-encounter-library .feature-stamp img{width:54px;height:54px;border:1px solid #d6b66f80;border-radius:50%}#public-encounter-library .feature-stamp strong{color:#f5f2e9;font-weight:500;font-size:13px}#public-encounter-library .library-section-head{display:flex;justify-content:space-between;align-items:end;gap:20px;margin:58px 0 24px}#public-encounter-library .library-section-head h2{font:34px/1.1 Georgia;margin:10px 0 0}#public-encounter-library .library-section-head>span{font-size:12px;color:var(--muted)}#public-encounter-library .raid-library-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:32px 24px}#public-encounter-library .raid-editorial-card{display:block;text-decoration:none;color:var(--text)}#public-encounter-library .raid-card-art{height:185px;position:relative;overflow:hidden;background:var(--surface);border-radius:5px}#public-encounter-library .raid-card-art:after{position:absolute;content:'';inset:0;background:linear-gradient(transparent 50%,#0009)}#public-encounter-library .raid-card-art img{width:100%;height:100%;object-fit:cover;transition:transform .3s;filter:saturate(.75)}#public-encounter-library .raid-editorial-card:hover img{transform:scale(1.035)}#public-encounter-library .raid-card-art span,#public-encounter-library .raid-card-art b{position:absolute;bottom:14px;color:#fff;z-index:1;font-size:11px;left:16px}#public-encounter-library .raid-card-art b{left:auto;right:16px;font-size:18px;font-weight:400}#public-encounter-library .raid-card-copy{padding:17px 0 0}#public-encounter-library .raid-card-copy small{font-size:10px;letter-spacing:.065em;text-transform:uppercase;color:var(--muted)}#public-encounter-library .raid-card-copy h3{font:25px/1.2 Georgia;margin:7px 0}#public-encounter-library .raid-card-copy p{font-size:12px;color:var(--muted);margin:0}#public-encounter-library .raid-card-copy p span{color:var(--muted)}#public-encounter-library .library-fixture-note{margin:36px 0 0;font-size:11px;color:var(--muted)}#public-encounter-library .raid-library-hero{background:linear-gradient(90deg,#08120ee8,#08120e40),var(--raid-art) center/cover;color:#f5f2e9;border-radius:6px;padding:56px 40px;margin-top:26px}#public-encounter-library .raid-library-hero h1{font:54px/1.1 Georgia;margin:18px 0}#public-encounter-library .raid-library-hero p{color:#d3d9d1;margin:0}#public-encounter-library .raid-library-hero .eyebrow{color:#e2c789}#public-encounter-library .boss-library-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}#public-encounter-library .boss-library-card{display:flex;align-items:center;gap:16px;min-width:0;padding:22px 18px;text-decoration:none;color:var(--text);background:var(--surface);border:1px solid var(--line);border-radius:6px}#public-encounter-library .boss-library-card:hover{border-color:var(--accent)}#public-encounter-library .boss-number{font-size:11px;color:var(--muted)}#public-encounter-library .boss-library-card img,#public-encounter-library .boss-initial{width:60px;height:60px;object-fit:cover;border-radius:50%;flex:none}#public-encounter-library .boss-initial{display:grid;place-items:center;background:var(--raised);font:28px Georgia}#public-encounter-library .boss-library-card h3{font:21px/1.2 Georgia;margin:0 0 7px}#public-encounter-library .boss-library-card p{font-size:11px;margin:0;color:var(--muted)}#public-encounter-library .boss-go{margin-left:auto;color:var(--link)}#public-encounter-library .library-trash{display:flex;justify-content:space-between;align-items:center;gap:20px;padding:18px 0;border-block:1px solid var(--line);margin-bottom:20px;text-decoration:none;font-size:12px}#public-encounter-library .library-trash small{display:block;font-size:10px;color:var(--muted)}#public-encounter-library .library-trash strong{font:20px Georgia;display:block;margin-top:5px;color:var(--text)}#public-encounter-library .encounter-empty{text-align:center;padding:70px 16px}#public-encounter-library .encounter-empty>img,#public-encounter-library .encounter-empty>.boss-initial{width:100px;height:100px;border-radius:50%;margin:0 auto 24px}#public-encounter-library .encounter-empty h1{font-size:44px;margin:18px 0}#public-encounter-library .encounter-empty p{margin:0 auto 24px;color:var(--muted)}
+@media(max-width:900px){#public-encounter-library .raid-library-grid{grid-template-columns:1fr 1fr}#public-encounter-library .library-heading{display:block}#public-encounter-library .library-heading>p{margin-top:22px}#public-encounter-library .feature-stamp{display:none}#public-encounter-library .boss-library-card{gap:10px;padding:16px 12px}#public-encounter-library .boss-library-card h3{font-size:18px}}
+@media(max-width:600px){#public-encounter-library .library-section-head{display:block;margin-top:38px}#public-encounter-library .library-section-head>span{display:block;margin-top:12px}#public-encounter-library .library-section-head h2{font-size:28px}#public-encounter-library .raid-library-grid,#public-encounter-library .boss-library-grid{grid-template-columns:1fr}#public-encounter-library .feature-copy{padding:28px}#public-encounter-library .feature-copy h1{font-size:49px}#public-encounter-library .encounter-feature{min-height:430px}#public-encounter-library .raid-card-art{height:220px}#public-encounter-library .raid-library-hero{padding:36px 24px}#public-encounter-library .raid-library-hero h1{font-size:39px}#public-encounter-library .library-trash{align-items:start}#public-encounter-library .library-trash>span:last-child{max-width:105px}#public-encounter-library .feature-label>span{display:block;margin-top:6px}}#public-encounter-library .feature-title{display:flex;align-items:center;gap:22px;margin:0 0 22px}#public-encounter-library .feature-title>img{width:104px;height:104px;object-fit:cover;border-radius:12px;border:1px solid #d6b66f70;box-shadow:0 8px 24px #0005;flex:none}#public-encounter-library .feature-title h1{margin:0}
+@media(max-width:600px){#public-encounter-library .feature-title{gap:16px}#public-encounter-library .feature-title>img{width:76px;height:76px}#public-encounter-library .feature-title h1{font-size:42px}}
+
+body.guild-public-mode main:has(#tab-strats.active){max-width:none;padding:0}
+body.guild-public-mode #tab-strats{width:min(1200px,calc(100% - 64px));margin:auto;padding:32px 0 88px;font-family:var(--kz-font-ui)}
+body.guild-public-mode #tab-strats>.section-header{display:none}
+#public-encounter-library{--bg:var(--kz-bg);--surface:var(--kz-surface);--raised:var(--kz-raised);--line:var(--kz-line);--text:var(--kz-text);--muted:var(--kz-muted);--accent:var(--kz-accent);--link:var(--kz-link);font:16px/1.6 var(--kz-font-ui)}
+#public-encounter-library a{cursor:pointer}#public-encounter-library .library-back{background:none;border:0;color:var(--kz-link);font:14px var(--kz-font-ui);padding:12px 0;cursor:pointer}#public-encounter-library .eyebrow{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--kz-link)}
+#public-encounter-library .feature-title h1{color:#f5f2e9}#public-encounter-library .raid-library-hero h1{color:#f5f2e9}#public-encounter-library .raid-library-hero{display:block}
+body.guild-public-mode #tab-strats .strat-header-row .boss-select-row,body.guild-public-mode #tab-strats .strat-header-divider{display:none}
+body.guild-public-mode #tab-strats .public-assignments .personal-plan{height:100%;display:flex;flex-direction:column}body.guild-public-mode #tab-strats .public-assignments .player-choices{height:auto;max-height:none;flex:1;overflow:auto}
+body.guild-public-mode #tab-strats .public-assignment-sheet{position:absolute;bottom:0;left:0;right:0;z-index:35;background:var(--kz-surface);border-top:1px solid var(--kz-accent);max-height:25%;overflow:auto;padding:12px 18px;color:var(--kz-text)}
+body.guild-public-mode #tab-strats .sheet-heading{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:10px;font:10px/1.4 var(--kz-font-ui);letter-spacing:.1em;text-transform:uppercase;color:var(--kz-link)}
+body.guild-public-mode #tab-strats .sheet-heading button{background:none;border:0;color:var(--kz-text);font:11px var(--kz-font-ui);cursor:pointer;padding:2px 0}
+body.guild-public-mode #tab-strats .public-assignment-sheet .personal-detail{display:grid;grid-template-columns:160px minmax(180px,1fr) minmax(0,1fr);gap:4px 20px;margin:0;padding:0;border:0;height:auto;align-items:center}
+body.guild-public-mode #tab-strats .personal-detail>small{grid-column:1;grid-row:1;font-size:10px}body.guild-public-mode #tab-strats .personal-detail>h3{grid-column:1;grid-row:2;margin:0;font:24px Georgia}
+body.guild-public-mode #tab-strats .personal-detail>.assigned-job{grid-column:2;grid-row:1/3;margin:0;display:flex;gap:10px;font-size:13px}
+body.guild-public-mode #tab-strats .assignment-instruction{grid-column:3;grid-row:1/3;margin:0;font:13px/1.5 var(--kz-font-ui)}
+body.guild-public-mode #tab-strats .assignment-pager{grid-column:3;grid-row:3;font-size:10px;margin:0}
+body.guild-public-mode #tab-strats .public-assignment-sheet.minimized .personal-detail{display:none}body.guild-public-mode #tab-strats .public-assignment-sheet.minimized .sheet-heading{margin:0}
+body.guild-public-mode #tab-strats .strat-guide{padding:28px;border:1px solid var(--kz-line);border-radius:16px;background:var(--kz-surface);margin-top:32px}
+body.guild-public-mode #tab-strats .strat-guide-hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(240px,.7fr);gap:14px;margin:22px 0 14px}
+body.guild-public-mode #tab-strats .strat-guide-boss{min-height:180px;border-radius:12px;background:linear-gradient(135deg,#1a232e,#0d1117);color:#f1eee7;display:flex;align-items:end;padding:18px;gap:16px}
+body.guild-public-mode #tab-strats .strat-guide-boss img{width:132px;height:132px;object-fit:cover;border-radius:10px}body.guild-public-mode #tab-strats .strat-guide-boss strong{color:#f1eee7;font:25px Georgia}
+body.guild-public-mode #tab-strats .strat-spell-card{background:var(--kz-bg);border:1px solid var(--kz-line);border-radius:10px;padding:14px;gap:11px}body.guild-public-mode #tab-strats .strat-spell-card img{width:38px;height:38px;border-radius:7px}body.guild-public-mode #tab-strats .strat-spell-card p{font-size:12px;line-height:1.45}
+@media(max-width:700px){body.guild-public-mode #tab-strats{width:calc(100% - 32px)}body.guild-public-mode #tab-strats .public-assignment-sheet .personal-detail{grid-template-columns:100px minmax(0,1fr);gap:4px 12px}body.guild-public-mode #tab-strats .assignment-instruction,body.guild-public-mode #tab-strats .assignment-pager{grid-column:1/-1;grid-row:auto}body.guild-public-mode #tab-strats .strat-guide-hero{grid-template-columns:1fr}}
+
+#public-results .results-title{display:flex;justify-content:space-between;align-items:baseline;gap:24px;margin-bottom:30px}#public-results .results-title h1{font:44px Georgia;margin:0}#public-results .results-title p{color:var(--muted);font-size:14px;margin:0}#public-results .results-columns{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:48px}#public-results .result-cover{display:block;position:relative;height:300px;overflow:hidden;border-radius:6px;background:var(--surface)}#public-results .result-cover img{width:100%;height:100%;object-fit:cover}#public-results .result-cover:after{content:'';position:absolute;inset:0;background:linear-gradient(transparent,#0008)}#public-results .result-cover>span{position:absolute;bottom:22px;left:24px;color:#fff;font-size:11px;text-transform:uppercase;letter-spacing:.12em;z-index:1}#public-results .result-feature-copy{padding-top:26px}#public-results .result-feature-copy h2{font:46px/1.08 Georgia;margin:14px 0 18px}#public-results .result-feature-copy p{font-size:14px;color:var(--muted);line-height:1.7;max-width:52ch}#public-results .result-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:24px}#public-results .result-actions button,#public-results .result-actions a{font-size:12px}#public-results .ai-report-link[hidden]{display:none}#public-results .recent-heading{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line);padding-bottom:20px}#public-results .recent-heading h2{font:27px Georgia;margin:0}#public-results .recent-heading>span{font-size:11px;color:var(--muted)}#public-results .recent-log{display:flex;width:100%;border:0;border-bottom:1px solid var(--line);padding:20px 0;gap:16px;justify-content:flex-start;text-align:left;border-radius:0}#public-results .recent-log img{width:46px;height:46px;border-radius:6px;object-fit:cover}#public-results .recent-log small{display:block;font-size:11px;font-weight:400;color:var(--muted);margin-bottom:5px}#public-results .recent-log strong{font:21px Georgia}#public-results .recent-log>span:last-child{margin-left:auto;color:var(--link)}#public-results .results-fixture{font-size:11px;color:var(--muted);margin-top:18px}#public-results .results-rankings{margin-top:64px;padding-top:36px;border-top:1px solid var(--line)}#public-results .rankings-heading{display:flex;align-items:end;justify-content:space-between;gap:24px;margin-bottom:28px}#public-results .rankings-heading h2{font:36px Georgia;margin:10px 0 0}#public-results .rankings-heading>span{font-size:11px;color:var(--muted);text-align:right}#public-results .ranking-tiers{display:grid;grid-template-columns:1.2fr 1fr;gap:32px}#public-results .ranking-tiers>article{background:var(--surface);padding:26px;border:1px solid var(--line);border-radius:6px}#public-results .ranking-tier-title{display:flex;align-items:center;justify-content:space-between;gap:12px}#public-results .ranking-tier-title h3{font:21px Georgia;margin:0}#public-results .ranking-tier-title>span{font-size:11px;white-space:nowrap;color:var(--muted)}#public-results .ranking-progress{height:4px;background:var(--raised);margin:20px 0}#public-results .ranking-progress>span{height:100%;display:block;background:var(--accent)}#public-results .ranking-scope{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}#public-results .ranking-zones{display:grid;grid-template-columns:1fr 1fr;gap:24px}#public-results .ranking-zones h4{font:18px Georgia;margin:0 0 16px}#public-results .rank-values{display:flex;justify-content:space-between;gap:12px}#public-results .rank-values>span{font-size:10px;color:var(--muted)}#public-results .rank-values strong{display:block;font:25px Georgia;color:var(--text);margin-bottom:8px}#public-results .ranking-combined{margin-top:36px}#public-results .ranking-combined strong{font-size:34px}#public-results .results-preview-controls{margin-top:36px;font-size:12px;color:var(--muted)}#public-results .results-preview-controls label{display:flex;gap:10px;margin:16px 0}#public-results .results-preview-controls input{width:auto}#public-results .results-preview-controls summary{cursor:pointer}
+@media(max-width:850px){#public-results .results-columns,#public-results .ranking-tiers{grid-template-columns:1fr}#public-results .results-title{display:block}#public-results .results-title p{margin-top:12px}#public-results .recent-reports{margin-top:8px}#public-results .ranking-tiers{gap:16px}#public-results .rankings-heading{align-items:start;flex-direction:column}#public-results .rankings-heading>span{text-align:left}}
+@media(max-width:480px){#public-results .results-title h1{font-size:35px}#public-results .result-cover{height:230px}#public-results .ranking-zones{grid-template-columns:1fr}#public-results .ranking-tier-title{align-items:start;flex-direction:column}#public-results .ranking-tiers>article{padding:20px}}
+
+#public-results{display:none;--bg:var(--kz-bg);--surface:var(--kz-surface);--raised:var(--kz-raised);--line:var(--kz-line);--text:var(--kz-text);--muted:var(--kz-muted);--accent:var(--kz-accent);--link:var(--kz-link);font:16px/1.6 var(--kz-font-ui);color:var(--text)}
+body.guild-public-mode #public-results{display:block;width:min(1200px,calc(100% - 64px));margin:auto;padding:32px 0 0;min-height:65vh}
+body.guild-public-mode #tab-guild-logs>:not(#public-results){display:none!important}
+body.guild-public-mode main:has(#tab-guild-logs.active){padding:0;max-width:none}
+#public-results h1,#public-results h2,#public-results h3,#public-results h4{color:var(--text);overflow-wrap:anywhere}#public-results .eyebrow{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--link)}
+#public-results a{color:var(--link);text-underline-offset:4px}#public-results .recent-log{text-decoration:none;align-items:center;background:none;color:var(--text)}#public-results .recent-log img{flex:none}#public-results .recent-log>span{min-width:0}#public-results .button{display:inline-flex;justify-content:center;align-items:center;min-height:44px;padding:11px 22px;border:1px solid var(--kz-control);border-radius:2px;background:transparent;color:var(--text);text-decoration:none;font:600 12px/1.6 var(--kz-font-ui);cursor:pointer}#public-results .primary{background:var(--accent);color:var(--kz-onaccent);border-color:var(--accent)}
+#public-results .ranking-zones:has(>div:only-child){grid-template-columns:1fr}#public-results .ranking-tiers>article{min-width:0}#public-results .rank-values{flex-wrap:wrap}#public-results .results-meta,#public-results .results-source{font-size:12px;color:var(--muted);margin-top:20px}
+#public-results .results-empty{padding:48px 0 72px;border-top:1px solid var(--line)}#public-results .results-empty h2{font:32px Georgia;margin-bottom:16px}#public-results .results-empty p{color:var(--muted)}
+#public-results .results-footer{border-top:1px solid var(--line);margin-top:64px;padding:28px 0;font-size:12px;color:var(--muted)}
+#public-results .results-back{background:none;border:0;color:var(--link);font:14px var(--kz-font-ui);padding:12px 0;cursor:pointer}
+#public-results .report-heading{padding:24px 0 40px}#public-results .report-heading h1{font:400 clamp(40px,5vw,64px)/1.08 Georgia;letter-spacing:-.035em;margin:16px 0 0}
+#public-results .report-cover{display:block;width:100%;height:280px;object-fit:cover;border-radius:6px;margin-bottom:32px}#public-results .report-layout{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,.7fr);gap:64px}#public-results .report-layout aside{border-left:1px solid var(--line);padding-left:32px}#public-results .report-layout h2{font:32px Georgia;margin:12px 0 16px}#public-results .report-layout h3{font:24px Georgia;margin-bottom:16px}#public-results .report-layout p{color:var(--muted);white-space:pre-wrap;margin-bottom:24px;overflow-wrap:anywhere}#public-results .report-section+.report-section{border-top:1px solid var(--line);padding-top:28px;margin-top:28px}
+@media(max-width:640px){body.guild-public-mode #public-results{width:calc(100% - 32px)}#public-results .report-layout{grid-template-columns:1fr;gap:32px}#public-results .report-layout aside{border-left:0;border-top:1px solid var(--line);padding:24px 0 0}}
+
+/* Shared marketing account entry and guild onboarding. */
+body.guild-public-mode #strat-list{padding:0;width:100%}
+@media(max-width:700px){body.guild-public-mode #tab-strats .public-assignments{height:auto;max-height:320px;min-height:0}body.guild-public-mode #tab-strats .public-assignments .personal-plan{max-height:290px}body.guild-public-mode #tab-strats .strat-guide-boss{align-items:center;flex-wrap:wrap}body.guild-public-mode #tab-strats .strat-guide-boss img{width:100px;height:100px}body.guild-public-mode #tab-strats .strat-guide-boss strong{font-size:22px;overflow-wrap:anywhere}body.guild-public-mode #tab-strats .public-assignment-sheet{padding:8px 12px}body.guild-public-mode #tab-strats .sheet-heading{margin-bottom:6px}}
+body.guild-public-mode #tab-strats .strat-guide-video{background:var(--kz-bg);border:1px dashed var(--kz-line);border-radius:12px;color:var(--kz-text)}
+body.guild-public-mode #tab-strats .video-placeholder{background:transparent;color:var(--kz-text)}
+body.guild-public-mode #tab-strats .video-placeholder strong{color:var(--kz-text)}
+body.guild-public-mode #tab-strats .video-placeholder small{color:var(--kz-muted)}
+body.guild-public-mode #tab-strats .public-assignment-sheet .personal-detail{text-align:left;justify-items:start}
+body.guild-public-mode #tab-strats .public-assignment-sheet .personal-detail>*{min-width:0;max-width:100%;overflow-wrap:anywhere}
+#public-roster-view .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+#public-roster-view :is(input,select){pointer-events:auto;opacity:1}
+#public-raids-view .raid-listing>img{height:auto;display:block}
+#lp-theme-toggle,#theme-toggle{width:40px!important;height:40px!important;min-width:40px;min-height:40px;padding:0!important;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;line-height:1}
+#lp-theme-toggle svg,#theme-toggle svg{display:block;flex:none}
+:is(#landing-page,body) .kz-onboard{position:fixed;inset:0;margin:auto;box-sizing:border-box;width:min(680px,calc(100% - 32px));max-height:calc(100dvh - 40px);padding:0;border:1px solid var(--lp-line,var(--line,#36463e));border-radius:18px;background:var(--lp-surface,var(--surface,#172c25));color:var(--lp-text,var(--text,#edf1e6));box-shadow:0 32px 100px #0006;font:15px/1.6 'Segoe UI',sans-serif}
+:is(#landing-page,body) .kz-onboard::backdrop{background:#071912b8;backdrop-filter:blur(7px)}
+:is(#landing-page,body) .kz-onboard header{display:flex;align-items:center;justify-content:space-between;padding:20px 30px;border-bottom:1px solid var(--lp-line,var(--line,#36463e));font-size:12px;letter-spacing:.12em;text-transform:uppercase}
+:is(#landing-page,body) .kz-onboard button,:is(#landing-page,body) .kz-onboard a{font:inherit;cursor:pointer}:is(#landing-page,body) .kz-onboard header button{background:transparent;color:inherit;border:0;font-size:24px;padding:0 8px}
+:is(#landing-page,body) .kz-onboard main{padding:30px}:is(#landing-page,body) .kz-onboard h2{font:normal 38px/1.15 Georgia,serif;margin:0 0 14px}:is(#landing-page,body) .kz-onboard p{margin:0 0 22px;opacity:.8}:is(#landing-page,body) .kz-onboard .ob-choices{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:24px 0}
+:is(#landing-page,body) .kz-onboard .ob-choice{display:block;text-align:left;padding:23px;border:1px solid var(--lp-line,var(--line,#546257));border-radius:10px;background:transparent;color:inherit;text-decoration:none}:is(#landing-page,body) .kz-onboard .ob-choice:hover{border-color:#c8aa62;background:#a7bd8810}:is(#landing-page,body) .kz-onboard strong{display:block;font:normal 24px/1.2 Georgia,serif;margin:8px 0}:is(#landing-page,body) .kz-onboard small{display:block;opacity:.75;font-size:13px}:is(#landing-page,body) .kz-onboard .ob-action{display:inline-block;padding:12px 20px;border:0;border-radius:6px;background:#d5b667;color:#19291f;font-weight:600;text-decoration:none;margin:12px 8px 0 0}:is(#landing-page,body) .kz-onboard .ob-back{border:0;background:transparent;color:inherit;padding:12px 0;display:block}:is(#landing-page,body) .kz-onboard input{box-sizing:border-box;width:100%;padding:13px;margin:8px 0 12px;border-radius:6px;border:1px solid #788275;background:transparent;color:inherit;font:inherit}:is(#landing-page,body) .kz-onboard label{display:block;font-weight:600}:is(#landing-page,body) .kz-onboard [role=status]{margin-top:16px}:is(#landing-page,body) .kz-onboard button:disabled{opacity:.5;cursor:wait}:is(#landing-page,body) .kz-onboard :focus-visible{outline:2px solid #d5b667;outline-offset:4px}:is(#landing-page,body) .kz-onboard .ob-status{display:inline-block;color:#d5b667;font-size:12px;text-transform:uppercase;letter-spacing:.1em;margin-bottom:16px}
+@media(max-width:520px){:is(#landing-page,body) .kz-onboard main{padding:24px}:is(#landing-page,body) .kz-onboard header{padding:16px 24px}:is(#landing-page,body) .kz-onboard h2{font-size:30px}:is(#landing-page,body) .kz-onboard .ob-choices{grid-template-columns:1fr}#landing-page .lp-navlinks{gap:12px}}
+
 </style>
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8959237604087556" crossorigin="anonymous"></script>
   <script>const whTooltips = { colorLinks: true, iconizeLinks: false, renameLinks: false, iconSize: 'small' };</script>
@@ -2684,145 +3048,249 @@ body.landing-mode #landing-page { display: block; }
      past a leaked height:56px is exactly what put the theme toggle
      button visibly past the header's own divider line. Same ARIA
      landmarks, none of the tag-name collisions. -->
-<div id="landing-page">
+<div id="landing-page"><dialog id="guild-onboarding" class="kz-onboard" aria-labelledby="ob-title"><header><span>Kaizen / Your guild starts here</span><button type="button" aria-label="Close" onclick="document.getElementById('guild-onboarding').close()">×</button></header><main id="ob-content"></main></dialog>
 <a href="#landing-main" style="position:absolute;left:-9999px;" onfocus="this.style.left='16px'" onblur="this.style.left='-9999px'">Skip to content</a>
 <div class="lp-top" role="banner">
   <div class="lp-wrap lp-nav" role="navigation" aria-label="Main navigation">
     <a class="lp-wordmark" href="/">Kaizen<i> /</i></a>
-    <!-- Matches Design/preview/homepage.html's header exactly: wordmark,
-         one nav link ("The overview" -> #product, the hero section
-         itself), the theme toggle, one primary CTA - not five items.
-         Sign In/Continue as SEPARATE header buttons are gone on
-         purpose (Codex's approved design has no dedicated header
-         sign-in slot) - real capability isn't lost, it's consolidated:
-         lp-nav-cta IS the same real openSignInGate()/
-         goToMyGuildOrRegister() behavior the old two buttons had,
-         just one element that swaps between them (see the Clerk
-         listener below) instead of two elements toggling visibility. -->
+    
     <div class="lp-navlinks">
-      <a href="#product">The overview</a>
-      <button type="button" class="lp-circle" id="lp-theme-toggle" aria-label="Switch to light mode"></button>
-      <a class="lp-button lp-primary" id="lp-nav-cta" href="#" onclick="openSignInGate();return false;">Get started</a>
+      <a id="lp-nav-signin" href="#" onclick="startMarketingAuth('signin');return false;">Sign in</a>
+      <a class="lp-button lp-primary" id="lp-nav-cta" href="#" onclick="startMarketingAuth('signup');return false;">Sign up</a><button type="button" class="lp-circle" id="lp-theme-toggle" aria-label="Switch to light mode"></button>
     </div>
   </div>
 </div>
 <div id="landing-main" role="main">
-<section class="lp-hero" id="product">
-  <div>
-    <div class="lp-eyebrow">Kaizen raid manager / The Burning Crusade</div>
-    <h1>Your guild.<br><em>Ready for the next pull.</em></h1>
-    <p>Bring your schedule, roster, and encounter plans together. Spend raid night playing with your guild.</p>
-    <div class="lp-actions">
-      <a class="lp-button lp-primary" href="#" onclick="openSignInGate();return false;">Create your account</a>
-      <a class="lp-button" href="#features">Explore Kaizen</a>
-    </div>
-  </div>
-</section>
-<section class="lp-feature-band lp-alt" id="features">
+<!-- ==================== MARKETING HOMEPAGE CONTENT ====================
+     Ground-up replacement to match Design/preview/homepage.html - owner
+     feedback (2026-09-12): the header alone wasn't enough, the whole
+     page's content/copy/structure was still the old pre-Design version
+     underneath it (illustrated feature cards, a different headline,
+     no real product mockups). Every section below is a 1:1 port of the
+     reference's own markup/copy/class names - NOT renamed to lp-*, since
+     every rule for them is written scoped under #landing-page (the
+     established convention throughout this file), which already fully
+     prevents any bleed into the rest of the app regardless of whether a
+     bare name happens to also exist elsewhere (several do - .personal-
+     plan/.player-choices/.choice-name/.personal-detail/.assigned-job
+     are the real Strats visitor panel's own class names, and
+     .group-label is the real Weekly Roster's - all of those are scoped
+     under #tab-strats/bare respectively, so an #landing-page-scoped
+     rule of the same name coexists safely). Reused, not reinvented,
+     where the reference's own class is a generic utility this page
+     already has a working equivalent for: .lp-button/.lp-primary for
+     buttons, .lp-eyebrow for eyebrows, .lp-muted for muted text,
+     .lp-wordmark for wordmarks-in-window-bars, .lp-wrap for the width
+     constrainer. CTAs call the real openSignInGate() (or scroll-to-
+     signup, matching the reference's own href="#signup" where that's
+     literally what it does) rather than the reference's fake do-
+     nothing preview handlers - same real capability as the old
+     sections' buttons had, not a downgrade. -->
+<section class="product-hero" id="product">
   <div class="lp-wrap">
-    <div class="lp-eyebrow">Before the first pull</div>
-    <h2 style="margin-bottom:36px">A little preparation. A better raid.</h2>
-    <div class="lp-grid">
-      <article class="lp-editorial">
-        <img src="assets/brand/karazhan-minimal.png" alt="Minimal layered illustration of a wizard tower beneath a peach moon">
-        <div class="lp-eyebrow" style="margin:16px 0 8px">01 / Schedule</div>
-        <h3>Give raid night a home.</h3>
-        <p>Put the time, raid, and signup details where everyone can find them.</p>
-      </article>
-      <article class="lp-editorial">
-        <img src="assets/brand/temple-minimal.png" alt="Minimal teal temple illustration beneath a pale gold moon">
-        <div class="lp-eyebrow" style="margin:16px 0 8px">02 / Roster</div>
-        <h3>Know who's ready.</h3>
-        <p>See the roles you have, the spots you need, and who is on the bench.</p>
-      </article>
-      <article class="lp-editorial">
-        <img src="assets/brand/outland-minimal.png" alt="Minimal illustration of floating islands and ruined spires at sunset">
-        <div class="lp-eyebrow" style="margin:16px 0 8px">03 / Strategy</div>
-        <h3>Arrive with a plan.</h3>
-        <p>Give your raiders a shared place for encounter notes and assignments.</p>
-      </article>
+    <div class="hero-copy">
+      <div class="lp-eyebrow">Raid manager for The Burning Crusade</div>
+      <h1>Your next raid,<br><em>ready.</em></h1>
+      <p>A plan for the players you're bringing.<br>Build the groups, assign the jobs, and share it in Discord.</p>
+      <div class="actions">
+        <a class="lp-button lp-primary" href="#" onclick="startMarketingAuth('signup');return false;">Get started</a>
+        <a class="quiet-link" href="#plan-preview">Take a look ↓</a>
+      </div>
     </div>
+    <div class="preview-switch"><a class="quiet-link" href="#weekly-roster">See the weekly roster ↓</a></div>
+    <div id="plan-preview" class="product-window">
+      <div class="window-bar"><span class="lp-wordmark">Kaizen<i> /</i></span><span>Encounter plan</span><span class="saved">Thursday raid</span></div>
+      <div class="plan-heading">
+        <div><small>Hyjal Summit</small><h3>Rage Winterchill</h3></div>
+        <span class="lp-muted">Positions &amp; assignments</span>
+      </div>
+      <div class="plan-layout">
+        <div class="position-map" role="group" aria-label="Illustrative player positions">
+          <img src="assets/backgrounds/default/hyjal-winterchill.jpg" alt="Overhead encounter terrain for Rage Winterchill" onerror="this.style.display='none'">
+          <button class="position-pin" type="button" style="left:51%;top:58%" data-player="0" aria-pressed="false" aria-label="Show Aerion's assignment"><span class="spec-pin" style="border-color:#C79C6E"><img src="assets/wow-spec-icons/warrior_protection.jpg" alt=""></span><b>Aerion</b></button>
+          <button class="position-pin" type="button" style="left:38%;top:40%" data-player="1" aria-pressed="false" aria-label="Show Nyra's assignment"><span class="spec-pin" style="border-color:#FFFFFF"><img src="assets/wow-spec-icons/priest_holy.jpg" alt=""></span><b>Nyra</b></button>
+          <button class="position-pin" type="button" style="left:66%;top:29%" data-player="2" aria-pressed="true" aria-label="Show Fen's assignment"><span class="spec-pin" style="border-color:#ABD473"><img src="assets/wow-spec-icons/hunter_beastmastery.jpg" alt=""></span><b>Fen</b></button>
+          <button class="position-pin" type="button" style="left:55%;top:40%" data-player="3" aria-pressed="false" aria-label="Show Rook's assignment"><span class="spec-pin" style="border-color:#FFF569"><img src="assets/wow-spec-icons/rogue_combat.jpg" alt=""></span><b>Rook</b></button>
+          <button class="position-pin" type="button" style="left:66%;top:62%" data-player="4" aria-pressed="false" aria-label="Show Vael's assignment"><span class="spec-pin" style="border-color:#69CCF0"><img src="assets/wow-spec-icons/mage_frost.jpg" alt=""></span><b>Vael</b></button>
+          <span class="boss-marker">Rage Winterchill</span>
+        </div>
+        <aside class="personal-plan">
+          <div class="lp-eyebrow">Your raid / player assignments</div>
+          <div class="player-choices">
+            <button type="button" data-player="0" aria-pressed="false"><img src="assets/wow-spec-icons/warrior_protection.jpg" alt=""><span class="choice-name"><strong>Aerion</strong><small>Main tank</small></span><span class="choice-target"></span></button>
+            <button type="button" data-player="1" aria-pressed="false"><img src="assets/wow-spec-icons/priest_holy.jpg" alt=""><span class="choice-name"><strong>Nyra</strong><small>Tank healing</small></span><span class="choice-target">→ Aerion</span></button>
+            <button type="button" data-player="2" aria-pressed="true"><img src="assets/wow-spec-icons/hunter_beastmastery.jpg" alt=""><span class="choice-name"><strong>Fen</strong><small>Misdirection</small></span><span class="choice-target">→ Aerion</span></button>
+            <button type="button" data-player="3" aria-pressed="false"><img src="assets/wow-spec-icons/rogue_combat.jpg" alt=""><span class="choice-name"><strong>Rook</strong><small>Melee position</small></span><span class="choice-target"></span></button>
+            <button type="button" data-player="4" aria-pressed="false"><img src="assets/wow-spec-icons/mage_frost.jpg" alt=""><span class="choice-name"><strong>Vael</strong><small>Ranged position</small></span><span class="choice-target"></span></button>
+          </div>
+          <div class="personal-detail" aria-live="polite">
+            <small id="lp-player-spec">Beast Mastery Hunter</small>
+            <h3 id="lp-player-name">Fen</h3>
+            <div class="assigned-job"><img id="lp-job-icon" src="assets/wow-spec-icons/misdirection.jpg" alt=""><div><strong id="lp-player-job">Misdirection</strong><span id="lp-player-target">→ Aerion</span></div></div>
+            <p id="lp-player-task">Misdirect to Aerion on the pull.</p>
+            <div id="lp-ability-reference"><a href="https://www.wowhead.com/tbc/spell=34477" target="_blank" rel="noopener">Misdirection on Wowhead ↗</a>
+              <details><summary>Assignment details</summary><p>Fen uses Misdirection on Aerion. The linked spell reference provides the ability details; this panel keeps your raid's assignment visible.</p></details>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+    <p class="spec-caption">Select a player to follow their position, assignment, and target. Illustrative raid plan; positions are examples.</p>
   </div>
 </section>
-<section class="lp-feature-band">
-  <div class="lp-wrap lp-feature-grid">
-    <div>
-      <div class="lp-eyebrow">Build your group</div>
-      <h2>Every role.<br><em>One ready roster.</em></h2>
-      <p>Bring the right people to the same plan. Make availability visible before the invites go out.</p>
-      <div class="lp-icon-list">
-        <div class="lp-icon-item"><svg class="lp-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4 6v6c0 5 8 9 8 9s8-4 8-9V6z"/><path d="M12 7v10M8 12h8"/></svg>Tank</div>
-        <div class="lp-icon-item"><svg class="lp-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6v6h6v6h-6v6H9v-6H3V9h6z"/></svg>Healer</div>
-        <div class="lp-icon-item"><svg class="lp-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 19 14-14M13 5h6v6M3 15l6 6M4 20l-1 1"/></svg>Damage</div>
-      </div>
-      <a class="lp-button lp-primary" href="#" onclick="openSignInGate();return false;">Start organizing</a>
-    </div>
-    <div>
-      <div class="lp-themeboard">
-        <div class="lp-eyebrow">Roster preview</div>
-        <h3>Your next raid</h3>
-        <div class="lp-event">
-          <div class="lp-date">SEP<strong>12</strong></div>
-          <div><h3>Karazhan</h3><small class="lp-muted">Saturday · 8:00 PM · America/New_York</small></div>
-        </div>
-        <div class="lp-statusrow">
-          <span class="lp-badge">✓ Confirmed</span>
-          <span class="lp-badge lp-warning">! 1 healer needed</span>
-        </div>
-        <div class="lp-progress" role="img" aria-label="9 of 10 roster slots filled"><span style="width:90%"></span></div>
-        <p><strong>9 / 10</strong> <span class="lp-muted">roster slots filled</span></p>
-        <div class="lp-actions">
-          <a class="lp-button lp-primary" href="#" onclick="openSignInGate();return false;">Create your raid</a>
-          <a class="lp-button" href="#raids">View raids</a>
-        </div>
-      </div>
-      <p class="lp-demo-note" style="margin-top:12px">Illustrative product preview · not live raid data</p>
-    </div>
-  </div>
-</section>
-<section class="lp-cinematic">
+<div class="strat-proof">
+  <p><strong>Start with your raid.</strong> Auto-Assign fills empty tank, healer, and Misdirection slots from the selected roster for you to review.</p>
+  <p><strong>Keep the whole encounter close.</strong> Boss plans, trash waves, and bestiary notes stay together.</p>
+</div>
+<section class="product-section roster-spotlight" id="weekly-roster">
   <div class="lp-wrap">
-    <div class="lp-copy">
-      <div class="lp-eyebrow" style="color:#E2C789">Plan the encounter</div>
-      <h2>Fewer questions.<br><em>Cleaner pulls.</em></h2>
-      <p>Keep assignments and encounter notes close to the roster. Let everyone arrive knowing their part.</p>
-      <a class="lp-button lp-primary" href="#" onclick="openSignInGate();return false;">Build your first raid</a>
+    <div class="roster-story">
+      <div><div class="lp-eyebrow">Weekly roster</div><h2>One healer<br><em>from ready.</em></h2></div>
+      <p>See the spot you need to fill. Bring in Raid Helper signups, arrange your groups, and check role and buff coverage before you post to Discord.</p>
     </div>
-  </div>
-</section>
-<section class="lp-feature-band" id="raids">
-  <div class="lp-wrap lp-feature-grid">
-    <div>
-      <div class="lp-eyebrow">Beginning in Outland</div>
-      <h2>Your next<br><em>raid night awaits.</em></h2>
-      <p>Start with The Burning Crusade. Give every raid a consistent place to gather, prepare, and improve.</p>
-      <div class="lp-tabs" role="group" aria-label="Raid artwork selector">
-        <button type="button" data-raid="karazhan" aria-pressed="true">Karazhan</button>
-        <button type="button" data-raid="outland" aria-pressed="false">Outland</button>
-        <button type="button" data-raid="temple" aria-pressed="false">Black Temple</button>
+    <div id="roster-preview">
+      <div class="product-window" id="lp-roster-window">
+        <div class="window-bar"><span class="lp-wordmark">Kaizen<i> /</i></span><span>Weekly roster · Raid Helper signups</span><span class="saved">Saved</span></div>
+        <div class="product-content">
+          <div class="raid-heading"><div><small>Saturday, September 12 · 8:00 PM ET</small><h2>Karazhan</h2></div><span class="badge warning">1 healer needed</span></div>
+          <div class="roster-layout">
+            <div class="group-pair">
+              <div class="raid-group">
+                <div class="group-label">Group 1<span>5 / 5</span></div>
+                <div class="member"><span class="avatar"><img src="assets/wow-spec-icons/warrior_protection.jpg" alt=""></span><span><strong>Aerion</strong><small>Warrior</small></span><span class="member-role">Tank</span></div>
+                <div class="member"><span class="avatar"><img src="assets/wow-spec-icons/druid_feral.jpg" alt=""></span><span><strong>Thorn</strong><small>Druid</small></span><span class="member-role">Tank</span></div>
+                <div class="member"><span class="avatar"><img src="assets/wow-spec-icons/priest_holy.jpg" alt=""></span><span><strong>Nyra</strong><small>Priest</small></span><span class="member-role">Healer</span></div>
+                <div class="member"><span class="avatar"><img src="assets/wow-spec-icons/shaman_elemental.jpg" alt=""></span><span><strong>Solas</strong><small>Shaman</small></span><span class="member-role">Damage</span></div>
+                <div class="member"><span class="avatar"><img src="assets/wow-spec-icons/mage_frost.jpg" alt=""></span><span><strong>Vael</strong><small>Mage</small></span><span class="member-role">Damage</span></div>
+              </div>
+              <div class="raid-group">
+                <div class="group-label">Group 2<span>4 / 5</span></div>
+                <div class="member"><span class="avatar"><img src="assets/wow-spec-icons/hunter_beastmastery.jpg" alt=""></span><span><strong>Fen</strong><small>Hunter</small></span><span class="member-role">Damage</span></div>
+                <div class="member"><span class="avatar"><img src="assets/wow-spec-icons/warlock_affliction.jpg" alt=""></span><span><strong>Ash</strong><small>Warlock</small></span><span class="member-role">Damage</span></div>
+                <div class="member"><span class="avatar"><img src="assets/wow-spec-icons/rogue_combat.jpg" alt=""></span><span><strong>Rook</strong><small>Rogue</small></span><span class="member-role">Damage</span></div>
+                <div class="member"><span class="avatar"><img src="assets/wow-spec-icons/druid_balance.jpg" alt=""></span><span><strong>Lune</strong><small>Druid</small></span><span class="member-role">Damage</span></div>
+                <div class="open-slot"><span>+</span> Open healer slot</div>
+              </div>
+            </div>
+            <aside class="readiness">
+              <div class="lp-eyebrow">Your next raid</div>
+              <div class="big-number">9<span>/10</span></div>
+              <p class="lp-muted">Roster slots filled</p>
+              <div class="progress" role="img" aria-label="9 of 10 roster slots filled"><span style="width:90%"></span></div>
+              <dl><div><dt>Tanks</dt><dd>2 / 2</dd></div><div><dt>Healers</dt><dd class="warning">1 / 2</dd></div><div><dt>Damage</dt><dd>6 / 6</dd></div></dl>
+              <p class="remaining"><strong class="warning">1 healer needed.</strong><br>Every other role is covered.</p>
+              <div class="coverage-note"><small>Buff coverage · example</small><p>✓ Bloodlust / Heroism<br>✓ Arcane Intellect<br>✓ Power Word: Fortitude</p></div>
+            </aside>
+          </div>
+          <div class="attendance-proof">
+            <div><div class="lp-eyebrow">Attendance, accounted for.</div><p>Kaizen automatically cross-checks raid logs against your roster to track attendance.</p><small>Illustrative attendance check · separate from the upcoming raid above</small></div>
+            <dl><div><dt>Rostered players</dt><dd>10</dd></div><div><dt>Matched in the log</dt><dd>9</dd></div><div><dt>Needs review</dt><dd>1</dd></div></dl>
+            <p class="attendance-note">Unmatched players stay visible for review.</p>
+          </div>
+        </div>
       </div>
-      <p id="lp-raid-description" aria-live="polite">Karazhan · A shared plan for your ten-player raid.</p>
     </div>
-    <img id="lp-raid-art" class="lp-raid-ring" src="assets/brand/karazhan-minimal.png" alt="Minimal layered illustration of a wizard tower beneath a peach moon">
+    <div class="roster-footnote">
+      <p><strong>Room for the whole raid week.</strong> Build separate rosters for each raid. Keep unassigned, benched, absent, and tentative players in view.</p>
+      <p><strong>Fill the last spot.</strong> Add a guildie or a one-off pug. Auto-Fill gets your groups started; you can adjust them before posting.</p>
+    </div>
+    <p class="spec-caption">Illustrative 10-player roster: 2 tanks, 1 healer, 6 damage. The final healer slot is open.</p>
   </div>
 </section>
-<section class="lp-feature-band lp-alt" id="signup">
-  <div class="lp-wrap" style="max-width:540px;text-align:center;">
-    <div class="lp-eyebrow">Your next raid starts here</div>
-    <h2>Gather your guild.</h2>
-    <p class="lp-muted" style="margin-inline:auto;">Create a place for your next raid night, or join one that's already running.</p>
-    <div class="lp-actions" style="justify-content:center;">
-      <a class="lp-button lp-primary" href="#" onclick="openSignInGate();return false;">Create your account</a>
+<section class="product-section">
+  <div class="lp-wrap focus-layout">
+    <div class="focus-copy">
+      <div class="lp-eyebrow">Raid Helper + Discord</div>
+      <h2>Right where<br><em>your guild is.</em></h2>
+      <p>Import your guild roster and Raid Helper signups. Arrange your groups, check buff coverage, and post the finished roster and encounter plan to Discord.</p>
+      <p>Attendance is cross-checked automatically against your raid logs and roster. Your raiders get the plan in the channels they already use.</p>
+    </div>
+    <div class="discord-object">
+      <div class="channel-name"># raid-planning <span>Discord delivery preview</span></div>
+      <div class="message-author"><span class="bot-avatar">K</span><strong>Kaizen</strong><small>APP</small></div>
+      <div class="discord-embed">
+        <small>Thursday raid · Hyjal Summit</small>
+        <h3>Your encounter plan is ready.</h3>
+        <p>Rage Winterchill</p>
+        <div class="message-assignment"><strong>Aerion</strong><span>Tank · marked position 1</span></div>
+        <div class="message-assignment"><strong>Nyra</strong><span>Healing · marked position 2</span></div>
+        <div class="message-assignment"><strong>Fen</strong><span>Misdirection → Aerion</span></div>
+        <p class="message-foot">Roster · Positions · Player assignments</p>
+      </div>
+      <p class="spec-caption">Illustrative post layout. This preview does not send messages.</p>
+    </div>
+  </div>
+</section>
+<section class="product-section assignments-section">
+  <div class="lp-wrap">
+    <div class="assignment-intro">
+      <div class="lp-eyebrow">Warcraft Logs + AI insights</div>
+      <h2>Take something<br><em>into the next pull.</em></h2>
+      <p>Bring in a Warcraft Logs report for a raid-wide debrief.<br>Review AI-drafted personal reports across every fight,<br>then send them privately to each player in Discord.</p>
+    </div>
+    <div class="debrief-object">
+      <div class="debrief-heading"><div><small>Kaizen / Post-raid report</small><h3>Aerion's raid review</h3></div><span class="lp-muted">Personal report · draft for review</span></div>
+      <div class="debrief-body">
+        <div>
+          <div class="lp-eyebrow">From the log</div>
+          <h3>A repeated early death</h3>
+          <p>Example finding: Aerion died early on several attempts. The personal report brings those moments together across the fights in this log.</p>
+          <div class="evidence-line">Review the affected pulls in Warcraft Logs</div>
+        </div>
+        <div>
+          <div class="lp-eyebrow">AI-generated coaching</div>
+          <h3>A focus for next time</h3>
+          <p>Review the events leading up to each death. Check positioning and available defensives with the raider before deciding what to change.</p>
+          <p class="lp-muted">Officer review comes before sending. The personal report is delivered privately using the player's Discord ID.</p>
+        </div>
+      </div>
+    </div>
+    <p class="spec-caption">Illustrative draft, not a real player assessment. Raid-wide fallout reports can also be posted to your chosen Discord channel.</p>
+  </div>
+</section>
+<section class="product-section guild-home-section">
+  <div class="lp-wrap focus-layout">
+    <div class="focus-copy">
+      <div class="lp-eyebrow">Your guild's home</div>
+      <h2>A place for<br><em>your people.</em></h2>
+      <p>Share your progression, raid schedule, and recruitment details on a public guild page.</p>
+      <p>Members, officers, and the GM get the access you choose. Visitors can look around.</p>
+      <p class="guild-entry">Invite the bot to register your guild. Sign in with Discord, Google, or email.</p>
+    </div>
+    <div class="guild-page-preview">
+      <div class="guild-page-art"><div><small>Guild page · example</small><h3>Kaizen</h3><span>The Burning Crusade</span></div></div>
+      <div class="guild-page-body">
+        <div><small>Progression</small><strong>Karazhan</strong><span>8 / 11 encounters</span></div>
+        <div><small>Raid schedule</small><strong>Saturday · 8:00 PM ET</strong><span>America/New_York</span></div>
+        <div><small>Recruitment</small><strong>Raid with us.</strong><span>Meet the guild in Discord.</span></div>
+      </div>
+      <p class="spec-caption">Public page concept · illustrative guild details</p>
+    </div>
+  </div>
+</section>
+<section class="closing-section" id="signup">
+  <div class="lp-wrap closing-layout">
+    <div class="closing-art">
+      <img src="assets/brand/karazhan-minimal.png" alt="Minimal wizard tower illustration beneath a peach moon">
+      <p>The Burning Crusade.<br><em>With your people.</em></p>
+    </div>
+    <!-- Real Clerk sign-up, not the reference's do-nothing preview form -
+         same openSignInGate() the rest of this page's CTAs use, guild
+         name/email fields dropped since Clerk's own sign-up UI collects
+         whatever it actually needs. -->
+    <div class="signup">
+      <div class="lp-eyebrow" style="text-align:center">Kaizen / The Burning Crusade</div>
+      <h2>Make it a raid night.</h2>
+      <p class="lp-muted">Start with your guild. Plan your first raid.</p>
+      <a class="lp-button lp-primary" href="#" style="width:100%;margin-top:24px;" onclick="startMarketingAuth('signup');return false;">Create account</a>
     </div>
   </div>
 </section>
 </div>
-<footer class="lp-footer">
-  <div class="lp-wrap">
-    <div class="lp-nav">
-      <a class="lp-wordmark" href="/">Kaizen<i> /</i></a>
-    </div>
-    <p>Independent raid management service concept for World of Warcraft players. Not an official Blizzard product. Original AI-generated concept illustrations.</p>
+<footer class="footer">
+  <div class="lp-wrap footer-line">
+    <span class="lp-wordmark">Kaizen<i> /</i></span>
+    <small>Independent raid management service concept for World of Warcraft players. Not an official Blizzard product.</small>
   </div>
 </footer>
 </div>
@@ -3239,19 +3707,19 @@ body.landing-mode #landing-page { display: block; }
       <div style="display:flex;gap:24px;align-items:flex-end;flex-wrap:wrap;margin-bottom:28px;">
         <div style="flex:1;min-width:220px;">
           <label class="pub-field-label" for="public-roster-search">Find a raider</label>
-          <input type="text" class="pub-input" style="width:100%;" placeholder="Character or spec" id="public-roster-search" oninput="renderPublicRaidersDirectory()">
+          <input type="search" class="pub-input" style="width:100%;" placeholder="Character or spec" id="public-roster-search" oninput="renderPublicRaidersDirectory()">
         </div>
         <div>
           <label class="pub-field-label" for="public-roster-role-filter">Role</label>
           <select class="pub-select" id="public-roster-role-filter" onchange="renderPublicRaidersDirectory()">
             <option value="">All roles</option>
-            <option>Tank</option><option>Healer</option><option>Melee</option><option>Ranged</option>
+            <option>Tank</option><option>Healer</option><option>Damage</option>
           </select>
         </div>
-        <span class="pub-meta" id="public-roster-count" style="margin-left:auto;padding-bottom:11px;"></span>
+        <span class="pub-meta" role="status" id="public-roster-count" style="margin-left:auto;padding-bottom:11px;"></span>
       </div>
       <div style="overflow-x:auto;">
-        <table class="pub-table">
+        <table class="pub-table"><caption class="sr-only">Public character directory</caption>
           <thead>
             <tr>
               <th>Character / spec</th>
@@ -3849,7 +4317,7 @@ body.landing-mode #landing-page { display: block; }
 </div>
 
 <!-- ==================== GUILD LOGS TAB ==================== -->
-<div class="tab-panel" id="tab-guild-logs">
+<div class="tab-panel" id="tab-guild-logs"><div id="public-results"></div>
   <!-- Same lighter-touch pattern as Strats (see its long HTML comment) -
        controls here were already krm-edit-only gated from earlier work,
        so this is just the header label/typography swap + container
@@ -5873,7 +6341,7 @@ function applyTabPermissions() {
   if (headerRight) headerRight.style.display = inManageMode ? '' : 'none';
   if (mastheadAccount && signInBtn && clerkUserBtn) {
     const target = inManageMode ? headerRight : mastheadAccount;
-    if (target && signInBtn.parentElement !== target) target.appendChild(signInBtn);
+    if (target) target.insertBefore(signInBtn, target.querySelector('.theme-toggle-btn'));
     if (target && clerkUserBtn.parentElement !== target) target.appendChild(clerkUserBtn);
   }
 
@@ -5900,6 +6368,7 @@ function applyTabPermissions() {
   // priority per the 2026-09-10 creative review (finding #1).
   const managerOverviewView = document.getElementById('manager-overview-view');
   const publicOverviewView = document.getElementById('public-overview-view');
+  document.body.classList.toggle('guild-public-mode', !inManageMode);
   if (managerOverviewView) managerOverviewView.style.display = inManageMode ? '' : 'none';
   if (publicOverviewView) publicOverviewView.style.display = inManageMode ? 'none' : '';
   if (!inManageMode) renderPublicOverview();
@@ -6234,7 +6703,36 @@ function confirmFetchOtherReport() {
   fetchLatestLog(code, true);
 }
 
+
+function publicWclUrl(value){try{const u=new URL(value);return u.protocol==='https:'&&(u.hostname==='warcraftlogs.com'||u.hostname.endsWith('.warcraftlogs.com'))?u.href:'';}catch{return '';}}
+function publicResultRecords(){const rows=guildInfo.publicSite?.results?.reports;return (Array.isArray(rows)?rows:[]).filter(r=>r.published===true&&publicWclUrl(r.wclUrl)).slice().sort((a,b)=>(Number(b.startTime)||0)-(Number(a.startTime)||0));}
+function publicResultImage(report){return publicUrl(report.image)||'assets/brand/encounter-karazhan.png';}
+function publicReportAvailable(report){return report.aiReport?.published===true&&Array.isArray(report.aiReport.sections)&&report.aiReport.sections.length>0;}
+function publicResultDate(report){return report.startTime&&Number.isFinite(Number(report.startTime))?new Date(Number(report.startTime)).toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric',timeZone:guildInfo.timezone||'America/New_York'}):'';}
+function publicResultsFooter(){return '<footer class="results-footer">A guild powered by <a href="/">Kaizen</a>.</footer>';}
+function publicResultsRankings(){
+ const site=guildInfo.publicSite||{};if(site.widgets?.rankings===false)return '';const ranks=Array.isArray(site.rankings)?site.rankings:[];if(!ranks.length)return '';
+ const progression=Array.isArray(site.progression)?site.progression:(guildInfo.progression||[]);const groups=new Map();for(const rank of ranks){const key=rank.progressionId??rank.scope; if(!groups.has(key))groups.set(key,[]);groups.get(key).push(rank);}
+ const number=v=>v!==null&&v!==undefined&&v!==''&&Number.isFinite(Number(v))?Number(v).toLocaleString('en-US'):'—';
+ return '<section class="results-rankings"><div class="rankings-heading"><div><div class="eyebrow">The bigger picture</div><h2>Guild rankings.</h2></div></div><div class="ranking-tiers">'+[...groups].map(([id,items])=>{const p=progression.find(x=>String(x.id)===String(id));const total=p&&Number(p.total)>0;return '<article><div class="ranking-tier-title"><h3>'+publicText(p?.label||items[0].scope)+'</h3>'+(total?'<span>'+number(p.killed)+' / '+number(p.total)+' cleared</span>':'')+'</div>'+(total?'<div class="ranking-progress"><span style="width:'+Math.max(0,Math.min(100,(Number(p.killed)||0)/Number(p.total)*100))+'%"></span></div>':'')+'<div class="ranking-zones">'+items.map(r=>'<div><p class="ranking-scope">'+publicText(r.category||'')+'</p><h4>'+publicText(r.scope)+'</h4><div class="rank-values">'+['world','region','realm'].map(k=>'<span><strong>'+number(r[k])+'</strong>'+k[0].toUpperCase()+k.slice(1)+'</span>').join('')+'</div>'+(publicWclUrl(r.url)?'<a class="results-source" href="'+publicText(publicWclUrl(r.url))+'" target="_blank" rel="noopener">View rankings ↗</a>':'')+(r.observedAt?'<p class="results-meta">Updated '+publicText(r.observedAt)+'</p>':'')+'</div>').join('')+'</div></article>';}).join('')+'</div></section>';
+}
+function renderPublicResults(){
+ const root=document.getElementById('public-results');if(!root)return;if(!canView('guildLogs')){root.innerHTML='';return;}
+ const reports=publicResultRecords(),latest=reports[0];
+ const title='<div class="results-title"><h1>Raid nights, recorded.</h1><p>The latest from '+publicText(guildInfo.guildName||'the guild')+'.</p></div>';
+ if(!latest){root.innerHTML=title+'<div class="results-empty"><h2>The next chapter starts here.</h2><p>Public raid logs and reviewed reports will appear here when shared by the guild.</p></div>'+publicResultsRankings()+publicResultsFooter();return;}
+ const available=publicReportAvailable(latest),ai=available?latest.aiReport:null;
+ root.innerHTML=title+'<div class="results-columns"><article class="result-feature"><a class="result-cover" href="'+publicText(publicWclUrl(latest.wclUrl))+'" target="_blank" rel="noopener"'+(available?' data-read-report':'')+'><img src="'+publicText(publicResultImage(latest))+'" alt=""><span>Latest raid '+(available?'report':'log')+'</span></a><div class="result-feature-copy"><div class="eyebrow">'+publicText([latest.raid,publicResultDate(latest)].filter(Boolean).join(' / '))+'</div><h2>'+publicText(ai?.title||latest.title||latest.raid||'Latest raid')+'</h2>'+(ai?.summary?'<p>'+publicText(ai.summary)+'</p>':'')+'<div class="result-actions">'+(available?'<button class="button primary" data-read-report>Read raid report →</button>':'')+'<a class="button" href="'+publicText(publicWclUrl(latest.wclUrl))+'" target="_blank" rel="noopener">View Warcraft Log ↗</a></div></div></article><aside class="recent-reports"><div class="recent-heading"><h2>Recent logs</h2><span>Warcraft Logs ↗</span></div>'+reports.slice(1,8).map(r=>'<a class="recent-log" href="'+publicText(publicWclUrl(r.wclUrl))+'" target="_blank" rel="noopener"><img src="'+publicText(publicUrl(r.icon)||publicResultImage(r))+'" alt="" loading="lazy"><span><small>'+publicText([publicResultDate(r),r.size?r.size+' players':''].filter(Boolean).join(' · '))+'</small><strong>'+publicText(r.title||r.raid||'Raid log')+'</strong></span><span aria-hidden="true">↗</span></a>').join('')+(!reports[1]?'<p class="results-meta">Earlier shared logs will appear here.</p>':'')+'</aside></div>'+publicResultsRankings()+publicResultsFooter();
+ root.querySelectorAll('[data-read-report]').forEach(a=>a.onclick=e=>{e.preventDefault();renderPublicRaidReport(latest.id);});
+}
+function renderPublicRaidReport(id){
+ const root=document.getElementById('public-results');if(!canView('guildLogs')){root.innerHTML='';return;}const report=publicResultRecords().find(r=>String(r.id)===String(id));if(!report||!publicReportAvailable(report)){renderPublicResults();return;}const ai=report.aiReport;
+ root.innerHTML='<button class="results-back">← Guild results</button><div class="report-heading"><div class="eyebrow">Shared raid report / '+publicText(publicResultDate(report))+'</div><h1 tabindex="-1">'+publicText(ai.title||report.title)+'</h1></div><img class="report-cover" src="'+publicText(publicResultImage(report))+'" alt=""><div class="report-layout"><article>'+(ai.summary?'<p class="report-intro">'+publicText(ai.summary)+'</p>':'')+ai.sections.map(section=>'<section class="report-section">'+(section.eyebrow?'<div class="eyebrow">'+publicText(section.eyebrow)+'</div>':'')+'<h2>'+publicText(section.title)+'</h2><p>'+publicText(section.body)+'</p></section>').join('')+'</article><aside><h3>Raid context</h3><p>'+publicText(report.raid||'')+(report.size?'<br>'+publicText(report.size)+'-player raid':'')+'</p><a href="'+publicText(publicWclUrl(report.wclUrl))+'" target="_blank" rel="noopener">View Warcraft Log ↗</a>'+(ai.reviewedBy?'<p class="results-meta">Reviewed by '+publicText(ai.reviewedBy)+'</p>':'')+'</aside></div>'+publicResultsFooter();
+ root.querySelector('.results-back').onclick=()=>{renderPublicResults();root.querySelector('[data-read-report]')?.focus();};root.querySelector('h1').focus();
+}
+
 function renderGuildLogsTab() {
+  if (!inManageMode) { renderPublicResults(); return; }
   const input = document.getElementById('logs-channel-input');
   if (input) input.value = logsChannelId || '';
   const archiveInput = document.getElementById('archive-channel-input');
@@ -8348,9 +8846,9 @@ function showTab(tab, btn, opts) {
   const publicLink = document.querySelector(`.public-nav-link[data-tab="${tab}"]`);
   if (publicLink) publicLink.classList.add('active');
   if (tab === 'overview') { renderOverview(); renderPublicOverview(); }
-  if (tab === 'roster') { renderActiveRosterSubTab(); renderPublicRaidersDirectory(); }
+  if (tab === 'roster') { if (inManageMode) renderActiveRosterSubTab(); else renderPublicRaidersDirectory(); }
   if (tab === 'strats') renderStrats();
-  if (tab === 'builder') { renderBuilder(); renderPublicRaidsView(); }
+  if (tab === 'builder') { if (inManageMode) renderBuilder(); else renderPublicRaidsView(); }
   if (tab === 'guild-logs') renderGuildLogsTab();
 
   // URL sync - direct links, refresh, and back/forward all land on the
@@ -8581,68 +9079,60 @@ function renderOverview() {
 // never through buildRTE.
 // ======================================================
 function renderPublicOverview() {
-  const heroEl = document.getElementById('public-overview-hero');
-  const contentEl = document.getElementById('public-overview-content');
-  if (!heroEl || !contentEl) return;
-
-  const esc = s => (s || '').replace(/</g, '&lt;');
-  const bannerUrl = guildInfo.banner || 'assets/brand/karazhan-minimal.png';
-
-  heroEl.innerHTML = `
-    <div style="min-height:60vh;display:flex;align-items:flex-end;background:linear-gradient(180deg,rgba(16,22,25,0.1),rgba(16,22,25,0.92)),url('${bannerUrl}') center/cover;padding:64px 0 56px;">
-      <div class="pub-container">
-        ${guildInfo.realm ? `<div class="pub-eyebrow" style="color:#E2C789;">${esc(guildInfo.realm)}</div>` : ''}
-        <h1 style="font-family:var(--kz-font-display);font-weight:400;font-size:clamp(44px,7vw,80px);color:#F5F2E9;margin:0 0 16px;line-height:1.05;text-shadow:0 2px 24px rgba(0,0,0,0.5);">${esc(guildInfo.guildName || 'Guild')}</h1>
-        <button class="pub-button" onclick="showTab('builder')">See our raid nights →</button>
-      </div>
-    </div>`;
-
-  const nextRaid = (guildInfo.raidSchedule || [])[0];
-  // 3-col desktop / 1-col mobile grid of real metric blocks, not a flat
-  // row-list - Codex review pass 2, finding #2: "misses the intended
-  // prominent progression treatment... 32-40px totals and clear raid
-  // labels... restrained top separators, not another wall of boxes."
-  // All six real records preserved, same source data, just laid out
-  // with actual visual weight instead of small right-aligned numbers.
-  const progressionHtml = (guildInfo.progression || []).length
-    ? `<div class="pub-progression-grid">${guildInfo.progression.map(p => `
-        <div style="border-top:2px solid var(--kz-line);padding-top:14px;">
-          <div style="font-size:15px;color:var(--kz-muted);margin-bottom:6px;">${esc(p.label)}</div>
-          <div style="font-family:var(--kz-font-display);font-size:clamp(32px,3.5vw,40px);color:var(--kz-accent);line-height:1;">${p.killed || 0}<span style="color:var(--kz-muted);font-size:0.55em;">/${p.total || 0}</span></div>
-        </div>`).join('')}</div>`
-    : `<div style="color:var(--kz-muted);font-size:15px;">No progression published yet.</div>`;
-
-  const toolsHtml = (guildInfo.tools || []).length
-    ? guildInfo.tools.map(t => `
-        <a href="${(t.url || '#').replace(/"/g, '&quot;')}" target="_blank" rel="noopener" style="display:block;padding:14px 0;border-bottom:1px solid var(--kz-line);text-decoration:none;">
-          <div style="font-size:15px;font-weight:600;color:${t.color || 'var(--kz-text)'};">${esc(t.name)}</div>
-          <div style="font-size:14px;color:var(--kz-muted);margin-top:2px;">${esc(t.desc)}</div>
-        </a>`).join('')
-    : '';
-
-  contentEl.innerHTML = `
-    <div class="pub-section pub-intro-grid">
-      <div>
-        <div class="pub-eyebrow">Our guild</div>
-        <div class="pub-rich-text">${guildInfo.about || ''}</div>
-        ${guildInfo.discord ? `<a href="${guildInfo.discord.replace(/"/g, '&quot;')}" target="_blank" rel="noopener" class="pub-button" style="margin-top:24px;">Join our Discord →</a>` : ''}
-      </div>
-      <div class="pub-card">
-        <div class="pub-eyebrow">Next on the calendar</div>
-        ${nextRaid ? `
-          <div style="font-family:var(--kz-font-display);font-size:22px;color:var(--kz-text);margin-bottom:6px;">${esc(nextRaid.content || nextRaid.day)}</div>
-          <div class="pub-meta">${esc(nextRaid.day)}${nextRaid.time ? ' · ' + esc(nextRaid.time) : ''}</div>
-        ` : `<div style="color:var(--kz-muted);font-size:15px;">No raid schedule published yet.</div>`}
-      </div>
-    </div>
-    <div class="pub-section">
-      <div class="pub-eyebrow">Progression</div>
-      ${progressionHtml}
-    </div>
-    ${guildInfo.recruitment ? `<div class="pub-section"><div class="pub-eyebrow">Recruitment</div><div class="pub-rich-text">${guildInfo.recruitment}</div></div>` : ''}
-    ${guildInfo.lootRules ? `<div class="pub-section"><div class="pub-eyebrow">Loot</div><div class="pub-rich-text">${guildInfo.lootRules}</div></div>` : ''}
-    ${toolsHtml ? `<div class="pub-section"><div class="pub-eyebrow">Resources</div>${toolsHtml}</div>` : ''}
-  `;
+  const hero = document.getElementById('public-overview-hero');
+  const content = document.getElementById('public-overview-content');
+  if (!hero || !content) return;
+  const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const link = value => { if (!value || !String(value).trim()) return ''; try { const u = new URL(value, location.href); return /^https?:$/.test(u.protocol) ? esc(u.href) : ''; } catch { return ''; } };
+  const site = guildInfo.publicSite || {};
+  const widgets = site.widgets || {};
+  const visible = name => widgets[name] !== false;
+  const nav = (tab, label, classes='') => '<a class="'+classes+'" href="#'+tab+'" onclick="event.preventDefault();showTab(\''+tab+'\')">'+label+'</a>';
+  const number = value => Number.isFinite(Number(value)) && value !== null && value !== '' ? Number(value).toLocaleString('en-US') : '—';
+  const recruitmentIcons = {"druid_balance":"assets/wow-spec-icons/druid_balance.jpg","druid_feral":"assets/wow-spec-icons/druid_feral.jpg","druid_restoration":"assets/wow-spec-icons/druid_restoration.jpg","hunter_beastmastery":"assets/wow-spec-icons/hunter_beastmastery.jpg","hunter_marksmanship":"assets/wow-spec-icons/hunter_marksmanship.jpg","hunter_survival":"assets/wow-spec-icons/hunter_survival.jpg","mage_arcane":"assets/wow-spec-icons/mage_arcane.jpg","mage_fire":"assets/wow-spec-icons/mage_fire.jpg","mage_frost":"assets/wow-spec-icons/mage_frost.jpg","misdirection":"assets/wow-spec-icons/misdirection.jpg","paladin_holy":"assets/wow-spec-icons/paladin_holy.jpg","paladin_protection":"assets/wow-spec-icons/paladin_protection.jpg","paladin_retribution":"assets/wow-spec-icons/paladin_retribution.jpg","priest_discipline":"assets/wow-spec-icons/priest_discipline.jpg","priest_holy":"assets/wow-spec-icons/priest_holy.jpg","priest_shadow":"assets/wow-spec-icons/priest_shadow.jpg","rogue_assassination":"assets/wow-spec-icons/rogue_assassination.jpg","rogue_combat":"assets/wow-spec-icons/rogue_combat.jpg","rogue_subtlety":"assets/wow-spec-icons/rogue_subtlety.jpg","shaman_elemental":"assets/wow-spec-icons/shaman_elemental.jpg","shaman_enhancement":"assets/wow-spec-icons/shaman_enhancement.jpg","shaman_restoration":"assets/wow-spec-icons/shaman_restoration.jpg","warlock_affliction":"assets/wow-spec-icons/warlock_affliction.jpg","warlock_demonology":"assets/wow-spec-icons/warlock_demonology.jpg","warlock_destruction":"assets/wow-spec-icons/warlock_destruction.jpg","warrior_arms":"assets/wow-spec-icons/warrior_arms.jpg","warrior_fury":"assets/wow-spec-icons/warrior_fury.jpg","warrior_protection":"assets/wow-spec-icons/warrior_protection.jpg"};
+  const openingIcon = opening => link(opening.icon) || link(recruitmentIcons[(String(opening.class||'')+'_'+String(opening.spec||'')).toLowerCase().replace(/[^a-z_]/g,'')]);
+  const banner = link(site.banner || guildInfo.banner);
+  hero.innerHTML = '<section class="overview-hero"'+(banner ? ' style="background-image:linear-gradient(90deg,#101619ed 10%,#10161970 70%),url(&quot;'+banner+'&quot;)"' : '')+'><div class="wrap"><div class="eyebrow">The Burning Crusade / A guild called</div><h1>'+esc(guildInfo.guildName || 'Guild')+'</h1>'+(site.tagline || guildInfo.tagline ? '<p>'+esc(site.tagline || guildInfo.tagline)+'</p>' : '')+(canView('raiders') ? nav('roster','Meet the guild <span>↗</span>') : '')+'</div></section>';
+  content.className = 'wrap overview-content';
+  const scheduled = canView('weeklyRoster') && visible('nextRaid') ? getScheduledRaidsThisWeek()[0] : null;
+  let next = '';
+  if (scheduled) {
+    const r = scheduled.raid, ready = computeRaidReadiness(r);
+    const gaps = ready.needed.reduce((sum,n)=>sum+n.needed,0);
+    const headline = ready.targets && gaps === 0 ? 'Ready to pull.' : ready.filled >= ready.total ? (gaps ? 'Check the mix.' : 'Roster full.') : ready.targets && gaps===1 ? 'One '+(ready.needed[0].role==='DPS'?'DPS':ready.needed[0].role.toLowerCase())+' from ready.' : Math.max(0,ready.total-ready.filled)+' spots open.';
+    const symbols = {
+      Tank:'<path d="M12 2L4 5v6c0 5.55 3.84 10.74 8 12 4.16-1.26 8-6.45 8-12V5l-8-3z"/>',
+      Healer:'<rect x="10" y="3" width="4" height="18" rx="1"/><rect x="3" y="10" width="18" height="4" rx="1"/>',
+      DPS:'<path d="M12 1.5L14 3.5V13H10V3.5Z"/><rect x="7" y="13" width="10" height="2.4" rx="1"/><rect x="10.8" y="15.4" width="2.4" height="4.6" rx="1"/><circle cx="12" cy="21" r="1.4"/>'
+    };
+    const roles = ready.targets ? ['Tank','Healer','DPS'].map(role=>{
+      const target = ready.targets[ready.targetKey[role]];
+      if (!Number.isFinite(target)) return '';
+      const gap = ready.needed.find(n=>n.role===role)?.needed || 0;
+      return '<div class="role-gap"><span class="need-icon '+({Tank:'tank',Healer:'healer',DPS:'damage'}[role])+'" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor">'+symbols[role]+'</svg></span><strong'+(!gap?' class="filled-role"':'')+'>'+(gap ? gap+' '+(role==='DPS'?'DPS':role.toLowerCase()+(gap===1?'':'s'))+' needed' : (role==='DPS'?'DPS':role+'s')+' filled')+'</strong><span class="need-count">'+ready.displayCounts[role]+' / '+target+'</span></div>';
+    }).join('') : '';
+    next = '<section data-widget-section="nextRaid" class="next-raid" aria-labelledby="overview-next-title"><div class="next-story"><div class="eyebrow">Next raid / '+esc(scheduled.occursOn.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'}))+'</div><h2 id="overview-next-title">'+esc(r.name)+'.<br><em>'+headline+'</em></h2><p><time>'+esc(formatGuildTime(scheduled.occursOn,r.scheduleTime))+'</time>'+(formatServerTime(r.scheduleTime)?'<small>'+esc(formatServerTime(r.scheduleTime))+' · Server time</small>':'')+'</p>'+nav('builder','View raid schedule →','button primary')+'</div><div class="next-readiness"><div class="readiness-title"><span>Confirmed roster</span><span>'+ready.total+'-player raid</span></div><div class="roster-total">'+ready.filled+'<span>/'+ready.total+'</span></div><div class="role-track" role="img" aria-label="'+ready.filled+' of '+ready.total+' roster slots filled">'+Array.from({length:ready.total},(_,i)=>'<i'+(i>=ready.filled?' class="vacant"':'')+'></i>').join('')+'</div>'+(roles?'<div class="role-needs" aria-label="Open roles for this raid">'+roles+'</div><p class="fine">Confirmed / target · For this raid night.</p>':'<p class="fine">Confirmed lineup · Role targets not configured.</p>')+'</div></section>';
+  }
+  const progression = Array.isArray(site.progression) ? site.progression : (guildInfo.progression || []);
+  const ranks = Array.isArray(site.rankings) ? site.rankings : [];
+  const progress = visible('progression') && progression.length ? '<section class="overview-section" id="public-progression"><div class="overview-heading"><div><div class="eyebrow">Progression</div><h2>A little further,<br><em>every raid.</em></h2></div><p>Our progress through Outland.<br>'+(canView('guildLogs')?nav('guild-logs','Browse raid results ↗'):'')+'</p></div><div class="progression-grid">'+progression.map(p=>{
+    const rank = visible('rankings') ? ranks.find(r=>r.progressionId != null && String(r.progressionId)===String(p.id)) : null;
+    const completion = Number(p.total)>0 ? Math.max(0,Math.min(100,Number(p.killed)/Number(p.total)*100)) : 0;
+    return '<article>'+(p.caption?'<div class="tier-caption">'+esc(p.caption)+'</div>':'')+'<h3>'+esc(p.label)+'</h3><div class="clear-total">'+number(p.killed)+' <span>/ '+number(p.total)+' cleared</span></div><div class="clear-track"><span style="width:'+completion+'%"></span></div>'+(p.detail?'<p class="fine">'+esc(p.detail)+'</p>':'')+(rank?'<div class="ranking" data-widget-section="rankings"><div class="ranking-label">'+esc(rank.scope)+' · '+esc(rank.category)+'</div><div class="world-rank"><span>World</span><strong>'+number(rank.world)+'</strong></div><dl class="rank-sub"><div><dt>Region</dt><dd>'+number(rank.region)+'</dd></div><div><dt>Realm</dt><dd>'+number(rank.realm)+'</dd></div></dl></div>'+(link(rank.url)?'<p class="fine ranking-foot"><a href="'+link(rank.url)+'" target="_blank" rel="noopener">Warcraft Logs ↗</a></p>':''):'')+'</article>';
+  }).join('')+'</div></section>' : '';
+  const openings = (Array.isArray(site.recruitment)?site.recruitment:[]).filter(o=>o.active===true);
+  const news = (Array.isArray(site.announcements)?site.announcements:[]).filter(a=>a.published===true);
+  const pinned = news.find(a=>a.pinned);
+  const feed = [...(pinned?[pinned]:[]),...news.filter(a=>a!==pinned)].slice(0,3);
+  const recruitment = visible('recruitment') && (openings.length || guildInfo.recruitment) ? '<section class="recruitment" data-widget-section="recruitment"><div class="eyebrow">Recruitment</div><h2>Room for<br><em>the right people.</em></h2>'+(site.recruitmentIntro?'<p>'+esc(site.recruitmentIntro)+'</p>':guildInfo.recruitment?'<div class="pub-rich-text">'+guildInfo.recruitment+'</div>':'')+(openings.length?'<dl class="recruit-summary" aria-label="Recruitment openings">'+['Tank','Healer','DPS'].map(role=>'<div><dd>'+openings.filter(o=>o.role===role).reduce((sum,o)=>sum+(Number(o.quantity)||0),0)+'</dd><dt>'+({Tank:'Tank',Healer:'Healers',DPS:'DPS'}[role])+'</dt></div>').join('')+'</dl><ul class="recruit-openings">'+openings.map(o=>'<li>'+(openingIcon(o)?'<img src="'+openingIcon(o)+'" alt="">':'')+'<div><strong>'+esc(o.class)+' <span>· '+esc(o.spec)+'</span></strong><small>'+esc(o.roleLabel || o.role)+'</small></div><b>'+number(o.quantity)+' <span>'+ (Number(o.quantity)===1?'spot':'spots')+'</span></b></li>').join('')+'</ul><p class="fine">Ongoing recruitment.</p>':'')+(link(guildInfo.discord)?'<a class="button" href="'+link(guildInfo.discord)+'" target="_blank" rel="noopener">Meet us in Discord ↗</a>':'')+'</section>':'';
+  const announcements = visible('announcements') && feed.length ? '<section class="announcements" data-widget-section="announcements"><div class="overview-heading"><div><div class="eyebrow">From the guild</div><h2>The latest.</h2></div>'+(site.announcementChannelLabel?'<span class="channel-label">'+esc(site.announcementChannelLabel)+'</span>':'')+'</div>'+feed.map(a=>'<article class="'+(a.pinned?'pinned-note':'recent-note')+'"><small>'+(a.pinned?'Pinned · ':'')+esc(a.dateLabel || a.date || '')+'</small><h3>'+esc(a.title)+'</h3><p class="announcement-excerpt">'+esc(a.excerpt)+'</p>'+(link(a.discordUrl)?'<a class="discord-source" href="'+link(a.discordUrl)+'" target="_blank" rel="noopener">Read in Discord ↗</a>':'')+'</article>').join('')+'</section>':'';
+  const recap = visible('recap') && site.latestRecap?.published===true ? site.latestRecap : null;
+  const recapHtml = recap?'<section class="recap-section" data-widget-section="recap"><div class="recap-art"'+(link(recap.image)?' style="background-image:url(&quot;'+link(recap.image)+'&quot;)"':'')+'></div><div class="recap-copy"><div class="eyebrow">Last raid / Published recap</div><h2>'+(recap.titleLead && recap.titleEmphasis ? esc(recap.titleLead)+'<em>'+esc(recap.titleEmphasis)+'</em>' : esc(recap.title))+'</h2>'+(recap.context?'<p>'+esc(recap.context)+'</p>':'')+'<p>'+esc(recap.excerpt)+'</p>'+(link(recap.url)?'<a class="button" href="'+link(recap.url)+'">Read the raid recap ↗</a>':'')+(recap.credit?'<small>'+esc(recap.credit)+'</small>':'')+'</div></section>':'';
+  const schedule = (guildInfo.raidSchedule||[]).map(s=>[s.day,s.content,s.time].filter(Boolean).map(esc).join(' · ')).join('<br>');
+  const tools = (guildInfo.tools||[]).filter(t=>link(t.url));
+  const basics = visible('basics') ? '<section class="guild-basics" data-widget-section="basics"><div><div class="eyebrow">Our guild</div><div class="pub-rich-text">'+(guildInfo.about||'')+'</div></div><div><h3>Raid nights</h3><p>'+schedule+'</p>'+(canView('weeklyRoster')?nav('builder','Full schedule →'):'')+'</div><div><h3>Before you raid</h3>'+(guildInfo.lootRules?'<details><summary>Loot &amp; expectations</summary><div class="pub-rich-text">'+guildInfo.lootRules+'</div></details>':'')+(canView('strats')?nav('strats','Encounter plans →'):'')+tools.map(t=>'<p><a href="'+link(t.url)+'" target="_blank" rel="noopener">'+esc(t.name)+' ↗</a></p>').join('')+'</div></section>' : '';
+  content.innerHTML = next+progress+(recruitment||announcements?'<div class="community-grid"'+(!recruitment||!announcements?' style="grid-template-columns:1fr"':'')+'>'+recruitment+announcements+'</div>':'')+recapHtml+basics;
+  if (!document.getElementById('public-overview-footer')) hero.parentElement?.insertAdjacentHTML('beforeend','<footer id="public-overview-footer" class="overview-footer"><div class="wrap"><p>A guild powered by <a href="/">Kaizen</a>.</p></div></footer>');
 }
 
 function addScheduleEntry() {
@@ -9062,6 +9552,15 @@ function renderRoster() {
 // configured"). Shown instead of #manager-roster-view when
 // !inManageMode; see the toggle in applyTabPermissions().
 // ======================================================
+
+function publicText(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function publicUrl(value){try{if(!value)return '';const u=new URL(value,location.href);return /^https?:$/.test(u.protocol)?u.href:'';}catch{return '';}}
+function publicRole(role){return ['Melee','Ranged','DPS'].includes(role)?'Damage':role||'—';}
+function publicCharacter(p, spec=p.ms){const icons={"druid_balance":"assets/wow-spec-icons/druid_balance.jpg","druid_feral":"assets/wow-spec-icons/druid_feral.jpg","druid_restoration":"assets/wow-spec-icons/druid_restoration.jpg","hunter_beastmastery":"assets/wow-spec-icons/hunter_beastmastery.jpg","hunter_marksmanship":"assets/wow-spec-icons/hunter_marksmanship.jpg","hunter_survival":"assets/wow-spec-icons/hunter_survival.jpg","mage_arcane":"assets/wow-spec-icons/mage_arcane.jpg","mage_fire":"assets/wow-spec-icons/mage_fire.jpg","mage_frost":"assets/wow-spec-icons/mage_frost.jpg","misdirection":"assets/wow-spec-icons/misdirection.jpg","paladin_holy":"assets/wow-spec-icons/paladin_holy.jpg","paladin_protection":"assets/wow-spec-icons/paladin_protection.jpg","paladin_retribution":"assets/wow-spec-icons/paladin_retribution.jpg","priest_discipline":"assets/wow-spec-icons/priest_discipline.jpg","priest_holy":"assets/wow-spec-icons/priest_holy.jpg","priest_shadow":"assets/wow-spec-icons/priest_shadow.jpg","rogue_assassination":"assets/wow-spec-icons/rogue_assassination.jpg","rogue_combat":"assets/wow-spec-icons/rogue_combat.jpg","rogue_subtlety":"assets/wow-spec-icons/rogue_subtlety.jpg","shaman_elemental":"assets/wow-spec-icons/shaman_elemental.jpg","shaman_enhancement":"assets/wow-spec-icons/shaman_enhancement.jpg","shaman_restoration":"assets/wow-spec-icons/shaman_restoration.jpg","warlock_affliction":"assets/wow-spec-icons/warlock_affliction.jpg","warlock_demonology":"assets/wow-spec-icons/warlock_demonology.jpg","warlock_destruction":"assets/wow-spec-icons/warlock_destruction.jpg","warrior_arms":"assets/wow-spec-icons/warrior_arms.jpg","warrior_fury":"assets/wow-spec-icons/warrior_fury.jpg","warrior_protection":"assets/wow-spec-icons/warrior_protection.jpg"};const key=(String(p.class||'')+'_'+String(spec||'')).toLowerCase().replace(/[^a-z_]/g,'');const icon=icons[key];return '<span class="character">'+(icon?'<img src="'+icon+'" alt="" loading="lazy">':'')+'<span><strong>'+publicText(p.name)+'</strong><small>'+publicText([spec,p.class].filter(Boolean).join(' '))+'</small></span></span>';}
+function publicRaidPlayer(r,id){return Number(id)<0?[...(r.guildies||[]),...(r.pugs||[])].find(p=>String(p.id)===String(id)):roster.find(p=>String(p.id)===String(id));}
+function publicSignupUrl(r){const server=String(raidHelperServerId||'');const channel=String(r.rhChannelId||'');return /^\d{15,22}$/.test(server)&&/^\d{15,22}$/.test(channel)?'https://discord.com/channels/'+server+'/'+channel:'';}
+function publicRaidArtwork(r){return publicUrl(r.encounterRaid?raidCardImage(r.encounterRaid):'')||('assets/brand/'+(/kara/i.test(r.encounterRaid||r.name)?'karazhan':/temple/i.test(r.encounterRaid||r.name)?'temple':'outland')+'-minimal.png');}
+
 function renderPublicRaidersDirectory() {
   const unavailableEl = document.getElementById('public-roster-unavailable');
   const contentEl = document.getElementById('public-roster-content');
@@ -9083,8 +9582,8 @@ function renderPublicRaidersDirectory() {
   const roleFilter = document.getElementById('public-roster-role-filter')?.value || '';
 
   const rows = roster.filter(p => {
-    if (roleFilter && p.role !== roleFilter) return false;
-    if (search && !p.name.toLowerCase().includes(search) && !(p.ms || '').toLowerCase().includes(search)) return false;
+    if (roleFilter && publicRole(p.role) !== roleFilter) return false;
+    if (search && ![p.name,p.ms,p.class].filter(Boolean).join(' ').toLowerCase().includes(search)) return false;
     return true;
   });
 
@@ -9096,35 +9595,7 @@ function renderPublicRaidersDirectory() {
     tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:32px;color:var(--kz-muted);">No raiders match that search.</td></tr>`;
     return;
   }
-  // Quiet textual role/status, not the manager's colored pill badges -
-  // creative review: "Do not use colored names, colored role pills and
-  // colored status pills as three competing signals on every row."
-  // The class-colored name stays (real class identity, the one signal
-  // worth keeping); role/status read as plain text here instead.
-  // Name reads in ivory, not the raw class color, on this page - Codex
-  // review pass 2, finding #3: several class colors (Shaman especially)
-  // don't meet real contrast against these dark surfaces, and "class
-  // identity must not make player names harder to read." Class
-  // identity is still right there via the spec icon's class-colored
-  // border (classSpecIconHtml) plus this small dot - not lost, just no
-  // longer carried by low-contrast body text.
-  tbody.innerHTML = rows.map(p => {
-    const cc = classColor(p.class);
-    return `<tr>
-      <td>
-        <div style="display:flex;align-items:center;gap:14px;">
-          ${classSpecIconHtml(p, 36)}
-          <div>
-            <div style="font-weight:600;font-size:16px;color:var(--kz-text);"><span class="class-dot" style="background:var(--${cc});"></span>${p.name}</div>
-            <div style="font-size:14px;color:var(--kz-muted);">${p.ms || p.class}</div>
-          </div>
-        </div>
-      </td>
-      <td style="color:var(--kz-text);">${p.role || '—'}</td>
-      <td style="color:var(--kz-muted);">${p.status || '—'}</td>
-      <td style="color:var(--kz-muted);">${p.level || '—'}</td>
-    </tr>`;
-  }).join('');
+  tbody.innerHTML=rows.map(p=>'<tr><td>'+publicCharacter(p)+'</td><td>'+publicText(publicRole(p.role))+'</td><td>'+publicText(p.status||'—')+'</td><td>'+publicText(p.level||'—')+'</td></tr>').join('');
 }
 
 // ======================================================
@@ -10378,7 +10849,7 @@ function getScheduledRaidsThisWeek() {
       occursOn.setDate(occursOn.getDate() + dayDiff);
       return { raid: r, occursOn };
     })
-    .sort((a, b) => a.occursOn - b.occursOn);
+    .sort((a, b) => a.occursOn - b.occursOn || a.raid.scheduleTime.localeCompare(b.raid.scheduleTime));
 }
 
 // Guild-local time formatted 12h with the real IANA zone abbreviation
@@ -10387,8 +10858,17 @@ function getScheduledRaidsThisWeek() {
 // Date via Intl rather than a fixed offset.
 function formatGuildTime(occursOn, scheduleTime) {
   const [h, m] = scheduleTime.split(':').map(Number);
-  const probe = new Date(occursOn.getFullYear(), occursOn.getMonth(), occursOn.getDate(), h, m);
   const tz = guildInfo.timezone || 'America/New_York';
+  // Interpret the configured clock time in the guild zone, not the visitor's zone.
+  const wall = Date.UTC(occursOn.getFullYear(), occursOn.getMonth(), occursOn.getDate(), h, m);
+  const partsFormatter = new Intl.DateTimeFormat('en-US', {timeZone:tz,year:'numeric',month:'numeric',day:'numeric',hour:'numeric',minute:'numeric',hourCycle:'h23'});
+  let instant = wall;
+  for (let i=0;i<3;i++) {
+    const parts=Object.fromEntries(partsFormatter.formatToParts(new Date(instant)).map(p=>[p.type,p.value]));
+    const rendered=Date.UTC(+parts.year,+parts.month-1,+parts.day,+parts.hour,+parts.minute);
+    instant += wall-rendered;
+  }
+  const probe = new Date(instant);
   return new Intl.DateTimeFormat('en-US', { timeZone: tz, hour: 'numeric', minute: '2-digit', hour12: true, timeZoneName: 'short' }).format(probe);
 }
 
@@ -10415,10 +10895,12 @@ function computeRaidReadiness(r) {
   const groupCount = r.size === 10 ? 2 : 5;
   const roleCounts = { Tank: 0, Healer: 0, Melee: 0, Ranged: 0 };
   let filled = 0;
+  const seen = new Set();
   for (let g = 0; g < groupCount; g++) {
     ((r.groups || [])[g] || []).forEach(pid => {
-      const p = getPlayerById(pid);
-      if (!p) return;
+      const p = publicRaidPlayer(r,pid);
+      if (!p || seen.has(String(p.id))) return;
+      seen.add(String(p.id));
       filled++;
       const role = (r.roleOverrides && r.roleOverrides[p.id]) || p.role;
       if (roleCounts[role] !== undefined) roleCounts[role]++;
@@ -10426,7 +10908,7 @@ function computeRaidReadiness(r) {
   }
   const displayCounts = { Tank: roleCounts.Tank, Healer: roleCounts.Healer, DPS: roleCounts.Melee + roleCounts.Ranged };
   const total = groupCount * 5;
-  const targets = r.targets;
+  const targets = r.targets && ['tank','healer','dps'].some(k=>Number(r.targets[k])>0) ? r.targets : null;
   const targetKey = { Tank: 'tank', Healer: 'healer', DPS: 'dps' };
   const needed = targets ? Object.entries(targetKey)
     .map(([role, key]) => ({ role, needed: Math.max(0, targets[key] - displayCounts[role]) }))
@@ -10435,77 +10917,24 @@ function computeRaidReadiness(r) {
 }
 
 function renderPublicRaidsView() {
-  const unavailableEl = document.getElementById('public-raids-unavailable');
-  const listEl = document.getElementById('public-raid-schedule-list');
-  const rangeEl = document.getElementById('public-raids-week-range');
-  if (!listEl) return;
-
-  const scheduled = canView('weeklyRoster') ? getScheduledRaidsThisWeek() : [];
-
-  if (rangeEl) {
-    if (scheduled.length) {
-      const fmt = d => d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-      rangeEl.textContent = scheduled.length === 1
-        ? fmt(scheduled[0].occursOn)
-        : `${fmt(scheduled[0].occursOn)} – ${fmt(scheduled[scheduled.length - 1].occursOn)}`;
-    } else {
-      rangeEl.textContent = '';
-    }
-  }
-
-  if (!scheduled.length) {
-    listEl.innerHTML = '';
-    unavailableEl.style.display = '';
-    return;
-  }
-  unavailableEl.style.display = 'none';
-
-  listEl.innerHTML = scheduled.map(({ raid: r, occursOn }) => {
-    const readiness = computeRaidReadiness(r);
-    const img = r.encounterRaid ? raidCardImage(r.encounterRaid) : '';
-    const dayLabel = WEEKDAY_NAMES[occursOn.getDay()];
-    const dateLabel = occursOn.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-    const guildTime = formatGuildTime(occursOn, r.scheduleTime);
-    const serverTime = formatServerTime(r.scheduleTime);
-
-    const roleRows = [
-      { role: 'Tank', icon: '🛡' }, { role: 'Healer', icon: '✚' }, { role: 'DPS', icon: '⚔' },
-    ].map(rr => {
-      const target = readiness.targets ? readiness.targets[readiness.targetKey[rr.role]] : null;
-      const gap = readiness.needed.find(n => n.role === rr.role);
-      if (target == null) return ''; // no target set for this raid - honest omission, not a fabricated "0 needed"
-      return `<div style="display:flex;align-items:center;gap:10px;padding:6px 0;">
-        <span style="font-size:14px;width:20px;">${rr.icon}</span>
-        <span style="flex:1;font-size:13px;color:${gap ? 'var(--kz-text)' : 'var(--kz-muted)'};">${gap ? `${gap.needed} ${rr.role.toLowerCase()}${gap.needed === 1 ? '' : 's'} needed` : `${rr.role} full`}</span>
-        <span style="font-size:13px;color:var(--kz-muted);">${readiness.displayCounts[rr.role]}/${target}</span>
-      </div>`;
-    }).join('');
-
-    const encounterLink = r.encounterRaid
-      ? `<a href="#" onclick="event.preventDefault();showTab('strats',null);setActiveRaid('${r.encounterRaid.replace(/'/g, "\\'")}');" style="font-size:14px;color:var(--kz-link);text-decoration:none;">Encounter plans →</a>`
-      : '';
-    const signupCta = (r.rhChannelId && guildInfo.discord)
-      ? `<a href="${guildInfo.discord}" target="_blank" rel="noopener" class="pub-button" style="margin-top:16px;display:inline-block;">Sign up on Discord →</a>`
-      : '';
-
-    return `<div style="display:flex;gap:24px;padding:32px 0;border-top:1px solid var(--kz-line);flex-wrap:wrap;">
-      ${img ? `<div style="width:160px;height:100px;flex-shrink:0;border-radius:6px;background:url('${img.replace(/'/g, "\\'")}') center/cover;"></div>` : ''}
-      <div style="flex:1;min-width:240px;">
-        <div style="font-size:12px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--kz-accent);">${dayLabel} · ${dateLabel}</div>
-        <div style="font-family:var(--kz-font-display);font-size:28px;color:var(--kz-text);margin:4px 0 8px;">${(r.name || '').replace(/</g, '&lt;')}</div>
-        <div style="font-size:14px;color:var(--kz-muted);">${guildTime}${serverTime ? ` · ${serverTime}` : ''}</div>
-        ${encounterLink ? `<div style="margin-top:8px;">${encounterLink}</div>` : ''}
-      </div>
-      <div style="min-width:220px;">
-        <div style="display:flex;align-items:baseline;gap:6px;">
-          <span style="font-family:var(--kz-font-display);font-size:28px;color:var(--kz-text);">${readiness.filled}</span>
-          <span style="font-size:14px;color:var(--kz-muted);">/ ${readiness.total} confirmed</span>
-        </div>
-        ${roleRows}
-        ${signupCta}
-      </div>
-    </div>`;
-  }).join('');
+ const list=document.getElementById('public-raid-schedule-list'),empty=document.getElementById('public-raids-unavailable'),range=document.getElementById('public-raids-week-range');if(!list)return;
+ const scheduled=canView('weeklyRoster')?getScheduledRaidsThisWeek():[];
+ const date=d=>d.toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+ range.textContent=scheduled.length?date(scheduled[0].occursOn)+(scheduled.length>1?' – '+date(scheduled[scheduled.length-1].occursOn):''):'';
+ empty.style.display=scheduled.length?'none':'';list.innerHTML='';
+ const symbols=['<path d="M12 3 5 6v6c0 4 7 9 7 9s7-5 7-9V6Z"/>','<path d="M9 4h6v5h5v6h-5v5H9v-5H4V9h5Z"/>','<path d="m5 19 4-4m-3-3 6 6M9 15 19 5l1-2-3 1L7 14"/>'];
+ scheduled.forEach(({raid:r,occursOn},index)=>{
+ const ready=computeRaidReadiness(r),signup=publicSignupUrl(r),row=document.createElement('article');row.className='raid-listing';
+ const roles=ready.targets?'<ul class="raid-role-needs">'+['Tank','Healer','DPS'].map((role,j)=>{const target=ready.targets[ready.targetKey[role]];if(!Number.isFinite(Number(target)))return '';const gap=ready.needed.find(x=>x.role===role)?.needed||0;return '<li class="'+(gap?'needs-role':'role-filled')+'"><span class="raid-role-symbol" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">'+symbols[j]+'</svg></span><span>'+(gap?gap+' '+(role==='DPS'?'DPS':role.toLowerCase()+(gap===1?'':'s'))+' needed':role+(role==='DPS'?'':'s')+' filled')+'</span><small>'+ready.displayCounts[role]+'/'+publicText(target)+'</small></li>';}).join('')+'</ul>':'<p class="pub-meta">'+Math.max(0,ready.total-ready.filled)+' open slots</p>';
+ row.innerHTML='<img src="'+publicText(publicRaidArtwork(r))+'" alt="" loading="lazy"><div><span class="pub-eyebrow">'+publicText(WEEKDAY_NAMES[occursOn.getDay()]+' · '+date(occursOn))+'</span><h2>'+publicText(r.name)+'</h2><p><time>'+publicText(formatGuildTime(occursOn,r.scheduleTime))+'</time><br><small>'+publicText(formatServerTime(r.scheduleTime)||('Guild time · '+(guildInfo.timezone||'America/New_York')))+'</small></p><button class="raid-text-link" data-lineup>View lineup →</button>'+(r.encounterRaid&&canView('strats')?'<button class="raid-text-link" data-plans>Encounter plans →</button>':'')+'</div><div class="raid-count"><div class="raid-needs-heading"><strong>'+ready.filled+' <small>/ '+ready.total+'</small></strong><span>Confirmed</span></div>'+roles+(signup?'<a class="pub-button raid-signup" href="'+signup+'" target="_blank" rel="noopener">Sign up on Discord ↗</a>':'')+'</div>';
+ row.querySelector('[data-lineup]').onclick=()=>renderPublicRaidLineup(r,occursOn,index);
+ row.querySelector('[data-plans]')?.addEventListener('click',()=>{showTab('strats');setActiveRaid(r.encounterRaid);});list.append(row);
+ });
+}
+function renderPublicRaidLineup(r,occursOn,returnIndex=0){
+ if(!canView('weeklyRoster'))return;const list=document.getElementById('public-raid-schedule-list'),ready=computeRaidReadiness(r);const seen=new Set();
+ list.innerHTML='<button class="raid-text-link" id="raid-list-back">← All raids</button><div class="lineup-heading"><h2 tabindex="-1">'+publicText(r.name)+'</h2><p>'+publicText(formatGuildTime(occursOn,r.scheduleTime))+' · '+publicText(occursOn.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'}))+'</p></div><div class="readiness-public"><div><strong>'+ready.filled+' <span>/ '+ready.total+'</span></strong><p>'+Math.max(0,ready.total-ready.filled)+' open slots</p></div><dl>'+['Tank','Healer','DPS'].map(role=>'<div><dt>'+role+'</dt><dd>'+ready.displayCounts[role]+'</dd></div>').join('')+'</dl></div><div class="lineup-grid">'+Array.from({length:ready.total/5},(_,g)=>{const players=Array.from({length:5},(_,i)=>{const p=publicRaidPlayer(r,(r.groups?.[g]||[])[i]);if(!p||seen.has(String(p.id)))return null;seen.add(String(p.id));return p;});return '<section class="lineup-group"><div class="lineup-group-heading"><h3>Group '+(g+1)+'</h3><span>'+players.filter(Boolean).length+' / 5</span></div>'+players.map(p=>p?'<div class="lineup-row">'+publicCharacter(p,r.specOverrides?.[p.id]||p.ms)+'<span>'+publicText(publicRole(r.roleOverrides?.[p.id]||p.role))+'</span></div>':'<div class="lineup-row open-position"><span>Open slot</span><span>1 available</span></div>').join('')+'</section>';}).join('')+'</div>';
+ document.getElementById('raid-list-back').onclick=()=>{renderPublicRaidsView();document.querySelectorAll('[data-lineup]')[returnIndex]?.focus();};list.querySelector('h2').focus();
 }
 
 // ======================================================
@@ -11338,7 +11767,34 @@ function renderBossSelectRow(groups, activeGroupKey) {
   return `<div class="boss-select-row">${cards}<span class="krm-edit-only">${addCard}</span></div>`;
 }
 
-function renderStrats() {
+
+const PUBLIC_ENCOUNTER_CATALOG=[{"id":"karazhan","name":"Karazhan","size":10,"kicker":"Beyond the violet veil","art":"assets/brand/encounter-karazhan.png","bosses":[["Attumen the Huntsman","kara-attumen"],["Moroes","kara-moroes"],["Maiden of Virtue","kara-maiden"],["Opera Event","kara-bigbadwolf"],["The Curator","kara-curator"],["Shade of Aran","kara-aran"],["Terestian Illhoof","kara-illhoof"],["Netherspite","kara-netherspite"],["Chess Event","kara-chess"],["Prince Malchezaar","kara-malchezaar"],["Nightbane","kara-nightbane"]],"key":"Karazhan"},{"id":"gruul-magtheridon","name":"Gruul & Magtheridon","size":25,"kicker":"Lair of the giants","art":"assets/backgrounds/default/gruul-mag-gruul.jpg","bosses":[["High King Maulgar","gruul-mag-maulgar"],["Gruul the Dragonkiller","gruul-mag-gruul"],["Magtheridon","gruul-mag-magtheridon"]],"key":"Gruul's Lair & Magtheridon's Lair"},{"id":"serpentshrine","name":"Serpentshrine Cavern","size":25,"kicker":"Beneath the reservoir","art":"assets/backgrounds/default/ssc-vashj.jpg","bosses":[["Hydross the Unstable","ssc-hydross"],["The Lurker Below","ssc-lurker"],["Leotheras the Blind","ssc-leotheras"],["Fathom-Lord Karathress","ssc-karathress"],["Morogrim Tidewalker","ssc-morogrim"],["Lady Vashj","ssc-vashj"]],"key":"Serpentshrine Cavern"},{"id":"tempest-keep","name":"Tempest Keep","size":25,"kicker":"Eye of the storm","art":"assets/backgrounds/default/tk-kaelthas.jpg","bosses":[["Al’ar","tk-alar"],["Void Reaver","tk-voidreaver"],["High Astromancer Solarian","tk-solarian"],["Kael’thas Sunstrider","tk-kaelthas"]],"key":"The Eye"},{"id":"hyjal","name":"Hyjal Summit","size":25,"kicker":"Stand against the Legion","art":"assets/brand/encounter-winterchill-map.jpg","bosses":[["Rage Winterchill","hyjal-winterchill"],["Anetheron","hyjal-anetheron"],["Kaz’rogal","hyjal-kazrogal"],["Azgalor","hyjal-azgalor"],["Archimonde","hyjal-archimonde"]],"key":"Battle for Mount Hyjal"},{"id":"black-temple","name":"Black Temple","size":25,"kicker":"Into the Betrayer’s domain","art":"assets/brand/encounter-temple.png","bosses":[["High Warlord Naj’entus","bt-najentus"],["Supremus","bt-supremus"],["Shade of Akama","bt-akama"],["Teron Gorefiend","bt-gorefiend"],["Gurtogg Bloodboil","bt-bloodboil"],["Reliquary of Souls","bt-essence-anger"],["Mother Shahraz","bt-shahraz"],["The Illidari Council","bt-gathios"],["Illidan Stormrage","bt-illidan"]],"key":"Black Temple"},{"id":"zul-aman","name":"Zul’Aman","size":10,"kicker":"Echoes of the Amani","art":"assets/brand/encounter-outland-minimal.png","bosses":[["Nalorakk"],["Akil’zon"],["Jan’alai"],["Halazzi"],["Hex Lord Malacrass"],["Zul’jin"]],"key":"Zul'Aman"},{"id":"sunwell","name":"Sunwell Plateau","size":25,"kicker":"The final stand","art":"assets/backgrounds/default/swp-kiljaeden.jpg","bosses":[["Kalecgos","swp-kalecgos"],["Brutallus","swp-brutallus"],["Felmyst","swp-felmyst"],["Eredar Twins","swp-alythess"],["M’uru","swp-muru"],["Kil’jaeden","swp-kiljaeden"]],"key":"Sunwell Plateau"}];
+function publicEncounterRaid(raid){return PUBLIC_ENCOUNTER_CATALOG.find(r=>r.key===raid||r.name===raid);}
+function openPublicEncounter(raid,key){activeRaid=raid;activeBossGroupKey=key;openBossGroup(key);}
+function renderPublicEncounterLibrary(){
+ const host=document.getElementById('strat-list');host.innerHTML='<div id="public-encounter-library"></div>';const el=host.firstElementChild;const raid=publicEncounterRaid(activeRaid);
+ const esc=publicText;const art=r=>publicUrl(r.art);const portrait=(slug)=>slug?'<img src="assets/boss-icons/'+esc(slug)+'.png" alt="">':'<span class="boss-initial" aria-hidden="true">◇</span>';
+ if(!raid){const focus=guildInfo.publicSite?.focusEncounter;const selected=focus&&strats.find(s=>String(s.id)===String(focus.stratId));
+ el.innerHTML=(selected?'<a href="#strats" class="encounter-feature" data-focus><img class="feature-terrain" src="'+esc(publicUrl(selected.image))+'" alt=""><div class="feature-copy"><span class="feature-label">In focus'+(focus.label?' / '+esc(focus.label):'')+'</span><p class="feature-raid">'+esc(selected.raid)+'</p><div class="feature-title">'+portrait(bossPortraitSlug(selected.raid,selected.name))+'<h1>'+esc(selected.name)+'</h1></div>'+(focus.summary?'<p>'+esc(focus.summary)+'</p>':'')+'<span class="feature-cta">View encounter plan ↗</span></div>'+(focus.raidLead?.name&&publicUrl(focus.raidLead.avatar)?'<div class="feature-stamp"><img src="'+esc(publicUrl(focus.raidLead.avatar))+'" alt=""><span>From your raid leader<br><strong>'+esc(focus.raidLead.name)+'</strong></span></div>':'')+'</a>':'')+'<div class="library-section-head"><div><div class="eyebrow">The Burning Crusade</div><h2>Choose your battleground.</h2></div><span>08 raids / one shared playbook</span></div><div class="raid-library-grid">'+PUBLIC_ENCOUNTER_CATALOG.map((r,i)=>'<a href="#strats" class="raid-editorial-card" data-raid-index="'+i+'"><div class="raid-card-art"><img src="'+esc(art(r))+'" alt="" loading="lazy"><span>'+r.size+' players</span><b>↗</b></div><div class="raid-card-copy"><small>'+String(i+1).padStart(2,'0')+' / '+esc(r.kicker)+'</small><h3>'+esc(r.name)+'</h3><p>'+r.bosses.length+' encounters</p></div></a>').join('')+'</div>';
+ el.querySelector('[data-focus]')?.addEventListener('click',e=>{e.preventDefault();activeRaid=selected.raid;setActiveStat(selected.id);});el.querySelectorAll('[data-raid-index]').forEach(a=>a.onclick=e=>{e.preventDefault();setActiveRaid(PUBLIC_ENCOUNTER_CATALOG[Number(a.dataset.raidIndex)].key);});
+ }else{const groups=buildBossGroups(raid.key);el.innerHTML='<button class="library-back">← All encounter plans</button><div class="raid-library-hero" style="--raid-art:url(&quot;'+esc(art(raid))+'&quot;)"><div class="eyebrow">'+raid.size+' players · '+raid.bosses.length+' encounters</div><h1>'+esc(raid.name)+'</h1><p>'+esc(raid.kicker)+'.</p></div><div class="library-section-head"><h2>The encounters.</h2><span>Select a boss to read the guild plan</span></div><div class="boss-library-grid">'+groups.map((g,i)=>'<a href="#strats" class="boss-library-card" data-group-index="'+i+'"><span class="boss-number">'+String(i+1).padStart(2,'0')+'</span>'+portrait(g.portraitSlug)+'<div><h3>'+esc(g.name)+'</h3><p>'+g.members.length+' plan'+(g.members.length===1?'':'s')+' / Positions & assignments</p></div><span class="boss-go">→</span></a>').join('')+'</div>'+(!groups.length?'<div class="encounter-empty"><h2>No guild plans yet.</h2><p>Published encounter plans will appear here.</p></div>':'');el.querySelector('.library-back').onclick=()=>setActiveRaid(null);el.querySelectorAll('[data-group-index]').forEach(a=>a.onclick=e=>{e.preventDefault();openPublicEncounter(raid.key,groups[Number(a.dataset.groupIndex)].groupKey);});}
+}
+function renderStrats(){
+ if(inManageMode){renderStratsWorkspace();return;}
+ const tab=document.getElementById('tab-strats');tab.classList.add('strat-visitor');
+ if(!canView('strats')){document.getElementById('strat-list').innerHTML='';return;}
+ const detail=activeRaid!=null&&(activeStratId!=null||activeTrashId!=null);tab.classList.toggle('public-encounter-detail',detail);tab.classList.toggle('strat-detail-active',detail);
+ if(!detail){renderPublicEncounterLibrary();return;}
+ renderStratsWorkspace();
+ const videoPlaceholder=tab.querySelector('.video-placeholder');
+ if(videoPlaceholder)videoPlaceholder.innerHTML='<strong>See the fight unfold.</strong><small>No guild video added yet.</small>';
+ const back=tab.querySelector('.strat-back-link');if(back){back.textContent='← '+(publicEncounterRaid(activeRaid)?.name||activeRaid);back.onclick=()=>setActiveRaid(activeRaid);}
+ const strat=activeTabKind==='strat'?getStrat(activeStratId):null;
+ const panel=tab.querySelector('.public-assignments');const wrap=tab.querySelector('.strat-image-wrap');const detailEl=panel?.querySelector('.personal-detail');
+ if(strat&&wrap&&detailEl){const sheet=document.createElement('section');sheet.className='public-assignment-sheet';sheet.setAttribute('aria-label','Assignment details');sheet.innerHTML='<div class="sheet-heading"><span>Assignment details</span><button type="button" aria-expanded="true">Minimize ↓</button></div>';sheet.append(detailEl);wrap.append(sheet);sheet.querySelector('button').onclick=function(){const collapsed=sheet.classList.toggle('minimized');this.textContent=collapsed?'Assignment details ↑':'Minimize ↓';this.setAttribute('aria-expanded',String(!collapsed));};}
+}
+
+function renderStratsWorkspace() {
   document.getElementById('tab-strats').classList.toggle('strat-detail-active', activeRaid != null);
   document.getElementById('tab-strats').classList.toggle('strat-visitor', !canEdit('strats'));
   const list = document.getElementById('strat-list');
@@ -15084,15 +15540,15 @@ function renderPublicPlayerDetail(strat,pid,page=0) {
   return '<small>'+stratDisplayText([p.ms,p.class].filter(Boolean).join(' '))+'</small><h3>'+stratDisplayText(p.name)+'</h3>'+ (jobs.length ? jobs.slice(page,page+1).map(job=>{
     const target=job.row.arrow ? jobRowTargetLabel(job.row) : '';
     const ability=sectionAbilityIcon(job.sec);
-    return '<div class="assigned-job">'+(ability ? '<img src="https://wow.zamimg.com/images/wow/icons/medium/'+ability.slug+'.jpg" alt="">' : '')+'<div><strong>'+stratDisplayText(publicJobTitle(job))+'</strong>'+(target?'<span>→ '+stratDisplayText(target)+'</span>':'')+'</div></div>'+(ability && /misdirect/i.test(job.sec.label)?'<a class="ability-reference" href="https://www.wowhead.com/tbc/spell=34477" data-wowhead="spell=34477&amp;domain=tbc" target="_blank" rel="noopener">Misdirection on Wowhead ↗</a>':'');
+    return '<div class="assigned-job">'+(ability ? '<img src="https://wow.zamimg.com/images/wow/icons/medium/'+ability.slug+'.jpg" alt="">' : '')+'<div><strong>'+stratDisplayText(publicJobTitle(job))+'</strong>'+(target?'<span>→ '+stratDisplayText(target)+'</span>':'')+'</div></div>'+(!job.row.arrow&&job.row.typeB==='text'?'<p class="assignment-instruction">'+stratDisplayText(job.row.valueB)+'</p>':'');
   }).join('')+(jobs.length>1?'<div class="assignment-pager"><button type="button" onclick="pagePublicJob('+strat.id+','+Number(pid)+','+((page+jobs.length-1)%jobs.length)+')" aria-label="Previous assignment">←</button><span>Assignment '+(page+1)+' of '+jobs.length+'</span><button type="button" onclick="pagePublicJob('+strat.id+','+Number(pid)+','+((page+1)%jobs.length)+')" aria-label="Next assignment">→</button></div>':'') : '<p>No personal assignment has been added.</p>');
 }
-function pagePublicJob(sid,pid,page){const el=document.querySelector('.public-assignments .personal-detail');if(el)el.innerHTML=renderPublicPlayerDetail(getStrat(sid),pid,page);}
+function pagePublicJob(sid,pid,page){const el=document.querySelector('.public-assignment-sheet .personal-detail');if(el)el.innerHTML=renderPublicPlayerDetail(getStrat(sid),pid,page);}
 function syncPublicPlayerDetail(pid) {
   const panel=document.querySelector('.public-assignments'); if(!panel) return;
   const strat=getStrat(Number(panel.id.replace('assigns-panel-',''))); if(!strat) return;
   panel.querySelectorAll('[data-public-player]').forEach(b=>b.setAttribute('aria-pressed',String(Number(b.dataset.publicPlayer)===Number(pid) && pid!=null)));
-  const detail=panel.querySelector('.personal-detail'); if(detail) detail.innerHTML=pid==null?'<p>Select a player to see their assignment.</p>':renderPublicPlayerDetail(strat,pid);
+  const detail=document.querySelector('.public-assignment-sheet .personal-detail')||panel.querySelector('.personal-detail');document.querySelector('.public-assignment-sheet')?.classList.remove('minimized');const toggle=document.querySelector('.public-assignment-sheet .sheet-heading button');if(toggle){toggle.textContent='Minimize ↓';toggle.setAttribute('aria-expanded','true');} if(detail) detail.innerHTML=pid==null?'<p>Select a player to see their assignment.</p>':renderPublicPlayerDetail(strat,pid);
 }
 function selectPublicPlayer(sid,pid) {
   if(canEdit('strats')) return;
@@ -15498,7 +15954,7 @@ async function initFromJson() {
         if (data.tabPermissions[tab]) tabPermissions[tab] = { ...tabPermissions[tab], ...data.tabPermissions[tab] };
       }
     }
-    showToast('📂 Loaded.');
+    if (inManageMode) showToast('📂 Loaded.');
     updateVersionFooter(result.updatedAt);
     console.log('Auto-loaded app state from D1 as', myRole, signedIn ? `(version ${_appStateVersion})` : '(public, read-only)');
   } catch(err) {
@@ -15559,23 +16015,10 @@ window.addEventListener('load', async function () {
     document.getElementById('save-to-github-btn').style.display = isSignedIn ? '' : 'none';
     document.getElementById('register-guild-btn').style.display = isSignedIn ? '' : 'none';
     document.getElementById('my-guilds-btn').style.display = isSignedIn ? '' : 'none';
-    // Single header CTA now (see the lp-nav markup comment) - was two
-    // separate elements (lp-nav-signin/lp-nav-continue) toggling
-    // visibility; same real behavior, just one element whose label/
-    // action swaps instead.
     if (isLandingPage) {
-      const cta = document.getElementById('lp-nav-cta');
-      if (cta) {
-        if (isSignedIn) {
-          cta.textContent = 'Continue →';
-          cta.onclick = (e) => { e.preventDefault(); goToMyGuildOrRegister(); };
-        } else {
-          cta.textContent = 'Get started';
-          cta.onclick = (e) => { e.preventDefault(); openSignInGate(); };
-        }
-      }
+      document.getElementById('lp-nav-signin').textContent=isSignedIn?'My guilds':'Sign in';
+      document.getElementById('lp-nav-cta').hidden=isSignedIn;
     }
-
     if (isSignedIn) {
       closeSignInGate();
       const userBtnEl = document.getElementById('clerk-user-button');
@@ -15604,7 +16047,7 @@ window.addEventListener('load', async function () {
       // away from itself before anyone with a live session ever saw it.
       // Signing out on the landing page needs no extra handling - the
       // nav toggle above already covers it.
-      if (isLandingPage) { if (isSignedIn && _authResolvedOnce) goToMyGuildOrRegister(); }
+      if (isLandingPage) { if (isSignedIn && (_authResolvedOnce || new URLSearchParams(location.search).has('onboarding'))) { history.replaceState(null,'',location.pathname); openGuildOnboarding(); } }
       else initFromJson().then(checkRegisterGuildReturn).then(showTabFromHash); // after data's loaded, not before - every tab's render function (renderStrats/renderBuilder/etc) reads global state initFromJson just populated
     }
     _authResolvedOnce = true;
@@ -15614,27 +16057,38 @@ window.addEventListener('load', async function () {
 function openSignInGate() { document.getElementById('auth-gate').style.display = 'flex'; }
 function closeSignInGate() { document.getElementById('auth-gate').style.display = 'none'; }
 
-// Landing-page-only: what "you're signed in now" means when there's no
-// guild in the URL to begin with. Mirrors loadMyGuildsMenu()'s own
-// fetch/shape (rejected memberships don't count) - one guild sends you
-// straight there, none at all sends you into the same Discord-invite
-// registration flow the header's "+ Register Guild" button uses (today's
-// stand-in for the real krm.gg "Join your Guild" flow - see the
-// isApproverRole/registerGuild comments), more than one just picks the
-// first for now (the header's own "My Guilds ▾" switcher already exists
-// once you're inside any guild, for actually switching between them).
-async function goToMyGuildOrRegister() {
-  try {
-    const res = await fetch(`${APP_API_WORKER}/api/my-guilds`, { headers: await clerkAuthHeader() });
-    const result = await res.json();
-    if (!res.ok) throw new Error(result.error || `Could not load your guilds (${res.status})`);
-    const guilds = (result.guilds || []).filter(g => g.status !== 'rejected');
-    if (guilds.length === 0) { registerGuild(); return; }
-    window.location.href = '/' + guilds[0].slug;
-  } catch (err) {
-    showToast(`✗ Could not continue: ${err.message}`, true);
-  }
+
+function onboardingThemeIcon(light){return light?'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 13A8.5 8.5 0 0 1 11 3.5 8.5 8.5 0 1 0 20.5 13Z"/></svg>':'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"/></svg>';}
+let onboardingPreview=false;
+function obEscape(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function obShow(html){const d=document.getElementById('guild-onboarding');document.getElementById('ob-content').innerHTML=html;if(!d.open)d.showModal();document.getElementById('ob-title')?.focus();}
+function obHeading(title,copy){return '<h2 id="ob-title" tabindex="-1" style="outline:none">'+title+'</h2><p>'+copy+'</p>';}
+function obBack(){return '<button class="ob-back" onclick="openGuildOnboarding()">← Back to your guilds</button>';}
+async function startMarketingAuth(mode){
+ if(onboardingPreview){obShow(obHeading(mode==='signup'?'Make it a raid night.':'Welcome back.','Design preview: account creation and sign-in are handled by Clerk in the live app. No information is sent.')+'<button class="ob-action" onclick="openGuildOnboarding()">Preview next step →</button>');return;}
+ if(window.Clerk?.user){openGuildOnboarding();return;}
+ if(!window.Clerk?.loaded){obShow(obHeading('Sign-in is loading.','Please try again in a moment.')+'<button class="ob-action" onclick="startMarketingAuth(&quot;signup&quot;)">Try again</button>');return;}
+ const destination=location.origin+'/?onboarding=choose';
+ const options={forceRedirectUrl:destination,signInForceRedirectUrl:destination,signUpForceRedirectUrl:destination};
+ document.getElementById('guild-onboarding').close();
+ if(mode==='signup')Clerk.openSignUp(options);else Clerk.openSignIn(options);
 }
+async function obApi(route,body){const res=await fetch(APP_API_WORKER+route,{method:body?'POST':'GET',headers:{...await clerkAuthHeader(),'Content-Type':'application/json'},...(body?{body:JSON.stringify(body)}:{})});const data=await res.json();if(!res.ok)throw Error(data.error||'Please try again.');return data;}
+async function openGuildOnboarding(){
+ obShow(obHeading('Your people. Your next raid.','Start a home for your guild, or find the people you already raid with.')+'<div class="ob-choices"><button class="ob-choice" onclick="obRegister()"><small>FOR GUILD LEADERS</small><strong>Register a guild →</strong><small>Connect your Discord server and make a home for your raids.</small></button><button class="ob-choice" onclick="obJoin()"><small>FOR RAIDERS</small><strong>Join a guild →</strong><small>Find your guild and send a membership request.</small></button></div><div id="ob-guilds" aria-live="polite">Loading your guilds…</div>');
+ const target=document.getElementById('ob-guilds');
+ try{const data=onboardingPreview?{guilds:[]}:await obApi('/api/my-guilds');if(!target.isConnected)return;target.textContent='';for(const guild of data.guilds||[]){const b=document.createElement('button');b.className='ob-choice';b.style.width='100%';b.style.marginTop='10px';b.innerHTML='<strong>'+obEscape(guild.name)+'</strong><small>'+({active:'Member · Open guild',pending:'Pending approval · Check status',rejected:'Request declined · View options'}[guild.status]||'View membership')+'</small>';b.onclick=()=>obMembership(guild,guild.status);target.append(b);}}catch(e){if(target.isConnected)target.innerHTML='<p>'+obEscape(e.message)+'</p><button class="ob-action" onclick="openGuildOnboarding()">Retry</button>';}
+}
+function obRegister(){obShow(obHeading('Give your guild a home.','Connect the Discord server you manage. Discord will ask you to select a server and review the bot permissions before registration.')+'<div class="ob-choice"><small>WHAT HAPPENS NEXT</small><strong>One home for every raid.</strong><small>Your guild page, roster and encounter plans stay together. You can configure your raid channels and guild details in management.</small></div><button id="ob-register" class="ob-action">Connect Discord server →</button>'+obBack());document.getElementById('ob-register').onclick=async function(){if(onboardingPreview){obShow(obHeading('Discord connection','In the live app, Discord opens here to select your server and grant permission.')+obBack());return;}this.disabled=true;await registerGuild();this.disabled=false;};}
+function obJoin(){obShow(obHeading('Find your guild.','Paste your guild’s Kaizen page link or enter its address name. Your GM will review your request.')+'<form id="ob-search"><label for="ob-slug">Guild link or address</label><input id="ob-slug" required maxlength="250" placeholder="kaizen" autocomplete="off"><button class="ob-action">Find guild →</button><div role="status" id="ob-error"></div></form>'+obBack());document.getElementById('ob-search').onsubmit=async function(e){e.preventDefault();const button=this.querySelector('button'),error=document.getElementById('ob-error');button.disabled=true;error.textContent='';try{let slug=document.getElementById('ob-slug').value.trim();if(/^https?:/i.test(slug))slug=new URL(slug).pathname;slug=slug.replace(/^\/+|\/+$/g,'');if(!/^[a-zA-Z0-9-]+$/.test(slug))throw Error('Use a guild page link or its address name, such as kaizen.');const g=onboardingPreview?{id:1,name:'Kaizen',slug:'kaizen'}:await obApi('/api/guild-by-slug?slug='+encodeURIComponent(slug));const member=onboardingPreview?{status:null}:await obApi('/api/guild-membership/mine?guildId='+encodeURIComponent(g.id));if(button.isConnected)obMembership(g,member.status);}catch(e){error.textContent=e.message;}finally{button.disabled=false;}};}
+function obMembership(g,status){
+ const active=status==='active',pending=status==='pending',rejected=status==='rejected';
+ obShow('<span class="ob-status">'+(active?'Membership approved':pending?'Pending GM approval':rejected?'Request declined':'Guild found')+'</span>'+obHeading(obEscape(g.name),active?'You’re in. Your next raid starts here.':pending?'Your request has been sent. You can browse the guild while you wait for a decision.':rejected?'Your membership request wasn’t approved. Contact your guild leader, or send a new request if your circumstances have changed.':'Send a membership request using your signed-in profile.')+'<a class="ob-action" href="'+(onboardingPreview?'guild.html':'/'+encodeURIComponent(g.slug))+'">'+(active?'Open guild':'View guild page')+' →</a>'+(!active&&!pending?'<button class="ob-action" id="ob-request">'+(rejected?'Request again':'Request to join')+'</button>':'')+(pending?'<button class="ob-action" id="ob-refresh">Check status</button>':'')+'<div role="status" id="ob-error"></div>'+obBack());
+ const request=document.getElementById('ob-request');if(request)request.onclick=async()=>{request.disabled=true;try{const result=onboardingPreview?{status:'pending'}:await obApi('/api/guild-membership/request',{guildId:g.id,displayName:Clerk.user.fullName||Clerk.user.username||'Raider',discordUserId:getMyDiscordId()});if(request.isConnected)obMembership(g,result.status);}catch(e){document.getElementById('ob-error').textContent=e.message;request.disabled=false;}};
+ const refresh=document.getElementById('ob-refresh');if(refresh)refresh.onclick=async()=>{refresh.disabled=true;try{const result=onboardingPreview?{status:'pending'}:await obApi('/api/guild-membership/mine?guildId='+encodeURIComponent(g.id));if(refresh.isConnected)obMembership(g,result.status);}catch(e){document.getElementById('ob-error').textContent=e.message;}finally{refresh.disabled=false;}};
+}
+
+async function goToMyGuildOrRegister(){openGuildOnboarding();}
 
 // Landing-page-only bootstrap: theme toggle (scoped to #landing-page's
 // own data-theme, never document.documentElement - this never touches
@@ -15648,15 +16102,10 @@ function initLandingPage() {
   const preference = window.matchMedia('(prefers-color-scheme: dark)');
   let explicit = null;
   try { explicit = localStorage.getItem('kaizen-landing-theme'); } catch {}
-  // Same two hand-drawn sun/moon glyphs as the rest of the app's own
-  // theme toggle (see syncThemeToggleIcon) - this is a visually
-  // identical circle, just wired to the landing page's own independent
-  // dark/light state rather than document.documentElement's.
-  const sunSvg = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"/></svg>';
-  const moonSvg = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 13A8.5 8.5 0 0 1 11 3.5 8.5 8.5 0 1 0 20.5 13Z"/></svg>';
+  // Same centered sun/moon glyphs as guild and manager controls.
   function setTheme(theme) {
     lp.dataset.theme = theme;
-    toggle.innerHTML = theme === 'dark' ? sunSvg : moonSvg;
+    toggle.innerHTML = onboardingThemeIcon(theme === 'light');
     toggle.setAttribute('aria-label', 'Switch to ' + (theme === 'dark' ? 'light' : 'dark') + ' mode');
   }
   setTheme(['light', 'dark'].includes(explicit) ? explicit : (preference.matches ? 'dark' : 'light'));
@@ -15667,18 +16116,35 @@ function initLandingPage() {
   });
   preference.addEventListener('change', e => { if (!explicit) setTheme(e.matches ? 'dark' : 'light'); });
 
-  const raids = {
-    karazhan: ['Karazhan · A shared plan for your ten-player raid.', 'Minimal layered illustration of a wizard tower beneath a peach moon'],
-    outland: ['Outland · Bring the group together for the challenges ahead.', 'Minimal illustration of floating islands and ruined spires at sunset'],
-    temple: ['Black Temple · Prepare your roster for the next challenge.', 'Minimal teal temple illustration beneath a pale gold moon'],
-  };
-  document.querySelectorAll('#landing-page [data-raid]').forEach(button => button.addEventListener('click', () => {
-    const key = button.dataset.raid;
-    document.querySelectorAll('#landing-page [data-raid]').forEach(b => b.setAttribute('aria-pressed', String(b === button)));
-    document.getElementById('lp-raid-art').src = 'assets/brand/' + key + '-minimal.png';
-    document.getElementById('lp-raid-art').alt = raids[key][1];
-    document.getElementById('lp-raid-description').textContent = raids[key][0];
-  }));
+  // Illustrative encounter-plan mockup (position pins + player-choices
+  // sidebar, both selecting the same person) - ported from Design/
+  // preview/guide.js's selectRaidPlayer, ids renamed lp-player-*/
+  // lp-job-icon/lp-ability-reference to avoid the real Strats visitor
+  // panel's own bare player-name/job-icon ids elsewhere in this file
+  // (confirmed no actual collision either way, but the prefix makes it
+  // unambiguous which one is which). Fixture data (Aerion/Nyra/Fen/
+  // Rook/Vael), matching the reference exactly - this is marketing
+  // copy illustrating the feature, not real guild data.
+  const raidPeople = [
+    { name: 'Aerion', spec: 'Protection Warrior', icon: 'warrior_protection', job: 'Main tank', target: '', note: 'Hold the boss at the marked position.' },
+    { name: 'Nyra', spec: 'Holy Priest', icon: 'priest_holy', job: 'Tank healing', target: 'Aerion', note: 'Keep Aerion covered from your marked position.' },
+    { name: 'Fen', spec: 'Beast Mastery Hunter', icon: 'ability_hunter_misdirection', job: 'Misdirection', target: 'Aerion', note: 'Misdirect to Aerion on the pull.' },
+    { name: 'Rook', spec: 'Combat Rogue', icon: 'rogue_combat', job: 'Melee position', target: '', note: 'Start at the marked melee position.' },
+    { name: 'Vael', spec: 'Frost Mage', icon: 'mage_frost', job: 'Ranged position', target: '', note: 'Start at the marked ranged position.' },
+  ];
+  function selectLandingRaidPlayer(n) {
+    const p = raidPeople[n];
+    document.querySelectorAll('#landing-page [data-player]').forEach(x => x.setAttribute('aria-pressed', String(Number(x.dataset.player) === n)));
+    document.getElementById('lp-player-name').textContent = p.name;
+    document.getElementById('lp-player-spec').textContent = p.spec;
+    document.getElementById('lp-player-job').textContent = p.job;
+    document.getElementById('lp-player-target').textContent = p.target ? '→ ' + p.target : '';
+    document.getElementById('lp-player-task').textContent = p.note;
+    document.getElementById('lp-job-icon').src = 'assets/wow-spec-icons/' + (p.icon === 'ability_hunter_misdirection' ? 'misdirection' : p.icon) + '.jpg';
+    const ref = document.getElementById('lp-ability-reference');
+    if (ref) ref.hidden = n !== 2; // Wowhead link only makes sense for Fen's Misdirection
+  }
+  document.querySelectorAll('#landing-page [data-player]').forEach(b => b.addEventListener('click', () => selectLandingRaidPlayer(Number(b.dataset.player))));
 }
 
 // One-time migration: ensure all roster entries have a level field
@@ -15708,4 +16174,3 @@ setTimeout(() => {
 
 </body>
 </html>
-
