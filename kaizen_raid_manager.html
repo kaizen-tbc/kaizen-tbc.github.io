@@ -1813,6 +1813,30 @@ tr:last-child td { border-bottom: none; }
   font-size: 12.5px; color: var(--text-bright); cursor: pointer; white-space: nowrap;
 }
 .add-menu button:hover { background: var(--bg-hover); }
+/* My Guilds dropdown rows (see guildMenuRowHtml) - each row is the
+   plain "open this guild" button plus an optional secondary action
+   ("Manage" / "You're here"), not just a single full-width button like
+   every other .add-menu use. */
+.add-menu .my-guilds-row { display: flex; align-items: center; gap: 4px; }
+.add-menu .my-guilds-row button { flex: 1 1 auto; min-width: 0; }
+.add-menu .my-guilds-row .my-guilds-manage,
+.add-menu .my-guilds-row .my-guilds-here {
+  flex: 0 0 auto; padding: 9px 12px 9px 0; font-size: 11px; white-space: nowrap;
+}
+.add-menu .my-guilds-row .my-guilds-manage { color: var(--gold); text-decoration: none; cursor: pointer; }
+.add-menu .my-guilds-row .my-guilds-manage:hover { text-decoration: underline; }
+.add-menu .my-guilds-row .my-guilds-here { color: var(--text-dim); font-style: italic; }
+/* The marketing header's own instance of this dropdown (#lp-guilds-menu)
+   needs to follow #landing-page's OWN independent dark/light toggle
+   (--lp-* tokens), not document.documentElement's - the app's global
+   --bg-card/--gold/etc tokens only track the main app's theme, which
+   can genuinely differ from whatever the landing page's own toggle is
+   set to (see initLandingPage's own comment on why that's deliberate). */
+#landing-page .add-menu { background: var(--lp-surface); border-color: var(--lp-line); box-shadow: 0 10px 26px #00000040; }
+#landing-page .add-menu button { color: var(--lp-text); }
+#landing-page .add-menu button:hover { background: var(--lp-hover); }
+#landing-page .my-guilds-manage { color: var(--lp-accent) !important; }
+#landing-page .my-guilds-here { color: var(--lp-muted) !important; }
 
 /* ===== TOOL CARDS ===== */
 .tool-card {
@@ -3053,7 +3077,18 @@ body.guild-public-mode #tab-strats .public-assignment-sheet .personal-detail>*{m
     
     <div class="lp-navlinks">
       <a id="lp-nav-signin" href="#" onclick="startMarketingAuth('signin');return false;">Sign in</a>
-      <a class="lp-button lp-primary" id="lp-nav-cta" href="#" onclick="startMarketingAuth('signup');return false;">Sign up</a><button type="button" class="lp-circle" id="lp-theme-toggle" aria-label="Switch to light mode"></button>
+      <a class="lp-button lp-primary" id="lp-nav-cta" href="#" onclick="startMarketingAuth('signup');return false;">Sign up</a>
+      <!-- Signed-in state: same shared My Guilds dropdown as the guild/
+           manager headers (see toggleGuildsMenu/loadGuildsMenu/
+           guildMenuRowHtml) instead of "Sign up" - the owner's own
+           instruction: "'sign up' shouldn't be there anymore" once
+           authenticated, and "'my guilds' should function like the
+           dropdown in manager." Hidden until signed in. -->
+      <span style="position:relative;display:inline-flex;" data-add-menu-toggle>
+        <button type="button" class="lp-linklike guilds-menu-btn" id="lp-guilds-btn" onclick="event.stopPropagation();toggleGuildsMenu('lp-guilds-menu')" style="display:none;">My Guilds ▾</button>
+        <div class="add-menu" id="lp-guilds-menu" style="right:0;left:auto;"></div>
+      </span>
+      <button type="button" class="lp-circle" id="lp-theme-toggle" aria-label="Switch to light mode"></button>
     </div>
   </div>
 </div>
@@ -3319,18 +3354,21 @@ body.guild-public-mode #tab-strats .public-assignment-sheet .personal-detail>*{m
          relocation), just DOM-moved here while !inManageMode so Clerk's
          mounted widget never gets re-mounted twice. -->
     <div id="public-masthead-account" class="guild-account-controls" style="margin-left:auto;">
-      <!-- The actual "published page vs. CMS" door - only shown to
-           someone whose real role has edit access somewhere (see
-           hasAnyRealEditAccess), toggled in applyTabPermissions. Lives
-           HERE (not #header-right) because #header-right itself is
-           display:none outside manage mode - this button was orphaned
-           inside a hidden parent when the account entry moved into the
-           masthead (Codex review pass 2), so a signed-in GM/officer had
-           no visible way back into manage mode after signing in. Found
-           live 2026-09-10 while walking the manager view with the owner.
-           Text now matches the approved shared-header spec ("Manage
-           Guild", not "⚙ Manage this Guild") - same button/id/behavior. -->
-      <button class="btn btn-small btn-gold guild-manage-link" id="manage-guild-btn" onclick="location.href = '/' + currentGuildSlug + '/manage'" style="display:none;">Manage Guild</button>
+      <!-- The standalone "Manage Guild" button that used to live here
+           (found live 2026-09-10, added so a signed-in GM/officer had a
+           way back into manage mode) is gone - folded into this same My
+           Guilds dropdown's per-row action instead, per the owner's own
+           instruction: "if you can manage that guild, maybe a button in
+           the dropdown to show 'Manage'... that allows us to remove the
+           manage guild button on the guild view page." Same shared
+           component as the marketing header (#lp-guilds-menu) and the
+           manager topbar (#my-guilds-menu) - see toggleGuildsMenu/
+           loadGuildsMenu/guildMenuRowHtml. Only ever shown once signed
+           in (.guilds-menu-btn display toggle). -->
+      <span style="position:relative;display:inline-flex;" data-add-menu-toggle>
+        <button class="btn btn-small guilds-menu-btn" id="guild-view-guilds-btn" onclick="event.stopPropagation();toggleGuildsMenu('guild-view-guilds-menu')" style="display:none;">My Guilds ▾</button>
+        <div class="add-menu" id="guild-view-guilds-menu" style="right:0;left:auto;"></div>
+      </span>
       <!-- Shared theme toggle - see toggleTheme()/syncThemeToggleIcon().
            One real circle per header instance (this one + the manager
            topbar's own below), not a single shared DOM node - each
@@ -3432,25 +3470,25 @@ body.guild-public-mode #tab-strats .public-assignment-sheet .personal-detail>*{m
          nothing in the UI calls it anymore except Settings' own Raid
          Helper save). -->
     <button class="btn btn-small" onclick="openSettings()" title="Settings">⚙</button>
-    <!-- My Guilds switcher - also the "+Register a Guild" entry point
-         now (it used to be its own separate header button - merged in
-         per the owner's own instruction: "the +register guild should be
-         part of the menu for My Guilds"). Reuses the same .add-menu/
-         data-add-menu-toggle mechanism the Strats "+" menus already use
-         (same open/close-on-outside-click handler, no new plumbing for
-         that part). Always visible once signed in; loadMyGuildsMenu()
-         puts "+ Register a Guild" at the top of the dropdown, the
-         guild list (each one a straight link to that guild's own page)
-         below it. -->
+    <!-- My Guilds switcher - the same shared component used on the
+         marketing header (#lp-guilds-menu) and a guild's public
+         masthead (#guild-view-guilds-menu) below - see
+         toggleGuildsMenu/loadGuildsMenu/guildMenuRowHtml. Also the
+         "+Register a Guild" entry point now (it used to be its own
+         separate header button - merged in per the owner's own
+         instruction: "the +register guild should be part of the menu
+         for My Guilds"). While you're actually managing THIS guild
+         right now, its own row reads "You're here" instead of offering
+         Manage again - see guildMenuRowHtml. -->
     <span style="position:relative;display:inline-flex;" data-add-menu-toggle>
-      <button class="btn btn-small" id="my-guilds-btn" onclick="event.stopPropagation();toggleMyGuildsMenu()" style="display:none;">My Guilds ▾</button>
+      <button class="btn btn-small guilds-menu-btn" id="my-guilds-btn" onclick="event.stopPropagation();toggleGuildsMenu('my-guilds-menu')" style="display:none;">My Guilds ▾</button>
       <div class="add-menu" id="my-guilds-menu" style="right:0;left:auto;"></div>
     </span>
-    <!-- manage-guild-btn used to live here, but it's only ever shown
-         outside manage mode (see applyTabPermissions), and #header-right
-         itself is display:none outside manage mode - so it was
-         unreachable. Moved to #public-masthead-account, next to the
-         header markup above. -->
+    <!-- A "Manage Guild" button used to live here too, briefly, before
+         moving to #public-masthead-account (it's only ever relevant
+         outside manage mode, and #header-right itself is display:none
+         then). It's gone entirely now - folded into the My Guilds
+         dropdown above, on both headers (see guildMenuRowHtml). -->
     <button type="button" class="guild-circle theme-toggle-btn" onclick="toggleTheme()" aria-label="Switch theme"></button>
     <button class="btn btn-small btn-gold" id="sign-in-btn" onclick="openSignInGate()" style="display:none;">Sign In</button>
     <div id="clerk-user-button" style="display:none;align-items:center;"></div>
@@ -6579,8 +6617,11 @@ function applyTabPermissions() {
       ? 'Pick a report above (or leave it on "Latest") and click "⬇ Fetch" — the fallout report generates automatically.'
       : 'No results have been published yet.';
   }
-  const manageBtn = document.getElementById('manage-guild-btn');
-  if (manageBtn) manageBtn.style.display = (!inManageMode && hasAnyRealEditAccess()) ? '' : 'none';
+  // The standalone Manage Guild button that used to be toggled here is
+  // gone - see #public-masthead-account's own comment; its job is now
+  // guildMenuRowHtml's per-row "Manage" action inside the My Guilds
+  // dropdown (still driven by the same hasAnyRealEditAccess-equivalent
+  // check, just per-guild-row instead of "does the current guild only").
   const banner = document.getElementById('manage-mode-banner');
   if (banner) {
     banner.style.display = inManageMode ? 'flex' : 'none';
@@ -7938,21 +7979,49 @@ async function requestToJoinGuild() {
   }
 }
 
-// My Guilds switcher - reuses the .add-menu/data-add-menu-toggle
-// mechanism (same outside-click-closes handler as the Strats "+" menus,
-// see the document click listener near addMenuHtml). Fetched fresh each
-// time it opens, not cached - a request just approved elsewhere
-// shouldn't need a full page reload to show up here next time you check.
-async function toggleMyGuildsMenu() {
-  document.querySelectorAll('.add-menu.open').forEach(el => { if (el.id !== 'my-guilds-menu') el.classList.remove('open'); });
-  const menu = document.getElementById('my-guilds-menu');
+// My Guilds switcher - ONE shared component now (owner's own framing:
+// "this all unifies the function of a common component across all 3
+// pages"), used identically from the marketing header, a guild's public
+// masthead, and the manager topbar - each just has its own trigger
+// button + menu <div> id (see #lp-guilds-menu/#guild-view-guilds-menu/
+// #my-guilds-menu), passed in here rather than hardcoded. Reuses the
+// .add-menu/data-add-menu-toggle mechanism (same outside-click-closes
+// handler as the Strats "+" menus, see the document click listener near
+// addMenuHtml). Fetched fresh each time it opens, not cached - a
+// request just approved elsewhere shouldn't need a full page reload to
+// show up here next time you check.
+async function toggleGuildsMenu(menuId) {
+  document.querySelectorAll('.add-menu.open').forEach(el => { if (el.id !== menuId) el.classList.remove('open'); });
+  const menu = document.getElementById(menuId);
   const willOpen = !menu.classList.contains('open');
   menu.classList.toggle('open');
-  if (willOpen) await loadMyGuildsMenu();
+  if (willOpen) await loadGuildsMenu(menuId);
 }
 
-async function loadMyGuildsMenu() {
-  const menu = document.getElementById('my-guilds-menu');
+// One guild's row, context-aware per the owner's own spec: if this IS
+// the guild whose /manage page you're actually on right now, there's
+// nothing to offer beyond acknowledging it ("You're here") - a second
+// Manage action for the guild you're already managing is redundant. If
+// you can manage it (gm/officer) but aren't already inside it, a direct
+// "Manage" jump - this is what lets the old standalone "Manage Guild"
+// button go away entirely, on the guild-view page and everywhere else.
+// Anyone else (a plain member, or any status other than active) just
+// gets the plain "open this guild's page" click, same as before.
+function guildMenuRowHtml(g) {
+  const slug = g.slug.replace(/'/g, "\\'");
+  const label = g.status === 'pending' ? `${obEscape(g.name)} <span style="color:var(--gold-dim);">(pending)</span>` : `${obEscape(g.name)} <span style="color:var(--text-dim);">· ${g.role}</span>`;
+  const canManage = g.status === 'active' && (g.role === 'gm' || g.role === 'officer');
+  const isHere = inManageMode && currentGuildSlug === g.slug;
+  const action = isHere
+    ? `<span class="my-guilds-here" title="You're currently managing this guild">You're here</span>`
+    : canManage
+      ? `<a href="/${slug}/manage" class="my-guilds-manage" onclick="event.stopPropagation();">Manage →</a>`
+      : '';
+  return `<div class="my-guilds-row"><button onclick="location.href='/${slug}'">${label}</button>${action}</div>`;
+}
+
+async function loadGuildsMenu(menuId) {
+  const menu = document.getElementById(menuId);
   menu.innerHTML = `<div style="padding:8px 12px;font-size:12px;color:var(--text-dim);">Loading...</div>`;
   // "+ Register a Guild" used to be its own separate header button -
   // merged into the top of this same menu on the owner's own
@@ -7960,7 +8029,7 @@ async function loadMyGuildsMenu() {
   // wants ("manage multiple, pick one to go to its page" plus "or start
   // another"). Always shown first, regardless of how many guilds this
   // person already has.
-  const registerRow = `<button onclick="event.stopPropagation();toggleMyGuildsMenu();registerGuild()" style="font-weight:600;color:var(--gold);">+ Register a Guild</button><div style="border-top:1px solid var(--border);margin:4px 0;"></div>`;
+  const registerRow = `<button onclick="event.stopPropagation();toggleGuildsMenu('${menuId}');registerGuild()" style="font-weight:600;color:var(--gold);">+ Register a Guild</button><div style="border-top:1px solid var(--border);margin:4px 0;"></div>`;
   try {
     const res = await fetch(`${APP_API_WORKER}/api/my-guilds`, { headers: await clerkAuthHeader() });
     const result = await res.json();
@@ -7972,11 +8041,7 @@ async function loadMyGuildsMenu() {
       menu.innerHTML = registerRow + `<div style="padding:8px 12px;font-size:12px;color:var(--text-dim);max-width:220px;">Not a member of any guild yet. Visit a guild's page and request to join, or register your own.</div>`;
       return;
     }
-    menu.innerHTML = registerRow + guilds.map(g => {
-      const label = g.status === 'pending' ? `${g.name} <span style="color:var(--gold-dim);">(pending)</span>` : `${g.name} <span style="color:var(--text-dim);">· ${g.role}</span>`;
-      const slug = g.slug.replace(/'/g, "\\'");
-      return `<button onclick="location.href='/${slug}'">${label}</button>`;
-    }).join('');
+    menu.innerHTML = registerRow + guilds.map(guildMenuRowHtml).join('');
   } catch (err) {
     menu.innerHTML = registerRow + `<div style="padding:8px 12px;font-size:12px;color:var(--red-bright);max-width:220px;">${err.message}</div>`;
   }
@@ -16601,10 +16666,33 @@ window.addEventListener('load', async function () {
     const isSignedIn = !!user;
     document.getElementById('sign-in-btn').style.display = isSignedIn ? 'none' : '';
     document.getElementById('clerk-user-button').style.display = isSignedIn ? 'flex' : 'none';
-    document.getElementById('my-guilds-btn').style.display = isSignedIn ? '' : 'none';
+    // One shared class now, not a single hardcoded id - the same My
+    // Guilds trigger exists on all 3 headers (marketing/guild-view/
+    // manager), each its own element (see toggleGuildsMenu's own doc).
+    document.querySelectorAll('.guilds-menu-btn').forEach(b => b.style.display = isSignedIn ? '' : 'none');
     if (isLandingPage) {
-      document.getElementById('lp-nav-signin').textContent=isSignedIn?'My guilds':'Sign in';
-      document.getElementById('lp-nav-cta').hidden=isSignedIn;
+      // "'sign up' shouldn't be there anymore" once authenticated - the
+      // plain "Sign in" link also has nothing left to do once signed in
+      // (the CTA already hides itself below), so it hides rather than
+      // relabeling to a dead "My guilds" link the .guilds-menu-btn
+      // above already covers for real.
+      document.getElementById('lp-nav-signin').style.display = isSignedIn ? 'none' : '';
+      // .hidden alone doesn't actually hide this one - confirmed live:
+      // #landing-page .lp-button's own explicit `display` declaration
+      // outranks the UA stylesheet's default (very low-priority)
+      // [hidden]{display:none}, and this file has no author-level
+      // [hidden] rule scoped to #landing-page to win that back. Setting
+      // display directly, same as lp-nav-signin above, actually hides it.
+      document.getElementById('lp-nav-cta').style.display = isSignedIn ? 'none' : '';
+      // "I expect to see my avatar up there... as I do with all the
+      // other pages" - the marketing header never relocated the shared
+      // Clerk avatar widget into itself before (applyTabPermissions,
+      // which does this for the other two headers, never runs on the
+      // landing page at all). Same "move the one real node, never
+      // re-mount" pattern as everywhere else in this file.
+      const lpNavlinks = document.querySelector('#landing-page .lp-navlinks');
+      const clerkBtn = document.getElementById('clerk-user-button');
+      if (isSignedIn && lpNavlinks && clerkBtn.parentElement !== lpNavlinks) lpNavlinks.appendChild(clerkBtn);
     }
     if (isSignedIn) {
       closeSignInGate();
