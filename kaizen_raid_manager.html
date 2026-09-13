@@ -6474,12 +6474,29 @@ function applyTabPermissions() {
   // hidden outright for a visitor rather than emptied out one button
   // at a time.
   const headerRight = document.getElementById('header-right') || document.querySelector('.header-right');
+  // #header-right is the OUTER manage-mode strip - the buttons this
+  // block moves around actually live one level deeper, inside its own
+  // .header-right-controls child (see the markup: <div id="header-right">
+  // <div class="header-right-controls guild-account-controls">...).
+  // insertBefore() requires its reference node to be a DIRECT child of
+  // the node you call it on, unlike querySelector (which finds a
+  // descendant at any depth) - calling headerRight.insertBefore() with
+  // a reference node that's actually a grandchild throws "the node
+  // before which the new node is to be inserted is not a child of this
+  // node" every time manage mode loads, which took down the ENTIRE
+  // manager view (this runs synchronously before renderRoster/
+  // renderOverview/renderBuilder etc. in the same initFromJson().then()
+  // chain, so the uncaught exception here skipped all of them - "raid
+  // manager is all jacked up," confirmed live). #public-masthead-account
+  // has no such nesting (it IS the direct parent already), which is why
+  // the public guild page never showed this.
+  const headerRightControls = headerRight ? (headerRight.querySelector('.header-right-controls') || headerRight) : null;
   const mastheadAccount = document.getElementById('public-masthead-account');
   const signInBtn = document.getElementById('sign-in-btn');
   const clerkUserBtn = document.getElementById('clerk-user-button');
   if (headerRight) headerRight.style.display = inManageMode ? '' : 'none';
   if (mastheadAccount && signInBtn && clerkUserBtn) {
-    const target = inManageMode ? headerRight : mastheadAccount;
+    const target = inManageMode ? headerRightControls : mastheadAccount;
     if (target) target.insertBefore(signInBtn, target.querySelector('.theme-toggle-btn'));
     if (target && clerkUserBtn.parentElement !== target) target.appendChild(clerkUserBtn);
   }
