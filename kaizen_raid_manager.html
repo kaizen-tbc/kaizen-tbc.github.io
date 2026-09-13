@@ -486,17 +486,6 @@ main {
   font-weight: 700;
 }
 .btn-gold:hover { background: var(--gold-light); border-color: var(--gold-light); color: #0a0b0d; }
-/* Unsaved-changes dot on the header's Save button (see
-   hasUnsavedChanges/pollUnsavedIndicator) - the only other signal that
-   anything is unsaved is a native beforeunload prompt, which only fires
-   on the way OUT. This is the "you should probably do that now" cue
-   while you're still here to act on it. */
-#save-to-github-btn { position: relative; }
-#save-to-github-btn.has-unsaved::after {
-  content: ''; position: absolute; top: -3px; right: -3px;
-  width: 9px; height: 9px; border-radius: 50%;
-  background: var(--red-bright); border: 2px solid var(--bg-deep);
-}
 
 .btn-danger { border-color: var(--red); color: var(--red); }
 .btn-danger:hover { background: var(--red); color: white; }
@@ -3423,34 +3412,40 @@ body.guild-public-mode #tab-strats .public-assignment-sheet .personal-detail>*{m
          reference. The old per-tab one was removed to avoid showing
          two of the same link when on the Overview tab. -->
     <a id="view-published-link" href="#" target="_blank" class="btn btn-small" style="font-size:11px;">View guild page ↗</a>
-    <!-- Save/Settings/My Guilds/Register Guild are real manager-only
-         tools that don't fit the approved shared header's minimal
-         "Manage Guild / theme / avatar" shape (that reference has no
-         equivalent for any of these) - kept here as plain utility
-         buttons ahead of the theme/avatar cluster rather than dropped,
-         so no existing capability is lost while the fuller "Guild
-         settings" destination (see Design/DECISIONS.md's proposed
-         manager IA) isn't built yet. Revisit once that page exists -
-         Settings especially belongs there instead of a header icon. -->
-    <button class="btn btn-small btn-gold" id="save-to-github-btn" onclick="saveAppData()" title="Save to the database" style="display:none;">💾 Save</button>
+    <!-- Settings/My Guilds are real manager-only tools that don't fit
+         the approved shared header's minimal "Manage Guild / theme /
+         avatar" shape (that reference has no equivalent for either) -
+         kept here as plain utility buttons ahead of the theme/avatar
+         cluster rather than dropped, so no existing capability is lost
+         while the fuller "Guild settings" destination (see
+         Design/DECISIONS.md's proposed manager IA) isn't built yet.
+         Revisit once that page exists - Settings especially belongs
+         there instead of a header icon.
+         The header Save button (saveAppData()) was removed on the
+         owner's own instruction - there is, on purpose, no autosave or
+         other save path anywhere yet. The owner's own plan is per-page
+         Save buttons instead of one global one; they asked to be
+         reminded rather than have it built now (see Design/DECISIONS.md
+         and the kaizen-krm-project memory note) - until that lands,
+         changes made in manage mode are NOT persisted through the UI at
+         all (saveAppData() itself still exists and still works, just
+         nothing in the UI calls it anymore except Settings' own Raid
+         Helper save). -->
     <button class="btn btn-small" onclick="openSettings()" title="Settings">⚙</button>
-    <!-- My Guilds switcher (Phase 3.5) - reuses the same .add-menu/
+    <!-- My Guilds switcher - also the "+Register a Guild" entry point
+         now (it used to be its own separate header button - merged in
+         per the owner's own instruction: "the +register guild should be
+         part of the menu for My Guilds"). Reuses the same .add-menu/
          data-add-menu-toggle mechanism the Strats "+" menus already use
          (same open/close-on-outside-click handler, no new plumbing for
-         that part). Not the real krm.gg context-aware single button yet
-         (0 guilds -> "Join your Guild" vs. 1+ -> "My Guilds") - that
-         belongs with the actual landing page later; this is just the
-         switcher itself, always visible once signed in. -->
+         that part). Always visible once signed in; loadMyGuildsMenu()
+         puts "+ Register a Guild" at the top of the dropdown, the
+         guild list (each one a straight link to that guild's own page)
+         below it. -->
     <span style="position:relative;display:inline-flex;" data-add-menu-toggle>
       <button class="btn btn-small" id="my-guilds-btn" onclick="event.stopPropagation();toggleMyGuildsMenu()" style="display:none;">My Guilds ▾</button>
       <div class="add-menu" id="my-guilds-menu" style="right:0;left:auto;"></div>
     </span>
-    <!-- Phase 2 MVP entry point - not the real krm.gg "Join your Guild"
-         flow yet (see registerGuild()), just enough of a button to
-         actually test the Discord bot-invite ownership flow end to end.
-         Only makes sense signed in (the start call needs a Clerk
-         session), so it toggles alongside sign-in-btn/clerk-user-button. -->
-    <button class="btn btn-small" id="register-guild-btn" onclick="registerGuild()" title="Register a new guild by inviting the Kaizen bot to its Discord server" style="display:none;">+ Register Guild</button>
     <!-- manage-guild-btn used to live here, but it's only ever shown
          outside manage mode (see applyTabPermissions), and #header-right
          itself is display:none outside manage mode - so it was
@@ -7959,6 +7954,13 @@ async function toggleMyGuildsMenu() {
 async function loadMyGuildsMenu() {
   const menu = document.getElementById('my-guilds-menu');
   menu.innerHTML = `<div style="padding:8px 12px;font-size:12px;color:var(--text-dim);">Loading...</div>`;
+  // "+ Register a Guild" used to be its own separate header button -
+  // merged into the top of this same menu on the owner's own
+  // instruction, since it's the same action a guild switcher naturally
+  // wants ("manage multiple, pick one to go to its page" plus "or start
+  // another"). Always shown first, regardless of how many guilds this
+  // person already has.
+  const registerRow = `<button onclick="event.stopPropagation();toggleMyGuildsMenu();registerGuild()" style="font-weight:600;color:var(--gold);">+ Register a Guild</button><div style="border-top:1px solid var(--border);margin:4px 0;"></div>`;
   try {
     const res = await fetch(`${APP_API_WORKER}/api/my-guilds`, { headers: await clerkAuthHeader() });
     const result = await res.json();
@@ -7967,16 +7969,16 @@ async function loadMyGuildsMenu() {
     // guild's own page (see renderJoinGuildUi), not from this switcher.
     const guilds = (result.guilds || []).filter(g => g.status !== 'rejected');
     if (guilds.length === 0) {
-      menu.innerHTML = `<div style="padding:8px 12px;font-size:12px;color:var(--text-dim);max-width:220px;">Not a member of any guild yet. Visit a guild's page and request to join, or register your own.</div>`;
+      menu.innerHTML = registerRow + `<div style="padding:8px 12px;font-size:12px;color:var(--text-dim);max-width:220px;">Not a member of any guild yet. Visit a guild's page and request to join, or register your own.</div>`;
       return;
     }
-    menu.innerHTML = guilds.map(g => {
+    menu.innerHTML = registerRow + guilds.map(g => {
       const label = g.status === 'pending' ? `${g.name} <span style="color:var(--gold-dim);">(pending)</span>` : `${g.name} <span style="color:var(--text-dim);">· ${g.role}</span>`;
       const slug = g.slug.replace(/'/g, "\\'");
       return `<button onclick="location.href='/${slug}'">${label}</button>`;
     }).join('');
   } catch (err) {
-    menu.innerHTML = `<div style="padding:8px 12px;font-size:12px;color:var(--red-bright);max-width:220px;">${err.message}</div>`;
+    menu.innerHTML = registerRow + `<div style="padding:8px 12px;font-size:12px;color:var(--red-bright);max-width:220px;">${err.message}</div>`;
   }
 }
 
@@ -14079,17 +14081,6 @@ window.addEventListener('beforeunload', e => {
   e.preventDefault();
   e.returnValue = ''; // browsers show their own generic prompt text, not this
 });
-// A visual cue while you're still here to act on it, not just a prompt on
-// the way out - polled rather than hooked into every single mutating
-// function (there are far too many across raiders/roster/strats/pins to
-// reliably instrument, and missing even one would silently defeat the
-// point). Cheap enough at a few-second interval; skipped entirely if the
-// button isn't even in the DOM yet (very first paint).
-setInterval(() => {
-  const btn = document.getElementById('save-to-github-btn');
-  if (btn) btn.classList.toggle('has-unsaved', hasUnsavedChanges());
-}, 4000);
-
 // Saves straight to D1 via the Worker (see wrangler.toml/schema.sql) -
 // replaces the old "PUT kaizen_data.json to the GitHub Contents API"
 // (kaizen_data.json/GitHub Pages is no longer this app's datastore, just
@@ -14125,7 +14116,6 @@ async function saveAppData() {
     showToast('✓ Saved.');
     updateVersionFooter(result.updatedAt);
     markSavedSnapshot(); // this exact state is now the new "clean" baseline
-    document.getElementById('save-to-github-btn')?.classList.remove('has-unsaved');
     // Returns the updatedAt string (truthy, so existing `if (!saved)`
     // checks elsewhere still work unchanged) rather than a bare true.
     return result.updatedAt;
@@ -16611,8 +16601,6 @@ window.addEventListener('load', async function () {
     const isSignedIn = !!user;
     document.getElementById('sign-in-btn').style.display = isSignedIn ? 'none' : '';
     document.getElementById('clerk-user-button').style.display = isSignedIn ? 'flex' : 'none';
-    document.getElementById('save-to-github-btn').style.display = isSignedIn ? '' : 'none';
-    document.getElementById('register-guild-btn').style.display = isSignedIn ? '' : 'none';
     document.getElementById('my-guilds-btn').style.display = isSignedIn ? '' : 'none';
     if (isLandingPage) {
       document.getElementById('lp-nav-signin').textContent=isSignedIn?'My guilds':'Sign in';
