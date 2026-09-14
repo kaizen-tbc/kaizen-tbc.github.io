@@ -62,6 +62,12 @@ export default {
     if (url.pathname === '/api/guild-membership/leave' && request.method === 'POST') {
       return handleGuildMembershipLeave(request, env);
     }
+    if (url.pathname === '/api/guild-membership/transfer-gm' && request.method === 'POST') {
+      return handleGuildMembershipTransferGm(request, env);
+    }
+    if (url.pathname === '/api/guild-membership/active' && request.method === 'GET') {
+      return handleGuildMembershipActive(request, env);
+    }
     if (url.pathname === '/api/guild/delete' && request.method === 'POST') {
       return handleGuildDelete(request, env);
     }
@@ -530,14 +536,20 @@ async function handleGuildMembershipDecide(request, env) {
 // POST /api/guild-membership/leave - authenticated. Body: { guildId }.
 // Removes the caller's OWN membership row (active or pending - "cancel
 // my request" and "leave the guild" are the same underlying action).
-// Refuses to leave the guild's last active GM behind with nobody able
-// to approve requests, delete it, or manage anything - not a real
-// safety net once role-management exists (there's no promote-to-GM
-// endpoint yet, a real gap, see DECISIONS.md), just enough to stop
-// someone accidentally locking a real guild's own data away from
-// everyone. A sole GM who actually wants out should delete the guild
-// instead (see handleGuildDelete) if it's genuinely done with, or ask
-// another officer to be promoted once that exists.
+//
+// Owner's own spec for the sole-GM case: "An officer should default to
+// GM if the GM decides to leave. If there are no officers then your
+// only option is to delete, not leave without assigning someone GM."
+// So leaving the guild's last active GM behind auto-promotes the
+// longest-serving active Officer (earliest decided_at/requested_at) to
+// GM first, then removes the leaving GM's own row - never silently
+// orphans the guild. Only Officers are eligible for this automatic
+// promotion, never a plain Member (the owner's own line: no officers
+// means delete, not "promote whoever's around") - a GM who wants a
+// SPECIFIC person (an officer they'd rather hand off to than whichever
+// one is longest-serving, or a plain Member) should use the explicit
+// POST /api/guild-membership/transfer-gm below first, then leave
+// normally afterward as a regular Officer.
 async function handleGuildMembershipLeave(request, env) {
   const auth = await verifyAuth(request, env);
   if (!auth) return corsResponse(JSON.stringify({ error: 'Unauthorized' }), 401);
@@ -550,17 +562,98 @@ async function handleGuildMembershipLeave(request, env) {
   ).bind(guildId, auth.sub).first();
   if (!membership) return corsResponse(JSON.stringify({ error: 'You have no membership in this guild.' }), 404);
 
+  let promoted = null;
   if (membership.role === 'gm' && membership.status === 'active') {
     const { count } = await env.kaizen_db.prepare(
       "SELECT COUNT(*) as count FROM guild_memberships WHERE guild_id = ? AND role = 'gm' AND status = 'active' AND user_id != ?"
     ).bind(guildId, auth.sub).first();
     if (!count) {
-      return corsResponse(JSON.stringify({ error: "You're this guild's only GM - it would be left with no one able to manage it. Delete the guild instead if you're done with it." }), 409);
+      const officer = await env.kaizen_db.prepare(
+        "SELECT user_id, display_name FROM guild_memberships WHERE guild_id = ? AND role = 'officer' AND status = 'active' ORDER BY COALESCE(decided_at, requested_at) ASC LIMIT 1"
+      ).bind(guildId).first();
+      if (!officer) {
+        return corsResponse(JSON.stringify({ error: "You're this guild's only GM and there's no Officer to hand off to - delete the guild instead if you're done with it, or hand off GM to someone specific first." }), 409);
+      }
+      const now = new Date().toISOString();
+      await env.kaizen_db.prepare(
+        "UPDATE guild_memberships SET role = 'gm', decided_at = ?, decided_by = ? WHERE guild_id = ? AND user_id = ?"
+      ).bind(now, auth.sub, guildId, officer.user_id).run();
+      promoted = officer.display_name || officer.user_id;
     }
   }
 
   await env.kaizen_db.prepare('DELETE FROM guild_memberships WHERE guild_id = ? AND user_id = ?').bind(guildId, auth.sub).run();
+  return corsResponse(JSON.stringify({ ok: true, promoted }), 200);
+}
+
+// POST /api/guild-membership/transfer-gm - authenticated AND the
+// caller must be the guild's own active GM. Body: { guildId, userId }.
+// Explicit handoff: lets a GM pick a SPECIFIC active member (not just
+// whichever Officer the auto-promote-on-leave fallback above would
+// pick) and hand GM to them directly - the outgoing GM becomes an
+// Officer rather than being removed, so they keep real access rather
+// than being force-left. Target must already be an active member of
+// this exact guild; any active role is eligible here (Officer or plain
+// Member), unlike the automatic leave-time fallback which only ever
+// considers Officers.
+async function handleGuildMembershipTransferGm(request, env) {
+  const auth = await verifyAuth(request, env);
+  if (!auth) return corsResponse(JSON.stringify({ error: 'Unauthorized' }), 401);
+  if (!env.kaizen_db) return corsResponse(JSON.stringify({ error: 'kaizen_db binding not configured.' }), 500);
+  const { guildId, userId } = await request.json();
+  if (!guildId || !userId) return corsResponse(JSON.stringify({ error: 'Missing guildId/userId.' }), 400);
+
+  const membership = await getActiveMembership(env, guildId, auth.sub);
+  if (!membership || membership.role !== 'gm') {
+    return corsResponse(JSON.stringify({ error: "Only this guild's GM can hand off GM." }), 403);
+  }
+  if (userId === auth.sub) {
+    return corsResponse(JSON.stringify({ error: "You're already GM." }), 400);
+  }
+  const target = await env.kaizen_db.prepare(
+    "SELECT status FROM guild_memberships WHERE guild_id = ? AND user_id = ?"
+  ).bind(guildId, userId).first();
+  if (!target || target.status !== 'active') {
+    return corsResponse(JSON.stringify({ error: 'That person is not an active member of this guild.' }), 404);
+  }
+
+  const now = new Date().toISOString();
+  await env.kaizen_db.batch([
+    env.kaizen_db.prepare("UPDATE guild_memberships SET role = 'gm', decided_at = ?, decided_by = ? WHERE guild_id = ? AND user_id = ?").bind(now, auth.sub, guildId, userId),
+    env.kaizen_db.prepare("UPDATE guild_memberships SET role = 'officer', decided_at = ?, decided_by = ? WHERE guild_id = ? AND user_id = ?").bind(now, auth.sub, guildId, auth.sub),
+  ]);
   return corsResponse(JSON.stringify({ ok: true }), 200);
+}
+
+// GET /api/guild-membership/active?guildId=1 - authenticated AND the
+// caller must be an active gm/officer (same gate as the pending-
+// requests queue). Feeds the "hand off GM to..." picker in Settings -
+// needs every active member's user_id/display_name/role, which
+// /api/my-guilds (keyed by the CALLER's own memberships) can't provide
+// for anyone else.
+async function handleGuildMembershipActive(request, env) {
+  const auth = await verifyAuth(request, env);
+  if (!auth) return corsResponse(JSON.stringify({ error: 'Unauthorized' }), 401);
+  const url = new URL(request.url);
+  const guildId = parseInt(url.searchParams.get('guildId'), 10);
+  if (!guildId) return corsResponse(JSON.stringify({ error: 'Missing guildId.' }), 400);
+  if (!env.kaizen_db) return corsResponse(JSON.stringify({ error: 'kaizen_db binding not configured.' }), 500);
+
+  const membership = await getActiveMembership(env, guildId, auth.sub);
+  if (!membership || !isApproverRole(membership.role)) {
+    return corsResponse(JSON.stringify({ error: 'Only a GM or Officer can view the member list.' }), 403);
+  }
+
+  // Officer first (the natural handoff candidates - matches the same
+  // preference the sole-GM leave fallback above uses), then Member,
+  // GM last (only ever the caller themselves, listed for completeness
+  // rather than filtered out server-side - the frontend excludes its
+  // own user_id when building the handoff picker).
+  const { results } = await env.kaizen_db.prepare(
+    `SELECT user_id, role, display_name, discord_user_id FROM guild_memberships WHERE guild_id = ? AND status = 'active'
+     ORDER BY CASE role WHEN 'officer' THEN 0 WHEN 'member' THEN 1 ELSE 2 END, COALESCE(decided_at, requested_at) ASC`
+  ).bind(guildId).all();
+  return corsResponse(JSON.stringify({ members: results }), 200);
 }
 
 // POST /api/guild/delete - authenticated AND the caller must be an

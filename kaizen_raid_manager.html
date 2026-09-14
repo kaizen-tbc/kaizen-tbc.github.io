@@ -4789,6 +4789,24 @@ body.guild-public-mode #tab-strats .public-assignment-sheet .personal-detail>*{m
           Without this, you paste an event URL manually. With it, events auto-load.
         </div>
       </div>
+      <!-- GM-only (owner: "we should be able to handoff GM too") - lets
+           the GM pick a SPECIFIC active member to hand off to, rather
+           than only ever the automatic longest-serving-Officer pick
+           that leaving as a sole GM falls back to (see
+           handleGuildMembershipLeave's own comment). Populated fresh
+           each time Settings opens (loadTransferGmPicker), same
+           not-cached convention as the join-requests queue above. -->
+      <div id="settings-transfer-gm" style="display:none;margin-top:20px;padding-top:16px;border-top:1px solid var(--border);">
+        <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-dim);margin-bottom:10px;">Hand Off GM</div>
+        <div class="notice notice-info" style="margin-bottom:12px;">
+          <span>ℹ</span> Makes them GM and makes you an Officer instead - you keep your access, you just stop being GM. If you leave the guild afterward as the only GM, the longest-serving Officer becomes GM automatically.
+        </div>
+        <div class="form-group">
+          <label class="form-label">New GM</label>
+          <select class="form-select" id="transfer-gm-select"><option value="">Loading members…</option></select>
+        </div>
+        <button class="btn btn-small" id="transfer-gm-btn" onclick="transferGmConfirm()" disabled>Hand off GM →</button>
+      </div>
       <!-- GM-only (owner: "as the GM how do I delete my guild page?") -
            see openSettings()'s own role check, which shows/hides this
            whole section, and deleteGuildConfirm() below. Kept last and
@@ -8153,7 +8171,12 @@ async function leaveGuildFromMenu(guildId, name, status, slug) {
     });
     const result = await res.json();
     if (!res.ok) throw new Error(result.error || `Could not leave (${res.status})`);
-    showToast(status === 'pending' ? '✓ Request canceled.' : `✓ Left "${name}".`);
+    // Sole-GM leave auto-promotes the longest-serving Officer to GM
+    // server-side (owner's own spec: "an officer should default to GM
+    // if the GM decides to leave") - result.promoted names who, so the
+    // person leaving isn't left guessing who's in charge now.
+    const promotedNote = result.promoted ? ` ${result.promoted} is now GM.` : '';
+    showToast((status === 'pending' ? '✓ Request canceled.' : `✓ Left "${name}".`) + promotedNote);
     document.querySelectorAll('.add-menu.open').forEach(el => loadGuildsMenu(el.id));
     // Left the guild whose /manage page you're actually on right now -
     // your own membership no longer backs it, so don't leave you
@@ -13874,7 +13897,68 @@ function openSettings() {
     document.getElementById('delete-guild-btn').disabled = true;
     input.oninput = () => { document.getElementById('delete-guild-btn').disabled = input.value !== (guildInfo.guildName || ''); };
   }
+  // Hand Off GM (owner: "we should be able to handoff GM too") - same
+  // GM-only gate as the Danger Zone above.
+  const tg = document.getElementById('settings-transfer-gm');
+  tg.style.display = myRole === 'gm' ? 'block' : 'none';
+  if (myRole === 'gm') loadTransferGmPicker();
   document.getElementById('settings-modal-overlay').classList.add('open');
+}
+
+// Fetched fresh each time Settings opens, same convention as
+// loadPendingRequests above - a member who was just approved shouldn't
+// need a full page reload to become a valid handoff target next time
+// this opens.
+async function loadTransferGmPicker() {
+  const select = document.getElementById('transfer-gm-select');
+  const btn = document.getElementById('transfer-gm-btn');
+  select.innerHTML = '<option value="">Loading members…</option>';
+  btn.disabled = true;
+  try {
+    const res = await fetch(`${APP_API_WORKER}/api/guild-membership/active?guildId=${CURRENT_GUILD_ID}`, { headers: await clerkAuthHeader() });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || `Could not load members (${res.status})`);
+    // Exclude the caller's own row (they're the current GM, listed in
+    // this same response) - can't hand off to yourself.
+    const candidates = (result.members || []).filter(m => m.role !== 'gm');
+    if (candidates.length === 0) {
+      select.innerHTML = '<option value="">No other members yet</option>';
+      return;
+    }
+    select.innerHTML = candidates.map(m => {
+      const name = obEscape(m.display_name || m.user_id);
+      return `<option value="${m.user_id.replace(/"/g, '&quot;')}" data-name="${name}">${name} · ${m.role}</option>`;
+    }).join('');
+    btn.disabled = false;
+  } catch (err) {
+    select.innerHTML = `<option value="">Could not load members</option>`;
+    showToast(`✗ ${err.message}`, true);
+  }
+}
+
+async function transferGmConfirm() {
+  const select = document.getElementById('transfer-gm-select');
+  const userId = select.value;
+  const name = select.options[select.selectedIndex]?.dataset.name || 'this person';
+  if (!userId) return;
+  if (!confirm(`Make ${name} the new GM? You'll become an Officer instead.`)) return;
+  const btn = document.getElementById('transfer-gm-btn');
+  btn.disabled = true;
+  try {
+    const res = await fetch(`${APP_API_WORKER}/api/guild-membership/transfer-gm`, {
+      method: 'POST',
+      headers: { ...(await clerkAuthHeader()), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ guildId: CURRENT_GUILD_ID, userId }),
+    });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || `Could not hand off GM (${res.status})`);
+    showToast(`✓ ${name} is now GM.`);
+    closeSettings();
+    location.reload(); // myRole/every gm-only UI needs a fresh permission resolution, not a partial patch-up
+  } catch (err) {
+    showToast(`✗ Could not hand off GM: ${err.message}`, true);
+    btn.disabled = false;
+  }
 }
 
 // "As the GM how do I delete my guild page?" (owner) - real, permanent
