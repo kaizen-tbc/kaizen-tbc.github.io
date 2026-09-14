@@ -3795,6 +3795,26 @@ body.guild-public-mode #tab-strats .public-assignment-sheet .personal-detail>*{m
       <input type="text" class="form-input" id="ov-announcement-channel-input" placeholder="#announcements"
         onchange="guildInfo.publicSite.announcementChannelLabel=this.value">
     </div>
+    <!-- Auto-pull from a real Discord channel (owner: "announcements
+         should automatically pull from a channel... support only 3...
+         push off the oldest every time a new announcement comes
+         through"). Set a channel ID here and this list stops being
+         something a GM writes by hand - see syncAnnouncementsFromDiscord,
+         which replaces the 3 rows below with that channel's 3 most
+         recent messages (pinned Discord messages surface first, exactly
+         like the "Pinned ·" treatment already built into the public
+         renderer). Manual "+ Add Announcement" rows above still work too
+         (the owner: "it CAN be [custom]") - syncing just overwrites
+         whatever's there with the channel's real current state. -->
+    <div class="form-group">
+      <label class="form-label">Auto-pull from Discord channel <span style="font-weight:400;color:var(--text-dim);">(optional - leave blank to write announcements by hand instead)</span></label>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input type="text" class="form-input" id="ov-announcement-channel-id-input" placeholder="Channel ID, e.g. 1234567890123456789"
+          onchange="guildInfo.publicSite.announcementsChannelId=this.value.trim();renderOverview();">
+        <button class="btn btn-small" id="ov-announcements-sync-btn" onclick="syncAnnouncementsFromDiscord(true)" style="flex:0 0 auto;white-space:nowrap;">↻ Sync now</button>
+      </div>
+      <div style="font-size:11px;color:var(--text-dim);margin-top:6px;" id="ov-announcements-sync-status"></div>
+    </div>
     <div style="display:flex;flex-direction:column;gap:10px;" id="ov-announcements"></div>
   </div>
 
@@ -3805,6 +3825,20 @@ body.guild-public-mode #tab-strats .public-assignment-sheet .personal-detail>*{m
       <div class="cms-section-hint">Featured raid-night writeup on the public overview</div>
     </div>
     <div id="ov-recap"></div>
+  </div>
+
+  <!-- Everything in "Public Site" above (tagline/banner/widgets/rankings/
+       recruitment/announcements/recap) had no save path at all until
+       this button - every other krm-edit-only control here mutates
+       guildInfo.publicSite in memory and re-renders, same as the rest of
+       this file, but nothing called saveAppData() for any of it. This
+       is deliberately scoped to just this section (not a revival of the
+       removed global header Save - the owner's own plan for that is
+       still pending, see DECISIONS.md/kaizen-manager-pending-items),
+       same pattern as Settings' own Raid Helper save button. -->
+  <div class="cms-section krm-edit-only" style="border-top:2px solid var(--border-bright);padding-top:16px;">
+    <button class="btn btn-gold" onclick="savePublicSite()">💾 Save Public Site</button>
+    <span style="font-size:11px;color:var(--text-dim);margin-left:10px;">Saves everything in the Public Site section above.</span>
   </div>
 
   </div><!-- /#manager-overview-view -->
@@ -9703,6 +9737,14 @@ function renderPublicSiteEditor() {
   // ── Announcements ──────────────────────────────────────
   const channelInput = document.getElementById('ov-announcement-channel-input');
   if (channelInput && document.activeElement !== channelInput) channelInput.value = site.announcementChannelLabel || '';
+  const channelIdInput = document.getElementById('ov-announcement-channel-id-input');
+  if (channelIdInput && document.activeElement !== channelIdInput) channelIdInput.value = site.announcementsChannelId || '';
+  const syncStatusEl = document.getElementById('ov-announcements-sync-status');
+  if (syncStatusEl) {
+    syncStatusEl.textContent = site.announcementsLastSyncedAt
+      ? `Last synced ${new Date(site.announcementsLastSyncedAt).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}`
+      : (site.announcementsChannelId ? 'Not synced yet.' : '');
+  }
   const annEl = document.getElementById('ov-announcements');
   if (annEl) {
     annEl.innerHTML = site.announcements.length === 0
@@ -9758,6 +9800,71 @@ function addRecruitmentOpening() { ensurePublicSiteDefaults().recruitment.push({
 function removeRecruitmentOpening(i) { guildInfo.publicSite.recruitment.splice(i,1); renderOverview(); }
 function addAnnouncement() { ensurePublicSiteDefaults().announcements.unshift({ pinned: false, dateLabel: '', title: '', excerpt: '', discordUrl: '', published: false }); renderOverview(); }
 function removeAnnouncement(i) { guildInfo.publicSite.announcements.splice(i,1); renderOverview(); }
+
+// "Announcements should automatically pull from a channel... support
+// only 3... push off the oldest every time a new announcement comes
+// through" (owner). `manual` distinguishes the Overview "↻ Sync now"
+// click (always shows a toast, always saves) from the quiet automatic
+// pull on manage-mode entry below (owner's own suggestion: "every time
+// the GM logs into the manager it does a pull") - same fetch/write
+// either way, just less chatty when nobody asked for it directly.
+// POST /discord-channel-recent lives on the real Discord-bot Worker
+// (RH_WORKER, same as post-strat/post-roster) since only it holds
+// DISCORD_BOT_TOKEN - this pilot Worker deliberately doesn't.
+async function syncAnnouncementsFromDiscord(manual) {
+  const site = ensurePublicSiteDefaults();
+  const channelId = (site.announcementsChannelId || '').trim();
+  if (!channelId) { if (manual) showToast('Set a channel ID first.', true); return; }
+  const btn = document.getElementById('ov-announcements-sync-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '↻ Syncing…'; }
+  try {
+    const res = await fetch(`${RH_WORKER}/discord-channel-recent`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ channelId, limit: 3 }),
+    });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || `Discord sync failed (${res.status})`);
+    // Replaces the list outright (not merged) - this IS "push off the
+    // oldest every time a new one comes through": Discord's own most-
+    // recent-3 is the whole source of truth, every sync.
+    site.announcements = result.announcements || [];
+    site.announcementsLastSyncedAt = new Date().toISOString();
+    renderOverview();
+    await saveAppData(); // real content, needs to actually land in D1, not sit in memory until someone finds "Save Public Site"
+    if (manual) showToast(`✓ Pulled ${site.announcements.length} announcement(s) from Discord.`);
+  } catch (err) {
+    if (manual) showToast(`✗ Could not sync announcements: ${err.message}`, true);
+    // A quiet auto-sync failure (bad channel ID, bot not in the server,
+    // MESSAGE_CONTENT intent off) shouldn't interrupt someone just
+    // opening the manager - it'll just retry next time they log in.
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '↻ Sync now'; }
+  }
+}
+
+// Once per manage-mode session, not once per render/tab-click - owner's
+// own suggested cadence ("every time the GM logs into the manager") is
+// naturally satisfied by gating on inManageMode having just resolved
+// true, plus a 10-minute debounce against announcementsLastSyncedAt so
+// switching tabs repeatedly in one sitting doesn't hammer Discord's API
+// for no reason. Silent (manual=false) - see syncAnnouncementsFromDiscord.
+function maybeAutoSyncAnnouncements() {
+  if (!inManageMode || (myRole !== 'gm' && myRole !== 'officer')) return;
+  const site = guildInfo.publicSite;
+  if (!site || !site.announcementsChannelId) return;
+  const last = site.announcementsLastSyncedAt ? new Date(site.announcementsLastSyncedAt).getTime() : 0;
+  if (Date.now() - last < 10 * 60 * 1000) return;
+  syncAnnouncementsFromDiscord(false);
+}
+
+// Manual save for everything in the "Public Site" editor section
+// (tagline/banner/widgets/rankings/recruitment/announcements/recap) -
+// see this button's own comment in the HTML for why it exists at all
+// (nothing here had a save path before it).
+async function savePublicSite() {
+  await saveAppData(); // its own toasts cover success/failure
+}
 
 // Generalized version of uploadOverviewImage/uploadProgressionImage's own
 // base64-embed upload, taking a setter callback instead of a fixed
@@ -9834,14 +9941,18 @@ function renderPublicOverview() {
   // spotlight is always "what's happening now", not "everything ever" - an
   // explicit site.progression override (once a GM sets one) is shown
   // exactly as given instead, uncurated, since that's a deliberate choice.
-  let progression;
-  if (Array.isArray(site.progression)) {
-    progression = site.progression;
-  } else {
-    const allTiers = guildInfo.progression || [];
-    const touched = allTiers.filter(p => Number(p.killed) > 0);
-    progression = (touched.length >= 2 ? touched : allTiers).slice(-2);
-  }
+  // Owner's own spec: "progression should just show the last 2." The last
+  // 2 TOUCHED tiers (killed>0), not the last 2 array POSITIONS - Zul'Aman/
+  // Sunwell sit after Black Temple/Hyjal in guildInfo.progression's own
+  // chronological order but haven't been started (0 kills), so a plain
+  // positional slice(-2) would show two empty future tiers instead of the
+  // guild's real current progress. A guild with 0-1 touched tiers just
+  // shows fewer cards (0 hides the section entirely below, via the
+  // existing progression.length check - never padded out with an empty
+  // future tier to force exactly 2).
+  const progression = Array.isArray(site.progression)
+    ? site.progression // explicit override - shown exactly as given, uncurated
+    : (guildInfo.progression || []).filter(p => Number(p.killed) > 0).slice(-2);
   const ranks = Array.isArray(site.rankings) ? site.rankings : [];
   const progress = visible('progression') && progression.length ? '<section class="overview-section" id="public-progression"><div class="overview-heading"><div><div class="eyebrow">Progression</div><h2>A little further,<br><em>every raid.</em></h2></div><p>Our progress through Outland.<br>'+(canView('guildLogs')?nav('guild-logs','Browse raid results ↗'):'')+'</p></div><div class="progression-grid">'+progression.map(p=>{
     const rank = visible('rankings') ? ranks.find(r=>r.progressionId != null && String(r.progressionId)===String(p.id)) : null;
@@ -16655,6 +16766,7 @@ async function initFromJson() {
   renderBuilder();
   renderStrats();
   markSavedSnapshot(); // baseline for hasUnsavedChanges - whatever just loaded (or the fresh defaults) counts as "clean"
+  maybeAutoSyncAnnouncements(); // owner: "every time the GM logs into the manager it does a pull" - see its own comment for the debounce
 }
 
 // ── Clerk bootstrap ───────────────────────────────────────────

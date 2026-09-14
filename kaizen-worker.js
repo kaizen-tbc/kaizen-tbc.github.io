@@ -107,6 +107,12 @@ export default {
       return handlePostStrat(request, env);
     }
 
+    // ── Read-only: the N most recent messages from a Discord channel,
+    // shaped for the public Announcements widget ── /discord-channel-recent
+    if (url.pathname === '/discord-channel-recent' && request.method === 'POST') {
+      return handleDiscordChannelRecent(request, env);
+    }
+
     // ── Post a trash guide (mob reference cards, then the wave
     // breakdown) to Discord, clearing the channel first ──
     // /post-trash-guide
@@ -1096,6 +1102,64 @@ function buildStratImageEmbed(strat, imageUrl) {
 // published: the image needs a real public URL, and the assignments need
 // to be readable from the same published JSON the roster-post flow already
 // relies on - no new file-upload path through the bot needed.
+// GET the N most recent messages from a real Discord channel, shaped to
+// drop straight into guildInfo.publicSite.announcements[] (owner: "it
+// should automatically pull from a channel... support only 3... push
+// off the oldest every time a new announcement is posted or comes
+// through"). No Clerk auth check, same convention as /post-strat and
+// /post-roster below - this Worker (deployed as production kaizen-bot)
+// has no Clerk verification wired in at all, only the frontend gates who
+// ever calls it; read-only besides, so the risk here is lower than
+// either of those two regardless.
+//
+// Real limitation, not fixable from here: Discord's MESSAGE_CONTENT
+// privileged intent, if the bot's Developer Portal application doesn't
+// have it approved/enabled, makes `content` come back EMPTY on every
+// message the bot didn't post itself - this endpoint would then pull 3
+// real messages with blank text. Verify that intent is on before relying
+// on this for real.
+async function handleDiscordChannelRecent(request, env) {
+  try {
+    const { channelId, limit } = await request.json();
+    if (!channelId) throw new Error('No channel ID provided.');
+    const n = Math.min(Math.max(parseInt(limit, 10) || 3, 1), 10);
+
+    const res = await fetch(`${DISCORD_API}/channels/${channelId}/messages?limit=${n}`, {
+      headers: { 'Authorization': `Bot ${env.DISCORD_BOT_TOKEN}` },
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || `Discord returned ${res.status} - check the channel ID and that the bot can see that channel.`);
+    }
+    const messages = await res.json();
+
+    // Discord returns newest-first already. pinned is Discord's own real
+    // flag on the message (not something we decide) - a genuinely pinned
+    // message surfaces first, matching the public renderer's own "one
+    // pinned + up to 2 recent" treatment (see renderPublicOverview).
+    // Title/excerpt are a mechanical split (first line / full text) -
+    // real chat messages aren't written as headlines, this is honest
+    // about that rather than pretending to summarize them.
+    const announcements = messages.map(m => {
+      const content = (m.content || '').trim();
+      const firstLine = content.split('\n')[0].slice(0, 80);
+      return {
+        pinned: !!m.pinned,
+        dateLabel: new Date(m.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        title: firstLine || '(no text on this message - see Discord)',
+        excerpt: content || '(attachment or embed only - see Discord)',
+        discordUrl: m.guild_id ? `https://discord.com/channels/${m.guild_id}/${channelId}/${m.id}` : '',
+        published: true,
+      };
+    });
+    announcements.sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
+
+    return corsResponse(JSON.stringify({ announcements: announcements.slice(0, n) }), 200);
+  } catch (err) {
+    return corsResponse(JSON.stringify({ error: err.message }), 500);
+  }
+}
+
 async function handlePostStrat(request, env) {
   try {
     const { stratId, channelId } = await request.json();
