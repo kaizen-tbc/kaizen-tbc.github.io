@@ -2637,6 +2637,39 @@ body.landing-mode #landing-page { display: block; }
 #landing-page #lp-ability-reference details { margin-top: 8px; }
 #landing-page #lp-ability-reference summary { cursor: pointer; min-height: 36px; }
 #landing-page #lp-ability-reference details p { font-size: 12px; margin: 8px 0; color: var(--lp-muted); }
+/* Assignment-sheet correction (Codex, Sept 13 - Design/preview/
+   assignment-sheet.css, ported near-verbatim under the #landing-page
+   bare-class convention above): initPlanAssignmentSheet() relocates
+   .personal-detail out of the sidebar into a minimizable bottom drawer
+   over the map itself, capped at one quarter of the map's height, so
+   a long .player-choices list can scroll on its own without growing
+   the map. The old inline Wowhead link + <details> accordion in
+   #lp-ability-reference is emptied by that same function - hide the
+   now-permanently-empty node outright rather than leave a blank gap. */
+#landing-page .assignment-sheet-layout.plan-layout { grid-template-columns: minmax(0,1fr) 290px; align-items: start; }
+#landing-page .assignment-sheet-layout .position-map { height: 520px; overflow: hidden; }
+#landing-page .assignment-sheet-layout .personal-plan { height: 520px; display: flex; flex-direction: column; overflow: hidden; padding: 22px; gap: 16px; box-sizing: border-box; }
+#landing-page .assignment-sheet-layout .player-choices { overflow-y: auto; min-height: 0; align-content: start; flex: 1; }
+#landing-page .assignment-sheet { position: absolute; bottom: 0; left: 0; right: 0; z-index: 6; background: var(--lp-surface); border-top: 2px solid var(--lp-accent); box-shadow: 0 -4px 18px #0003; max-height: 25%; box-sizing: border-box; display: flex; flex-direction: column; }
+#landing-page .assignment-sheet-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 20px 4px; min-height: 40px; box-sizing: border-box; flex: none; }
+#landing-page .assignment-sheet-header .lp-eyebrow { margin: 0; font-size: 10px; letter-spacing: 0.09em; line-height: 1.4; }
+#landing-page .assignment-sheet-header button { margin: 0; min-height: 26px; padding: 3px 0 3px 12px; border: 0; background: transparent; color: var(--lp-muted); font-size: 11px; line-height: 1.4; white-space: nowrap; cursor: pointer; }
+#landing-page .assignment-sheet .personal-detail { border-top: 0; margin: 0; padding: 8px 20px 18px; overflow: auto; min-height: 0; display: grid; grid-template-columns: minmax(120px,.7fr) minmax(160px,.9fr) minmax(0,1.8fr); column-gap: 24px; align-items: center; }
+/* Same specificity fight as #landing-page .lp-button vs [hidden] fixed
+   elsewhere in this file: .personal-detail's own explicit display:grid
+   above outranks the UA's default (very low-priority) [hidden]{display:
+   none} - without this, expand(false) sets the hidden attribute but the
+   panel never actually visually collapses. Author-level override wins
+   it back, matching Design/preview/assignment-sheet.css's own rule. */
+#landing-page .assignment-sheet .personal-detail[hidden] { display: none; }
+#landing-page .assignment-sheet #lp-ability-reference { display: none; }
+#landing-page .sheet-identity { display: flex; flex-direction: column; gap: 4px; }
+#landing-page .assignment-sheet #lp-player-name { order: -1; margin: 0; font: 23px/1.1 Georgia, serif; }
+#landing-page .assignment-sheet #lp-player-spec { font-size: 11px; line-height: 1.35; margin: 0; color: var(--lp-muted); }
+#landing-page .assignment-sheet .assigned-job { margin: 0; padding: 0; gap: 10px; }
+#landing-page .assignment-sheet .assigned-job > img { width: 32px; height: 32px; flex: none; }
+#landing-page .assignment-sheet #lp-player-task { border-left: 1px solid var(--lp-line); padding-left: 24px; line-height: 1.5; margin: 0; font-size: 14px; color: var(--lp-text); }
+#landing-page .assignment-sheet.is-minimized .assignment-sheet-header { padding: 7px 20px; min-height: 36px; }
 #landing-page .strat-proof { width: min(1000px, calc(100% - 64px)); margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 64px; border-top: 1px solid var(--lp-line); padding: 32px 0; }
 #landing-page .strat-proof p { color: var(--lp-muted); font-size: 15px; margin: 0; }
 #landing-page .strat-proof strong { display: block; color: var(--lp-text); font-weight: 600; margin-bottom: 8px; }
@@ -2712,6 +2745,23 @@ body.landing-mode #landing-page { display: block; }
   #landing-page .debrief-body { grid-template-columns: 1fr; }
   #landing-page .debrief-body > div + div { border-left: 0; border-top: 1px solid var(--lp-line); }
   #landing-page .debrief-heading { align-items: start; flex-direction: column; }
+}
+/* Assignment-sheet correction's own breakpoints (850/600, matching
+   Design/preview/assignment-sheet.css exactly) - overriding via the
+   more specific .assignment-sheet-layout compound selector rather than
+   editing the generic .plan-layout/.position-map/.personal-plan rules
+   above, so this correction can't drift the unrelated widgets sharing
+   those same @media(max-width:800px)/(max-width:480px) blocks. */
+@media (max-width: 850px) {
+  #landing-page .assignment-sheet-layout.plan-layout { grid-template-columns: minmax(0,1fr) 230px; }
+  #landing-page .assignment-sheet-layout .personal-plan { padding: 14px; }
+  #landing-page .assignment-sheet .personal-detail { grid-template-columns: 1fr 1.2fr; gap: 10px 16px; }
+  #landing-page .assignment-sheet #lp-player-task { grid-column: 1 / -1; padding-left: 0; border-left: 0; }
+}
+@media (max-width: 600px) {
+  #landing-page .assignment-sheet-layout.plan-layout { grid-template-columns: 1fr; }
+  #landing-page .assignment-sheet-layout .position-map { height: 460px; }
+  #landing-page .assignment-sheet-layout .personal-plan { height: 260px; }
 }
 @media (max-width: 700px) {
   #landing-page .product-hero { padding-top: 48px; }
@@ -16645,6 +16695,64 @@ function initLandingPage() {
   }
   document.querySelectorAll('#landing-page [data-player]').forEach(b => b.addEventListener('click', () => selectLandingRaidPlayer(Number(b.dataset.player))));
   initHeroFilm();
+  initPlanAssignmentSheet();
+}
+
+// Assignment-sheet correction (Codex, Sept 13 - Design/preview/
+// assignment-sheet.js ported near-verbatim, ids/classes adjusted for
+// the lp- prefix convention above): relocates .personal-detail out of
+// the sidebar into a minimizable bottom drawer over the map itself
+// (capped at 25% of its height via CSS), so a long .player-choices
+// list can scroll on its own without growing the map. The old inline
+// Wowhead link + <details> accordion in #lp-ability-reference is
+// emptied outright - the drawer just shows the assignment text
+// plainly, no external link or click-to-expand needed once it's
+// already a deliberate "show/minimize" panel.
+function initPlanAssignmentSheet() {
+  const frame = document.querySelector('#plan-preview .plan-layout');
+  if (!frame) return;
+  const map = frame.querySelector('.position-map'), detail = frame.querySelector('.personal-detail');
+  if (!map || !detail) return;
+  frame.classList.add('assignment-sheet-layout');
+  const sheet = document.createElement('section');
+  sheet.className = 'assignment-sheet';
+  sheet.setAttribute('aria-label', 'Selected player assignment');
+  const header = document.createElement('div');
+  header.className = 'assignment-sheet-header';
+  const heading = document.createElement('span');
+  heading.className = 'lp-eyebrow';
+  heading.textContent = 'Assignment details';
+  const toggle = document.createElement('button');
+  toggle.type = 'button';
+  toggle.setAttribute('aria-controls', 'lp-assignment-sheet-body');
+  header.append(heading, toggle);
+  detail.id = 'lp-assignment-sheet-body';
+  detail.tabIndex = 0;
+  const identity = document.createElement('div');
+  identity.className = 'sheet-identity';
+  identity.append(document.getElementById('lp-player-spec'), document.getElementById('lp-player-name'));
+  detail.prepend(identity);
+  const reference = document.getElementById('lp-ability-reference');
+  if (reference) reference.replaceChildren();
+  detail.querySelectorAll('details').forEach(disclosure => {
+    const summary = disclosure.querySelector('summary');
+    if (summary) summary.remove();
+    disclosure.replaceWith(...disclosure.childNodes);
+  });
+  sheet.append(header, detail);
+  map.append(sheet);
+  function expand(open) {
+    detail.hidden = !open;
+    sheet.classList.toggle('is-minimized', !open);
+    toggle.textContent = open ? 'Minimize ↓' : 'Show assignment ↑';
+    toggle.setAttribute('aria-expanded', String(open));
+    heading.textContent = open ? 'Assignment details' : document.getElementById('lp-player-name').textContent + ' · ' + document.getElementById('lp-player-job').textContent;
+  }
+  toggle.addEventListener('click', () => expand(detail.hidden));
+  frame.addEventListener('click', e => { if (e.target.closest('[data-player]')) expand(true); });
+  frame.addEventListener('keyup', e => { if (e.target.closest('[data-player]') && e.key.startsWith('Arrow')) expand(true); });
+  sheet.addEventListener('keydown', e => { if (e.key === 'Escape') { expand(false); toggle.focus(); } });
+  expand(true);
 }
 
 // Cinematic hero video (Design/preview/hero-film.js, ported near-verbatim -
