@@ -59,6 +59,12 @@ export default {
     if (url.pathname === '/api/guild-membership/decide' && request.method === 'POST') {
       return handleGuildMembershipDecide(request, env);
     }
+    if (url.pathname === '/api/guild-membership/leave' && request.method === 'POST') {
+      return handleGuildMembershipLeave(request, env);
+    }
+    if (url.pathname === '/api/guild/delete' && request.method === 'POST') {
+      return handleGuildDelete(request, env);
+    }
 
     // ── Current WCL rate-limit status, read-only diagnostic ── /wcl-status
     if (url.pathname === '/wcl-status' && request.method === 'GET') {
@@ -519,6 +525,72 @@ async function handleGuildMembershipDecide(request, env) {
   }
 
   return corsResponse(JSON.stringify({ status: newStatus }), 200);
+}
+
+// POST /api/guild-membership/leave - authenticated. Body: { guildId }.
+// Removes the caller's OWN membership row (active or pending - "cancel
+// my request" and "leave the guild" are the same underlying action).
+// Refuses to leave the guild's last active GM behind with nobody able
+// to approve requests, delete it, or manage anything - not a real
+// safety net once role-management exists (there's no promote-to-GM
+// endpoint yet, a real gap, see DECISIONS.md), just enough to stop
+// someone accidentally locking a real guild's own data away from
+// everyone. A sole GM who actually wants out should delete the guild
+// instead (see handleGuildDelete) if it's genuinely done with, or ask
+// another officer to be promoted once that exists.
+async function handleGuildMembershipLeave(request, env) {
+  const auth = await verifyAuth(request, env);
+  if (!auth) return corsResponse(JSON.stringify({ error: 'Unauthorized' }), 401);
+  if (!env.kaizen_db) return corsResponse(JSON.stringify({ error: 'kaizen_db binding not configured.' }), 500);
+  const { guildId } = await request.json();
+  if (!guildId) return corsResponse(JSON.stringify({ error: 'Missing guildId.' }), 400);
+
+  const membership = await env.kaizen_db.prepare(
+    'SELECT role, status FROM guild_memberships WHERE guild_id = ? AND user_id = ?'
+  ).bind(guildId, auth.sub).first();
+  if (!membership) return corsResponse(JSON.stringify({ error: 'You have no membership in this guild.' }), 404);
+
+  if (membership.role === 'gm' && membership.status === 'active') {
+    const { count } = await env.kaizen_db.prepare(
+      "SELECT COUNT(*) as count FROM guild_memberships WHERE guild_id = ? AND role = 'gm' AND status = 'active' AND user_id != ?"
+    ).bind(guildId, auth.sub).first();
+    if (!count) {
+      return corsResponse(JSON.stringify({ error: "You're this guild's only GM - it would be left with no one able to manage it. Delete the guild instead if you're done with it." }), 409);
+    }
+  }
+
+  await env.kaizen_db.prepare('DELETE FROM guild_memberships WHERE guild_id = ? AND user_id = ?').bind(guildId, auth.sub).run();
+  return corsResponse(JSON.stringify({ ok: true }), 200);
+}
+
+// POST /api/guild/delete - authenticated AND the caller must be an
+// active GM of the guild being deleted (not Officer - unlike deciding
+// membership requests, this one destroys everyone else's data too).
+// Real, irreversible, no soft-delete/undo: removes the guild's own row,
+// its entire app_state blob (roster/raids/strats/everything), and
+// every membership row for it - every other active member instantly
+// loses access, same as the guild never existed. Does NOT touch
+// Discord (no bot-kick, no channel deletion) - discord_guild_id here
+// was only ever used to dedupe registration, never acted on directly.
+async function handleGuildDelete(request, env) {
+  const auth = await verifyAuth(request, env);
+  if (!auth) return corsResponse(JSON.stringify({ error: 'Unauthorized' }), 401);
+  if (!env.kaizen_db) return corsResponse(JSON.stringify({ error: 'kaizen_db binding not configured.' }), 500);
+  const { guildId } = await request.json();
+  if (!guildId) return corsResponse(JSON.stringify({ error: 'Missing guildId.' }), 400);
+
+  const membership = await getActiveMembership(env, guildId, auth.sub);
+  if (!membership || membership.role !== 'gm') {
+    return corsResponse(JSON.stringify({ error: 'Only this guild\'s GM can delete it.' }), 403);
+  }
+
+  await env.kaizen_db.batch([
+    env.kaizen_db.prepare('DELETE FROM guild_memberships WHERE guild_id = ?').bind(guildId),
+    env.kaizen_db.prepare('DELETE FROM app_state WHERE guild_id = ?').bind(guildId),
+    env.kaizen_db.prepare('DELETE FROM guilds WHERE id = ?').bind(guildId),
+  ]);
+
+  return corsResponse(JSON.stringify({ ok: true }), 200);
 }
 
 // GET /api/public-state?guildId=1 - no auth at all, deliberately. This

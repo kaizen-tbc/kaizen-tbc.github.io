@@ -1072,6 +1072,7 @@ tr:last-child td { border-bottom: none; }
 
 .notice-info { background: rgba(26,175,192,0.1); border: 1px solid var(--teal-dim); color: var(--teal); }
 .notice-warn { background: rgba(201,162,39,0.1); border: 1px solid var(--gold-dim); color: var(--gold); }
+.notice-danger { background: rgba(231,76,60,0.1); border: 1px solid var(--red); color: var(--red-bright); }
 
 /* ===== BUFF COVERAGE ===== */
 .buff-grid {
@@ -1815,17 +1816,26 @@ tr:last-child td { border-bottom: none; }
 .add-menu button:hover { background: var(--bg-hover); }
 /* My Guilds dropdown rows (see guildMenuRowHtml) - each row is the
    plain "open this guild" button plus an optional secondary action
-   ("Manage" / "You're here"), not just a single full-width button like
-   every other .add-menu use. */
+   ("Manage" / "You're here") plus a "Leave"/"Cancel" action (owner:
+   "how do you remove a guild from your list"), not just a single
+   full-width button like every other .add-menu use. */
 .add-menu .my-guilds-row { display: flex; align-items: center; gap: 4px; }
-.add-menu .my-guilds-row button { flex: 1 1 auto; min-width: 0; }
+.add-menu .my-guilds-row > button:first-child { flex: 1 1 auto; min-width: 0; }
 .add-menu .my-guilds-row .my-guilds-manage,
-.add-menu .my-guilds-row .my-guilds-here {
+.add-menu .my-guilds-row .my-guilds-here,
+.add-menu .my-guilds-row .my-guilds-leave {
   flex: 0 0 auto; padding: 9px 12px 9px 0; font-size: 11px; white-space: nowrap;
 }
 .add-menu .my-guilds-row .my-guilds-manage { color: var(--gold); text-decoration: none; cursor: pointer; }
 .add-menu .my-guilds-row .my-guilds-manage:hover { text-decoration: underline; }
 .add-menu .my-guilds-row .my-guilds-here { color: var(--text-dim); font-style: italic; }
+/* Deliberately low-key (plain muted text, no border/background of its
+   own) so it never competes visually with Manage - this is a rarely-
+   used, one-way action, not something a row should invite a misclick
+   on. Only turns attention-getting (red) on hover/focus, right before
+   the confirm() dialog actually asks. */
+.add-menu .my-guilds-row .my-guilds-leave { background: none; border: 0; cursor: pointer; color: var(--text-dim); }
+.add-menu .my-guilds-row .my-guilds-leave:hover, .add-menu .my-guilds-row .my-guilds-leave:focus-visible { color: var(--red-bright); }
 /* The marketing header's own instance of this dropdown (#lp-guilds-menu)
    needs to follow #landing-page's OWN independent dark/light toggle
    (--lp-* tokens), not document.documentElement's - the app's global
@@ -1844,6 +1854,8 @@ tr:last-child td { border-bottom: none; }
 #landing-page .add-menu button:hover { background: var(--lp-hover); }
 #landing-page .my-guilds-manage { color: var(--lp-accent) !important; }
 #landing-page .my-guilds-here { color: var(--lp-muted) !important; }
+#landing-page .my-guilds-leave { color: var(--lp-muted) !important; }
+#landing-page .my-guilds-leave:hover, #landing-page .my-guilds-leave:focus-visible { color: #E06A63 !important; }
 
 /* ===== TOOL CARDS ===== */
 .tool-card {
@@ -4776,6 +4788,22 @@ body.guild-public-mode #tab-strats .public-assignment-sheet .personal-detail>*{m
         <div style="font-size:11px;color:var(--text-dim);margin-top:6px;">
           Without this, you paste an event URL manually. With it, events auto-load.
         </div>
+      </div>
+      <!-- GM-only (owner: "as the GM how do I delete my guild page?") -
+           see openSettings()'s own role check, which shows/hides this
+           whole section, and deleteGuildConfirm() below. Kept last and
+           visually separate on purpose - this is the one truly
+           irreversible action reachable from Settings. -->
+      <div id="settings-danger-zone" style="display:none;margin-top:24px;padding-top:16px;border-top:1px solid var(--border);">
+        <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--red-bright);margin-bottom:10px;">Danger Zone</div>
+        <div class="notice notice-danger" style="margin-bottom:12px;">
+          <span>⚠</span> Deleting this guild removes its roster, raids, strats, and every member's access — permanently, for everyone. This does not touch Discord (no channels or messages are deleted). This cannot be undone.
+        </div>
+        <div class="form-group">
+          <label class="form-label">Type the guild's name to confirm: <strong id="settings-danger-zone-name"></strong></label>
+          <input type="text" class="form-input" id="delete-guild-confirm-input" placeholder="Guild name" autocomplete="off">
+        </div>
+        <button class="btn btn-danger" id="delete-guild-btn" onclick="deleteGuildConfirm()" disabled>🗑 Delete this guild</button>
       </div>
     </div>
     <div class="modal-footer">
@@ -8104,7 +8132,37 @@ function guildMenuRowHtml(g) {
     : canManage
       ? `<a href="/${slug}/manage" class="my-guilds-manage" onclick="event.stopPropagation();">Manage →</a>`
       : '';
-  return `<div class="my-guilds-row"><button onclick="location.href='/${slug}'">${label}</button>${action}</div>`;
+  // "How do you remove a guild from your list" (owner) - a plain
+  // "Leave"/"Cancel" action per row, the counterpart to Register/Join.
+  // Deletes just the caller's own membership row (see POST /api/
+  // guild-membership/leave) - never touches the guild itself, that's
+  // Settings' own Danger Zone (GM-only, deletes the whole guild).
+  const nameJs = obEscape(g.name).replace(/'/g, "\\'");
+  const leave = `<button type="button" class="my-guilds-leave" onclick="event.stopPropagation();leaveGuildFromMenu(${g.id},'${nameJs}','${g.status}','${g.slug.replace(/'/g, "\\'")}')" title="${g.status === 'pending' ? 'Cancel your request to join' : 'Leave this guild'}">${g.status === 'pending' ? 'Cancel' : 'Leave'}</button>`;
+  return `<div class="my-guilds-row"><button onclick="location.href='/${slug}'">${label}</button>${action}${leave}</div>`;
+}
+
+async function leaveGuildFromMenu(guildId, name, status, slug) {
+  const verb = status === 'pending' ? 'cancel your request to join' : 'leave';
+  if (!confirm(`Are you sure you want to ${verb} "${name}"?`)) return;
+  try {
+    const res = await fetch(`${APP_API_WORKER}/api/guild-membership/leave`, {
+      method: 'POST',
+      headers: { ...(await clerkAuthHeader()), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ guildId }),
+    });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || `Could not leave (${res.status})`);
+    showToast(status === 'pending' ? '✓ Request canceled.' : `✓ Left "${name}".`);
+    document.querySelectorAll('.add-menu.open').forEach(el => loadGuildsMenu(el.id));
+    // Left the guild whose /manage page you're actually on right now -
+    // your own membership no longer backs it, so don't leave you
+    // stranded there. Everywhere else, just refreshing the menu above
+    // is enough - you're still looking at whatever page you were on.
+    if (inManageMode && guildId === CURRENT_GUILD_ID) location.href = '/';
+  } catch (err) {
+    showToast(`✗ Could not leave: ${err.message}`, true);
+  }
 }
 
 async function loadGuildsMenu(menuId) {
@@ -13801,7 +13859,53 @@ function openSettings() {
   const rh = getRHConfig();
   document.getElementById('rh-server-id-input').value = rh.serverId;
   document.getElementById('rh-api-key-input').value   = rh.apiKey;
+  // Danger Zone (guild deletion) is GM-only - an Officer can approve/
+  // reject join requests above, but destroying the whole guild and
+  // every other member's access is a bigger call than that, so it
+  // stays out of Officer's reach entirely (matches the backend's own
+  // check in handleGuildDelete, this is just not showing what would
+  // 403 anyway).
+  const dz = document.getElementById('settings-danger-zone');
+  dz.style.display = myRole === 'gm' ? 'block' : 'none';
+  if (myRole === 'gm') {
+    document.getElementById('settings-danger-zone-name').textContent = guildInfo.guildName || '';
+    const input = document.getElementById('delete-guild-confirm-input');
+    input.value = '';
+    document.getElementById('delete-guild-btn').disabled = true;
+    input.oninput = () => { document.getElementById('delete-guild-btn').disabled = input.value !== (guildInfo.guildName || ''); };
+  }
   document.getElementById('settings-modal-overlay').classList.add('open');
+}
+
+// "As the GM how do I delete my guild page?" (owner) - real, permanent
+// deletion (see POST /api/guild/delete): the guild row, its whole
+// app_state blob, and every membership row for it, all gone. Typing
+// the exact guild name (case-sensitive, no trimming) is the only
+// confirmation - deliberately no second confirm() dialog on top of
+// that, matching the "type the name to confirm" pattern used for
+// deleting a real repo/database elsewhere, not stacking two different
+// kinds of friction on the one destructive action.
+async function deleteGuildConfirm() {
+  const btn = document.getElementById('delete-guild-btn');
+  const typed = document.getElementById('delete-guild-confirm-input').value;
+  if (typed !== (guildInfo.guildName || '')) return; // button should already be disabled, but never trust that alone
+  btn.disabled = true;
+  btn.textContent = 'Deleting…';
+  try {
+    const res = await fetch(`${APP_API_WORKER}/api/guild/delete`, {
+      method: 'POST',
+      headers: { ...(await clerkAuthHeader()), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ guildId: CURRENT_GUILD_ID }),
+    });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || `Could not delete guild (${res.status})`);
+    showToast(`✓ "${guildInfo.guildName}" has been deleted.`);
+    location.href = '/'; // this guild no longer exists - nowhere else to send them
+  } catch (err) {
+    showToast(`✗ Could not delete guild: ${err.message}`, true);
+    btn.disabled = false;
+    btn.textContent = '🗑 Delete this guild';
+  }
 }
 
 // Fetched fresh every time Settings opens (not cached/pre-loaded on
