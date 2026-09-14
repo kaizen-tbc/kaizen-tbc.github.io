@@ -71,6 +71,12 @@ export default {
     if (url.pathname === '/api/guild/delete' && request.method === 'POST') {
       return handleGuildDelete(request, env);
     }
+    if (url.pathname === '/api/wcl-zones' && request.method === 'GET') {
+      return handleWCLZones(request, env);
+    }
+    if (url.pathname === '/api/wcl-ranking' && request.method === 'POST') {
+      return handleWCLRanking(request, env);
+    }
 
     // ── Current WCL rate-limit status, read-only diagnostic ── /wcl-status
     if (url.pathname === '/wcl-status' && request.method === 'GET') {
@@ -1650,6 +1656,96 @@ function rateLimitSuffix(rl) {
   if (remaining > rl.limitPerHour * 0.1) return '';
   const mins = Math.ceil((rl.pointsResetIn || 0) / 60);
   return ` (Warcraft Logs rate limit: ${rl.pointsSpentThisHour}/${rl.limitPerHour} points used this hour, resets in ~${mins}m — this is likely the real cause.)`;
+}
+
+// ── Public Site: real Warcraft Logs rankings (owner: "it should pull
+// [WCL rankings] for people if they have the WCL api") ─────────────
+// Lives on THIS pilot Worker (APP_API_WORKER, real Clerk auth via
+// getActiveMembership), NOT the Discord-bot one - Warcraft Logs
+// credentials have nothing to do with the Discord-bot production
+// boundary the rest of this file's Discord features are stuck behind,
+// so this can be configured and go live entirely from KRM once
+// WCL_CLIENT_ID/WCL_CLIENT_SECRET are set as secrets here.
+
+// GET /api/wcl-zones?guildId=1 - gm/officer of that guild. Lists every
+// zone Warcraft Logs knows (id + name) so a GM can find the numeric id
+// for each raid they want ranked. Deliberately NOT auto-matched to
+// guildInfo.progression's own tier labels - those combine paired raids
+// into one tile ("SSC / TK", "Black Temple / Hyjal"), but WCL tracks
+// each raid instance as its own separate zone, so which single real
+// zone a combined tile should represent is a human call, not something
+// to guess onto a real public page. Cached (zones essentially never
+// change) so clicking "Find zone IDs" doesn't cost a real WCL call
+// every time.
+async function handleWCLZones(request, env) {
+  const auth = await verifyAuth(request, env);
+  if (!auth) return corsResponse(JSON.stringify({ error: 'Unauthorized' }), 401);
+  const url = new URL(request.url);
+  const guildId = parseInt(url.searchParams.get('guildId'), 10);
+  if (!guildId) return corsResponse(JSON.stringify({ error: 'Missing guildId.' }), 400);
+  const membership = await getActiveMembership(env, guildId, auth.sub);
+  if (!membership || !isApproverRole(membership.role)) {
+    return corsResponse(JSON.stringify({ error: 'Only a GM or Officer can look up Warcraft Logs zones.' }), 403);
+  }
+  if (!env.WCL_CLIENT_ID || !env.WCL_CLIENT_SECRET) {
+    return corsResponse(JSON.stringify({ error: 'Warcraft Logs is not configured on this server yet.' }), 501);
+  }
+  try {
+    const cacheKey = 'wcl_zones_v1';
+    if (env.WCL_CACHE) {
+      const cached = await env.WCL_CACHE.get(cacheKey, 'json').catch(() => null);
+      if (cached) return corsResponse(JSON.stringify({ zones: cached }), 200);
+    }
+    const data = await wclQuery(env, `{ worldData { zones { id name } } }`);
+    const zones = data?.worldData?.zones || [];
+    if (env.WCL_CACHE) await env.WCL_CACHE.put(cacheKey, JSON.stringify(zones), { expirationTtl: 86400 }).catch(() => {});
+    return corsResponse(JSON.stringify({ zones }), 200);
+  } catch (err) {
+    return corsResponse(JSON.stringify({ error: err.message + rateLimitSuffix(await getWCLRateLimit(env)) }), 500);
+  }
+}
+
+// POST /api/wcl-ranking - gm/officer. Body: {guildId, wclGuildId,
+// zoneId, metric:'progress'|'speed'}. Real Guild.zoneRanking(zoneId).
+// progress/speed -> WorldRegionServerRankPositions{worldRank,
+// regionRank,serverRank} schema, confirmed against Warcraft Logs' own
+// v2 API docs before writing this (classic.warcraftlogs.com/v2-api-docs
+// /warcraft/guildzonerankings.doc.html) - not guessed at.
+async function handleWCLRanking(request, env) {
+  const auth = await verifyAuth(request, env);
+  if (!auth) return corsResponse(JSON.stringify({ error: 'Unauthorized' }), 401);
+  const { guildId, wclGuildId, zoneId, metric } = await request.json();
+  if (!guildId || !wclGuildId || !zoneId) return corsResponse(JSON.stringify({ error: 'Missing guildId/wclGuildId/zoneId.' }), 400);
+  const membership = await getActiveMembership(env, guildId, auth.sub);
+  if (!membership || !isApproverRole(membership.role)) {
+    return corsResponse(JSON.stringify({ error: 'Only a GM or Officer can sync rankings.' }), 403);
+  }
+  if (!env.WCL_CLIENT_ID || !env.WCL_CLIENT_SECRET) {
+    return corsResponse(JSON.stringify({ error: 'Warcraft Logs is not configured on this server yet - ask the developer to set WCL_CLIENT_ID/WCL_CLIENT_SECRET.' }), 501);
+  }
+  const field = metric === 'speed' ? 'speed' : 'progress';
+  try {
+    const data = await wclQuery(env, `
+      query($guildId: Int!, $zoneId: Int!) {
+        guildData {
+          guild(id: $guildId) {
+            zoneRanking(zoneId: $zoneId) {
+              ${field} { worldRank { number } regionRank { number } serverRank { number } }
+            }
+          }
+        }
+      }
+    `, { guildId: Number(wclGuildId), zoneId: Number(zoneId) });
+    const ranking = data?.guildData?.guild?.zoneRanking?.[field];
+    if (!ranking) throw new Error('Warcraft Logs returned no ranking for that guild/zone - check the Guild ID and Zone ID.');
+    return corsResponse(JSON.stringify({
+      world: ranking.worldRank?.number ?? null,
+      region: ranking.regionRank?.number ?? null,
+      realm: ranking.serverRank?.number ?? null,
+    }), 200);
+  } catch (err) {
+    return corsResponse(JSON.stringify({ error: err.message + rateLimitSuffix(await getWCLRateLimit(env)) }), 500);
+  }
 }
 
 // reports lives on the top-level reportData container, filtered by guildID

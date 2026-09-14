@@ -3767,6 +3767,25 @@ body.guild-public-mode #tab-strats .public-assignment-sheet .personal-detail>*{m
       <div class="cms-section-label">Rankings</div>
       <button class="btn btn-small krm-edit-only" onclick="addRankingRow()">+ Add Ranking</button>
     </div>
+    <!-- Auto-pull real World/Region/Realm progress + speed ranks from
+         Warcraft Logs (owner: "it should pull those for people if they
+         have the WCL api"). Rows below still edit by hand too (rankings
+         are currently the reference's own example numbers, same
+         placeholder-as-pipeline-demo treatment as Recruitment/
+         Announcements) - Sync overwrites them with real ones once a
+         Warcraft Logs guild ID is set here, a zone ID is picked per row
+         (see "Find zone IDs" + syncOneRankingFromWCL below), and Sync
+         is clicked on that row. -->
+    <div class="form-group">
+      <label class="form-label">Warcraft Logs Guild ID <span style="font-weight:400;color:var(--text-dim);">(from your guild's WCL page URL, e.g. .../guild/id/816169)</span></label>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input type="text" class="form-input" id="ov-wcl-guild-id-input" placeholder="e.g. 816169"
+          onchange="guildInfo.publicSite.wclGuildId=this.value.trim();renderOverview();">
+        <button class="btn btn-small" onclick="findWCLZoneIds()" style="flex:0 0 auto;white-space:nowrap;">🔍 Find zone IDs</button>
+      </div>
+      <div style="font-size:11px;color:var(--text-dim);margin-top:6px;" id="ov-rankings-sync-status"></div>
+      <div id="ov-wcl-zone-list" style="display:none;max-height:160px;overflow-y:auto;margin-top:8px;padding:10px;background:var(--bg-hover);border-radius:3px;font-size:12px;font-family:var(--font-mono,monospace);"></div>
+    </div>
     <div style="display:flex;flex-direction:column;gap:10px;" id="ov-rankings"></div>
   </div>
 
@@ -9687,6 +9706,14 @@ function renderPublicSiteEditor() {
   }
 
   // ── Rankings ───────────────────────────────────────────
+  const wclIdInput = document.getElementById('ov-wcl-guild-id-input');
+  if (wclIdInput && document.activeElement !== wclIdInput) wclIdInput.value = site.wclGuildId || '';
+  const wclStatusEl = document.getElementById('ov-rankings-sync-status');
+  if (wclStatusEl) {
+    wclStatusEl.textContent = site.rankingsLastSyncedAt
+      ? `Last synced ${new Date(site.rankingsLastSyncedAt).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}`
+      : (site.wclGuildId ? 'Not synced yet.' : '');
+  }
   const rankEl = document.getElementById('ov-rankings');
   if (rankEl) {
     rankEl.innerHTML = site.rankings.length === 0
@@ -9705,6 +9732,24 @@ function renderPublicSiteEditor() {
             <input class="form-input" type="number" placeholder="Realm rank" value="${r.realm??''}" onchange="guildInfo.publicSite.rankings[${i}].realm=this.value===''?null:Number(this.value)">
             <input class="form-input" placeholder="Warcraft Logs URL" value="${(r.url||'').replace(/"/g,'&quot;')}" onchange="guildInfo.publicSite.rankings[${i}].url=this.value">
             <input class="form-input" placeholder="Observed (e.g. Sept 12)" value="${(r.observedAt||'').replace(/"/g,'&quot;')}" onchange="guildInfo.publicSite.rankings[${i}].observedAt=this.value">
+          </div>
+          <!-- Per-row WCL sync (owner: pull rankings "for people if they
+               have the WCL api"). Deliberately an explicit numeric zone
+               ID, not a name-matching guess - "SSC / TK"/"Black Temple /
+               Hyjal" are combined tiles in guildInfo.progression, but WCL
+               tracks each raid instance as its OWN zone (Serpentshrine
+               Cavern separate from Tempest Keep, etc.), so which single
+               real zone a combined row should represent has to be a
+               human decision, not something silently guessed onto a real
+               public page. Use "🔍 Find zone IDs" below to look them up
+               once, then it's a one-click refresh after that. -->
+          <div style="display:grid;grid-template-columns:1fr 110px auto;gap:8px;margin-top:8px;align-items:center;">
+            <input class="form-input" type="number" placeholder="WCL Zone ID" value="${r.wclZoneId??''}" onchange="guildInfo.publicSite.rankings[${i}].wclZoneId=this.value===''?null:Number(this.value)">
+            <select class="form-input" onchange="guildInfo.publicSite.rankings[${i}].wclMetric=this.value">
+              <option value="progress" ${r.wclMetric!=='speed'?'selected':''}>Progress</option>
+              <option value="speed" ${r.wclMetric==='speed'?'selected':''}>Speed</option>
+            </select>
+            <button class="btn btn-small" onclick="syncOneRankingFromWCL(${i})" title="Pull world/region/realm rank for this zone">↻ Sync</button>
           </div>
         </div>`).join('');
   }
@@ -9794,8 +9839,62 @@ function renderPublicSiteEditor() {
   }
 }
 
-function addRankingRow() { ensurePublicSiteDefaults().rankings.push({ progressionId: (guildInfo.progression||[])[0]?.id || '', scope: '', category: '', world: null, region: null, realm: null, url: '', observedAt: '' }); renderOverview(); }
+function addRankingRow() { ensurePublicSiteDefaults().rankings.push({ progressionId: (guildInfo.progression||[])[0]?.id || '', scope: '', category: '', world: null, region: null, realm: null, url: '', observedAt: '', wclZoneId: null, wclMetric: 'progress' }); renderOverview(); }
 function removeRankingRow(i) { guildInfo.publicSite.rankings.splice(i,1); renderOverview(); }
+
+// One-time lookup so a GM can find the right numeric WCL zone ID(s) to
+// paste into each ranking row's "WCL Zone ID" field - see the row's own
+// comment for why this is explicit rather than guessed from the tier
+// label (guildInfo.progression combines paired raids like "SSC / TK"
+// into one tile; WCL tracks each raid as its own separate zone).
+// GET /api/wcl-zones lives on THIS pilot Worker (APP_API_WORKER), not
+// the Discord-bot one - Warcraft Logs credentials have nothing to do
+// with the Discord-bot production boundary, so this can be configured
+// and verified entirely within KRM once WCL_CLIENT_ID/SECRET are set.
+async function findWCLZoneIds() {
+  const listEl = document.getElementById('ov-wcl-zone-list');
+  listEl.style.display = 'block';
+  listEl.textContent = 'Looking up zones…';
+  try {
+    const res = await fetch(`${APP_API_WORKER}/api/wcl-zones?guildId=${CURRENT_GUILD_ID}`, { headers: await clerkAuthHeader() });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || `Could not look up zones (${res.status})`);
+    listEl.innerHTML = (result.zones || []).map(z => `${z.id} — ${obEscape(z.name)}`).join('<br>') || 'No zones returned.';
+  } catch (err) {
+    listEl.textContent = `✗ ${err.message}`;
+  }
+}
+
+// Pulls real World/Region/Realm rank for ONE ranking row's configured
+// WCL Zone ID + metric (Progress/Speed), writes it into that row, and
+// saves immediately - same "don't leave a real pull sitting unsaved"
+// reasoning as syncAnnouncementsFromDiscord.
+async function syncOneRankingFromWCL(i) {
+  const site = ensurePublicSiteDefaults();
+  const row = site.rankings[i];
+  if (!row) return;
+  const wclGuildId = (site.wclGuildId || '').trim();
+  if (!wclGuildId) { showToast('Set a Warcraft Logs Guild ID first.', true); return; }
+  if (!row.wclZoneId) { showToast('Set this row\'s WCL Zone ID first (see "Find zone IDs").', true); return; }
+  try {
+    const res = await fetch(`${APP_API_WORKER}/api/wcl-ranking`, {
+      method: 'POST',
+      headers: { ...(await clerkAuthHeader()), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ guildId: CURRENT_GUILD_ID, wclGuildId, zoneId: row.wclZoneId, metric: row.wclMetric || 'progress' }),
+    });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || `Sync failed (${res.status})`);
+    row.world = result.world;
+    row.region = result.region;
+    row.realm = result.realm;
+    site.rankingsLastSyncedAt = new Date().toISOString();
+    renderOverview();
+    await saveAppData();
+    showToast('✓ Ranking synced from Warcraft Logs.');
+  } catch (err) {
+    showToast(`✗ Could not sync: ${err.message}`, true);
+  }
+}
 function addRecruitmentOpening() { ensurePublicSiteDefaults().recruitment.push({ role: 'DPS', class: '', spec: '', quantity: 1, roleLabel: '', active: true }); renderOverview(); }
 function removeRecruitmentOpening(i) { guildInfo.publicSite.recruitment.splice(i,1); renderOverview(); }
 function addAnnouncement() { ensurePublicSiteDefaults().announcements.unshift({ pinned: false, dateLabel: '', title: '', excerpt: '', discordUrl: '', published: false }); renderOverview(); }
