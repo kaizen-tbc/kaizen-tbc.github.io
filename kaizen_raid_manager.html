@@ -9823,7 +9823,25 @@ function renderPublicOverview() {
     }).join('') : '';
     next = '<section data-widget-section="nextRaid" class="next-raid" aria-labelledby="overview-next-title"><div class="next-story"><div class="eyebrow">Next raid / '+esc(scheduled.occursOn.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'}))+'</div><h2 id="overview-next-title">'+esc(r.name)+'.<br><em>'+headline+'</em></h2><p><time>'+esc(formatGuildTime(scheduled.occursOn,r.scheduleTime))+'</time>'+(formatServerTime(r.scheduleTime)?'<small>'+esc(formatServerTime(r.scheduleTime))+' · Server time</small>':'')+'</p>'+nav('builder','View raid schedule →','button primary')+'</div><div class="next-readiness"><div class="readiness-title"><span>Confirmed roster</span><span>'+ready.total+'-player raid</span></div><div class="roster-total">'+ready.filled+'<span>/'+ready.total+'</span></div><div class="role-track" role="img" aria-label="'+ready.filled+' of '+ready.total+' roster slots filled">'+Array.from({length:ready.total},(_,i)=>'<i'+(i>=ready.filled?' class="vacant"':'')+'></i>').join('')+'</div>'+(roles?'<div class="role-needs" aria-label="Open roles for this raid">'+roles+'</div><p class="fine">Confirmed / target · For this raid night.</p>':'<p class="fine">Confirmed lineup · Role targets not configured.</p>')+'</div></section>';
   }
-  const progression = Array.isArray(site.progression) ? site.progression : (guildInfo.progression || []);
+  // The locked reference (guild.html) shows a 2-card "current progress"
+  // spotlight - the in-progress tier plus the one most recently finished
+  // (Black Temple/Hyjal + SSC/TK in its own fixture), never a full clear
+  // history back to the guild's very first raid. This renderer used to just
+  // map the ENTIRE guildInfo.progression array with no curation - correct
+  // for a 2-tier fixture, but on real data (Kaizen has 6: Karazhan through
+  // Sunwell) it dumped every tier including ones cleared and forgotten
+  // months ago. Curate down to the last 2 TOUCHED tiers (killed>0) so the
+  // spotlight is always "what's happening now", not "everything ever" - an
+  // explicit site.progression override (once a GM sets one) is shown
+  // exactly as given instead, uncurated, since that's a deliberate choice.
+  let progression;
+  if (Array.isArray(site.progression)) {
+    progression = site.progression;
+  } else {
+    const allTiers = guildInfo.progression || [];
+    const touched = allTiers.filter(p => Number(p.killed) > 0);
+    progression = (touched.length >= 2 ? touched : allTiers).slice(-2);
+  }
   const ranks = Array.isArray(site.rankings) ? site.rankings : [];
   const progress = visible('progression') && progression.length ? '<section class="overview-section" id="public-progression"><div class="overview-heading"><div><div class="eyebrow">Progression</div><h2>A little further,<br><em>every raid.</em></h2></div><p>Our progress through Outland.<br>'+(canView('guildLogs')?nav('guild-logs','Browse raid results ↗'):'')+'</p></div><div class="progression-grid">'+progression.map(p=>{
     const rank = visible('rankings') ? ranks.find(r=>r.progressionId != null && String(r.progressionId)===String(p.id)) : null;
