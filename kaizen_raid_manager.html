@@ -4633,7 +4633,7 @@ body.guild-public-mode #tab-strats .public-assignment-sheet .personal-detail>*{m
   </div>
 </div>
 
-<!-- ==================== GITHUB SETTINGS MODAL ==================== -->
+<!-- ==================== SETTINGS MODAL (Raid Helper) ==================== -->
 <div class="modal-overlay" id="settings-modal-overlay" onclick="if(event.target===this)closeSettings()">
   <div class="modal" style="width:480px;">
     <div class="modal-header">
@@ -4641,30 +4641,11 @@ body.guild-public-mode #tab-strats .public-assignment-sheet .personal-detail>*{m
       <button class="modal-close" onclick="closeSettings()">✕</button>
     </div>
     <div class="modal-body">
-      <!-- GitHub - personal to this browser, optional -->
-      <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:10px;">
-        <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-dim);">GitHub</div>
-        <div style="font-size:10px;color:var(--text-dim);">personal to this browser · optional</div>
-      </div>
-      <div class="notice notice-info" style="margin-bottom:16px;">
-        <span>ℹ</span> Only needed if you're uploading strat/mob images. Stored in this browser only, never saved with the rest of the guild's data.
-      </div>
-      <div class="form-group" style="margin-bottom:14px;">
-        <label class="form-label">GitHub Personal Access Token</label>
-        <input type="password" class="form-input" id="gh-token-input" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
-        <div style="font-size:11px;color:var(--text-dim);margin-top:6px;">
-          github.com → Settings → Developer settings → Personal access tokens → Tokens (classic). Give it <strong style="color:var(--text-bright);">repo</strong> scope.
-        </div>
-      </div>
-      <div class="form-group" style="margin-bottom:14px;">
-        <label class="form-label">GitHub Username</label>
-        <input type="text" class="form-input" id="gh-user-input" value="kaizen-tbc" placeholder="kaizen-tbc">
-      </div>
-      <div class="form-group" style="margin-bottom:20px;">
-        <label class="form-label">Repository Name</label>
-        <input type="text" class="form-input" id="gh-repo-input" value="guild" placeholder="kaizen-tbc.github.io">
-      </div>
-
+      <!-- GitHub is gone entirely - owner's own instruction: "remove
+           the github mentions from the settings menu... get rid of all
+           of it." Every image upload in this file now embeds straight
+           to base64 (see uploadAssetFile and friends); a real image
+           host is a separate future migration, not a Settings field. -->
       <!-- Raid Helper - guild-wide, saved for everyone -->
       <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:10px;padding-top:16px;border-top:1px solid var(--border);">
         <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-dim);">Raid Helper</div>
@@ -4690,8 +4671,7 @@ body.guild-public-mode #tab-strats .public-assignment-sheet .personal-detail>*{m
     </div>
     <div class="modal-footer">
       <button class="btn" onclick="closeSettings()">Cancel</button>
-      <button class="btn btn-danger btn-small" onclick="clearGitHubToken()" style="margin-right:auto;">Clear Tokens</button>
-      <button class="btn btn-small" onclick="saveData()" title="Download kaizen_data.json locally">💾 Save Local</button>
+      <button class="btn btn-small" onclick="saveData()" title="Download kaizen_data.json locally" style="margin-right:auto;">💾 Save Local</button>
       <label class="btn btn-small" style="cursor:pointer;" title="Load a previously saved JSON file">
         📂 Load JSON<input type="file" accept=".json" onchange="loadData(event)" style="display:none;">
       </label>
@@ -6386,13 +6366,11 @@ let archiveChannelId = '';
 // history worth keeping) then posts the current strat's image + assigns.
 let stratsChannelId = '';
 
-// Raid Helper integration config - guild-wide, same for everyone (unlike
-// the GitHub token in getGHConfig, which is genuinely personal to
-// whoever's browser it's in). Used to live in localStorage, meaning every
-// officer had to separately paste the same values into their own browser
-// with no way to tell if they'd drifted - now part of the shared saved
-// state like the channel IDs above, so it's configured once. See
-// getRHConfig/saveSettingsModal.
+// Raid Helper integration config - guild-wide, same for everyone. Used
+// to live in localStorage, meaning every officer had to separately
+// paste the same values into their own browser with no way to tell if
+// they'd drifted - now part of the shared saved state like the channel
+// IDs above, so it's configured once. See getRHConfig/saveSettingsModal.
 let raidHelperServerId = '';
 let raidHelperApiKey = '';
 
@@ -7851,10 +7829,10 @@ async function resolveGuildFromUrl() {
 
 // ======================================================
 // APP STATE (D1, via the Worker's /api/state) - see wrangler.toml/
-// schema.sql/kaizen-worker.js. Replaces kaizen_data.json-on-GitHub as the
-// datastore (initFromJson/saveAppData below); GitHub is still used for
-// static assets (strat images, boss/mob icons - see getGHConfig's other
-// callers), just not for this JSON blob anymore.
+// schema.sql/kaizen-worker.js. Replaces kaizen_data.json-on-GitHub as
+// the datastore (initFromJson/saveAppData below); images (strat
+// screenshots, boss/mob icons) are embedded straight into this same
+// blob as base64 now too - GitHub is gone entirely, see uploadAssetFile.
 //
 // Auth for it is real now (see the Clerk bootstrap further down + the
 // <script> tags in <head>) - every call sends whatever
@@ -8665,7 +8643,7 @@ async function publishRosterToDiscord(notify = true) {
     // whatever was there before (stale, not "nothing"), which is worse
     // than just stopping here. See saveAndPublish.
     const saved = await saveAndPublish('Saving roster...');
-    if (!saved) { showToast('✗ Roster not published — GitHub save failed, fix that first.', true); return; }
+    if (!saved) { showToast('✗ Roster not published — save failed, fix that first.', true); return; }
 
     // Ask Worker to post the roster
     const res = await fetch(`${RH_WORKER}/post-roster`, {
@@ -9592,38 +9570,19 @@ function addAnnouncement() { ensurePublicSiteDefaults().announcements.unshift({ 
 function removeAnnouncement(i) { guildInfo.publicSite.announcements.splice(i,1); renderOverview(); }
 
 // Generalized version of uploadOverviewImage/uploadProgressionImage's own
-// GitHub-Contents-API-or-base64-fallback upload, taking a setter callback
-// instead of a fixed guildInfo[field] write so every publicSite.* image
-// slot (banner override, recap image, published-report image/icon, raid-
-// lead avatar) can reuse the exact same upload path without copy-pasting
-// it again per field. `hint` only affects the GitHub filename/toast text.
+// base64-embed upload, taking a setter callback instead of a fixed
+// guildInfo[field] write so every publicSite.* image slot (banner
+// override, recap image, published-report image/icon, raid-lead avatar)
+// can reuse the exact same upload path without copy-pasting it again
+// per field. `hint` is unused now (it only ever affected the old
+// GitHub filename/toast text) - kept as a parameter so callers don't
+// all need editing too.
 async function uploadPublicSiteImage(event, setter, hint) {
   const file = event.target.files[0];
   if (!file) return;
-  const cfg = getGHConfig();
-  if (!cfg.token) {
-    const reader = new FileReader();
-    reader.onload = e => { setter(e.target.result); renderOverview(); };
-    reader.readAsDataURL(file);
-    return;
-  }
-  showToast(`⬆ Uploading ${hint}...`);
-  try {
-    const filename = `assets/${hint}-${Date.now()}.${file.name.split('.').pop()}`;
-    const arrayBuf = await file.arrayBuffer();
-    const bytes = new Uint8Array(arrayBuf);
-    let binary = ''; bytes.forEach(b => binary += String.fromCharCode(b));
-    const encoded = btoa(binary);
-    const apiUrl = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${filename}`;
-    const headers = { 'Authorization': `token ${cfg.token}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' };
-    const putRes = await fetch(apiUrl, { method: 'PUT', headers, body: JSON.stringify({ message: `${hint}: ${filename}`, content: encoded }) });
-    if (!putRes.ok) throw new Error('Upload failed');
-    setter(filename + '?v=' + Date.now());
-    renderOverview();
-    showToast(`✓ ${hint} uploaded.`);
-  } catch(err) {
-    showToast(`✗ Upload failed: ${err.message}`, true);
-  }
+  const reader = new FileReader();
+  reader.onload = e => { setter(e.target.result); renderOverview(); };
+  reader.readAsDataURL(file);
 }
 
 // ======================================================
@@ -9896,78 +9855,27 @@ async function uploadScheduleImage(event, idx) {
   }
 }
 
-// Shared upload helper — uploads to GitHub assets/ and returns the path
+// Shared upload helper - GitHub is gone entirely (owner's own
+// instruction: "remove the github mentions from the settings menu...
+// get rid of all of it") - every image upload in this file now embeds
+// the file as base64 directly, full stop. `path` is unused now (kept
+// as a parameter so callers don't all need editing too) - a real image
+// host is a separate future migration (see the kaizen-manager-pending-
+// items memory note), not this pass.
 async function uploadAssetFile(file, path) {
-  const cfg = getGHConfig();
-  if (!cfg.token) {
-    // Fallback: base64 local preview
-    return await new Promise(resolve => {
-      const reader = new FileReader();
-      reader.onload = e => resolve(e.target.result);
-      reader.readAsDataURL(file);
-    });
-  }
-  showToast(`⬆ Uploading...`);
-  try {
-    const arrayBuf = await file.arrayBuffer();
-    const bytes = new Uint8Array(arrayBuf);
-    let binary = '';
-    bytes.forEach(b => binary += String.fromCharCode(b));
-    const encoded = btoa(binary);
-    const apiUrl = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}`;
-    const headers = {
-      'Authorization': `token ${cfg.token}`,
-      'Accept': 'application/vnd.github.v3+json',
-      'Content-Type': 'application/json',
-    };
-    let sha = null;
-    const getRes = await fetch(apiUrl, { headers });
-    if (getRes.ok) sha = (await getRes.json()).sha;
-    const body = { message: `upload ${path}`, content: encoded };
-    if (sha) body.sha = sha;
-    const putRes = await fetch(apiUrl, { method: 'PUT', headers, body: JSON.stringify(body) });
-    if (!putRes.ok) throw new Error('Upload failed');
-    return path + '?v=' + Date.now();
-  } catch(err) {
-    showToast(`✗ Upload failed: ${err.message}`, true);
-    return null;
-  }
+  return await new Promise(resolve => {
+    const reader = new FileReader();
+    reader.onload = e => resolve(e.target.result);
+    reader.readAsDataURL(file);
+  });
 }
 
 async function uploadOverviewImage(event, field) {
   const file = event.target.files[0];
   if (!file) return;
-  const cfg = getGHConfig();
-  if (!cfg.token) {
-    // Fall back to base64 local preview
-    const reader = new FileReader();
-    reader.onload = e => { guildInfo[field] = e.target.result; renderOverview(); };
-    reader.readAsDataURL(file);
-    return;
-  }
-  showToast(`⬆ Uploading ${field}...`);
-  try {
-    const filename = `assets/${field === 'logo' ? 'kaizen-logo' : 'kaizen-banner'}.${file.name.split('.').pop()}`;
-    const arrayBuf = await file.arrayBuffer();
-    const bytes = new Uint8Array(arrayBuf);
-    let binary = '';
-    bytes.forEach(b => binary += String.fromCharCode(b));
-    const encoded = btoa(binary);
-    const apiUrl = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${filename}`;
-    const headers = { 'Authorization': `token ${cfg.token}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' };
-    let sha = null;
-    const getRes = await fetch(apiUrl, { headers });
-    if (getRes.ok) sha = (await getRes.json()).sha;
-    const body = { message: `overview ${field}: ${filename}`, content: encoded };
-    if (sha) body.sha = sha;
-    const putRes = await fetch(apiUrl, { method: 'PUT', headers, body: JSON.stringify(body) });
-    if (!putRes.ok) throw new Error('Upload failed');
-    guildInfo[field] = filename + '?v=' + Date.now();
-    renderOverview();
-    showToast(`✓ ${field} uploaded.`);
-  } catch(err) {
-    showToast(`✗ Upload failed: ${err.message}`, true);
-  }
+  const reader = new FileReader();
+  reader.onload = e => { guildInfo[field] = e.target.result; renderOverview(); };
+  reader.readAsDataURL(file);
 }
 
 
@@ -12107,11 +12015,10 @@ function previewFeaturedEncounter() {
 }
 
 // Assignments on a pug-heavy week can change right up until posting time,
-// so this now saves to GitHub itself rather than requiring a separate
-// manual "Save" click first (that extra step is exactly what
+// so this saves itself (see saveAndPublish) rather than requiring a
+// separate manual "Save" click first (that extra step is exactly what
 // caused a stale/empty post live - edited assignments, forgot to save,
-// posted whatever was still published from before). See postStratToDiscord
-// for the wait built in after the save.
+// posted whatever was still published from before).
 // Dispatches the one "Post to Discord" button in the Strats header to
 // whichever kind of tab is actually active - a trash guide posts
 // completely differently (mob cards + wave breakdown, no image/
@@ -12194,7 +12101,7 @@ function confirmPostStrat() {
   if (!stratsChannelId) { showToast('Set the strats channel first (⚙ Strats Settings).', true); return; }
 
   document.getElementById('confirm-text').textContent =
-    `Publish "${strat.name}" to the strats channel? This saves to GitHub automatically, waits for the site to actually catch up (usually well under a minute), then clears whatever's currently posted there and posts the fresh version - this can't be undone.`;
+    `Publish "${strat.name}" to the strats channel? This saves automatically, then clears whatever's currently posted there and posts the fresh version - this can't be undone.`;
   const existingCheck = document.getElementById('confirm-notify-wrap');
   if (existingCheck) existingCheck.remove();
   document.getElementById('confirm-ok').onclick = () => {
@@ -12210,7 +12117,7 @@ function confirmPostTrashGuide() {
   if (!stratsChannelId) { showToast('Set the strats channel first (⚙ Strats Settings).', true); return; }
 
   document.getElementById('confirm-text').textContent =
-    `Publish the trash guide before "${guide.beforeBoss || '(no boss set)'}" to the strats channel? This saves to GitHub automatically, waits for the site to actually catch up (usually well under a minute), then clears whatever's currently posted there and posts mob reference cards + the wave breakdown as two separate messages - this can't be undone.`;
+    `Publish the trash guide before "${guide.beforeBoss || '(no boss set)'}" to the strats channel? This saves automatically, then clears whatever's currently posted there and posts mob reference cards + the wave breakdown as two separate messages - this can't be undone.`;
   const existingCheck = document.getElementById('confirm-notify-wrap');
   if (existingCheck) existingCheck.remove();
   document.getElementById('confirm-ok').onclick = () => {
@@ -12244,7 +12151,7 @@ async function postStratToDiscord(stratId) {
   _stratPostInFlight = true;
   try {
     const saved = await saveAndPublish('Saving latest assignments...');
-    if (!saved) { showToast('✗ Strat not posted — GitHub save failed, fix that first.', true); return; }
+    if (!saved) { showToast('✗ Strat not posted — save failed, fix that first.', true); return; }
 
     showToast('🚀 Publishing strat to Discord...');
     const res = await fetch(`${RH_WORKER}/post-strat`, {
@@ -12267,7 +12174,7 @@ async function postTrashGuideToDiscord(guideId) {
   _stratPostInFlight = true;
   try {
     const saved = await saveAndPublish('Saving latest trash guide...');
-    if (!saved) { showToast('✗ Trash guide not posted — GitHub save failed, fix that first.', true); return; }
+    if (!saved) { showToast('✗ Trash guide not posted — save failed, fix that first.', true); return; }
 
     showToast('🚀 Publishing trash guide to Discord...');
     const res = await fetch(`${RH_WORKER}/post-trash-guide`, {
@@ -13201,74 +13108,16 @@ function updateBestiaryAbility(mobId, idx, field, value) {
   mob.abilities[idx][field] = value;
 }
 
-// Same GitHub-commit-image pattern as replaceStratImage - lands under
-// trash/mobs/ instead of strats/ so it has a public URL the same way, no
-// separate upload pipeline needed.
+// Same base64-embed pattern as replaceStratImage/every other image
+// upload in this file - no separate upload pipeline needed.
 async function uploadBestiaryMobImage(event, mobId) {
   const file = event.target.files[0];
   if (!file) return;
   const mob = trashBestiary.find(m => m.id === mobId);
   if (!mob) return;
-
-  const cfg = getGHConfig();
-  if (!cfg.token) {
-    const reader = new FileReader();
-    reader.onload = e => { mob.image = e.target.result; renderBestiaryModalList(); showToast('Image updated locally.'); };
-    reader.readAsDataURL(file);
-    return;
-  }
-
-  showToast('⬆ Uploading mob image...');
-  try {
-    const newExt = (file.name.match(/\.[^.]+$/) || ['.png'])[0].toLowerCase();
-    const slug = (mob.name || `mob-${mob.id}`).toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || `mob-${mob.id}`;
-    const oldPath = (typeof mob.image === 'string' && mob.image.startsWith('trash/mobs/')) ? mob.image : null;
-    const path = `trash/mobs/${slug}${newExt}`;
-
-    const arrayBuf = await file.arrayBuffer();
-    const bytes = new Uint8Array(arrayBuf);
-    let binary = '';
-    bytes.forEach(b => binary += String.fromCharCode(b));
-    const encoded = btoa(binary);
-
-    const headers = {
-      'Authorization': `token ${cfg.token}`,
-      'Accept': 'application/vnd.github.v3+json',
-      'Content-Type': 'application/json',
-    };
-    const apiBase = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/`;
-
-    if (oldPath && oldPath !== path) {
-      const staleRes = await fetch(apiBase + oldPath, { headers });
-      if (staleRes.ok) {
-        const staleSha = (await staleRes.json()).sha;
-        await fetch(apiBase + oldPath, {
-          method: 'DELETE', headers,
-          body: JSON.stringify({ message: `remove stale mob image: ${oldPath}`, sha: staleSha }),
-        });
-      }
-    }
-
-    const apiUrl = apiBase + path;
-    const getRes = await fetch(apiUrl, { headers });
-    let sha = null;
-    if (getRes.ok) sha = (await getRes.json()).sha;
-
-    const body = { message: `add/update mob image: ${path}`, content: encoded };
-    if (sha) body.sha = sha;
-
-    const putRes = await fetch(apiUrl, { method: 'PUT', headers, body: JSON.stringify(body) });
-    if (!putRes.ok) {
-      const err = await putRes.json();
-      throw new Error(err.message || `PUT failed: ${putRes.status}`);
-    }
-
-    mob.image = path;
-    renderBestiaryModalList();
-    showToast('✓ Mob image uploaded! Save to publish it.');
-  } catch (err) {
-    showToast(`✗ Image upload failed: ${err.message}`, true);
-  }
+  const reader = new FileReader();
+  reader.onload = e => { mob.image = e.target.result; renderBestiaryModalList(); showToast('Image updated.'); };
+  reader.readAsDataURL(file);
 }
 
 // ── Assign interaction ──────────────────────────────────────
@@ -13654,52 +13503,20 @@ async function saveStrat() {
   if (!raid) { showToast('Please select a raid instance.', true); return; }
   if (!imgEl.src || imgEl.src === window.location.href) { showToast('Please choose an image first.', true); return; }
 
-  const cfg = getGHConfig();
-  let imagePath = imgEl.src; // fallback to base64 if no token
-
-  if (cfg.token && _pendingStratFile) {
-    // See compressImageForUpload above replaceStratImage - same ~1MB
-    // GitHub Contents API cap applies here too.
-    if (_pendingStratFile.size > IMAGE_UPLOAD_MAX_BYTES) {
-      showToast('⬆ Compressing image...');
-      _pendingStratFile = await compressImageForUpload(_pendingStratFile);
-    }
-    showToast('⬆ Uploading image...');
-    try {
-      // Derive a stable name from the raid + encounter name rather than the
-      // uploaded file's own filename — screenshot tools/clipboard pastes
-      // routinely reuse generic names like "image.png", which would silently
-      // overwrite an unrelated strat's picture if used as the GitHub path.
-      const ext = (_pendingStratFile.name.match(/\.[^.]+$/) || ['.png'])[0].toLowerCase();
-      const path = `strats/${uniqueStratSlug(slugifyStratFilename(raid, name))}${ext}`;
-      const arrayBuf = await _pendingStratFile.arrayBuffer();
-      const bytes = new Uint8Array(arrayBuf);
-      let binary = '';
-      bytes.forEach(b => binary += String.fromCharCode(b));
-      const encoded = btoa(binary);
-
-      const apiUrl = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}`;
-      const headers = {
-        'Authorization': `token ${cfg.token}`,
-        'Accept': 'application/vnd.github.v3+json',
-        'Content-Type': 'application/json',
-      };
-
-      let sha = null;
-      const getRes = await fetch(apiUrl, { headers });
-      if (getRes.ok) sha = (await getRes.json()).sha;
-
-      const body = { message: `strat image: ${path}`, content: encoded };
-      if (sha) body.sha = sha;
-
-      const putRes = await fetch(apiUrl, { method: 'PUT', headers, body: JSON.stringify(body) });
-      if (!putRes.ok) throw new Error('Image upload failed');
-
-      imagePath = path;
-      showToast(`✓ Image uploaded: ${path}`);
-    } catch(err) {
-      showToast(`Image upload failed, saving locally: ${err.message}`, true);
-    }
+  let imagePath = imgEl.src; // base64 - the only path now, GitHub is gone
+  // Guild data is one JSON blob saved to D1 (see saveAppData) - an
+  // uncompressed screenshot or phone photo can run several MB as base64,
+  // and that adds up fast across dozens of strats. Downscale/recompress
+  // client-side first (same helper as replaceStratImage below) so a
+  // normal screenshot doesn't bloat every single save.
+  if (_pendingStratFile && _pendingStratFile.size > IMAGE_UPLOAD_MAX_BYTES) {
+    showToast('⬆ Compressing image...');
+    _pendingStratFile = await compressImageForUpload(_pendingStratFile);
+    imagePath = await new Promise(resolve => {
+      const reader = new FileReader();
+      reader.onload = e => resolve(e.target.result);
+      reader.readAsDataURL(_pendingStratFile);
+    });
   }
 
   strats.push({ id: nextStratId++, name, raid, image: imagePath, sections: defaultSections() });
@@ -13743,17 +13560,17 @@ function onStratDrop(e, targetId) {
   renderStrats();
 }
 
-// GitHub's Contents API (used by this and every other direct-to-GitHub
-// image upload below) caps a single file's content at ~1MB - a raw
-// screenshot or a photo straight off a phone routinely blows past that
-// without looking especially large. When it does, the PUT below just
-// fails - and from the user's side that reads as "Replace Image did
-// nothing," since the old image is left exactly as it was and the only
-// signal is an error toast that's easy to miss. Downscale/recompress
-// client-side first so a normal screenshot just works instead. Returns
-// the file untouched if it's already small enough; otherwise always
-// returns a re-encoded JPEG (callers that swap the file extension based
-// on what they got back, e.g. replaceStratImage, handle that already).
+// Every image in this app is embedded as base64 straight into the one
+// guildInfo/strats JSON blob saved to D1 (see saveAppData) - GitHub is
+// gone entirely now. A raw screenshot or a phone photo routinely runs
+// several MB, and that's real weight added to every single save/load
+// for the whole guild, not just the one strat being edited. Downscale/
+// recompress client-side first so a normal screenshot doesn't bloat
+// things. Returns the file untouched if it's already small enough;
+// otherwise always returns a re-encoded JPEG (callers that swap the
+// file extension based on what they got back, e.g. replaceStratImage,
+// handle that already). A dedicated image host is a separate future
+// migration (see the kaizen-manager-pending-items memory note), not this.
 const IMAGE_UPLOAD_MAX_BYTES = 900 * 1024;
 async function compressImageForUpload(file, maxBytes = IMAGE_UPLOAD_MAX_BYTES, maxDim = 1920) {
   if (file.size <= maxBytes) return file;
@@ -13790,79 +13607,11 @@ async function replaceStratImage(event, id) {
     file = await compressImageForUpload(file);
   }
 
-  const cfg = getGHConfig();
-  if (!cfg.token) {
-    // No token — fall back to base64
-    // (data: URLs never get a ?v= query param anyway - see imageArea -
-    // so imageUpdatedAt isn't needed on this branch.)
-    const reader = new FileReader();
-    reader.onload = e => { strat.image = e.target.result; renderStrats(); showToast('Image updated locally.'); };
-    reader.readAsDataURL(file);
-    return;
-  }
-
-  showToast('⬆ Uploading image...');
-  try {
-    // Reuse the strat's existing asset path so this truly overwrites the same
-    // file, regardless of what the newly-picked file happens to be named on
-    // disk. Only fall back to a name derived from the upload if this strat
-    // doesn't have a real strats/ path yet (e.g. it was still base64).
-    const newExt = (file.name.match(/\.[^.]+$/) || ['.png'])[0].toLowerCase();
-    const oldPath = (typeof strat.image === 'string' && strat.image.startsWith('strats/')) ? strat.image : null;
-    const path = oldPath
-      ? oldPath.replace(/\.[^.]+$/, newExt)
-      : `strats/${slugifyStratFilename(strat.raid, strat.name)}${newExt}`;
-
-    const arrayBuf = await file.arrayBuffer();
-    const bytes = new Uint8Array(arrayBuf);
-    let binary = '';
-    bytes.forEach(b => binary += String.fromCharCode(b));
-    const encoded = btoa(binary);
-
-    const headers = {
-      'Authorization': `token ${cfg.token}`,
-      'Accept': 'application/vnd.github.v3+json',
-      'Content-Type': 'application/json',
-    };
-    const apiBase = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/`;
-
-    // If the extension changed (e.g. old was .png, new upload is .jpg), the
-    // target path differs from oldPath — delete the stale file so we don't
-    // leave an orphaned duplicate behind.
-    if (oldPath && oldPath !== path) {
-      const staleRes = await fetch(apiBase + oldPath, { headers });
-      if (staleRes.ok) {
-        const staleSha = (await staleRes.json()).sha;
-        await fetch(apiBase + oldPath, {
-          method: 'DELETE',
-          headers,
-          body: JSON.stringify({ message: `remove stale strat image: ${oldPath}`, sha: staleSha }),
-        });
-      }
-    }
-
-    const apiUrl = apiBase + path;
-    let sha = null;
-    const getRes = await fetch(apiUrl, { headers });
-    if (getRes.ok) sha = (await getRes.json()).sha;
-
-    const body = { message: `strat image: ${path}`, content: encoded };
-    if (sha) body.sha = sha;
-
-    const putRes = await fetch(apiUrl, { method: 'PUT', headers, body: JSON.stringify(body) });
-    if (!putRes.ok) {
-      const err = await putRes.json();
-      throw new Error(err.message || `Upload failed: ${putRes.status}`);
-    }
-
-    strat.image = path;
-    strat.imageUpdatedAt = Date.now();
-    renderStrats();
-    showToast(`✓ Image uploaded: ${path}`);
-  } catch(err) {
-    console.error('Image upload error:', err);
-    showToast(`✗ Upload failed: ${err.message}`, true);
-  }
+  // base64 only now, GitHub is gone (data: URLs never get a ?v= query
+  // param anyway - see imageArea - so imageUpdatedAt isn't relevant here).
+  const reader = new FileReader();
+  reader.onload = e => { strat.image = e.target.result; renderStrats(); showToast('Image updated.'); };
+  reader.readAsDataURL(file);
 }
 
 function renameStrat(id) {
@@ -13876,21 +13625,10 @@ function renameStrat(id) {
 }
 
 // ======================================================
-// GITHUB + RAID HELPER SETTINGS
+// RAID HELPER SETTINGS
 // ======================================================
-const GH_TOKEN_KEY  = 'kaizen_gh_token';
-const GH_USER_KEY   = 'kaizen_gh_user';
-const GH_REPO_KEY   = 'kaizen_gh_repo';
 const RH_SERVER_KEY = 'kaizen_rh_server';
 const RH_APIKEY_KEY = 'kaizen_rh_apikey';
-
-function getGHConfig() {
-  return {
-    token: localStorage.getItem(GH_TOKEN_KEY) || '',
-    user:  localStorage.getItem(GH_USER_KEY)  || 'kaizen-tbc',
-    repo:  localStorage.getItem(GH_REPO_KEY)  || 'kaizen-tbc.github.io',
-  };
-}
 
 // Guild-wide now (see raidHelperServerId/raidHelperApiKey), not
 // per-browser localStorage - RH_SERVER_KEY/RH_APIKEY_KEY below are read
@@ -13951,13 +13689,9 @@ function syncThemeToggleIcon() {
 syncThemeToggleIcon();
 
 function openSettings() {
-  const cfg = getGHConfig();
-  const rh  = getRHConfig();
-  document.getElementById('gh-token-input').value      = cfg.token;
-  document.getElementById('gh-user-input').value       = cfg.user;
-  document.getElementById('gh-repo-input').value       = cfg.repo;
-  document.getElementById('rh-server-id-input').value  = rh.serverId;
-  document.getElementById('rh-api-key-input').value    = rh.apiKey;
+  const rh = getRHConfig();
+  document.getElementById('rh-server-id-input').value = rh.serverId;
+  document.getElementById('rh-api-key-input').value   = rh.apiKey;
   document.getElementById('settings-modal-overlay').classList.add('open');
 }
 
@@ -14048,44 +13782,22 @@ function closeSettings() {
   document.getElementById('settings-modal-overlay').classList.remove('open');
 }
 
-// GitHub (personal, this browser only - localStorage) and Raid Helper
-// (guild-wide - the real saved state, same as the Discord channel IDs)
-// have different save semantics, on purpose:
-// - GitHub: optional (only matters if you're uploading strat/mob images),
-//   saved locally, never shared. A blank field here leaves whatever's
-//   already saved alone rather than wiping it - use "Clear Tokens" for
-//   that.
-// - Raid Helper: not personal, so it shouldn't live in one browser's
-//   storage while everyone else's drifts - this calls saveAppData()
-//   directly instead of waiting for the header's Save button, so a
-//   config change like this doesn't need a second manual step to
-//   actually stick. That said, it's still a full save of whatever's
-//   currently in memory (there's only one savable blob right now, not
-//   per-field granularity) - anything else you were mid-editing saves
-//   right along with it, same as clicking the header Save button would.
+// Raid Helper settings are guild-wide, not personal, so they shouldn't
+// live in one browser's storage while everyone else's drifts - this
+// calls saveAppData() directly instead of waiting for a separate Save
+// step, so a config change like this doesn't need a second manual step
+// to actually stick. That said, it's still a full save of whatever's
+// currently in memory (there's only one savable blob right now, not
+// per-field granularity) - anything else you were mid-editing saves
+// right along with it.
 async function saveSettingsModal() {
-  const token    = document.getElementById('gh-token-input').value.trim();
-  const user     = document.getElementById('gh-user-input').value.trim();
-  const repo     = document.getElementById('gh-repo-input').value.trim();
   const serverId = document.getElementById('rh-server-id-input').value.trim();
   const apiKey   = document.getElementById('rh-api-key-input').value.trim();
-
-  if (token) localStorage.setItem(GH_TOKEN_KEY, token);
-  if (user)  localStorage.setItem(GH_USER_KEY,  user);
-  if (repo)  localStorage.setItem(GH_REPO_KEY,  repo);
 
   raidHelperServerId = serverId;
   raidHelperApiKey = apiKey;
   closeSettings();
   await saveAppData(); // its own toasts cover success/failure
-}
-
-function clearGitHubToken() {
-  localStorage.removeItem(GH_TOKEN_KEY);
-  localStorage.removeItem(GH_USER_KEY);
-  localStorage.removeItem(GH_REPO_KEY);
-  closeSettings();
-  showToast('GitHub token cleared.');
 }
 
 // Everything that actually gets persisted to kaizen_data.json, minus the
@@ -14119,18 +13831,16 @@ function buildSavePayload() {
 // ── Unsaved-changes tracking ──────────────────────────────────────
 // Nothing in this app auto-saves - a new strat, a replaced image, a
 // section edit, a roster import - all of it lives only in this tab's
-// memory until "Save" is clicked. (A replaced strat image is a
-// partial exception: the raw image FILE itself uploads straight to
-// GitHub immediately, since that's its own direct API call - but the
-// metadata saying "this strat's image is now that file" only updates here,
-// in kaizen_data.json. Confirmed live: a whole Karazhan strat, image
-// included, silently reverted to "nothing here yet" because it was built
-// in a session that got closed/reloaded before Save - the image
-// file was still sitting in the repo, just orphaned, nothing pointing at
-// it anymore.) Comparing a JSON snapshot taken right after the last real
-// load/save against the live state on the way out catches that, without
-// needing every single mutating function in this file to remember to flag
-// itself dirty.
+// memory until "Save" is clicked (and per the owner's own instruction,
+// there is currently no header Save button either - see
+// kaizen-manager-pending-items memory note). Images used to be a
+// partial exception when they uploaded straight to GitHub on pick,
+// leaving only the pointer to save here - that's gone now too, an
+// image is base64 in this exact same blob like everything else, so
+// there's no special case left to explain. Comparing a JSON snapshot
+// taken right after the last real load/save against the live state on
+// the way out catches unsaved work, without needing every single
+// mutating function in this file to remember to flag itself dirty.
 let _lastSavedSnapshot = null;
 function markSavedSnapshot() {
   try { _lastSavedSnapshot = JSON.stringify(buildSavePayload()); }
@@ -14147,11 +13857,10 @@ window.addEventListener('beforeunload', e => {
   e.returnValue = ''; // browsers show their own generic prompt text, not this
 });
 // Saves straight to D1 via the Worker (see wrangler.toml/schema.sql) -
-// replaces the old "PUT kaizen_data.json to the GitHub Contents API"
-// (kaizen_data.json/GitHub Pages is no longer this app's datastore, just
-// still where the static assets - strat images, boss/mob icons - live,
-// see getGHConfig's other callers). Named saveAppData now, not
-// saveToGitHub - it doesn't touch GitHub at all anymore.
+// replaces the old "PUT kaizen_data.json to the GitHub Contents API".
+// Images are embedded as base64 in this same blob now too (see
+// uploadAssetFile) - GitHub is gone entirely, nothing in this app
+// touches it anymore. Named saveAppData, not saveToGitHub.
 async function saveAppData() {
   showToast('⬆ Saving...');
   const payload = buildSavePayload();
