@@ -1833,7 +1833,14 @@ tr:last-child td { border-bottom: none; }
    can genuinely differ from whatever the landing page's own toggle is
    set to (see initLandingPage's own comment on why that's deliberate). */
 #landing-page .add-menu { background: var(--lp-surface); border-color: var(--lp-line); box-shadow: 0 10px 26px #00000040; }
-#landing-page .add-menu button { color: var(--lp-text); }
+/* #landing-page's own generic "button" reset (further down this sheet)
+   gives every <button> a bordered, padded, min-height:44px box - correct
+   for real CTA buttons, wrong here since these rows should look like the
+   app's plain borderless .add-menu row buttons. Undo it explicitly rather
+   than letting it leak through as a square stroke around each row. */
+#landing-page .add-menu button {
+  color: var(--lp-text); border: 0; min-height: auto; padding: 9px 12px; border-radius: 0; background: none;
+}
 #landing-page .add-menu button:hover { background: var(--lp-hover); }
 #landing-page .my-guilds-manage { color: var(--lp-accent) !important; }
 #landing-page .my-guilds-here { color: var(--lp-muted) !important; }
@@ -2283,6 +2290,16 @@ a[href] > div > div[style*="line-height:1.6"] {
    Clerk's own generated styles). !important because Clerk's own inline
    sizing on this element otherwise wins on specificity. */
 .kz-clerk-avatar { width: 40px !important; height: 40px !important; }
+/* #clerk-user-button now also gets moved onto the landing page (signed-in
+   avatar next to the theme toggle - see the Clerk listener's isLandingPage
+   branch in initLandingPage). Clerk's own trigger is a real <button>, so
+   #landing-page's generic button reset further down this sheet (border/
+   padding/min-height/background) boxes the round avatar in a square
+   stroke the moment it lands there. Strip that reset back off here. */
+#landing-page #clerk-user-button button {
+  border: 0; padding: 0; min-height: auto; background: none; border-radius: 9999px;
+}
+#landing-page #clerk-user-button button:hover { background: none; }
 @media (max-width: 650px) {
   .guild-account-controls { gap: 10px; }
   .guild-circle { width: 34px; height: 34px; min-height: 34px; }
