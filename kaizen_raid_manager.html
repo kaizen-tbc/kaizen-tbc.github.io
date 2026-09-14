@@ -2510,10 +2510,32 @@ body.landing-mode #landing-page { display: block; }
    is safe even where a bare class name, like .personal-plan or
    .group-label, already means something else elsewhere in the app). */
 #landing-page .product-home .hero-copy, #landing-page .hero-copy { text-align: center; max-width: 760px; margin: 0 auto 64px; }
-#landing-page .product-hero { padding: 80px 0 72px; }
+#landing-page .product-hero { position: relative; isolation: isolate; padding: 96px 0 72px; }
 #landing-page .product-hero h1 { font-size: clamp(54px, 7.5vw, 100px); line-height: 1.02; }
 #landing-page .hero-copy > p { font-size: 20px; color: var(--lp-muted); margin: 24px auto; }
 #landing-page .hero-copy .actions { justify-content: center; align-items: center; }
+/* Cinematic hero video (Design/preview/hero-film.css, ported verbatim) -
+   text/link colors here are deliberately hardcoded light/cream, not the
+   theme-aware --lp-* tokens the rest of this page uses, because the
+   backdrop is always a darkened video/photo regardless of the site's
+   own light/dark toggle - same reasoning the reference itself uses. */
+#landing-page .hero-film { position: absolute; inset: 0 0 auto; height: 780px; z-index: -1; overflow: hidden; pointer-events: none; background: var(--lp-bg) url('assets/marketing-hero-landscape.png?v=calm') center 45%/cover no-repeat; }
+#landing-page .hero-film video { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center 45%; opacity: var(--film-opacity,1); transform: translateZ(0); will-change: opacity; }
+#landing-page .hero-film::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg,#07151b4d 0%,#07151b80 44%,transparent 68%,var(--lp-bg) 100%), linear-gradient(90deg,#07151b55,transparent 65%); }
+#landing-page .product-hero.film-ended .hero-film video { opacity: 0; transition: opacity 2.4s ease; }
+#landing-page .product-hero .hero-copy h1 { color: #f5f2e9; text-shadow: 0 2px 30px #07151b50; }
+#landing-page .product-hero .hero-copy h1 em { color: #ead099; }
+#landing-page .product-hero .hero-copy > p { color: #e2e8e8; }
+#landing-page .product-hero .hero-copy .lp-eyebrow { color: #ead099; }
+#landing-page .product-hero .hero-copy .quiet-link { color: #f5f2e9; }
+#landing-page .product-hero > .lp-wrap { position: relative; }
+#landing-page .product-hero .hero-copy { min-height: 420px; margin: 0 auto 36px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+#landing-page .product-hero .preview-switch .quiet-link { color: #f5f2e9; text-shadow: 0 1px 8px #07151b; }
+#landing-page .product-hero .preview-switch .film-control { display: inline-flex; align-items: center; justify-content: center; min-height: 36px; padding: 7px 12px; border: 1px solid #dbe4e566; background: #101b2380; color: #f5f2e9; border-radius: 30px; font: 12px/1.5 'Segoe UI', sans-serif; cursor: pointer; gap: 8px; }
+#landing-page .product-hero .preview-switch .film-control:hover { background: #101b23bb; border-color: #ead099; }
+#landing-page .film-control:focus-visible { outline: 2px solid #ead099; outline-offset: 4px; }
+#landing-page .product-hero .product-window { position: relative; box-shadow: 0 28px 80px #07151b33; }
+#landing-page .product-hero .preview-switch .film-control[hidden] { display: none; }
 #landing-page .actions { display: flex; gap: 16px; flex-wrap: wrap; }
 #landing-page .quiet-link { font-size: 14px; text-decoration: none; padding: 12px; color: var(--lp-muted); }
 #landing-page .product-window { border: 1px solid var(--lp-line); background: var(--lp-surface); border-radius: 10px; overflow: hidden; box-shadow: 0 24px 60px #00000012; scroll-margin-top: 100px; }
@@ -2562,7 +2584,7 @@ body.landing-mode #landing-page { display: block; }
 #landing-page .footer-line { display: flex; align-items: center; justify-content: space-between; gap: 24px; }
 #landing-page .footer-line small { font-size: 12px; }
 /* Encounter-plan mockup (position map + player-choices sidebar) */
-#landing-page .preview-switch { display: flex; justify-content: center; gap: 8px; margin: 0 0 24px; }
+#landing-page .preview-switch { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; gap: 20px; }
 #landing-page .plan-heading { display: flex; justify-content: space-between; align-items: center; gap: 24px; padding: 24px 28px; }
 #landing-page .plan-heading h3 { font-size: 24px; margin: 4px 0 0; }
 #landing-page .plan-heading > span { font-size: 13px; }
@@ -2677,6 +2699,12 @@ body.landing-mode #landing-page { display: block; }
 @media (max-width: 700px) {
   #landing-page .product-hero { padding-top: 48px; }
   #landing-page .product-home .hero-copy, #landing-page .hero-copy { margin-bottom: 40px; }
+  #landing-page .product-hero .hero-copy { min-height: 420px; margin-bottom: 28px; }
+  #landing-page .hero-film { height: 690px; }
+  #landing-page .preview-switch { gap: 8px; }
+  #landing-page .preview-switch .quiet-link { font-size: 12px; padding-left: 0; }
+  #landing-page .preview-switch .film-control { font-size: 11px; white-space: nowrap; }
+  #landing-page .hero-film video { object-position: 56% center; }
   #landing-page .hero-copy > p { font-size: 18px; }
   #landing-page .product-content { padding: 20px; }
   #landing-page .roster-layout { grid-template-columns: 1fr; }
@@ -2722,6 +2750,8 @@ body.landing-mode #landing-page { display: block; }
 }
 @media (prefers-reduced-motion: reduce) {
   #landing-page * { transition: none !important; }
+  #landing-page .hero-film video { transition: none; opacity: 0; }
+  #landing-page .product-hero .preview-switch .film-control { display: none; }
 }
 
 /* KZ_STRATS_VISUAL_V1 — shared domain, distinct visitor assignment presentation. */
@@ -3119,6 +3149,15 @@ body.guild-public-mode #tab-strats .public-assignment-sheet .personal-detail>*{m
      nothing preview handlers - same real capability as the old
      sections' buttons had, not a downgrade. -->
 <section class="product-hero" id="product">
+  <!-- Owner-requested cinematic hero (Design/preview/homepage.html +
+       hero-film.css/js, ported 1:1): a muted, one-time background video
+       under the existing copy, fading into the calm-lakeside fallback
+       image on end and with scroll - see initHeroFilm() below and the
+       #landing-page .hero-film rules. poster/landscape/video assets
+       copied verbatim from Design/preview/assets/. -->
+  <div class="hero-film" aria-hidden="true">
+    <video id="marketing-hero-video" muted playsinline preload="metadata" poster="assets/marketing-hero-poster.jpg"></video>
+  </div>
   <div class="lp-wrap">
     <div class="hero-copy">
       <div class="lp-eyebrow">Raid manager for The Burning Crusade</div>
@@ -3129,7 +3168,10 @@ body.guild-public-mode #tab-strats .public-assignment-sheet .personal-detail>*{m
         <a class="quiet-link" href="#plan-preview">Take a look ↓</a>
       </div>
     </div>
-    <div class="preview-switch"><a class="quiet-link" href="#weekly-roster">See the weekly roster ↓</a></div>
+    <div class="preview-switch">
+      <button id="hero-film-control" class="film-control" type="button" aria-controls="marketing-hero-video">Pause video Ⅱ</button>
+      <a class="quiet-link" href="#weekly-roster">See the weekly roster ↓</a>
+    </div>
     <div id="plan-preview" class="product-window">
       <div class="window-bar"><span class="lp-wordmark">Kaizen<i> /</i></span><span>Encounter plan</span><span class="saved">Thursday raid</span></div>
       <div class="plan-heading">
@@ -16585,6 +16627,60 @@ function initLandingPage() {
     if (ref) ref.hidden = n !== 2; // Wowhead link only makes sense for Fen's Misdirection
   }
   document.querySelectorAll('#landing-page [data-player]').forEach(b => b.addEventListener('click', () => selectLandingRaidPlayer(Number(b.dataset.player))));
+  initHeroFilm();
+}
+
+// Cinematic hero video (Design/preview/hero-film.js, ported near-verbatim -
+// only change is wrapping the reference's IIFE as a named function called
+// from initLandingPage() instead of its own <script src>, since this file
+// is the only real frontend source). Muted, one-time background video
+// under the hero copy: fades to the poster/landscape fallback on end and
+// with scroll, pause/replay via #hero-film-control, respects
+// prefers-reduced-motion (never even requests the video then), and
+// pauses/resumes with tab visibility so it doesn't keep playing hidden.
+function initHeroFilm() {
+  const hero = document.querySelector('#landing-page .product-hero');
+  const video = document.getElementById('marketing-hero-video');
+  const control = document.getElementById('hero-film-control');
+  if (!hero || !video || !control) return;
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+  let userPaused = false, ticking = false;
+  const label = text => { control.textContent = text; control.setAttribute('aria-label', text); };
+  function scrollFade() {
+    const traveled = Math.max(0, -hero.getBoundingClientRect().top);
+    hero.style.setProperty('--film-opacity', String(Math.max(0, 1 - traveled / 650)));
+    ticking = false;
+  }
+  addEventListener('scroll', () => { if (!ticking) { ticking = true; requestAnimationFrame(scrollFade); } }, { passive: true });
+  scrollFade();
+  function start() {
+    if (reduced.matches) return;
+    video.src = 'assets/marketing-hero.mp4?v=720p-smooth';
+    video.play().catch(() => label('Play background video'));
+  }
+  video.addEventListener('playing', () => label('Pause video Ⅱ'));
+  video.addEventListener('ended', () => { hero.classList.add('film-ended'); label('Replay video ↻'); });
+  video.addEventListener('error', () => { hero.classList.add('film-ended'); control.hidden = true; });
+  control.addEventListener('click', () => {
+    if (video.ended || hero.classList.contains('film-ended')) {
+      hero.classList.remove('film-ended'); video.currentTime = 0; userPaused = false;
+      video.play().catch(() => label('Play background video'));
+    } else if (video.paused) {
+      userPaused = false;
+      video.play().catch(() => label('Play background video'));
+    } else {
+      userPaused = true; video.pause(); label('Play video ▷');
+    }
+  });
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) video.pause();
+    else if (!userPaused && !video.ended && !reduced.matches) video.play().catch(() => label('Play background video'));
+  });
+  reduced.addEventListener('change', () => {
+    if (reduced.matches) { video.pause(); video.removeAttribute('src'); video.load(); }
+    else start();
+  });
+  start();
 }
 
 // One-time migration: ensure all roster entries have a level field
