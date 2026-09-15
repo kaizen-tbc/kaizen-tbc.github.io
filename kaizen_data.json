@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-09-14T15:18:52.062Z",
+  "savedAt": "2026-09-15T15:58:42.832Z",
   "roster": [
     {
       "id": 1,
@@ -274,7 +274,7 @@
       "altOf": "",
       "level": 70,
       "notes": "Dartht Alt",
-      "discordUserId": "1441257818404688026"
+      "discordUserId": "294322401758412800"
     },
     {
       "id": 23,
@@ -989,33 +989,34 @@
       "groups": [
         [
           46,
-          -2,
-          -5,
+          31,
+          35,
           -1,
-          -9
+          55
         ],
         [
           40,
           29,
-          31,
-          14
+          -2,
+          14,
+          -3
         ],
         [
-          -3,
+          -4,
+          22,
           4,
           39,
-          2,
-          -8
+          2
         ],
         [
           28,
-          -4,
-          66
+          66,
+          -5,
+          36
         ],
         [
           27,
-          55,
-          36
+          41
         ]
       ],
       "groupTitles": [
@@ -1034,9 +1035,11 @@
         "28": "Shadow",
         "29": "Beastmastery",
         "31": "Fury",
+        "35": "Combat",
         "36": "Holy",
         "39": "Destruction",
         "40": "Enhancement",
+        "41": "Shadow",
         "46": "Enhancement",
         "55": "Protection",
         "66": "Arcane"
@@ -1050,9 +1053,11 @@
         "28": "Ranged",
         "29": "Ranged",
         "31": "Melee",
+        "35": "Melee",
         "36": "Healer",
         "39": "Ranged",
         "40": "Melee",
+        "41": "Ranged",
         "46": "Melee",
         "55": "Tank",
         "66": "Ranged"
@@ -1061,22 +1066,24 @@
         "2": "510158141388750849",
         "4": "137777201792811008",
         "14": "458021620251099147",
-        "22": "1441257818404688026",
+        "22": "294322401758412800",
         "27": "1435080844967542785",
         "28": "487364533879308317",
         "29": "425115846843826218",
         "31": "273635685297029133",
+        "35": "660029197481148418",
         "36": "179449409518567424",
         "39": "368979837467099139",
         "40": "331204665536544782",
+        "41": "222160767011520523",
         "46": "185217579055448064",
         "55": "397962649154879489",
         "66": "384157825603207179",
         "-1": "1344798487891415082",
-        "-2": "185994214352486400",
-        "-3": "227110510972108810",
-        "-4": "420003745649262596",
-        "-5": "1366791215709950024",
+        "-2": "1366791215709950024",
+        "-3": "185994214352486400",
+        "-4": "227110510972108810",
+        "-5": "420003745649262596",
         "-6": "473718939679981581",
         "-7": "595869887952322561"
       },
@@ -1085,7 +1092,9 @@
         -6,
         -7
       ],
-      "tentative": [],
+      "tentative": [
+        22
+      ],
       "pugs": [
         {
           "id": -1,
@@ -1104,6 +1113,21 @@
         },
         {
           "id": -2,
+          "name": "victoreem",
+          "class": "Hunter",
+          "ms": "Survival",
+          "os": "",
+          "role": "Ranged",
+          "status": "Pug",
+          "altOf": "",
+          "notes": "Via Raid Helper",
+          "_rhStatus": "attending",
+          "_rhSpec": "Survival",
+          "_rhClass": "Hunter",
+          "_userId": "1366791215709950024"
+        },
+        {
+          "id": -3,
           "name": "Bradpitiful/Zabanya",
           "class": "Warrior",
           "ms": "Fury",
@@ -1118,7 +1142,7 @@
           "_userId": "185994214352486400"
         },
         {
-          "id": -3,
+          "id": -4,
           "name": "Depew/Kiricolo",
           "class": "Shaman",
           "ms": "Elemental",
@@ -1133,7 +1157,7 @@
           "_userId": "227110510972108810"
         },
         {
-          "id": -4,
+          "id": -5,
           "name": "Mac/Eye",
           "class": "Mage",
           "ms": "Arcane",
@@ -1146,21 +1170,6 @@
           "_rhSpec": "Arcane",
           "_rhClass": "Mage",
           "_userId": "420003745649262596"
-        },
-        {
-          "id": -5,
-          "name": "victoreem",
-          "class": "Hunter",
-          "ms": "Survival",
-          "os": "",
-          "role": "Ranged",
-          "status": "Pug",
-          "altOf": "",
-          "notes": "Via Raid Helper",
-          "_rhStatus": "attending",
-          "_rhSpec": "Survival",
-          "_rhClass": "Hunter",
-          "_userId": "1366791215709950024"
         },
         {
           "id": -6,
@@ -1191,31 +1200,9 @@
           "_rhSpec": "",
           "_rhClass": "Absence",
           "_userId": "595869887952322561"
-        },
-        {
-          "id": -8,
-          "name": "dartht",
-          "class": "Warlock",
-          "ms": "Destruction",
-          "os": "",
-          "role": "Ranged",
-          "status": "Main",
-          "altOf": "",
-          "notes": "PUG"
-        },
-        {
-          "id": -9,
-          "name": "Taragar",
-          "class": "Warrior",
-          "ms": "Arms",
-          "os": "",
-          "role": "Melee",
-          "status": "Main",
-          "altOf": "",
-          "notes": "PUG"
         }
       ],
-      "nextPugId": -10,
+      "nextPugId": -8,
       "signUpPool": [
         {
           "id": -1,
@@ -1231,23 +1218,6 @@
           "_rhSpec": "Feral",
           "_rhClass": "Druid",
           "_userId": "1344798487891415082"
-        },
-        {
-          "id": 46,
-          "name": "Chewïe",
-          "class": "Shaman",
-          "ms": "Enhancement",
-          "os": "",
-          "role": "Melee",
-          "status": "Casual",
-          "altOf": "",
-          "level": 70,
-          "notes": "ENH MS - ELE OS",
-          "discordUserId": "185217579055448064",
-          "_rhStatus": "attending",
-          "_userId": "185217579055448064",
-          "_rhSpec": "Enhancement",
-          "_rhClass": "Shaman"
         },
         {
           "id": 28,
@@ -1301,7 +1271,141 @@
           "_rhClass": "Shaman"
         },
         {
+          "id": 35,
+          "name": "Popeshe",
+          "class": "Rogue",
+          "ms": "Combat",
+          "os": "",
+          "role": "Melee",
+          "status": "Main",
+          "altOf": "",
+          "level": 70,
+          "notes": "",
+          "discordUserId": "660029197481148418",
+          "_rhStatus": "attending",
+          "_userId": "660029197481148418",
+          "_rhSpec": "Combat",
+          "_rhClass": "Rogue"
+        },
+        {
+          "id": 66,
+          "name": "Rodentmage",
+          "class": "Mage",
+          "ms": "Arcane",
+          "os": "",
+          "role": "Ranged",
+          "status": "Casual",
+          "altOf": "",
+          "level": 70,
+          "notes": "",
+          "discordUserId": "384157825603207179",
+          "_rhStatus": "attending",
+          "_userId": "384157825603207179",
+          "_rhSpec": "Arcane",
+          "_rhClass": "Mage"
+        },
+        {
+          "id": 41,
+          "name": "Velogis",
+          "class": "Priest",
+          "ms": "Shadow",
+          "os": "",
+          "role": "Ranged",
+          "status": "Main",
+          "altOf": "",
+          "level": 70,
+          "notes": "",
+          "discordUserId": "222160767011520523",
+          "_rhStatus": "attending",
+          "_userId": "222160767011520523",
+          "_rhSpec": "Shadow",
+          "_rhClass": "Priest"
+        },
+        {
           "id": -2,
+          "name": "victoreem",
+          "class": "Hunter",
+          "ms": "Survival",
+          "os": "",
+          "role": "Ranged",
+          "status": "Pug",
+          "altOf": "",
+          "notes": "Via Raid Helper",
+          "_rhStatus": "attending",
+          "_rhSpec": "Survival",
+          "_rhClass": "Hunter",
+          "_userId": "1366791215709950024"
+        },
+        {
+          "id": 22,
+          "name": "Darthorg",
+          "class": "Warlock",
+          "ms": "Destruction",
+          "os": "",
+          "role": "Ranged",
+          "status": "Alt",
+          "altOf": "",
+          "level": 70,
+          "notes": "Dartht Alt",
+          "discordUserId": "1441257818404688026",
+          "_rhStatus": "attending",
+          "_userId": "1441257818404688026",
+          "_rhSpec": "Destruction",
+          "_rhClass": "Warlock"
+        },
+        {
+          "id": 36,
+          "name": "Priestous",
+          "class": "Priest",
+          "ms": "Holy",
+          "os": "",
+          "role": "Healer",
+          "status": "Main",
+          "altOf": "",
+          "level": 70,
+          "notes": "",
+          "discordUserId": "179449409518567424",
+          "_rhStatus": "attending",
+          "_userId": "179449409518567424",
+          "_rhSpec": "Holy",
+          "_rhClass": "Priest"
+        },
+        {
+          "id": 14,
+          "name": "Sobadai",
+          "class": "Druid",
+          "ms": "Feral",
+          "os": "",
+          "role": "Tank",
+          "status": "Main",
+          "altOf": "",
+          "level": 70,
+          "notes": "",
+          "discordUserId": "458021620251099147",
+          "_rhStatus": "attending",
+          "_userId": "458021620251099147",
+          "_rhSpec": "Feral",
+          "_rhClass": "Druid"
+        },
+        {
+          "id": 46,
+          "name": "Chewïe",
+          "class": "Shaman",
+          "ms": "Enhancement",
+          "os": "",
+          "role": "Melee",
+          "status": "Casual",
+          "altOf": "",
+          "level": 70,
+          "notes": "ENH MS - ELE OS",
+          "discordUserId": "185217579055448064",
+          "_rhStatus": "attending",
+          "_userId": "185217579055448064",
+          "_rhSpec": "Enhancement",
+          "_rhClass": "Shaman"
+        },
+        {
+          "id": -3,
           "name": "Bradpitiful/Zabanya",
           "class": "Warrior",
           "ms": "Fury",
@@ -1316,7 +1420,7 @@
           "_userId": "185994214352486400"
         },
         {
-          "id": -3,
+          "id": -4,
           "name": "Depew/Kiricolo",
           "class": "Shaman",
           "ms": "Elemental",
@@ -1365,7 +1469,7 @@
           "_rhClass": "Warrior"
         },
         {
-          "id": -4,
+          "id": -5,
           "name": "Mac/Eye",
           "class": "Mage",
           "ms": "Arcane",
@@ -1397,89 +1501,6 @@
           "_rhClass": "Hunter"
         },
         {
-          "id": 14,
-          "name": "Sobadai",
-          "class": "Druid",
-          "ms": "Feral",
-          "os": "",
-          "role": "Tank",
-          "status": "Main",
-          "altOf": "",
-          "level": 70,
-          "notes": "",
-          "discordUserId": "458021620251099147",
-          "_rhStatus": "attending",
-          "_userId": "458021620251099147",
-          "_rhSpec": "Feral",
-          "_rhClass": "Druid"
-        },
-        {
-          "id": 66,
-          "name": "Rodentmage",
-          "class": "Mage",
-          "ms": "Arcane",
-          "os": "",
-          "role": "Ranged",
-          "status": "Casual",
-          "altOf": "",
-          "level": 70,
-          "notes": "",
-          "discordUserId": "384157825603207179",
-          "_rhStatus": "attending",
-          "_userId": "384157825603207179",
-          "_rhSpec": "Arcane",
-          "_rhClass": "Mage"
-        },
-        {
-          "id": -5,
-          "name": "victoreem",
-          "class": "Hunter",
-          "ms": "Survival",
-          "os": "",
-          "role": "Ranged",
-          "status": "Pug",
-          "altOf": "",
-          "notes": "Via Raid Helper",
-          "_rhStatus": "attending",
-          "_rhSpec": "Survival",
-          "_rhClass": "Hunter",
-          "_userId": "1366791215709950024"
-        },
-        {
-          "id": 22,
-          "name": "Darthorg",
-          "class": "Warrior",
-          "ms": "Arms",
-          "os": "",
-          "role": "Melee",
-          "status": "Alt",
-          "altOf": "",
-          "level": 70,
-          "notes": "Dartht Alt",
-          "discordUserId": "294322401758412800",
-          "_rhStatus": "attending",
-          "_userId": "294322401758412800",
-          "_rhSpec": "Arms",
-          "_rhClass": "Warrior"
-        },
-        {
-          "id": 22,
-          "name": "Darthorg",
-          "class": "Warlock",
-          "ms": "Destruction",
-          "os": "",
-          "role": "Ranged",
-          "status": "Alt",
-          "altOf": "",
-          "level": 70,
-          "notes": "Dartht Alt",
-          "discordUserId": "1441257818404688026",
-          "_rhStatus": "attending",
-          "_userId": "1441257818404688026",
-          "_rhSpec": "Destruction",
-          "_rhClass": "Warlock"
-        },
-        {
           "id": 27,
           "name": "Keishatini",
           "class": "Druid",
@@ -1495,23 +1516,6 @@
           "_userId": "1435080844967542785",
           "_rhSpec": "Restoration",
           "_rhClass": "Druid"
-        },
-        {
-          "id": 36,
-          "name": "Priestous",
-          "class": "Priest",
-          "ms": "Holy",
-          "os": "",
-          "role": "Healer",
-          "status": "Main",
-          "altOf": "",
-          "level": 70,
-          "notes": "",
-          "discordUserId": "179449409518567424",
-          "_rhStatus": "attending",
-          "_userId": "179449409518567424",
-          "_rhSpec": "Holy",
-          "_rhClass": "Priest"
         },
         {
           "id": 4,
@@ -1578,26 +1582,21 @@
           "_userId": "595869887952322561"
         },
         {
-          "id": -8,
-          "name": "dartht",
-          "class": "Warlock",
-          "ms": "Destruction",
-          "os": "",
-          "role": "Ranged",
-          "status": "Main",
-          "altOf": "",
-          "notes": "PUG"
-        },
-        {
-          "id": -9,
-          "name": "Taragar",
+          "id": 22,
+          "name": "Darthorg",
           "class": "Warrior",
           "ms": "Arms",
           "os": "",
           "role": "Melee",
-          "status": "Main",
+          "status": "Alt",
           "altOf": "",
-          "notes": "PUG"
+          "level": 70,
+          "notes": "Dartht Alt",
+          "discordUserId": "294322401758412800",
+          "_rhStatus": "tentative",
+          "_userId": "294322401758412800",
+          "_rhSpec": "Arms",
+          "_rhClass": "Warrior"
         }
       ],
       "rhEventTitle": "9/15 Black Temple",
