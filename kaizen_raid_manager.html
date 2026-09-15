@@ -3637,6 +3637,17 @@ body.guild-public-mode #tab-strats .public-assignment-sheet .personal-detail>*{m
   <button id="join-guild-btn" class="btn btn-small btn-gold" onclick="requestToJoinGuild()" style="display:none;">Request to Join</button>
 </div>
 
+<!-- Access-denied notice (see initFromJson's wasDeniedManageAccess) -
+     shown once, only when this exact page load hit /slug/manage without
+     real edit access and got quietly downgraded to the plain public
+     view instead. A plain functional notice, not a designed screen -
+     matches this file's own .notice component so it doesn't need its
+     own stylesheet pass. Wording/layout is real content this session,
+     not a placeholder - final visual treatment is Codex's, not this. -->
+<div id="manage-denied-banner" style="display:none;background:var(--bg-panel);border-bottom:1px solid var(--border-bright);padding:10px 20px;">
+  <div class="notice notice-warn" style="margin:0;" id="manage-denied-text"></div>
+</div>
+
 <!-- Sign-in panel (see the Clerk bootstrap script near the bottom of the
      file) - NOT a hard gate anymore. An unauthenticated visitor sees the
      app right away in read-only mode (see myRole/canEdit -
@@ -8108,6 +8119,28 @@ function checkRegisterGuildReturn() {
 // data/status is known. Not shown to an unauthenticated visitor at all
 // (there's nothing to request with yet) or an active member (nothing
 // left to ask for).
+// Companion to initFromJson's wasDeniedManageAccess downgrade - explains
+// why someone who typed/clicked their way to /slug/manage is looking at
+// the plain public page instead. Real contact mechanism only ever uses
+// what's actually reliable (guildInfo.discord, the guild's own real
+// invite) - never a specific GM's name, since guild_memberships.
+// display_name is null for any GM who arrived via registration rather
+// than an approved join request (confirmed on the real Kaizen row) -
+// see the persona-nav-map's own "Spec for Codex" note on this exact gap.
+function renderManageDeniedBanner() {
+  const banner = document.getElementById('manage-denied-banner');
+  const text = document.getElementById('manage-denied-text');
+  if (!banner || !text) return;
+  if (!window.wasDeniedManageAccess) { banner.style.display = 'none'; return; }
+  const signedIn = !!window.Clerk?.user;
+  const name = guildInfo?.guildName || currentGuildSlug;
+  const discordLink = guildInfo?.discord ? ` <a href="${obEscape(guildInfo.discord)}" target="_blank" rel="noopener">Ask an Officer or the GM in Discord ↗</a>` : '';
+  banner.style.display = 'block';
+  text.innerHTML = signedIn
+    ? `<span>⚠</span> You don't have permission to manage ${obEscape(name)} — only an Officer or the GM can.${discordLink}`
+    : `<span>⚠</span> Sign in to see if you can manage ${obEscape(name)}.${discordLink}`;
+}
+
 function renderJoinGuildUi() {
   const banner = document.getElementById('join-guild-banner');
   const text = document.getElementById('join-guild-status-text');
@@ -16768,6 +16801,26 @@ async function initFromJson() {
       myRole = 'unauthenticated';
       _appStateVersion = 0; // no version to track - the public path never saves
     }
+
+    // Owner-directed fix (persona-nav-map, "Member" - hitting /manage
+    // without real access should be a real screen, not a silently-
+    // disabled manager shell): the URL alone decided inManageMode in
+    // resolveGuildFromUrl(), before myRole was ever knowable. Now that
+    // it is, downgrade inManageMode back to false for anyone whose real
+    // role has zero edit access anywhere (hasAnyRealEditAccess) - every
+    // downstream branch (applyTabPermissions, renderOverview,
+    // guildMenuRowHtml, tab routing, all of it) already reads this same
+    // variable to decide manager-shell-vs-public-view, so flipping it
+    // once, here, before any of that runs, makes the WHOLE app fall
+    // back to the exact same public guild page a plain visitor sees -
+    // not a new screen to build and maintain in parallel. This never
+    // changes what DATA was fetched above (an active Member's /api/state
+    // call already happened identically either way - tabPermissions
+    // gates editing UI, not the fetch itself), only which chrome renders.
+    // wasDeniedManageAccess flags the one-time notice below.
+    window.wasDeniedManageAccess = inManageMode && !hasAnyRealEditAccess();
+    if (window.wasDeniedManageAccess) inManageMode = false;
+
     if (!result.data) throw new Error('No app state saved yet');
     if (isActiveMember) _appStateVersion = result.version || 0;
     const data = result.data;
@@ -16857,6 +16910,7 @@ async function initFromJson() {
   }
   applyTabPermissions();
   renderJoinGuildUi();
+  renderManageDeniedBanner();
   renderRaidTabs();
   renderRoster();
   renderOverview();
@@ -17022,10 +17076,33 @@ async function openGuildOnboarding(){
  let guilds = [], loadError = null;
  if (onboardingPreview) { guilds = []; }
  else { try { guilds = (await obApi('/api/my-guilds')).guilds || []; } catch(e) { loadError = e.message; } }
+
+ // Owner-directed fix (persona-nav-map, "Unverified" - carry the guild
+ // you arrived on through sign-in instead of dropping it): isLandingPage
+ // false is the ONLY reliable signal a real guild slug actually resolved
+ // - currentGuildSlug/CURRENT_GUILD_ID default to 'kaizen'/1 even on the
+ // bare marketing root (see resolveGuildFromUrl), so skipping this check
+ // would falsely treat every cold sign-in as "arrived on Kaizen." guildInfo
+ // is already loaded for the current guild's PUBLIC page by this point
+ // regardless of auth state, so no extra fetch is needed for its name.
+ const arrivedGuild = (!isLandingPage && !onboardingPreview)
+   ? { id: CURRENT_GUILD_ID, slug: currentGuildSlug, name: guildInfo?.guildName || currentGuildSlug }
+   : null;
+ const arrivedMembership = arrivedGuild ? guilds.find(g => g.id === arrivedGuild.id) : null;
+ // True only for "arrived on a specific guild I have zero relationship
+ // to yet" - arriving on a guild you're ALREADY active/pending/rejected
+ // on is not a new offer, it's just one more row in the existing list
+ // below (or the sole-active-guild auto-skip, unaffected either way).
+ const arrivedNeedsOffer = !!(arrivedGuild && !arrivedMembership);
+
  const active = guilds.filter(g => g.status === 'active');
  // Exactly one real home already, no ambiguity - skip the chooser
- // entirely and just take them in. Signing in isn't "start over."
- if (active.length === 1 && !onboardingPreview) {
+ // entirely and just take them in. Signing in isn't "start over." -
+ // unless they arrived on a DIFFERENT guild they have no relationship to
+ // yet, in which case silently skipping to their existing guild would
+ // swallow the one they actually came here for (persona-nav-map's
+ // "several guilds already" branch applies here too, at n=1).
+ if (active.length === 1 && !onboardingPreview && !arrivedNeedsOffer) {
    document.getElementById('guild-onboarding').close();
    location.href = '/' + encodeURIComponent(active[0].slug);
    return;
@@ -17037,6 +17114,18 @@ async function openGuildOnboarding(){
  const guildListHtml = guilds.map((guild,i) => '<button class="ob-choice" style="width:100%;margin-top:10px;" onclick="obMembership(_obGuildsCache['+i+'],_obGuildsCache['+i+'].status)"><strong>'+obEscape(guild.name)+'</strong><small>'+({active:'Member · Open guild',pending:'Pending approval · Check status',rejected:'Request declined · View options'}[guild.status]||'View membership')+'</small></button>').join('');
  if (loadError) {
    obShow(obHeading('Your people. Your next raid.','Start a home for your guild, or find the people you already raid with.')+chooserHtml+'<p style="margin-top:16px;">'+obEscape(loadError)+'</p><button class="ob-action" onclick="openGuildOnboarding()">Retry loading your guilds</button>');
+ } else if (arrivedNeedsOffer) {
+   // New default: lead with "join the guild you were just looking at",
+   // not a blank Register/Join fork - obMembership(g, null) already
+   // renders exactly the right "guild found, request to join" screen
+   // and wires its own Request button. Any OTHER real guilds this
+   // person already belongs to are appended below, never dropped -
+   // matches member-flows.html's "many" review scenario.
+   obMembership(arrivedGuild, null);
+   if (guilds.length) {
+     document.getElementById('ob-content').insertAdjacentHTML('beforeend',
+       '<p style="margin-top:24px;color:var(--text-dim);font-size:13px;">You also belong to:</p>' + guildListHtml);
+   }
  } else if (guilds.length) {
    // Already has at least one relationship to a guild (active-but-plural,
    // pending, and/or rejected) - lead with THOSE, "start another" second.
