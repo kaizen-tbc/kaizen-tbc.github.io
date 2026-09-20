@@ -2080,6 +2080,16 @@ async function fetchRecruitGear(env, region, realmSlug, nameSlug) {
   });
   const mediaAssets = media?.assets || [];
   return {
+    // Blizzard's own canonical capitalization (confirmed live 2026-09-20:
+    // a lookup for "hamshammích" in any case returns name:"Hamshammích",
+    // realm.name:"Dreamscythe") - owner: "I think it's better if we take
+    // the capitalization from Blizzard if possible" rather than echoing
+    // back whatever case was typed into the search box. runRecruitCheck
+    // prefers these over the as-typed name/realm; only falls back to the
+    // typed values when the Blizzard lookup itself failed (WCL has no
+    // equivalent canonical-name field to fall back to instead).
+    name: summary.name ?? null,
+    realm: summary.realm?.name ?? null,
     avatarUrl: mediaAssets.find(a => a.key === 'avatar')?.value ?? null,
     portraitUrl: mediaAssets.find(a => a.key === 'main-raw')?.value ?? null,
     level: summary.level ?? null,
@@ -2378,8 +2388,13 @@ async function runRecruitCheck(env, { name, realm, region, tier, forceRefresh })
   }
 
   const rankingsValue = rankingsOutcome.status === 'fulfilled' ? rankingsOutcome.value.value : null;
+  const gearValue = gearOutcome.status === 'fulfilled' ? gearOutcome.value.value : null;
   return {
-    character: { name, realm, region: regionSlug },
+    // Blizzard's own capitalization when the armory lookup succeeded
+    // (see fetchRecruitGear's own comment); only falls back to whatever
+    // case was typed in when that lookup failed, since WCL's response has
+    // no equivalent canonical-name field to prefer instead.
+    character: { name: gearValue?.name || name, realm: gearValue?.realm || realm, region: regionSlug },
     gear: gearOutcome.status === 'fulfilled' ? gearOutcome.value.value : null,
     rankings: rankingsValue,
     tiers: RECRUIT_TIERS.map(t => ({ key: t.key, label: t.label, available: t.zoneId != null })),

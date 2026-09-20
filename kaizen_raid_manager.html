@@ -3147,6 +3147,17 @@ body.guild-public-mode #tab-strats .public-assignment-sheet .personal-detail>*{m
 @media(max-width:520px){:is(#landing-page,body) .kz-onboard main{padding:24px}:is(#landing-page,body) .kz-onboard header{padding:16px 24px}:is(#landing-page,body) .kz-onboard h2{font-size:30px}:is(#landing-page,body) .kz-onboard .ob-choices{grid-template-columns:1fr}#landing-page .lp-navlinks{gap:12px}}
 
 
+
+/* Tier control uses the shared surface palette; retain native keyboard behavior. */
+#recruit-check-main #rc-tier-select{appearance:none;-webkit-appearance:none;min-height:42px;min-width:0;max-width:100%;padding:10px 38px 10px 14px;border:1px solid var(--lp-line);border-radius:6px;background-color:var(--lp-raised);color:var(--lp-text);font:500 13px/1.4 var(--lp-font-ui,'Segoe UI',sans-serif);cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23b2bec1' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m7 10 5 5 5-5'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;transition:border-color .15s ease}
+#recruit-check-main #rc-tier-select:hover{border-color:var(--lp-accent)}
+#recruit-check-main #rc-tier-select:focus-visible{outline:2px solid var(--lp-accent);outline-offset:3px}
+#recruit-check-main #rc-tier-select option{background:var(--lp-surface);color:var(--lp-text)}
+#recruit-check-main #rc-tier-select option:disabled{color:var(--lp-muted)}
+#recruit-check-main .rc-performance-heading{flex-wrap:wrap;align-items:center}
+#recruit-check-main .rc-performance-heading>div{flex:1 1 210px;min-width:0}
+#recruit-check-main .rc-performance-heading>a{margin-top:0}
+@media(max-width:600px){#recruit-check-main #rc-tier-select{width:100%}}
 /* Approved Recruit Check armory direction. */
 #recruit-check-main .rc-best-average strong .rc-parse{font:34px Georgia}
 #recruit-check-main .rc-best-average strong{background:#142023;border-radius:5px;padding:3px 8px;align-self:center;min-width:54px}
@@ -3155,7 +3166,7 @@ body.guild-public-mode #tab-strats .public-assignment-sheet .personal-detail>*{m
 
 #recruit-check-main .rc-kicker{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--lp-accent);margin-bottom:12px}
 #recruit-check-main .rc-result{border:0;padding-top:0}
-#recruit-check-main .rc-armory{overflow:hidden;border-radius:7px;background:radial-gradient(ellipse at center,#34474c,#152126 75%)}
+#recruit-check-main .rc-armory{padding:8px;box-sizing:border-box;overflow:hidden;border-radius:7px;background:radial-gradient(ellipse at center,#34474c,#152126 75%)}
 #recruit-check-main .rc-blizzard-render{transform:scale(1.7)}
 #recruit-check-main .rc-profile .rc-guild{color:var(--lp-link,var(--lp-accent))}
 
@@ -17303,8 +17314,15 @@ async function submitRecruitCheck(tier, forceRefresh, skipUrlPush) {
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || `Lookup failed (${res.status})`);
-    if (!skipUrlPush) updateRecruitCheckUrl(name, realm, data.selectedTier);
-    renderRecruitCheckResult(name, realm, data);
+    // Blizzard's own capitalization (data.character.name/realm), not
+    // whatever case was typed into the search box - owner: "take the
+    // capitalization from Blizzard if possible" (see kaizen-worker.js's
+    // fetchRecruitGear/runRecruitCheck). Falls back to the typed values
+    // only if the armory lookup itself failed.
+    const displayName = data.character?.name || name;
+    const displayRealm = data.character?.realm || realm;
+    if (!skipUrlPush) updateRecruitCheckUrl(displayName, displayRealm, data.selectedTier);
+    renderRecruitCheckResult(displayName, displayRealm, data);
   } catch (err) {
     resultEl.innerHTML = `<p class="rc-error" style="margin-top:24px;">${escapeRc(err.message)}</p>`;
   } finally {
