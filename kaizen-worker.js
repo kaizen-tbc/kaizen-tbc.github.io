@@ -2063,26 +2063,38 @@ async function fetchRecruitGear(env, region, realmSlug, nameSlug) {
 // undershoots Classic-Armory by a consistent ~11% every time -
 // Bradpitiful 1748 vs 1949 (10.3%), Zabanya 1771 vs 2007 (11.8%), Depew
 // 1723 vs 1932 (10.8%). The owner's own hunch going in was gem quality/
-// enchant completeness, but the data argues against that as the primary
-// cause: those three have meaningfully different classes, gear sets and
-// gem/enchant coverage (a heavily-gemmed warrior vs two differently-kitted
-// shamans), yet the gap barely moves (10.3-11.8%, a 1.5-point spread) -
-// a per-gem or per-enchant bonus term would be expected to vary more than
-// that across such different loadouts. A near-constant ratio instead
-// points to Classic-Armory simply using a different flat scale than this
-// specific open-source addon's GLOBAL_SCALE, not a structurally different
-// per-item formula. GS_CALIBRATION_FACTOR below is the average of the
-// three real ratios (1949/1748, 2007/1771, 1932/1723 = 1.1232), applied
-// as a final multiplier; re-checked against all three, it lands within
-// 1% of Classic-Armory's real number for every one of them (1963/1989/1935
-// vs 1949/2007/1932). This is an empirical correction from three real,
-// independent characters, not a curve-fit to one - but it's still only
-// three data points, all raid-geared level-70s; an undergeared character,
-// a twink, or a 2H-weapon user (still unconfirmed live - see above) could
-// reveal it needs refining further. Ship as an honestly-labeled estimate
-// ("GearScore (est.)"), never a claimed exact match to Classic-Armory.
+// enchant completeness; tested properly with a 4th character (Healkinz,
+// chosen for a contrasting gem profile) plus a real, confirmed gem-quality
+// outlier on Zabanya (one genuine UNCOMMON gem against RARE everywhere
+// else) - see DECISIONS.md's "Gem-quality hypothesis tested" entry for
+// the full investigation. Conclusion: no meaningful correlation between
+// gem-quality variance and the residual gap, so this stays a single flat
+// multiplier rather than per-gem scoring (which real gemItemIds data
+// would support building, if a future character's gap ever demands it -
+// not starting from zero on that if it comes up again).
+// GS_CALIBRATION_FACTOR is the average ratio (real Classic-Armory number
+// / this formula's raw output) across FOUR real, independent characters
+// - refined 2026-09-20 from an initial 3-character average (1.1232) to a
+// 4-character one (1.1262) once Healkinz's data was folded into the fit
+// instead of only used to validate it. Re-checked live against all four
+// (real deployed numbers, not hand math): Bradpitiful 1953 vs 1949
+// (0.21%), Zabanya 1994 vs 2007 (0.65%), Depew 1940 vs 1932 (0.41%),
+// Healkinz 1975 vs 1976 (0.05%) - tighter across the board than the
+// 3-character version (avg error dropped from 10.25 to 6.5 points; max
+// error from 18 points/0.9% to 13 points/0.65%). The owner's own bar:
+// "matching classic armory as best as we can... any percentage closer
+// we can get to it we do" - this is that, re-fit on every new real data
+// point rather than
+// left alone once "good enough." Still only four data points, all
+// raid-geared level-70s; an undergeared character, a twink, or a real
+// 2H-weapon user (that slot weight is still inferred from Blizzard's
+// documented enum, never directly observed live) could shift this
+// further - re-average in the same way the next time a real character
+// is checked, don't just leave this constant untouched indefinitely.
+// Ship as an honestly-labeled estimate ("GearScore (est.)"), never a
+// claimed exact match to Classic-Armory.
 const GS_GLOBAL_SCALE = 1.7;
-const GS_CALIBRATION_FACTOR = 1.1232;
+const GS_CALIBRATION_FACTOR = 1.1262;
 const GS_ENCHANT_BONUS = 1.05;
 const GS_RARITY_WEIGHTS = { POOR: 3.5, COMMON: 3, UNCOMMON: 2.5, RARE: 1.76, EPIC: 1.6, LEGENDARY: 1.4, ARTIFACT: 1.4, HEIRLOOM: 1.4 };
 const GS_SLOT_WEIGHTS = {
