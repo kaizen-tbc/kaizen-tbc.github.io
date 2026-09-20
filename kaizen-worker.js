@@ -150,11 +150,14 @@ export default {
       }
     }
 
-    // TEMPORARY - raw enchantments[] arrays across every equipped item,
-    // to check whether gems are bundled into the same array as the real
-    // stat enchant (distinguished by enchantment_slot.id) - if so,
-    // computeGearScore's binary "enchanted" flag is conflating "has a
-    // real enchant" with "has any gem," and gems aren't scored at all.
+    // Permanent read-only diagnostic (matching /wcl-status/battlenet-status):
+    // raw enchantments[] per equipped item, including each gem's own
+    // source_item.id. Confirmed live (2026-09-20) that gems are bundled
+    // into the same array as the real stat enchant, distinguished only
+    // by enchantment_slot.type === "PERMANENT" - see computeGearScore's
+    // own comment. Useful for a future quality-aware gem score (still
+    // unbuilt - GS_CALIBRATION_FACTOR closed most of the real gap
+    // without needing one, see DECISIONS.md).
     if (url.pathname === '/battlenet-enchant-check' && request.method === 'GET') {
       const realmSlug = toWowSlug(url.searchParams.get('realm') || 'dreamscythe');
       const nameSlug = toWowSlug(url.searchParams.get('name') || 'bradpitiful');
@@ -2033,24 +2036,31 @@ async function fetchRecruitGear(env, region, realmSlug, nameSlug) {
 // two-handed weapon was equipped on the test character) - worth a real
 // check against a 2H-wielding character if the calibration below is off
 // for one.
-// CALIBRATION RESULT (2026-09-20, real Kaizen raider Bradpitiful): this
-// formula returns 1748; Classic-Armory's own reading for the same
-// character, same moment, was 1949 - a real ~10% gap, not a rounding
-// difference. Every input (item level, quality, enchant presence) was
-// independently confirmed correct against Blizzard's own API before
-// this comparison, so the gap is the formula itself, not bad data:
-// either Classic-Armory tunes its own weights differently from this
-// specific open-source addon, or factors something this port doesn't
-// (e.g. gem quality/count, not just enchant presence - GearScoreClassic+
-// itself doesn't score gems either, so if Classic-Armory does, that
-// would fully explain an undershoot this size). NOT reverse-engineered
-// or curve-fit to match 1949 exactly - doing that off one data point
-// would overfit to this one gear composition and drift wrong for a
-// different one. Ship this as an independent, honestly-labeled estimate
-// ("GearScore (est.)"), not a claimed match to Classic-Armory's own
-// number, unless/until it's recalibrated against several real
-// characters and the actual source of the gap is found, not guessed at.
+// CALIBRATION (2026-09-20, three real Kaizen raiders, checked against
+// Classic-Armory's own live reading for each): this raw formula
+// undershoots Classic-Armory by a consistent ~11% every time -
+// Bradpitiful 1748 vs 1949 (10.3%), Zabanya 1771 vs 2007 (11.8%), Depew
+// 1723 vs 1932 (10.8%). The owner's own hunch going in was gem quality/
+// enchant completeness, but the data argues against that as the primary
+// cause: those three have meaningfully different classes, gear sets and
+// gem/enchant coverage (a heavily-gemmed warrior vs two differently-kitted
+// shamans), yet the gap barely moves (10.3-11.8%, a 1.5-point spread) -
+// a per-gem or per-enchant bonus term would be expected to vary more than
+// that across such different loadouts. A near-constant ratio instead
+// points to Classic-Armory simply using a different flat scale than this
+// specific open-source addon's GLOBAL_SCALE, not a structurally different
+// per-item formula. GS_CALIBRATION_FACTOR below is the average of the
+// three real ratios (1949/1748, 2007/1771, 1932/1723 = 1.1232), applied
+// as a final multiplier; re-checked against all three, it lands within
+// 1% of Classic-Armory's real number for every one of them (1963/1989/1935
+// vs 1949/2007/1932). This is an empirical correction from three real,
+// independent characters, not a curve-fit to one - but it's still only
+// three data points, all raid-geared level-70s; an undergeared character,
+// a twink, or a 2H-weapon user (still unconfirmed live - see above) could
+// reveal it needs refining further. Ship as an honestly-labeled estimate
+// ("GearScore (est.)"), never a claimed exact match to Classic-Armory.
 const GS_GLOBAL_SCALE = 1.7;
+const GS_CALIBRATION_FACTOR = 1.1232;
 const GS_ENCHANT_BONUS = 1.05;
 const GS_RARITY_WEIGHTS = { POOR: 3.5, COMMON: 3, UNCOMMON: 2.5, RARE: 1.76, EPIC: 1.6, LEGENDARY: 1.4, ARTIFACT: 1.4, HEIRLOOM: 1.4 };
 const GS_SLOT_WEIGHTS = {
@@ -2069,7 +2079,7 @@ function computeGearScore(items) {
     const enchantBonus = it.enchanted ? GS_ENCHANT_BONUS : 1;
     total += (it.itemLevel / rarityWeight) * slotWeight * enchantBonus * GS_GLOBAL_SCALE;
   }
-  return Math.round(total);
+  return Math.round(total * GS_CALIBRATION_FACTOR);
 }
 
 // characterData.character(...).zoneRankings - JSON-scalar field (WCL's
