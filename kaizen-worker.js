@@ -150,6 +150,28 @@ export default {
       }
     }
 
+    // TEMPORARY - raw enchantments[] arrays across every equipped item,
+    // to check whether gems are bundled into the same array as the real
+    // stat enchant (distinguished by enchantment_slot.id) - if so,
+    // computeGearScore's binary "enchanted" flag is conflating "has a
+    // real enchant" with "has any gem," and gems aren't scored at all.
+    if (url.pathname === '/battlenet-enchant-check' && request.method === 'GET') {
+      const realmSlug = toWowSlug(url.searchParams.get('realm') || 'dreamscythe');
+      const nameSlug = toWowSlug(url.searchParams.get('name') || 'bradpitiful');
+      try {
+        const equipment = await battleNetFetch(env, 'us', `/profile/wow/character/${realmSlug}/${nameSlug}/equipment?namespace=profile-classicann-us&locale=en_US`);
+        const slim = (equipment.equipped_items || []).map(it => ({
+          name: it.name,
+          inventoryType: it.inventory_type?.type,
+          sockets: it.sockets,
+          enchantments: (it.enchantments || []).map(e => ({ slotId: e.enchantment_slot?.id, slotType: e.enchantment_slot?.type, display: e.display_string, sourceItemId: e.source_item?.id })),
+        }));
+        return corsResponse(JSON.stringify(slim), 200);
+      } catch (err) {
+        return corsResponse(JSON.stringify({ error: err.message }), 500);
+      }
+    }
+
     // ── Direct roster post from raid manager ── /post-roster
     if (url.pathname === '/post-roster' && request.method === 'POST') {
       return handleDirectRosterPost(request, env);
@@ -1953,16 +1975,34 @@ async function fetchRecruitGear(env, region, realmSlug, nameSlug) {
   const itemLevels = await Promise.all(rawItems.map(it =>
     it.item?.id ? getItemLevel(env, region, it.item.id).catch(() => null) : Promise.resolve(null)
   ));
-  const items = rawItems.map((it, i) => ({
-    slot: it.slot?.type,
-    inventoryType: it.inventory_type?.type,
-    name: it.name,
-    quality: it.quality?.type,
-    itemLevel: itemLevels[i],
-    enchanted: (it.enchantments || []).length > 0,
-    gems: (it.sockets || []).filter(s => s.item).length,
-    socketCount: (it.sockets || []).length,
-  }));
+  const items = rawItems.map((it, i) => {
+    // Blizzard bundles gems into the SAME enchantments[] array as the
+    // real stat enchant, distinguished only by enchantment_slot.type -
+    // confirmed live (2026-09-20) against a real Kaizen raider's gear:
+    // exactly one entry per item has type "PERMANENT" (the actual
+    // enchant), every other entry is a filled gem socket, often (not
+    // always) carrying its own source_item.id. The previous `enchanted:
+    // .length > 0` was wrong - it was true for a gemmed-but-unenchanted
+    // item too, incorrectly applying the enchant bonus. There is no
+    // separate `sockets` field on this endpoint at all (another wrong
+    // pre-credentials guess, same class of bug as the missing item-level
+    // field) - gemItemIds is the real per-gem data now available for a
+    // future quality-aware gem score, once that's calibrated against
+    // real Classic-Armory comparisons rather than guessed at.
+    const enchantments = it.enchantments || [];
+    const realEnchant = enchantments.some(e => e.enchantment_slot?.type === 'PERMANENT');
+    const gemEntries = enchantments.filter(e => e.enchantment_slot?.type !== 'PERMANENT');
+    return {
+      slot: it.slot?.type,
+      inventoryType: it.inventory_type?.type,
+      name: it.name,
+      quality: it.quality?.type,
+      itemLevel: itemLevels[i],
+      enchanted: realEnchant,
+      gems: gemEntries.length,
+      gemItemIds: gemEntries.map(e => e.source_item?.id).filter(Boolean),
+    };
+  });
   return {
     level: summary.level ?? null,
     class: summary.character_class?.name ?? null,

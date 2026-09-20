@@ -17189,11 +17189,14 @@ function renderRecruitCheckResult(name, realm, data) {
       html += `<p>GearScore (est.): <strong>${g.gearScore}</strong></p>`;
     }
     if (g.items?.length) {
+      // "Unenchanted" only, not "missing gems" - Blizzard's equipment API
+      // only reports FILLED gem sockets (via each item's enchantments[]),
+      // never how many total sockets an item has, so an empty-socket gap
+      // genuinely can't be detected from this data (not a missing feature,
+      // a real data-source limit - see fetchRecruitGear's own comment).
       const enchantableSlots = ['HEAD','SHOULDER','CHEST','LEGS','WRIST','FEET','MAIN_HAND'];
       const missing = g.items.filter(it => !it.enchanted && enchantableSlots.includes(it.slot));
-      const gaps = g.items.filter(it => it.socketCount > 0 && it.gems < it.socketCount);
       if (missing.length) html += `<p class="rc-muted">Unenchanted: ${missing.map(it => escapeRc(it.slot)).join(', ')}</p>`;
-      if (gaps.length) html += `<p class="rc-muted">Missing gems: ${gaps.map(it => escapeRc(it.slot)).join(', ')}</p>`;
     }
   } else if (data.errors?.gear) {
     html += `<p class="rc-error">${escapeRc(data.errors.gear)}</p>`;
