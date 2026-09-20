@@ -134,6 +134,29 @@ export default {
       }
     }
 
+    // GET /recruit-check-diag - read-only, no auth (same public-armory-
+    // data reasoning as /battlenet-gearscore-check below): runs the exact
+    // runRecruitCheck code path /api/recruit-check uses, tier selection,
+    // per-tier/per-gear caching and cooldown included, so all of it stays
+    // checkable against real data without a real signed-in Clerk session
+    // (which this environment can't complete on its own - see
+    // Design/DECISIONS.md). ?tier=<key from RECRUIT_TIERS>,
+    // ?forceRefresh=1 to exercise the cooldown path.
+    if (url.pathname === '/recruit-check-diag' && request.method === 'GET') {
+      try {
+        const result = await runRecruitCheck(env, {
+          name: url.searchParams.get('name') || 'Bradpitiful',
+          realm: url.searchParams.get('realm') || 'dreamscythe',
+          region: url.searchParams.get('region') || 'us',
+          tier: url.searchParams.get('tier') || undefined,
+          forceRefresh: url.searchParams.get('forceRefresh') === '1',
+        });
+        return corsResponse(JSON.stringify(result), 200);
+      } catch (err) {
+        return corsResponse(JSON.stringify({ error: err.message }), err.status || 500);
+      }
+    }
+
     // Permanent read-only diagnostic, same spirit as /wcl-status: runs
     // the real fetchRecruitGear (the exact code path /api/recruit-check
     // uses) so a computed gearScore can be checked against Classic-
@@ -2123,6 +2146,12 @@ async function fetchRecruitGear(env, region, realmSlug, nameSlug) {
 // is checked, don't just leave this constant untouched indefinitely.
 // Ship as an honestly-labeled estimate ("GearScore (est.)"), never a
 // claimed exact match to Classic-Armory.
+// Independently reconfirmed 2026-09-20: the owner upgraded Zabanya's one
+// outlier UNCOMMON gem to a RARE one in-game and re-checked Classic-
+// Armory's own number - no movement ("Did not move the needle. I was
+// wrong."), matching this comment's conclusion above from the other
+// direction (a real gear change, not just cross-character comparison).
+// No formula change from this - it's confirmation, not new information.
 const GS_GLOBAL_SCALE = 1.7;
 const GS_CALIBRATION_FACTOR = 1.1262;
 const GS_ENCHANT_BONUS = 1.05;
@@ -2146,35 +2175,70 @@ function computeGearScore(items) {
   return Math.round(total * GS_CALIBRATION_FACTOR);
 }
 
+// The 5 raid tiers this whole app already groups TBC content into -
+// RAID_PROGRESSION_LABEL in kaizen_raid_manager.html has the identical
+// label set (Karazhan / Gruul's / Magtheridon / SSC / TK / Black Temple /
+// Hyjal / Sunwell Plateau); reused here verbatim so a tier picked in the
+// dropdown means the same thing everywhere in the app. zoneId values are
+// WCL's real numeric zone ids for the TBC ANNIVERSARY track specifically
+// (expansion:"The Burning Crusade", frozen:false) - confirmed live
+// 2026-09-20 by probing worldData.zone(id) against real Kaizen
+// characters via a temporary diagnostic (since removed). This matters
+// because WCL ALSO serves the original 2021 TBC Classic replay's now-
+// frozen zones under the SAME names (Karazhan=1007, Gruul/Mag=1008,
+// SSC/TK=1010, BT/Hyjal=1011) - those are a different, closed track and
+// return "Unsupported zone specified" for an Anniversary character, so
+// using them here would silently break every tier lookup. A second,
+// unrelated "Titan Reforged" track (1052/1053/1057/1059 etc, also
+// non-frozen) exists too and is NOT this project's realm - ignored.
+// Each combined tile (e.g. "SSC / TK") is confirmed to be ONE real WCL
+// zone on the Anniversary track, not two that need merging - so the
+// tier dropdown never has to combine multiple zoneRankings queries.
+// Sunwell Plateau has no confirmed zone id: it hasn't unlocked on TBC
+// Anniversary yet, and none of 1041-1065 (the plausible id range) had a
+// valid Anniversary-track Sunwell zone. Left null rather than guessed;
+// runRecruitCheck below reports it as unavailable instead of querying a
+// wrong id. Re-verify (and fill in) once Sunwell actually unlocks.
+const RECRUIT_TIERS = [
+  { key: 'karazhan', label: 'Karazhan', zoneId: 1047 },
+  { key: 'gruul-magtheridon', label: "Gruul's / Magtheridon", zoneId: 1048 },
+  { key: 'ssc-tk', label: 'SSC / TK', zoneId: 1056 },
+  { key: 'bt-hyjal', label: 'Black Temple / Hyjal', zoneId: 1060 },
+  { key: 'sunwell', label: 'Sunwell Plateau', zoneId: null },
+];
+
 // characterData.character(...).zoneRankings - JSON-scalar field (WCL's
 // rankings fields aren't fully-typed GraphQL, same as the guild-level
-// zoneRanking query above). No zoneID passed -> WCL defaults to the
-// latest unfrozen zone, resolving "this tier" without this endpoint
-// needing to know which guild the recruiter belongs to. Uses
-// wclClassicQuery, not wclQuery - see WCL_CLASSIC_API's comment above;
-// this was confirmed live (2026-09-20) with real credentials against a
-// real Kaizen raider (Bradpitiful/Dreamscythe) - a Dreamscythe character
-// resolves on classic.warcraftlogs.com and comes back null on the retail
-// host every time, regardless of whether the character actually has
-// logs. Real confirmed shape (differs from the pre-credentials guess):
-// zr.zone is a bare numeric id, NOT {name} - resolved below via the same
-// cache /api/wcl-zones already warms, best-effort (a cache miss just
-// means no zone label, never a failure). Per-boss entries have
-// rankPercent (their best logged attempt) and medianPercent (closest
-// analog to "average" - there's no separate per-boss average field) -
-// matches the brief's "best/average parse per relevant boss" directly.
-// bestSpec (not spec) is which spec earned their best parse.
-async function fetchRecruitRankings(env, name, realmSlug, region) {
+// zoneRanking query above). zoneId omitted -> WCL defaults to the latest
+// unfrozen zone; passed -> scopes the whole response (rankings AND the
+// two performance averages below) to that one tier, confirmed live
+// 2026-09-20 against real Kaizen characters across all 4 available tiers.
+// Uses wclClassicQuery, not wclQuery - see WCL_CLASSIC_API's comment
+// above. Real confirmed shape (differs from the pre-credentials guess):
+// zr.zone is a bare numeric id, NOT {name} - resolved below against
+// RECRUIT_TIERS first (covers every tier this app actually shows in the
+// dropdown), falling back to the /api/wcl-zones cache for anything
+// outside that set, best-effort either way (a miss just means no zone
+// label, never a failure). Per-boss entries have rankPercent (their best
+// logged attempt) and medianPercent (closest analog to "average" - no
+// separate per-boss average field) - matches the brief's "best/average
+// parse per relevant boss" directly. bestPerformanceAverage/
+// medianPerformanceAverage are WCL's own tier-wide equivalents (confirmed
+// live as real top-level zoneRankings fields, not derived here) - this is
+// the "Best Perf. Avg" header metric Codex's visual pass added a slot
+// for. bestSpec (not spec) is which spec earned their best parse.
+async function fetchRecruitRankings(env, name, realmSlug, region, zoneId) {
+  const hasZone = zoneId != null;
   const data = await wclClassicQuery(env, `
-    query($name: String!, $server: String!, $region: String!) {
+    query($name: String!, $server: String!, $region: String!${hasZone ? ', $zid: Int!' : ''}) {
       characterData {
         character(name: $name, serverSlug: $server, serverRegion: $region) {
           id
-          zoneRankings
+          zoneRankings${hasZone ? '(zoneID: $zid)' : ''}
         }
       }
     }
-  `, { name, server: realmSlug, region });
+  `, hasZone ? { name, server: realmSlug, region, zid: zoneId } : { name, server: realmSlug, region });
   const character = data?.characterData?.character;
   if (!character) throw new Error('Character not found on Warcraft Logs - they may not have any logged parses.');
   const zr = character.zoneRankings || {};
@@ -2185,8 +2249,9 @@ async function fetchRecruitRankings(env, name, realmSlug, region) {
     spec: r.bestSpec ?? r.spec ?? null,
     kills: r.totalKills ?? 0,
   })) : [];
-  let zoneName = null;
-  if (zr.zone != null && env.WCL_CACHE) {
+  const tierMatch = zr.zone != null ? RECRUIT_TIERS.find(t => t.zoneId === zr.zone) : null;
+  let zoneName = tierMatch?.label ?? null;
+  if (!zoneName && zr.zone != null && env.WCL_CACHE) {
     const zones = await env.WCL_CACHE.get('wcl_zones_classic_v2', 'json').catch(() => null);
     zoneName = zones?.find(z => z.id === zr.zone)?.name ?? null;
   }
@@ -2194,8 +2259,144 @@ async function fetchRecruitRankings(env, name, realmSlug, region) {
     characterId: character.id,
     zoneId: zr.zone ?? null,
     zoneName,
+    tierKey: tierMatch?.key ?? null,
+    bestPerformanceAverage: zr.bestPerformanceAverage ?? null,
+    medianPerformanceAverage: zr.medianPerformanceAverage ?? null,
     rankings,
     wclUrl: `https://www.warcraftlogs.com/character/id/${character.id}`,
+  };
+}
+
+// In-isolate request de-duplication - NOT a global/edge-wide lock
+// (Cloudflare Workers don't share memory across isolates or locations),
+// just a same-warm-isolate optimization: if a second identical lookup
+// arrives while the first is still in flight on THIS isolate, it awaits
+// the same promise instead of paying for a second upstream call. A real,
+// disclosed, partial mitigation - not a substitute for the cache/cooldown
+// below, which are the actual global rate-limit controls.
+const recruitInFlight = new Map();
+function dedupedFetch(key, fn) {
+  if (recruitInFlight.has(key)) return recruitInFlight.get(key);
+  const p = Promise.resolve().then(fn).finally(() => recruitInFlight.delete(key));
+  recruitInFlight.set(key, p);
+  return p;
+}
+
+// Owner: "refresh constraints to avoid repeated upstream API calls...
+// show last-fetched time/refresh availability, distinguish cached/stale/
+// error results and never let clients bypass the limits." Three windows:
+// - < RECRUIT_FRESH_TTL old: served straight from cache, no upstream call
+//   at all (cacheStatus 'cached').
+// - a forced refresh (someone clicked "refresh now") always attempts a
+//   live call UNLESS a refresh already happened this same key within
+//   RECRUIT_REFRESH_COOLDOWN - then the cached copy is served instead
+//   with refreshDenied:true, so a client can't force-bypass the cache
+//   faster than the cooldown regardless of what it asks for.
+// - a live call that throws (rate limit, transient API error) falls back
+//   to serving the old cached value if one exists, marked cacheStatus
+//   'stale', rather than turning a temporary upstream hiccup into a hard
+//   error for something that was working fine 20 minutes ago.
+const RECRUIT_FRESH_TTL = 900;
+const RECRUIT_STALE_TTL = 3600;
+const RECRUIT_REFRESH_COOLDOWN = 60;
+async function getCachedOrFetch(env, cacheKey, forceRefresh, fetchFn) {
+  const cached = env.WCL_CACHE ? await env.WCL_CACHE.get(cacheKey, 'json').catch(() => null) : null;
+  const freshCutoff = Date.now() - RECRUIT_FRESH_TTL * 1000;
+  if (cached && cached.fetchedAt >= freshCutoff && !forceRefresh) {
+    return { value: cached.value, fetchedAt: cached.fetchedAt, cacheStatus: 'cached' };
+  }
+  if (forceRefresh && env.WCL_CACHE && cached) {
+    const onCooldown = await env.WCL_CACHE.get(`${cacheKey}:cooldown`).catch(() => null);
+    if (onCooldown) return { value: cached.value, fetchedAt: cached.fetchedAt, cacheStatus: 'cached', refreshDenied: true };
+  }
+  try {
+    const value = await dedupedFetch(cacheKey, fetchFn);
+    const fetchedAt = Date.now();
+    if (env.WCL_CACHE) {
+      await env.WCL_CACHE.put(cacheKey, JSON.stringify({ value, fetchedAt }), { expirationTtl: RECRUIT_STALE_TTL }).catch(() => {});
+      if (forceRefresh) await env.WCL_CACHE.put(`${cacheKey}:cooldown`, '1', { expirationTtl: RECRUIT_REFRESH_COOLDOWN }).catch(() => {});
+    }
+    return { value, fetchedAt, cacheStatus: 'live' };
+  } catch (err) {
+    if (cached) return { value: cached.value, fetchedAt: cached.fetchedAt, cacheStatus: 'stale', staleError: err.message };
+    throw err;
+  }
+}
+
+// Shared by handleRecruitCheck (POST /api/recruit-check, real auth) and
+// /recruit-check-diag (GET, read-only, no auth) below - one real
+// implementation, not two copies to keep in sync. Gear and rankings are
+// cached and refreshed independently (own cache keys, own TTL/cooldown
+// clocks) specifically so switching the tier dropdown only re-fetches
+// rankings, never re-pays for the Blizzard gear lookup (owner: "reuse
+// gear on tier changes").
+async function runRecruitCheck(env, { name, realm, region, tier, forceRefresh }) {
+  const regionSlug = toWowSlug(region || 'us');
+  const realmSlug = toWowSlug(realm);
+  const nameSlug = toWowSlug(name);
+
+  const tierDef = tier ? RECRUIT_TIERS.find(t => t.key === tier) : null;
+  if (tier && !tierDef) throw new Error(`Unknown tier "${tier}".`);
+  const tierUnavailable = !!(tierDef && tierDef.zoneId == null);
+
+  const blizzardConfigured = !!(env.BATTLENET_CLIENT_ID && env.BATTLENET_CLIENT_SECRET);
+  const wclConfigured = !!(env.WCL_CLIENT_ID && env.WCL_CLIENT_SECRET);
+  if (!blizzardConfigured && !wclConfigured) {
+    const err = new Error('Recruit Check is not configured on this server yet - ask the developer to set BATTLENET_CLIENT_ID/SECRET and WCL_CLIENT_ID/SECRET.');
+    err.status = 501;
+    throw err;
+  }
+
+  const gearCacheKey = `recruit-gear:${regionSlug}:${realmSlug}:${nameSlug}`;
+  const rankingsCacheKey = `recruit-rankings:${regionSlug}:${realmSlug}:${nameSlug}:${tierDef ? tierDef.key : 'auto'}`;
+
+  const [gearOutcome, rankingsOutcome] = await Promise.allSettled([
+    blizzardConfigured
+      ? getCachedOrFetch(env, gearCacheKey, forceRefresh, () => fetchRecruitGear(env, regionSlug, realmSlug, nameSlug))
+      : Promise.reject(new Error('not_configured')),
+    !wclConfigured
+      ? Promise.reject(new Error('not_configured'))
+      : tierUnavailable
+        ? Promise.reject(new Error('tier_unavailable'))
+        : getCachedOrFetch(env, rankingsCacheKey, forceRefresh, () => fetchRecruitRankings(env, name, realmSlug, regionSlug, tierDef ? tierDef.zoneId : undefined)),
+  ]);
+
+  const errors = {};
+  if (gearOutcome.status === 'rejected') {
+    errors.gear = gearOutcome.reason?.message === 'not_found'
+      ? "Character not found on Blizzard's armory - check the name/realm, or this may be a known Anniversary-realm API hiccup, try again shortly."
+      : gearOutcome.reason?.message === 'not_configured'
+        ? 'Blizzard armory lookup is not configured on this server yet.'
+        : (gearOutcome.reason?.message || 'Blizzard armory lookup failed.');
+  }
+  if (rankingsOutcome.status === 'rejected') {
+    errors.rankings = rankingsOutcome.reason?.message === 'not_configured'
+      ? 'Warcraft Logs lookup is not configured on this server yet.'
+      : rankingsOutcome.reason?.message === 'tier_unavailable'
+        ? `${tierDef.label} hasn't unlocked on Warcraft Logs for TBC Anniversary yet.`
+        : (rankingsOutcome.reason?.message || 'Warcraft Logs lookup failed.') + rateLimitSuffix(await getWCLRateLimit(env));
+  }
+
+  const rankingsValue = rankingsOutcome.status === 'fulfilled' ? rankingsOutcome.value.value : null;
+  return {
+    character: { name, realm, region: regionSlug },
+    gear: gearOutcome.status === 'fulfilled' ? gearOutcome.value.value : null,
+    rankings: rankingsValue,
+    tiers: RECRUIT_TIERS.map(t => ({ key: t.key, label: t.label, available: t.zoneId != null })),
+    selectedTier: tierDef ? tierDef.key : (rankingsValue?.tierKey ?? null),
+    fetchedAt: {
+      gear: gearOutcome.status === 'fulfilled' ? gearOutcome.value.fetchedAt : null,
+      rankings: rankingsOutcome.status === 'fulfilled' ? rankingsOutcome.value.fetchedAt : null,
+    },
+    cacheStatus: {
+      gear: gearOutcome.status === 'fulfilled' ? gearOutcome.value.cacheStatus : null,
+      rankings: rankingsOutcome.status === 'fulfilled' ? rankingsOutcome.value.cacheStatus : null,
+    },
+    refreshDenied: {
+      gear: gearOutcome.status === 'fulfilled' ? !!gearOutcome.value.refreshDenied : false,
+      rankings: rankingsOutcome.status === 'fulfilled' ? !!rankingsOutcome.value.refreshDenied : false,
+    },
+    errors,
   };
 }
 
@@ -2204,61 +2405,27 @@ async function fetchRecruitRankings(env, name, realmSlug, region) {
 // point on the marketing page but request people sign up to use the
 // feature" - matches handleMyGuilds' verifyAuth-only pattern above, not
 // the isApproverRole-gated pattern the WCL ranking sync endpoints use).
-// Body: {name, realm, region} (region defaults 'us'). Combines a
-// Blizzard armory lookup (gear/ilvl) with a Warcraft Logs character
-// lookup (per-boss parses this tier) into one cached response.
+// Body: {name, realm, region, tier, forceRefresh} (region defaults 'us',
+// tier defaults to WCL's own "latest unfrozen zone", forceRefresh
+// defaults false). All the actual lookup/cache/tier logic lives in
+// runRecruitCheck above so it can also run un-authenticated through
+// /recruit-check-diag for verification.
 async function handleRecruitCheck(request, env) {
   const auth = await verifyAuth(request, env);
   if (!auth) return corsResponse(JSON.stringify({ error: 'Unauthorized' }), 401);
 
-  const { name, realm, region } = await request.json();
+  const { name, realm, region, tier, forceRefresh } = await request.json();
   if (!name || !realm) return corsResponse(JSON.stringify({ error: 'Missing name/realm.' }), 400);
-  const regionSlug = toWowSlug(region || 'us');
-  const realmSlug = toWowSlug(realm);
-  const nameSlug = toWowSlug(name);
 
-  const cacheKey = `recruit:${regionSlug}:${realmSlug}:${nameSlug}`;
-  if (env.WCL_CACHE) {
-    const cached = await env.WCL_CACHE.get(cacheKey, 'json').catch(() => null);
-    if (cached) return corsResponse(JSON.stringify(cached), 200);
+  try {
+    const result = await runRecruitCheck(env, { name, realm, region, tier, forceRefresh: !!forceRefresh });
+    if (result.gear == null && result.rankings == null) {
+      return corsResponse(JSON.stringify({ error: 'Both lookups failed.', errors: result.errors }), 502);
+    }
+    return corsResponse(JSON.stringify(result), 200);
+  } catch (err) {
+    return corsResponse(JSON.stringify({ error: err.message }), err.status || 500);
   }
-
-  const blizzardConfigured = !!(env.BATTLENET_CLIENT_ID && env.BATTLENET_CLIENT_SECRET);
-  const wclConfigured = !!(env.WCL_CLIENT_ID && env.WCL_CLIENT_SECRET);
-  if (!blizzardConfigured && !wclConfigured) {
-    return corsResponse(JSON.stringify({ error: 'Recruit Check is not configured on this server yet - ask the developer to set BATTLENET_CLIENT_ID/SECRET and WCL_CLIENT_ID/SECRET.' }), 501);
-  }
-
-  const [gearResult, rankingResult] = await Promise.allSettled([
-    blizzardConfigured ? fetchRecruitGear(env, regionSlug, realmSlug, nameSlug) : Promise.reject(new Error('not_configured')),
-    wclConfigured ? fetchRecruitRankings(env, name, realmSlug, regionSlug) : Promise.reject(new Error('not_configured')),
-  ]);
-
-  const errors = {};
-  if (gearResult.status === 'rejected') {
-    errors.gear = gearResult.reason?.message === 'not_found'
-      ? "Character not found on Blizzard's armory - check the name/realm, or this may be a known Anniversary-realm API hiccup, try again shortly."
-      : gearResult.reason?.message === 'not_configured'
-        ? 'Blizzard armory lookup is not configured on this server yet.'
-        : (gearResult.reason?.message || 'Blizzard armory lookup failed.');
-  }
-  if (rankingResult.status === 'rejected') {
-    errors.rankings = rankingResult.reason?.message === 'not_configured'
-      ? 'Warcraft Logs lookup is not configured on this server yet.'
-      : (rankingResult.reason?.message || 'Warcraft Logs lookup failed.') + rateLimitSuffix(await getWCLRateLimit(env));
-  }
-  if (gearResult.status === 'rejected' && rankingResult.status === 'rejected') {
-    return corsResponse(JSON.stringify({ error: 'Both lookups failed.', errors }), 502);
-  }
-
-  const result = {
-    character: { name, realm, region: regionSlug },
-    gear: gearResult.status === 'fulfilled' ? gearResult.value : null,
-    rankings: rankingResult.status === 'fulfilled' ? rankingResult.value : null,
-    errors,
-  };
-  if (env.WCL_CACHE) await env.WCL_CACHE.put(cacheKey, JSON.stringify(result), { expirationTtl: 900 }).catch(() => {});
-  return corsResponse(JSON.stringify(result), 200);
 }
 
 // reports lives on the top-level reportData container, filtered by guildID

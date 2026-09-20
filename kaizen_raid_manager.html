@@ -3146,6 +3146,49 @@ body.guild-public-mode #tab-strats .public-assignment-sheet .personal-detail>*{m
 :is(#landing-page,body) .kz-onboard .ob-choice{display:block;text-align:left;padding:23px;border:1px solid var(--lp-line,var(--line,#546257));border-radius:10px;background:transparent;color:inherit;text-decoration:none}:is(#landing-page,body) .kz-onboard .ob-choice:hover{border-color:#c8aa62;background:#a7bd8810}:is(#landing-page,body) .kz-onboard strong{display:block;font:normal 24px/1.2 Georgia,serif;margin:8px 0}:is(#landing-page,body) .kz-onboard small{display:block;opacity:.75;font-size:13px}:is(#landing-page,body) .kz-onboard .ob-action{display:inline-block;padding:12px 20px;border:0;border-radius:6px;background:#d5b667;color:#19291f;font-weight:600;text-decoration:none;margin:12px 8px 0 0}:is(#landing-page,body) .kz-onboard .ob-back{border:0;background:transparent;color:inherit;padding:12px 0;display:block}:is(#landing-page,body) .kz-onboard input{box-sizing:border-box;width:100%;padding:13px;margin:8px 0 12px;border-radius:6px;border:1px solid #788275;background:transparent;color:inherit;font:inherit}:is(#landing-page,body) .kz-onboard label{display:block;font-weight:600}:is(#landing-page,body) .kz-onboard [role=status]{margin-top:16px}:is(#landing-page,body) .kz-onboard button:disabled{opacity:.5;cursor:wait}:is(#landing-page,body) .kz-onboard :focus-visible{outline:2px solid #d5b667;outline-offset:4px}:is(#landing-page,body) .kz-onboard .ob-status{display:inline-block;color:#d5b667;font-size:12px;text-transform:uppercase;letter-spacing:.1em;margin-bottom:16px}
 @media(max-width:520px){:is(#landing-page,body) .kz-onboard main{padding:24px}:is(#landing-page,body) .kz-onboard header{padding:16px 24px}:is(#landing-page,body) .kz-onboard h2{font-size:30px}:is(#landing-page,body) .kz-onboard .ob-choices{grid-template-columns:1fr}#landing-page .lp-navlinks{gap:12px}}
 
+
+/* Approved Recruit Check armory direction. */
+#recruit-check-main .rc-best-average strong .rc-parse{font:34px Georgia}
+#recruit-check-main .rc-best-average strong{background:#142023;border-radius:5px;padding:3px 8px;align-self:center;min-width:54px}
+@media(max-width:850px){#recruit-check-main .rc-profile{flex-wrap:wrap}#recruit-check-main .rc-metrics{flex-wrap:wrap;gap:18px}#recruit-check-main .rc-metrics>div+div{padding-left:18px}}
+@media(max-width:600px){#recruit-check-main .rc-metrics{gap:10px}#recruit-check-main .rc-metrics>div+div{padding-left:10px}#recruit-check-main .rc-metrics span{font-size:11px}#recruit-check-main .rc-best-average strong .rc-parse{font-size:29px}}
+
+#recruit-check-main .rc-kicker{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--lp-accent);margin-bottom:12px}
+#recruit-check-main .rc-result{border:0;padding-top:0}
+#recruit-check-main .rc-armory{overflow:hidden;border-radius:7px;background:radial-gradient(ellipse at center,#34474c,#152126 75%)}
+#recruit-check-main .rc-blizzard-render{transform:scale(1.7)}
+#recruit-check-main .rc-profile .rc-guild{color:var(--lp-link,var(--lp-accent))}
+
+#recruit-check-main .rc-columns{display:grid;align-items:start}
+#recruit-check-main .rc-profile,#recruit-check-main .rc-columns>.rc-section{border:1px solid var(--lp-line);border-radius:9px;background:var(--lp-surface);min-width:0}
+#recruit-check-main .rc-metrics{display:flex}#recruit-check-main .rc-metrics>div{display:flex;flex-direction:column;gap:5px}#recruit-check-main .rc-metrics span,#recruit-check-main .rc-metrics small{font-size:12px;color:var(--lp-muted)}
+#recruit-check-main .rc-section h3{font:27px Georgia;margin:0 0 18px}
+#recruit-check-main .rc-table-scroll{overflow-x:auto}#recruit-check-main table.rc-table td{padding:17px 10px}#recruit-check-main table.rc-table th{padding:12px 10px;font-size:11px}#recruit-check-main .rc-parse{font-weight:700;font-variant-numeric:tabular-nums}
+
+#recruit-check-main{max-width:1360px;padding:45px 28px 80px;position:relative}
+#recruit-check-main:before{content:'';position:absolute;z-index:-1;inset:0 0 auto;height:260px;background:linear-gradient(90deg,var(--lp-bg),transparent),linear-gradient(0deg,var(--lp-bg),transparent),url('/assets/progression-black-temple-hyjal.png') right center/cover;opacity:.28;pointer-events:none}
+#recruit-check-main>h1{font-size:52px}#recruit-check-main>.rc-row{background:transparent;border:0;padding:0;max-width:820px;margin-bottom:24px}
+#recruit-check-main .rc-profile{min-height:0;display:flex;align-items:center;gap:24px;padding:22px 28px;margin-bottom:22px;background:var(--lp-surface)}
+#recruit-check-main .rc-avatar{width:76px;height:76px;object-fit:cover;border:1px solid var(--lp-line);border-radius:50%}
+#recruit-check-main .rc-identity h2{font:38px/1.1 Georgia;margin:0 0 8px}#recruit-check-main .rc-identity p{font-size:13px;color:var(--lp-muted);margin:0 0 5px}#recruit-check-main .rc-guild{color:var(--lp-accent);font-size:13px}
+#recruit-check-main .rc-metrics{margin:0 0 0 auto;gap:28px;flex-shrink:0;text-align:center}#recruit-check-main .rc-metrics>div+div{border-left:1px solid var(--lp-line);padding-left:28px}#recruit-check-main .rc-metrics strong{font:34px Georgia}
+#recruit-check-main .rc-columns{grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:20px}#recruit-check-main .rc-columns>.rc-section{padding:22px 24px}
+#recruit-check-main .rc-armory{position:relative;min-height:460px;display:grid;grid-template-columns:48px 1fr 48px;grid-template-rows:1fr auto;gap:10px;isolation:isolate}
+#recruit-check-main .rc-body-render{position:absolute;inset:0 30px 48px;z-index:-1;display:grid;place-items:center;background:radial-gradient(ellipse,#65878420,transparent 70%)}
+#recruit-check-main .rc-blizzard-render{width:100%;height:100%;object-fit:contain;max-height:440px}#recruit-check-main .rc-slot-column{display:flex;flex-direction:column;gap:7px}#recruit-check-main .rc-left{grid-column:1}#recruit-check-main .rc-right{grid-column:3}#recruit-check-main .rc-weapons{grid-column:1/-1;display:flex;gap:10px;justify-content:center;padding-top:6px}
+#recruit-check-main .rc-slot{width:46px;height:46px;min-height:0;position:relative;padding:0;border:2px solid var(--quality);border-radius:5px;background:#101619;cursor:pointer;display:grid;place-items:center;isolation:isolate}#recruit-check-main .rc-slot:focus-visible,#recruit-check-main .rc-slot:hover{outline:2px solid var(--lp-accent);outline-offset:3px}
+#recruit-check-main .rc-slot-icon{width:100%;height:100%;object-fit:cover;border-radius:3px}#recruit-check-main .rc-slot-fallback{position:absolute;z-index:-1;font-size:11px;color:#b2bec1}
+#recruit-check-main .rc-selected-item,#recruit-check-main .rc-item-tooltip{display:flex;gap:12px;align-items:center;background:#142023;color:#f5f2e9;border:1px solid #34484b;border-radius:6px;padding:14px}
+#recruit-check-main .rc-selected-item{margin-top:18px;min-height:75px}#recruit-check-main .rc-detail-icon{width:40px;height:40px;object-fit:cover;border-radius:4px}#recruit-check-main .rc-selected-item strong,#recruit-check-main .rc-item-tooltip strong{display:block;font-size:14px}#recruit-check-main .rc-selected-item small,#recruit-check-main .rc-item-tooltip small,#recruit-check-main .rc-selected-item span,#recruit-check-main .rc-item-tooltip span{display:block;font-size:12px;color:#b2bec1;margin-top:5px}
+#recruit-check-main .rc-item-tooltip{position:fixed;z-index:10000;width:290px;max-width:calc(100vw - 16px);box-sizing:border-box;box-shadow:0 8px 30px #0008}#recruit-check-main .rc-item-tooltip[hidden]{display:none!important}
+#recruit-check-main .rc-gear-review{margin-top:16px;font-size:12px}#recruit-check-main .rc-gear-review summary{cursor:pointer;color:var(--lp-accent);display:flex;justify-content:space-between;gap:10px}#recruit-check-main .rc-gear-review p{padding:12px 0;border-bottom:1px solid var(--lp-line);margin:0}#recruit-check-main .rc-gear-review small{display:block;margin-top:5px;color:var(--lp-muted)}
+#recruit-check-main .rc-performance-heading{display:flex;justify-content:space-between;align-items:start;gap:12px;margin-bottom:18px}#recruit-check-main .rc-performance-heading h3{margin-top:0}#recruit-check-main .rc-performance-heading a{font-size:12px;white-space:nowrap;margin-top:8px}#recruit-check-main .rc-performance-heading p{font-size:12px;line-height:1.5}
+#recruit-check-main .rc-parse{background:none;border:0;border-radius:0;min-width:0;padding:0;font-size:19px}#recruit-check-main .rc-table td:nth-child(3) .rc-parse{font-size:15px}#recruit-check-main .rc-table td:nth-child(4){font-size:11px;color:var(--lp-muted)}#recruit-check-main .rc-table td:not(:first-child),#recruit-check-main .rc-table th:not(:first-child){text-align:center}#recruit-check-main .rc-table tbody tr:nth-child(even){background:#728b8210}#recruit-check-main .rc-table td:first-child{font-weight:500;min-width:135px}
+/* WCL colors remain exact on a consistent dark table in either theme. */
+#recruit-check-main .rc-table{background:#142023;color:#f5f2e9}#recruit-check-main .rc-table th,#recruit-check-main .rc-table td:nth-child(4){color:#b2bec1}#recruit-check-main table.rc-table td,#recruit-check-main table.rc-table th{border-color:#344044}
+@media(max-width:1000px){#recruit-check-main .rc-columns{grid-template-columns:1fr}#recruit-check-main .rc-equipment{grid-row:1}#recruit-check-main .rc-performance{grid-row:2}#recruit-check-main .rc-armory{max-width:520px;margin:auto}}
+@media(max-width:600px){#recruit-check-main{padding:28px 16px}#recruit-check-main>h1{font-size:40px}#recruit-check-main .rc-profile{flex-wrap:wrap;gap:14px;padding:18px!important}#recruit-check-main .rc-avatar{width:54px;height:54px}#recruit-check-main .rc-identity h2{font-size:28px}#recruit-check-main .rc-metrics{width:100%;margin-top:8px;justify-content:space-around}#recruit-check-main .rc-metrics strong{font-size:29px}#recruit-check-main .rc-columns>.rc-section{padding:18px 14px}#recruit-check-main .rc-performance-heading{flex-wrap:wrap}#recruit-check-main .rc-slot{width:40px;height:40px}#recruit-check-main .rc-armory{grid-template-columns:40px 1fr 40px;min-height:405px}#recruit-check-main .rc-body-render{inset:0 20px 44px}}
+
 </style>
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8959237604087556" crossorigin="anonymous"></script>
   <script>const whTooltips = { colorLinks: true, iconizeLinks: false, renameLinks: false, iconSize: 'small' };</script>
@@ -3480,8 +3523,8 @@ body.guild-public-mode #tab-strats .public-assignment-sheet .personal-detail>*{m
      for Codex's real visual pass, same pattern as the Unverified/Member
      navigation fixes. -->
 <div id="recruit-check-main" role="main">
-  <h1 style="font-family:var(--lp-font-display);font-size:28px;margin-bottom:8px;">Recruit Check</h1>
-  <p class="rc-muted" style="margin-bottom:24px;">Look up a character's gear and Warcraft Logs performance in one search.</p>
+  <div class="rc-kicker">Character insights</div><h1>Recruit Check</h1>
+  <p class="rc-muted" style="margin-bottom:24px;">Gear and encounter history. One clear picture.</p>
   <div class="rc-row">
     <div class="rc-field">
       <label for="rc-name">Character name</label>
@@ -3491,7 +3534,7 @@ body.guild-public-mode #tab-strats .public-assignment-sheet .personal-detail>*{m
       <label for="rc-realm">Realm</label>
       <input type="text" id="rc-realm" value="Dreamscythe" autocomplete="off">
     </div>
-    <button type="button" class="lp-button lp-primary" onclick="submitRecruitCheck()" id="rc-search-btn">Search</button>
+    <button type="button" class="lp-button lp-primary" onclick="submitRecruitCheck()" id="rc-search-btn">Look up character →</button>
   </div>
   <div id="rc-result"></div>
 </div>
@@ -8073,6 +8116,18 @@ let isLandingPage = false;
 // as true on this page as on the bare marketing root.
 let isRecruitCheckPage = false;
 
+// Parsed from a shareable Recruit Check URL - /recruit-check/<region>/
+// tbc-anniversary/<realm>/<character>?tier=<key>, inspired by Classic-
+// Armory's own character URLs (owner's ask: a link a recruiter can paste
+// straight to someone else, not just a search box). null on a bare
+// /recruit-check with no character segment. "tbc-anniversary" is a fixed
+// literal, not a variable - it's the only edition this pilot's Blizzard/
+// WCL clients actually support (see fetchRecruitGear/fetchRecruitRankings
+// in kaizen-worker.js), present in the URL now so this shape doesn't need
+// to change if a second edition is ever added; any other value there (or
+// too few path segments) is simply "no route" rather than guessed at.
+let recruitCheckRoute = null;
+
 // true on /<slug>/manage, false on a bare /<slug> (or no path at all).
 // This is the actual "published page vs. CMS" switch from the original
 // krm.gg design - canEdit() below caps every permission at 'view' when
@@ -8096,7 +8151,21 @@ let currentGuildSlug = 'kaizen';
 async function resolveGuildFromUrl() {
   const parts = window.location.pathname.split('/').filter(Boolean); // ["", "flying-hellfish", "manage"] -> ["flying-hellfish", "manage"]
   if (parts.length === 0) { isLandingPage = true; document.body.classList.add('landing-mode'); return; } // bare root - the marketing homepage now, not a guild
-  if (parts[0] === 'recruit-check') { isRecruitCheckPage = true; isLandingPage = true; document.body.classList.add('landing-mode', 'recruit-check-mode'); return; }
+  if (parts[0] === 'recruit-check') {
+    isRecruitCheckPage = true; isLandingPage = true;
+    document.body.classList.add('landing-mode', 'recruit-check-mode');
+    if (parts.length >= 5 && parts[2] === 'tbc-anniversary') {
+      try {
+        recruitCheckRoute = {
+          region: decodeURIComponent(parts[1]).toLowerCase(),
+          realm: decodeURIComponent(parts[3]),
+          name: decodeURIComponent(parts[4]),
+          tier: new URLSearchParams(location.search).get('tier') || null,
+        };
+      } catch { recruitCheckRoute = null; } // malformed %-escape in the URL - fall back to "no route" rather than throwing
+    }
+    return;
+  }
   inManageMode = parts[1] === 'manage';
   const slug = parts[0];
   try {
@@ -17014,6 +17083,7 @@ let _authResolvedOnce = false;
 window.addEventListener('load', async function () {
   await resolveGuildFromUrl(); // decides CURRENT_GUILD_ID/inManageMode/isLandingPage before anything else touches any of them
   if (isLandingPage) initLandingPage(); // theme toggle + raid picker - independent of Clerk/auth state
+  if (isRecruitCheckPage) initRecruitCheckPage(); // prefill inputs from recruitCheckRoute - independent of Clerk/auth state, same reasoning as initLandingPage above
   await Clerk.load({ ui: { ClerkUI: window.__internal_ClerkUICtor } });
 
   Clerk.addListener(({ user }) => {
@@ -17080,7 +17150,10 @@ window.addEventListener('load', async function () {
         // submitRecruitCheck() stashes the in-progress search before
         // sending someone through Clerk.openSignIn (which reloads this
         // same page on return) - restore and re-run it so signing in
-        // doesn't lose what they were about to search.
+        // doesn't lose what they were about to search. Takes priority
+        // over recruitCheckRoute below: a stashed search reflects
+        // whatever was actually being submitted (which may differ from
+        // the URL if they edited the fields right before signing in).
         if (isSignedIn) {
           let pending = null;
           try { pending = JSON.parse(sessionStorage.getItem('kaizen-recruit-check-pending') || 'null'); } catch {}
@@ -17088,7 +17161,14 @@ window.addEventListener('load', async function () {
             sessionStorage.removeItem('kaizen-recruit-check-pending');
             document.getElementById('rc-name').value = pending.name;
             document.getElementById('rc-realm').value = pending.realm;
-            submitRecruitCheck();
+            submitRecruitCheck(pending.tier || null);
+          } else if (recruitCheckRoute) {
+            // A shareable /recruit-check/<region>/tbc-anniversary/<realm>/
+            // <character> link, opened while already signed in (or
+            // freshly signed in with no pending search) - the URL itself
+            // is the intent, run it immediately rather than waiting for
+            // a manual Search click.
+            submitRecruitCheck(recruitCheckRoute.tier);
           }
         }
       }
@@ -17130,7 +17210,71 @@ function closeSignInGate() { document.getElementById('auth-gate').style.display 
 // searching, not by hiding the nav link.
 function escapeRc(value) { return String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
-async function submitRecruitCheck() {
+// Same slugging rule as toWowSlug in kaizen-worker.js (lowercase, strip
+// apostrophes, spaces->hyphens) - kept in sync by hand since this file
+// and the Worker don't share code, but it's a one-line rule unlikely to
+// drift. Used only for building the shareable URL's path segments; the
+// actual lookup fields sent to the API are always the as-typed values.
+function rcSlug(value) { return String(value || '').trim().toLowerCase().replace(/'/g, '').replace(/\s+/g, '-'); }
+
+// Prefills the search fields from a parsed shareable URL (recruitCheckRoute,
+// set by resolveGuildFromUrl) as soon as the page loads - independent of
+// Clerk, same as initLandingPage. Whether the search actually RUNS yet
+// depends on auth state, handled separately in the sign-in listener below
+// (a signed-out visitor should still see the fields populated and ready,
+// not be thrown into the sign-in flow just for opening a link). Restored
+// values are the URL's slug form (e.g. "zabanya", not "Zabanya") since
+// that's all the URL itself carries - cosmetic only, the lookup still
+// resolves the same character either way.
+function initRecruitCheckPage() {
+  if (!recruitCheckRoute) return;
+  document.getElementById('rc-name').value = recruitCheckRoute.name;
+  document.getElementById('rc-realm').value = recruitCheckRoute.realm;
+}
+
+// Keeps the address bar in sync with the current search/tier so the URL
+// is always something a recruiter can copy and hand to someone else
+// (owner's ask, Classic-Armory-style character URLs) - pushState, not
+// replaceState, so Back actually steps through prior searches (see the
+// popstate listener below), and skipped entirely when the fields already
+// match the current URL (repeat/refresh/tier-only reloads shouldn't pile
+// up redundant history entries).
+function updateRecruitCheckUrl(name, realm, tier) {
+  const path = `/recruit-check/us/tbc-anniversary/${encodeURIComponent(rcSlug(realm))}/${encodeURIComponent(rcSlug(name))}`;
+  const qs = tier ? `?tier=${encodeURIComponent(tier)}` : '';
+  const target = path + qs;
+  if (location.pathname + location.search !== target) history.pushState({ recruitCheck: { name, realm, tier } }, '', target);
+}
+
+// Back/Forward through a sequence of searches (owner: "restore inputs/
+// results on direct entry, reload, browser Back"). Popping back to the
+// bare /recruit-check (no character segment) clears the result area
+// rather than leaving a stale previous search's results on screen with
+// an empty-looking URL.
+window.addEventListener('popstate', () => {
+  if (!isRecruitCheckPage) return;
+  const parts = location.pathname.split('/').filter(Boolean);
+  if (parts.length >= 5 && parts[2] === 'tbc-anniversary') {
+    try {
+      document.getElementById('rc-name').value = decodeURIComponent(parts[4]);
+      document.getElementById('rc-realm').value = decodeURIComponent(parts[3]);
+      submitRecruitCheck(new URLSearchParams(location.search).get('tier') || null, false, true);
+    } catch {}
+  } else {
+    document.getElementById('rc-name').value = '';
+    document.getElementById('rc-realm').value = 'Dreamscythe';
+    document.getElementById('rc-result').innerHTML = '';
+  }
+});
+
+// tier: a RECRUIT_TIERS key from the last response's data.tiers (see
+// kaizen-worker.js), or null/omitted for WCL's own default ("latest
+// unfrozen zone"). forceRefresh: bypass the 15-minute cache for a live
+// re-fetch, subject to the server's own per-character cooldown (see
+// runRecruitCheck) - never trust a client to self-limit this. skipUrlPush:
+// set by the popstate listener above, which is already reacting to a URL
+// change and would otherwise push a second, redundant history entry.
+async function submitRecruitCheck(tier, forceRefresh, skipUrlPush) {
   const name = document.getElementById('rc-name').value.trim();
   const realm = document.getElementById('rc-realm').value.trim();
   if (!name || !realm) { showToast('Enter a character name and realm.', true); return; }
@@ -17142,7 +17286,7 @@ async function submitRecruitCheck() {
     // run, not send them somewhere else. Stash it so the reload Clerk
     // does on return (see the window.load handler's isRecruitCheckPage
     // branch) can restore and re-run it automatically.
-    try { sessionStorage.setItem('kaizen-recruit-check-pending', JSON.stringify({ name, realm })); } catch {}
+    try { sessionStorage.setItem('kaizen-recruit-check-pending', JSON.stringify({ name, realm, tier: tier || null })); } catch {}
     Clerk.openSignIn({ forceRedirectUrl: location.href, signInForceRedirectUrl: location.href, signUpForceRedirectUrl: location.href });
     return;
   }
@@ -17155,10 +17299,11 @@ async function submitRecruitCheck() {
     const res = await fetch(`${APP_API_WORKER}/api/recruit-check`, {
       method: 'POST',
       headers: { ...(await clerkAuthHeader()), 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, realm, region: 'us' }),
+      body: JSON.stringify({ name, realm, region: 'us', tier: tier || undefined, forceRefresh: !!forceRefresh }),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || `Lookup failed (${res.status})`);
+    if (!skipUrlPush) updateRecruitCheckUrl(name, realm, data.selectedTier);
     renderRecruitCheckResult(name, realm, data);
   } catch (err) {
     resultEl.innerHTML = `<p class="rc-error" style="margin-top:24px;">${escapeRc(err.message)}</p>`;
@@ -17172,75 +17317,64 @@ async function submitRecruitCheck() {
 // stays visible above since #rc-result only replaces itself). No
 // invented layout/copy beyond that; a Codex visual pass is a separate,
 // later step (see Design/DECISIONS.md).
-function renderRecruitCheckResult(name, realm, data) {
-  const resultEl = document.getElementById('rc-result');
-  let html = '<div class="rc-result">';
-
-  html += `<div class="rc-section"><h3>${escapeRc(name)} — ${escapeRc(realm)}</h3>`;
-  if (data.gear) {
-    const g = data.gear;
-    // Real rendered character portrait (Blizzard's own character-media
-    // render, not a generic race/gender sprite) - plain <img>, no frame/
-    // layout treatment invented here, that's Codex's call.
-    if (g.portraitUrl) html += `<img src="${g.portraitUrl}" alt="" style="max-width:180px;display:block;margin-bottom:12px;" onerror="this.style.display='none'">`;
-    html += `<p class="rc-muted">${escapeRc(g.class || '')} ${escapeRc(g.race || '')}${g.guild ? ' · ' + escapeRc(g.guild) : ''}</p>`;
-    html += `<p>Item level: <strong>${g.equippedItemLevel ?? '—'}</strong> (avg ${g.averageItemLevel ?? '—'})</p>`;
-    if (g.gearScore != null) {
-      // "(est.)" is deliberate, not filler - calibrated against 4 real
-      // characters' own Classic-Armory readings (see computeGearScore's
-      // comment in kaizen-worker.js), consistently within ~1%, but never
-      // claimed as an exact/guaranteed match.
-      html += `<p>GearScore (est.): <strong>${g.gearScore}</strong></p>`;
-    }
-    if (g.items?.length) {
-      // Plain icon grid, real Blizzard item icons + real WoW quality
-      // colors (gray/white/green/blue/purple/orange) - a fixed game
-      // convention, not an invented design choice, same as reusing the
-      // real GearScore formula rather than inventing one. No paperdoll/
-      // slot-position layout attempted here - that's a real visual/IA
-      // task, left for Codex (see Design/DECISIONS.md).
-      const qualityColors = { POOR: '#9d9d9d', COMMON: '#ffffff', UNCOMMON: '#1eff00', RARE: '#0070dd', EPIC: '#a335ee', LEGENDARY: '#ff8000', ARTIFACT: '#e6cc80', HEIRLOOM: '#00ccff' };
-      html += '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;">';
-      g.items.forEach(it => {
-        if (!it.icon) return;
-        const border = qualityColors[it.quality] || '#666';
-        const title = `${it.name || it.slot}${it.itemLevel ? ' (ilvl ' + it.itemLevel + ')' : ''}${it.enchanted ? ' — enchanted' : ''}${it.gems ? ' — ' + it.gems + ' gem(s)' : ''}`;
-        html += `<img src="${it.icon}" alt="" title="${escapeRc(title)}" style="width:36px;height:36px;border:2px solid ${border};border-radius:4px;" onerror="this.style.display='none'">`;
-      });
-      html += '</div>';
-      // "Unenchanted" only, not "missing gems" - Blizzard's equipment API
-      // only reports FILLED gem sockets (via each item's enchantments[]),
-      // never how many total sockets an item has, so an empty-socket gap
-      // genuinely can't be detected from this data (not a missing feature,
-      // a real data-source limit - see fetchRecruitGear's own comment).
-      const enchantableSlots = ['HEAD','SHOULDER','CHEST','LEGS','WRIST','FEET','MAIN_HAND'];
-      const missing = g.items.filter(it => !it.enchanted && enchantableSlots.includes(it.slot));
-      if (missing.length) html += `<p class="rc-muted">Unenchanted: ${missing.map(it => escapeRc(it.slot)).join(', ')}</p>`;
-    }
-  } else if (data.errors?.gear) {
-    html += `<p class="rc-error">${escapeRc(data.errors.gear)}</p>`;
-  }
-  html += '</div>';
-
-  html += '<div class="rc-section"><h3>Warcraft Logs performance</h3>';
-  if (data.rankings?.rankings?.length) {
-    html += `<p class="rc-muted">${escapeRc(data.rankings.zoneName || 'Current tier')} · <a href="${data.rankings.wclUrl}" target="_blank" rel="noopener">View on Warcraft Logs →</a></p>`;
-    html += '<table class="rc-table"><thead><tr><th>Boss</th><th>Best %</th><th>Avg %</th><th>Spec</th><th>Kills</th></tr></thead><tbody>';
-    data.rankings.rankings.forEach(r => {
-      html += `<tr><td>${escapeRc(r.encounter || '—')}</td><td>${r.bestPercent != null ? Math.round(r.bestPercent) : '—'}</td><td>${r.medianPercent != null ? Math.round(r.medianPercent) : '—'}</td><td>${escapeRc(r.spec || '—')}</td><td>${r.kills ?? 0}</td></tr>`;
-    });
-    html += '</tbody></table>';
-  } else if (data.rankings?.wclUrl) {
-    html += `<p class="rc-muted">No ranked parses this tier yet. <a href="${data.rankings.wclUrl}" target="_blank" rel="noopener">View on Warcraft Logs →</a></p>`;
-  } else if (data.errors?.rankings) {
-    html += `<p class="rc-error">${escapeRc(data.errors.rankings)}</p>`;
-  }
-  html += '</div>';
-
-  html += '</div>';
-  resultEl.innerHTML = html;
+// WCL percentile bands; classify raw values, never round a 99.x into a 100.
+function rcParseBadge(value) {
+  if (value == null || value === '' || !Number.isFinite(Number(value))) return '<span class="rc-muted">—</span>';
+  const n=Math.max(0,Math.min(100,Number(value)));
+  const color=n===100?'#e5cc80':n>=99?'#e268a8':n>=95?'#ff8000':n>=75?'#a335ee':n>=50?'#0070ff':n>=25?'#1eff00':'#9d9d9d';
+  return `<span class="rc-parse" style="color:${color}" aria-label="${n.toFixed(1)} percentile">${Number((Math.floor(n*10)/10).toFixed(1))}</span>`;
 }
-
+function rcSafeAsset(value) { try { if(!value)return ''; const u = new URL(value, location.origin); return ['https:', 'http:'].includes(u.protocol) ? escapeRc(u.href) : ''; } catch { return ''; } }
+// Owner: "show last-fetched time/refresh availability". Plain relative
+// time, no library - this data changes on a 15-minute cadence at most,
+// second-level precision would be noise.
+function rcTimeAgo(ts) {
+  if (!ts) return null;
+  const mins = Math.max(0, Math.round((Date.now() - ts) / 60000));
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  return `${Math.round(mins / 60)}h ago`;
+}
+function renderRecruitCheckResult(name, realm, data) {
+  const el=document.getElementById('rc-result'),g=data.gear,rank=data.rankings;
+  const number=v=>v==null?'—':escapeRc(Number(v).toLocaleString());
+  const image=(url,cls)=>rcSafeAsset(url)?`<img class="${cls}" src="${rcSafeAsset(url)}" alt="" onerror="this.hidden=true">`:'';
+  const qualities={POOR:'#9d9d9d',COMMON:'#fff',UNCOMMON:'#1eff00',RARE:'#0070dd',EPIC:'#a335ee',LEGENDARY:'#ff8000',ARTIFACT:'#e6cc80'};
+  const items=g?.items||[];
+  const selectedTier=data.selectedTier||'';
+  // Plain <select>, no styling beyond what .rc-performance-heading already
+  // gives its children - a Codex visual pass is expected here too (see
+  // Design/DECISIONS.md), same "functional first" pattern as everything
+  // else in this file. Disabled options (Sunwell, pre-unlock) are still
+  // shown so it's clear the tier exists and why it can't be picked yet,
+  // rather than silently missing from the list.
+  const tierSelect=(data.tiers||[]).length?`<select id="rc-tier-select" aria-label="Raid tier" onchange="submitRecruitCheck(this.value)">${data.tiers.map(t=>`<option value="${escapeRc(t.key)}"${t.key===selectedTier?' selected':''}${t.available?'':' disabled'}>${escapeRc(t.label)}${t.available?'':' (not released yet)'}</option>`).join('')}</select>`:'';
+  const gearAgo=rcTimeAgo(data.fetchedAt?.gear),rankAgo=rcTimeAgo(data.fetchedAt?.rankings);
+  const refreshNote=(data.refreshDenied?.gear||data.refreshDenied?.rankings)?' · just refreshed, try again shortly':'';
+  const refreshLine=(gearAgo||rankAgo)?`<p class="rc-muted" style="font-size:12px;margin:10px 0 0;">Gear checked ${gearAgo||'—'} · Performance checked ${rankAgo||'—'}${refreshNote} · <button type="button" onclick="submitRecruitCheck('${escapeRc(selectedTier)}',true)" style="background:none;border:0;padding:0;color:inherit;text-decoration:underline;cursor:pointer;font:inherit;">Refresh now</button></p>`:'';
+  let html=`<div class="rc-result"><section class="rc-profile">${g?image(g.avatarUrl,'rc-avatar'):''}<div class="rc-identity"><h2>${escapeRc(name)}</h2><p>${escapeRc([g?.race,g?.class,realm].filter(Boolean).join(' · '))}</p>${g?.guild?`<span class="rc-guild">&lt;${escapeRc(g.guild)}&gt;</span>`:''}</div><div class="rc-metrics"><div><strong>${number(g?.equippedItemLevel)}</strong><span>Equipped ilvl</span><small>Average ${number(g?.averageItemLevel)}</small></div><div><strong>${number(g?.gearScore)}</strong><span>GearScore (est.)</span></div><div class="rc-best-average"><strong>${rcParseBadge(rank?.bestPerformanceAverage)}</strong><span>Best Perf. Avg</span><small>${rank?.bestPerformanceAverage == null ? 'Not available' : 'Selected tier'}</small></div></div></section>${refreshLine}<div class="rc-columns"><section class="rc-section rc-equipment"><h3>Equipped gear</h3>`;
+  if(g){
+    const left=['HEAD','NECK','SHOULDER','BACK','CHEST','SHIRT','TABARD','WRIST'],right=['HANDS','WAIST','LEGS','FEET','FINGER_1','FINGER_2','TRINKET_1','TRINKET_2'];
+    const slotButton=(it,i)=>`<button type="button" class="rc-slot" data-rc-item="${i}" aria-describedby="rc-item-tooltip" aria-label="${escapeRc(it.slot||'Item')}: ${escapeRc(it.name||'Unknown item')}" style="--quality:${qualities[it.quality]||'#778a90'}">${image(it.icon,'rc-slot-icon')}<span class="rc-slot-fallback">${escapeRc((it.slot||'?').slice(0,2))}</span></button>`;
+    const group=slots=>slots.map(slot=>items.map((it,i)=>it.slot===slot?slotButton(it,i):'').join('')).join('');
+    html+=`<div class="rc-armory"><div class="rc-body-render">${g.portraitUrl?image(g.portraitUrl,'rc-blizzard-render'):'<p class="rc-muted">Character render unavailable</p>'}</div><div class="rc-slot-column rc-left">${group(left)}</div><div class="rc-slot-column rc-right">${group(right)}</div><div class="rc-weapons">${items.map((it,i)=>!left.includes(it.slot)&&!right.includes(it.slot)?slotButton(it,i):'').join('')}</div></div><div id="rc-selected-item" class="rc-selected-item" aria-live="polite"></div>`;
+    const missing=items.filter(it=>!it.enchanted&&['HEAD','SHOULDER','CHEST','LEGS','WRIST','FEET','MAIN_HAND'].includes(it.slot));
+    html+=`<details class="rc-gear-review"><summary>${missing.length?`${missing.length} unenchanted ${missing.length===1?'item':'items'}`:'Review equipped items'}<span>Review gear ↓</span></summary><div>${items.map(it=>`<p><strong>${escapeRc(it.name||it.slot)}</strong><small>${escapeRc(it.slot||'').replaceAll('_',' ')} · ilvl ${number(it.itemLevel)} · ${it.enchanted?'Enchanted':'No enchant recorded'} · ${number(it.gems??0)} gems recorded</small></p>`).join('')}</div></details>`;
+  }else html+=`<p class="rc-error">${escapeRc(data.errors?.gear||'Gear information unavailable. Try the lookup again.')}</p>`;
+  html+='</section><section class="rc-section rc-performance"><div class="rc-performance-heading"><div><h3>Encounter performance</h3><p class="rc-muted">'+escapeRc(rank?.zoneName||'Current tier')+' · Best and median percentiles</p></div><div style="display:flex;align-items:center;gap:10px;">'+tierSelect+(rcSafeAsset(rank?.wclUrl)?`<a href="${rcSafeAsset(rank.wclUrl)}" target="_blank" rel="noopener">View on WCL ↗</a>`:'')+'</div></div>';
+  if(rank?.rankings?.length){html+='<div class="rc-table-scroll"><table class="rc-table"><thead><tr><th scope="col">Encounter</th><th scope="col">Best</th><th scope="col">Median</th><th scope="col">Spec</th><th scope="col">Kills</th></tr></thead><tbody>';
+    rank.rankings.forEach(r=>{html+=`<tr><td>${escapeRc(r.encounter||'—')}</td><td>${rcParseBadge(r.bestPercent)}</td><td>${rcParseBadge(r.medianPercent)}</td><td>${escapeRc(r.spec||'—')}</td><td>${number(r.kills??0)}</td></tr>`});html+='</tbody></table></div>';
+  }else html+=`<p class="rc-muted">${escapeRc(data.errors?.rankings||(rank?'No ranked parses this tier yet.':'Performance information unavailable. Try the lookup again.'))}</p>`;
+  html+='</section></div><div id="rc-item-tooltip" class="rc-item-tooltip" role="tooltip" hidden></div></div>';el.innerHTML=html;
+  const detail=el.querySelector('#rc-selected-item'),tooltip=el.querySelector('#rc-item-tooltip');
+  const itemText=it=>`${image(it.icon,'rc-detail-icon')}<div><strong style="color:${qualities[it.quality]||'#f5f2e9'}">${escapeRc(it.name||'Unknown item')}</strong><small>${escapeRc(it.slot||'').replaceAll('_',' ')} · Item level ${number(it.itemLevel)}</small><span>${it.enchanted?'Enchanted':'No enchant recorded'} · ${number(it.gems??0)} gems recorded</span></div>`;
+  const hide=()=>{tooltip.hidden=true};
+  const show=b=>{const it=items[Number(b.dataset.rcItem)];tooltip.innerHTML=itemText(it);tooltip.hidden=false;const r=b.getBoundingClientRect();tooltip.style.left=Math.max(8,Math.min(innerWidth-tooltip.offsetWidth-8,r.left+r.width+10))+'px';tooltip.style.top=Math.max(8,Math.min(innerHeight-tooltip.offsetHeight-8,r.top))+'px';};
+  el.querySelectorAll('[data-rc-item]').forEach(b=>{b.onmouseenter=()=>show(b);b.onmouseleave=hide;b.onfocus=()=>show(b);b.onblur=hide;b.onclick=()=>{detail.innerHTML=itemText(items[Number(b.dataset.rcItem)]);show(b)};b.onkeydown=e=>{if(e.key==='Escape')hide()}});
+  tooltip.onmouseleave=hide;
+  el.onkeydown=e=>{if(e.key==='Escape')hide()};
+  if(detail)detail.innerHTML=items.length?itemText(items[0]):'<p class="rc-muted">No equipment returned.</p>';
+}
 
 function onboardingThemeIcon(light){return light?'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 13A8.5 8.5 0 0 1 11 3.5 8.5 8.5 0 1 0 20.5 13Z"/></svg>':'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"/></svg>';}
 let onboardingPreview=false;
