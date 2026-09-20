@@ -2403,6 +2403,27 @@ body.landing-mode > #join-guild-banner,
 body.landing-mode > main,
 body.landing-mode > #version-footer { display: none !important; }
 body.landing-mode #landing-page { display: block; }
+/* Recruit Check reuses #landing-page's own header/nav/footer chrome (see
+   resolveGuildFromUrl/isRecruitCheckPage) - only the #landing-main content
+   area swaps out, so the nav's sign-in/sign-up/My Guilds/theme-toggle logic
+   (already scoped to #landing-page .lp-navlinks) needs no duplication.
+   Functional/minimal styling only - awaiting Codex's design pass, same as
+   the Unverified/Member fixes. */
+body.recruit-check-mode #landing-main { display: none; }
+body.recruit-check-mode #recruit-check-main { display: block; }
+#recruit-check-main { display: none; max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+#recruit-check-main .rc-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+#recruit-check-main .rc-field label { font-size: 13px; color: var(--lp-muted); }
+#recruit-check-main .rc-field input { background: var(--lp-surface); border: 1px solid var(--lp-line); color: var(--lp-text); border-radius: 6px; padding: 10px 12px; font-size: 14px; }
+#recruit-check-main .rc-row { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
+#recruit-check-main .rc-row .rc-field { flex: 1; min-width: 160px; margin-bottom: 0; }
+#recruit-check-main .rc-result { margin-top: 32px; border-top: 1px solid var(--lp-line); padding-top: 24px; }
+#recruit-check-main .rc-section { margin-bottom: 24px; }
+#recruit-check-main .rc-section h3 { font-size: 15px; margin-bottom: 10px; }
+#recruit-check-main table.rc-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+#recruit-check-main table.rc-table td, #recruit-check-main table.rc-table th { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--lp-line); }
+#recruit-check-main .rc-error { color: var(--lp-danger); font-size: 13px; margin-top: 8px; }
+#recruit-check-main .rc-muted { color: var(--lp-muted); font-size: 13px; }
 
 #landing-page {
   --lp-bg: #101619; --lp-surface: #192226; --lp-raised: #243036; --lp-line: #3B4B51;
@@ -3185,6 +3206,12 @@ body.guild-public-mode #tab-strats .public-assignment-sheet .personal-detail>*{m
     <a class="lp-wordmark" href="/">Kaizen<i> /</i></a>
     
     <div class="lp-navlinks">
+      <!-- Recruit Check: plain functional link, visible to everyone
+           (owner: "expose the entry point on the marketing page but
+           request people sign up to use the feature") - the sign-in gate
+           lives at the point of searching, not here. Minimal styling
+           only, awaiting Codex's design pass. -->
+      <a href="/recruit-check" class="lp-hide-mobile">Recruit Check</a>
       <a id="lp-nav-signin" href="#" onclick="startMarketingAuth('signin');return false;">Sign in</a>
       <a class="lp-button lp-primary" id="lp-nav-cta" href="#" onclick="startMarketingAuth('signup');return false;">Sign up</a>
       <!-- Signed-in state: same shared My Guilds dropdown as the guild/
@@ -3440,6 +3467,35 @@ body.guild-public-mode #tab-strats .public-assignment-sheet .personal-detail>*{m
   </div>
 </section>
 </div>
+
+<!-- ==================== RECRUIT CHECK ====================
+     Owner's own brief (2026-09-20): one search (name+realm), one
+     combined gear+WCL-performance profile, replacing manually checking
+     Classic-Armory + Warcraft Logs by hand when vetting a recruit. Lives
+     inside #landing-page to reuse its header/nav/footer chrome for free
+     (see isRecruitCheckPage/resolveGuildFromUrl + the body.recruit-check-mode
+     CSS above) - only this content area swaps in/out. Deliberately plain/
+     functional markup implementing exactly the owner's own spec, no
+     invented copy or layout beyond it - flagged in Design/DECISIONS.md
+     for Codex's real visual pass, same pattern as the Unverified/Member
+     navigation fixes. -->
+<div id="recruit-check-main" role="main">
+  <h1 style="font-family:var(--lp-font-display);font-size:28px;margin-bottom:8px;">Recruit Check</h1>
+  <p class="rc-muted" style="margin-bottom:24px;">Look up a character's gear and Warcraft Logs performance in one search.</p>
+  <div class="rc-row">
+    <div class="rc-field">
+      <label for="rc-name">Character name</label>
+      <input type="text" id="rc-name" placeholder="Character name" autocomplete="off">
+    </div>
+    <div class="rc-field">
+      <label for="rc-realm">Realm</label>
+      <input type="text" id="rc-realm" value="Dreamscythe" autocomplete="off">
+    </div>
+    <button type="button" class="lp-button lp-primary" onclick="submitRecruitCheck()" id="rc-search-btn">Search</button>
+  </div>
+  <div id="rc-result"></div>
+</div>
+
 <footer class="footer">
   <div class="lp-wrap footer-line">
     <span class="lp-wordmark">Kaizen<i> /</i></span>
@@ -8009,6 +8065,14 @@ let CURRENT_GUILD_ID = 1;
 // ever calling initFromJson()/fetching guild data on this path.
 let isLandingPage = false;
 
+// True only for /recruit-check - a top-level, guild-agnostic page (see
+// resolveGuildFromUrl). Deliberately also sets isLandingPage=true (not a
+// third independent mode): it reuses every bit of #landing-page's own
+// nav-visibility/Clerk-mount/theme-toggle wiring for free, and every
+// existing isLandingPage check ("no real guild resolved here") is exactly
+// as true on this page as on the bare marketing root.
+let isRecruitCheckPage = false;
+
 // true on /<slug>/manage, false on a bare /<slug> (or no path at all).
 // This is the actual "published page vs. CMS" switch from the original
 // krm.gg design - canEdit() below caps every permission at 'view' when
@@ -8032,6 +8096,7 @@ let currentGuildSlug = 'kaizen';
 async function resolveGuildFromUrl() {
   const parts = window.location.pathname.split('/').filter(Boolean); // ["", "flying-hellfish", "manage"] -> ["flying-hellfish", "manage"]
   if (parts.length === 0) { isLandingPage = true; document.body.classList.add('landing-mode'); return; } // bare root - the marketing homepage now, not a guild
+  if (parts[0] === 'recruit-check') { isRecruitCheckPage = true; isLandingPage = true; document.body.classList.add('landing-mode', 'recruit-check-mode'); return; }
   inManageMode = parts[1] === 'manage';
   const slug = parts[0];
   try {
@@ -17011,7 +17076,23 @@ window.addEventListener('load', async function () {
       // away from itself before anyone with a live session ever saw it.
       // Signing out on the landing page needs no extra handling - the
       // nav toggle above already covers it.
-      if (isLandingPage) {
+      if (isRecruitCheckPage) {
+        // submitRecruitCheck() stashes the in-progress search before
+        // sending someone through Clerk.openSignIn (which reloads this
+        // same page on return) - restore and re-run it so signing in
+        // doesn't lose what they were about to search.
+        if (isSignedIn) {
+          let pending = null;
+          try { pending = JSON.parse(sessionStorage.getItem('kaizen-recruit-check-pending') || 'null'); } catch {}
+          if (pending) {
+            sessionStorage.removeItem('kaizen-recruit-check-pending');
+            document.getElementById('rc-name').value = pending.name;
+            document.getElementById('rc-realm').value = pending.realm;
+            submitRecruitCheck();
+          }
+        }
+      }
+      else if (isLandingPage) {
         // Discord's OAuth redirect (handleRegisterGuildCallback) always
         // lands back at bare "/" with ?registered=<id>/?registerError=...,
         // regardless of where "Register a guild" was actually clicked from
@@ -17042,6 +17123,94 @@ window.addEventListener('load', async function () {
 
 function openSignInGate() { document.getElementById('auth-gate').style.display = 'flex'; }
 function closeSignInGate() { document.getElementById('auth-gate').style.display = 'none'; }
+
+// Recruit Check frontend - see handleRecruitCheck in kaizen-worker.js.
+// Owner's own decision: the nav entry is visible to everyone, but using
+// the feature requires being signed in - gated here, at the point of
+// searching, not by hiding the nav link.
+function escapeRc(value) { return String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+async function submitRecruitCheck() {
+  const name = document.getElementById('rc-name').value.trim();
+  const realm = document.getElementById('rc-realm').value.trim();
+  if (!name || !realm) { showToast('Enter a character name and realm.', true); return; }
+
+  if (!window.Clerk?.user) {
+    // Same Clerk.openSignIn modal startMarketingAuth uses, but redirects
+    // back to THIS page instead of the guild-onboarding chooser - signing
+    // in should return the recruiter to the search they were about to
+    // run, not send them somewhere else. Stash it so the reload Clerk
+    // does on return (see the window.load handler's isRecruitCheckPage
+    // branch) can restore and re-run it automatically.
+    try { sessionStorage.setItem('kaizen-recruit-check-pending', JSON.stringify({ name, realm })); } catch {}
+    Clerk.openSignIn({ forceRedirectUrl: location.href, signInForceRedirectUrl: location.href, signUpForceRedirectUrl: location.href });
+    return;
+  }
+
+  const btn = document.getElementById('rc-search-btn');
+  const resultEl = document.getElementById('rc-result');
+  btn.disabled = true;
+  resultEl.innerHTML = '<p class="rc-muted" style="margin-top:24px;">Searching…</p>';
+  try {
+    const res = await fetch(`${APP_API_WORKER}/api/recruit-check`, {
+      method: 'POST',
+      headers: { ...(await clerkAuthHeader()), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, realm, region: 'us' }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || `Lookup failed (${res.status})`);
+    renderRecruitCheckResult(name, realm, data);
+  } catch (err) {
+    resultEl.innerHTML = `<p class="rc-error" style="margin-top:24px;">${escapeRc(err.message)}</p>`;
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// Plain, functional result rendering - exactly the owner's own spec
+// (gear section, performance section with per-boss WCL links, search bar
+// stays visible above since #rc-result only replaces itself). No
+// invented layout/copy beyond that; a Codex visual pass is a separate,
+// later step (see Design/DECISIONS.md).
+function renderRecruitCheckResult(name, realm, data) {
+  const resultEl = document.getElementById('rc-result');
+  let html = '<div class="rc-result">';
+
+  html += `<div class="rc-section"><h3>${escapeRc(name)} — ${escapeRc(realm)}</h3>`;
+  if (data.gear) {
+    const g = data.gear;
+    html += `<p class="rc-muted">${escapeRc(g.class || '')} ${escapeRc(g.race || '')}${g.guild ? ' · ' + escapeRc(g.guild) : ''}</p>`;
+    html += `<p>Item level: <strong>${g.equippedItemLevel ?? '—'}</strong> (avg ${g.averageItemLevel ?? '—'})</p>`;
+    if (g.items?.length) {
+      const enchantableSlots = ['HEAD','SHOULDER','CHEST','LEGS','WRIST','FEET','MAIN_HAND'];
+      const missing = g.items.filter(it => !it.enchanted && enchantableSlots.includes(it.slot));
+      const gaps = g.items.filter(it => it.socketCount > 0 && it.gems < it.socketCount);
+      if (missing.length) html += `<p class="rc-muted">Unenchanted: ${missing.map(it => escapeRc(it.slot)).join(', ')}</p>`;
+      if (gaps.length) html += `<p class="rc-muted">Missing gems: ${gaps.map(it => escapeRc(it.slot)).join(', ')}</p>`;
+    }
+  } else if (data.errors?.gear) {
+    html += `<p class="rc-error">${escapeRc(data.errors.gear)}</p>`;
+  }
+  html += '</div>';
+
+  html += '<div class="rc-section"><h3>Warcraft Logs performance</h3>';
+  if (data.rankings?.rankings?.length) {
+    html += `<p class="rc-muted">${escapeRc(data.rankings.zoneName || 'Current tier')} · <a href="${data.rankings.wclUrl}" target="_blank" rel="noopener">View on Warcraft Logs →</a></p>`;
+    html += '<table class="rc-table"><thead><tr><th>Boss</th><th>Best %</th><th>Spec</th></tr></thead><tbody>';
+    data.rankings.rankings.forEach(r => {
+      html += `<tr><td>${escapeRc(r.encounter || '—')}</td><td>${r.bestPercent != null ? Math.round(r.bestPercent) : '—'}</td><td>${escapeRc(r.spec || '—')}</td></tr>`;
+    });
+    html += '</tbody></table>';
+  } else if (data.rankings?.wclUrl) {
+    html += `<p class="rc-muted">No ranked parses this tier yet. <a href="${data.rankings.wclUrl}" target="_blank" rel="noopener">View on Warcraft Logs →</a></p>`;
+  } else if (data.errors?.rankings) {
+    html += `<p class="rc-error">${escapeRc(data.errors.rankings)}</p>`;
+  }
+  html += '</div>';
+
+  html += '</div>';
+  resultEl.innerHTML = html;
+}
 
 
 function onboardingThemeIcon(light){return light?'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 13A8.5 8.5 0 0 1 11 3.5 8.5 8.5 0 1 0 20.5 13Z"/></svg>':'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"/></svg>';}

@@ -77,6 +77,9 @@ export default {
     if (url.pathname === '/api/wcl-ranking' && request.method === 'POST') {
       return handleWCLRanking(request, env);
     }
+    if (url.pathname === '/api/recruit-check' && request.method === 'POST') {
+      return handleRecruitCheck(request, env);
+    }
 
     // ── Current WCL rate-limit status, read-only diagnostic ── /wcl-status
     if (url.pathname === '/wcl-status' && request.method === 'GET') {
@@ -1746,6 +1749,199 @@ async function handleWCLRanking(request, env) {
   } catch (err) {
     return corsResponse(JSON.stringify({ error: err.message + rateLimitSuffix(await getWCLRateLimit(env)) }), 500);
   }
+}
+
+// ── Recruit Check: combined Warcraft Logs + Blizzard armory lookup ──
+// (owner's brief, 2026-09-20: "one search, one combined profile" for
+// vetting recruits instead of checking Classic-Armory + WCL by hand).
+// Classic-Armory itself has no public API, but its own client-side JS
+// (classic-armory.org/static/js/client_character.js, public source) shows
+// it's a thin wrapper over Blizzard's own official Game Data/Profile APIs
+// (us.api.blizzard.com, namespace profile-classicann-<region> for TBC
+// Anniversary realms - confirmed live against a real Dreamscythe
+// character before writing this). Building against Blizzard's own
+// documented OAuth2 client_credentials API directly is more durable than
+// scraping a fan site's private endpoint. Real, disclosed risk, not
+// hypothetical: Blizzard's own forums document Anniversary-namespace
+// instability (404s for characters that definitely exist, a namespace
+// rename that broke integrations) - handled below as "lookup failed, try
+// again," never as "character doesn't exist." Rate limit: 36,000
+// requests/hour, 100/sec per Blizzard's own docs - not the bottleneck
+// here (WCL's 3,600 points/hour is).
+// Env vars required: BATTLENET_CLIENT_ID, BATTLENET_CLIENT_SECRET - from
+// a client_credentials client registered at develop.battle.net, no
+// redirect URI needed, same registration shape as the existing WCL client.
+const BATTLENET_TOKEN_URL = (region) => `https://${region}.battle.net/oauth/token`;
+const BATTLENET_API = (region) => `https://${region}.api.blizzard.com`;
+
+// Same caching shape as getWCLToken - reuses the same WCL_CACHE KV (the
+// only namespace this pilot Worker has bound) under its own key prefix.
+async function getBattleNetToken(env, region) {
+  const cacheKey = `battlenet_token_${region}`;
+  if (env.WCL_CACHE) {
+    const cached = await env.WCL_CACHE.get(cacheKey).catch(() => null);
+    if (cached) return cached;
+  }
+  const creds = btoa(`${env.BATTLENET_CLIENT_ID}:${env.BATTLENET_CLIENT_SECRET}`);
+  const res = await fetch(BATTLENET_TOKEN_URL(region), {
+    method: 'POST',
+    headers: {
+      'Authorization': `Basic ${creds}`,
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: 'grant_type=client_credentials',
+  });
+  if (!res.ok) throw new Error(`Battle.net auth failed: ${res.status}`);
+  const data = await res.json();
+  if (env.WCL_CACHE && data.access_token) {
+    const ttl = Math.max(60, (data.expires_in || 86400) - 60);
+    await env.WCL_CACHE.put(cacheKey, data.access_token, { expirationTtl: ttl }).catch(() => {});
+  }
+  return data.access_token;
+}
+
+async function battleNetFetch(env, region, path) {
+  const token = await getBattleNetToken(env, region);
+  const res = await fetch(`${BATTLENET_API(region)}${path}`, {
+    headers: { 'Authorization': `Bearer ${token}` },
+  });
+  if (res.status === 404) throw new Error('not_found');
+  if (!res.ok) throw new Error(`Battle.net API error (${res.status})`);
+  return res.json();
+}
+
+// WoW slug rules: lowercase, apostrophes stripped, spaces -> hyphens
+// (e.g. "Aman'thul" -> "amanthul"). Same shape both Blizzard and WCL
+// server slugs use.
+function toWowSlug(str) {
+  return String(str || '').trim().toLowerCase().replace(/'/g, '').replace(/\s+/g, '-');
+}
+
+// Blizzard character summary + equipment. Namespace confirmed live
+// against classic-armory.org's own traffic before writing this.
+async function fetchRecruitGear(env, region, realmSlug, nameSlug) {
+  const ns = `profile-classicann-${region}`;
+  const [summary, equipment] = await Promise.all([
+    battleNetFetch(env, region, `/profile/wow/character/${realmSlug}/${nameSlug}?namespace=${ns}&locale=en_US`),
+    battleNetFetch(env, region, `/profile/wow/character/${realmSlug}/${nameSlug}/equipment?namespace=${ns}&locale=en_US`),
+  ]);
+  const items = (equipment.equipped_items || []).map(it => ({
+    slot: it.slot?.type,
+    name: it.name,
+    quality: it.quality?.type,
+    itemLevel: it.level?.value ?? null,
+    enchanted: (it.enchantments || []).length > 0,
+    gems: (it.sockets || []).filter(s => s.item).length,
+    socketCount: (it.sockets || []).length,
+  }));
+  return {
+    level: summary.level ?? null,
+    class: summary.character_class?.name ?? null,
+    race: summary.race?.name ?? null,
+    guild: summary.guild?.name ?? null,
+    averageItemLevel: summary.average_item_level ?? null,
+    equippedItemLevel: summary.equipped_item_level ?? null,
+    items,
+  };
+}
+
+// characterData.character(...).zoneRankings - JSON-scalar field (WCL's
+// rankings fields aren't fully-typed GraphQL, same as the guild-level
+// zoneRanking query above). No zoneID passed -> WCL defaults to the
+// latest unfrozen zone, resolving "this tier" without this endpoint
+// needing to know which guild the recruiter belongs to.
+// NOTE: this pilot has no WCL credentials configured yet, so the exact
+// shape of zoneRankings' JSON has not been confirmed against a real live
+// query - the mapping below is the best-effort shape per WCL's own docs
+// and must be checked against one real response before it's trusted on a
+// real page (flagged in the plan doc, not silently assumed correct).
+async function fetchRecruitRankings(env, name, realmSlug, region) {
+  const data = await wclQuery(env, `
+    query($name: String!, $server: String!, $region: String!) {
+      characterData {
+        character(name: $name, serverSlug: $server, serverRegion: $region) {
+          id
+          zoneRankings
+        }
+      }
+    }
+  `, { name, server: realmSlug, region });
+  const character = data?.characterData?.character;
+  if (!character) throw new Error('Character not found on Warcraft Logs - they may not have any logged parses.');
+  const zr = character.zoneRankings || {};
+  const rankings = Array.isArray(zr.rankings) ? zr.rankings.map(r => ({
+    encounter: r.encounter?.name ?? null,
+    bestPercent: r.rankPercent ?? r.bestPercent ?? null,
+    spec: r.spec ?? null,
+  })) : [];
+  return {
+    characterId: character.id,
+    zoneName: zr.zone?.name ?? null,
+    rankings,
+    wclUrl: `https://www.warcraftlogs.com/character/id/${character.id}`,
+  };
+}
+
+// POST /api/recruit-check - any signed-in user, no guild membership
+// required (owner's own call: "any signed-in member... expose the entry
+// point on the marketing page but request people sign up to use the
+// feature" - matches handleMyGuilds' verifyAuth-only pattern above, not
+// the isApproverRole-gated pattern the WCL ranking sync endpoints use).
+// Body: {name, realm, region} (region defaults 'us'). Combines a
+// Blizzard armory lookup (gear/ilvl) with a Warcraft Logs character
+// lookup (per-boss parses this tier) into one cached response.
+async function handleRecruitCheck(request, env) {
+  const auth = await verifyAuth(request, env);
+  if (!auth) return corsResponse(JSON.stringify({ error: 'Unauthorized' }), 401);
+
+  const { name, realm, region } = await request.json();
+  if (!name || !realm) return corsResponse(JSON.stringify({ error: 'Missing name/realm.' }), 400);
+  const regionSlug = toWowSlug(region || 'us');
+  const realmSlug = toWowSlug(realm);
+  const nameSlug = toWowSlug(name);
+
+  const cacheKey = `recruit:${regionSlug}:${realmSlug}:${nameSlug}`;
+  if (env.WCL_CACHE) {
+    const cached = await env.WCL_CACHE.get(cacheKey, 'json').catch(() => null);
+    if (cached) return corsResponse(JSON.stringify(cached), 200);
+  }
+
+  const blizzardConfigured = !!(env.BATTLENET_CLIENT_ID && env.BATTLENET_CLIENT_SECRET);
+  const wclConfigured = !!(env.WCL_CLIENT_ID && env.WCL_CLIENT_SECRET);
+  if (!blizzardConfigured && !wclConfigured) {
+    return corsResponse(JSON.stringify({ error: 'Recruit Check is not configured on this server yet - ask the developer to set BATTLENET_CLIENT_ID/SECRET and WCL_CLIENT_ID/SECRET.' }), 501);
+  }
+
+  const [gearResult, rankingResult] = await Promise.allSettled([
+    blizzardConfigured ? fetchRecruitGear(env, regionSlug, realmSlug, nameSlug) : Promise.reject(new Error('not_configured')),
+    wclConfigured ? fetchRecruitRankings(env, name, realmSlug, regionSlug) : Promise.reject(new Error('not_configured')),
+  ]);
+
+  const errors = {};
+  if (gearResult.status === 'rejected') {
+    errors.gear = gearResult.reason?.message === 'not_found'
+      ? "Character not found on Blizzard's armory - check the name/realm, or this may be a known Anniversary-realm API hiccup, try again shortly."
+      : gearResult.reason?.message === 'not_configured'
+        ? 'Blizzard armory lookup is not configured on this server yet.'
+        : (gearResult.reason?.message || 'Blizzard armory lookup failed.');
+  }
+  if (rankingResult.status === 'rejected') {
+    errors.rankings = rankingResult.reason?.message === 'not_configured'
+      ? 'Warcraft Logs lookup is not configured on this server yet.'
+      : (rankingResult.reason?.message || 'Warcraft Logs lookup failed.') + rateLimitSuffix(await getWCLRateLimit(env));
+  }
+  if (gearResult.status === 'rejected' && rankingResult.status === 'rejected') {
+    return corsResponse(JSON.stringify({ error: 'Both lookups failed.', errors }), 502);
+  }
+
+  const result = {
+    character: { name, realm, region: regionSlug },
+    gear: gearResult.status === 'fulfilled' ? gearResult.value : null,
+    rankings: rankingResult.status === 'fulfilled' ? rankingResult.value : null,
+    errors,
+  };
+  if (env.WCL_CACHE) await env.WCL_CACHE.put(cacheKey, JSON.stringify(result), { expirationTtl: 900 }).catch(() => {});
+  return corsResponse(JSON.stringify(result), 200);
 }
 
 // reports lives on the top-level reportData container, filtered by guildID
