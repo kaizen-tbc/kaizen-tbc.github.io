@@ -87,6 +87,53 @@ export default {
       return corsResponse(JSON.stringify({ rateLimit: rl }), 200);
     }
 
+    // ── Battle.net credential check, read-only diagnostic ── /battlenet-status
+    // Same shape as /wcl-status above - no guild data, just confirms
+    // BATTLENET_CLIENT_ID/SECRET are actually valid by fetching a real
+    // OAuth token and running one real lookup (a known public character)
+    // through the full namespace/response path, not just the token step.
+    if (url.pathname === '/battlenet-status' && request.method === 'GET') {
+      if (!env.BATTLENET_CLIENT_ID || !env.BATTLENET_CLIENT_SECRET) {
+        return corsResponse(JSON.stringify({ configured: false }), 200);
+      }
+      try {
+        await getBattleNetToken(env, 'us');
+        const summary = await battleNetFetch(env, 'us', `/profile/wow/character/dreamscythe/${encodeURIComponent('hamshammích')}?namespace=profile-classicann-us&locale=en_US`);
+        return corsResponse(JSON.stringify({ configured: true, tokenOk: true, sampleLookupOk: true, sampleCharacter: summary.name || null }), 200);
+      } catch (err) {
+        return corsResponse(JSON.stringify({ configured: true, tokenOk: err.message !== 'not_found', error: err.message }), 200);
+      }
+    }
+
+    // ── Read-only diagnostic: run the exact query fetchRecruitRankings
+    // uses and return the raw response ── /wcl-character-shape-check
+    // (same spirit as /wcl-status - WCL's own docs warn zoneRankings
+    // "is not considered frozen... can change without notice," so this
+    // stays as a permanent way to check the real shape against
+    // fetchRecruitRankings' mapping without guessing. Confirmed
+    // 2026-09-20 against a real Kaizen raider (classic.warcraftlogs.com,
+    // not the retail host - see WCL_CLASSIC_API's comment above for why).
+    if (url.pathname === '/wcl-character-shape-check' && request.method === 'GET') {
+      const name = url.searchParams.get('name') || 'Hamshammích';
+      const server = url.searchParams.get('server') || 'dreamscythe';
+      const region = url.searchParams.get('region') || 'US';
+      try {
+        const data = await wclClassicQuery(env, `
+          query($name: String!, $server: String!, $region: String!) {
+            characterData {
+              character(name: $name, serverSlug: $server, serverRegion: $region) {
+                id
+                zoneRankings
+              }
+            }
+          }
+        `, { name, server, region });
+        return corsResponse(JSON.stringify(data), 200);
+      } catch (err) {
+        return corsResponse(JSON.stringify({ error: err.message + rateLimitSuffix(await getWCLRateLimit(env)) }), 500);
+      }
+    }
+
     // ── Direct roster post from raid manager ── /post-roster
     if (url.pathname === '/post-roster' && request.method === 'POST') {
       return handleDirectRosterPost(request, env);
@@ -1573,6 +1620,20 @@ async function handlePostRosterCommand(interaction, guildId, options, env) {
 // extractRoleParses still wrapped in try/catch in case that shape drifts.
 const WCL_TOKEN_URL = 'https://www.warcraftlogs.com/oauth/token';
 const WCL_API       = 'https://www.warcraftlogs.com/api/v2/client';
+// classic.warcraftlogs.com/api/v2/client is a GENUINELY SEPARATE dataset
+// from the retail host above, not just a different frontend on the same
+// data - confirmed live (2026-09-20, once real WCL credentials were first
+// configured on this pilot): worldData.region(id:1) on the retail host
+// has zero servers matching "Dreamscythe" (or any TBC/Classic name at
+// all) across every US-region server; the SAME OAuth bearer token
+// against classic.warcraftlogs.com/api/v2/client finds it immediately,
+// under a completely different region id (6, not 1) with its own zone
+// IDs (Karazhan/Zul'Aman/etc alongside Classic-era raids). Any
+// guild/character/server-scoped query for a Classic Era or TBC
+// Anniversary realm - which every realm this project cares about is -
+// MUST go through this host, not the retail one. The OAuth token itself
+// is shared across both hosts (same getWCLToken call works for either).
+const WCL_CLASSIC_API = 'https://classic.warcraftlogs.com/api/v2/client';
 
 // Every wclQuery call used to fetch a brand new OAuth token first - meaning
 // each "one" WCL API call was actually two physical requests hitting
@@ -1607,9 +1668,9 @@ async function getWCLToken(env) {
   return data.access_token;
 }
 
-async function wclQuery(env, query, variables = {}, _retrying = false) {
+async function wclQuery(env, query, variables = {}, _retrying = false, api = WCL_API) {
   const token = await getWCLToken(env);
-  const res = await fetch(WCL_API, {
+  const res = await fetch(api, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${token}`,
@@ -1622,7 +1683,7 @@ async function wclQuery(env, query, variables = {}, _retrying = false) {
   // surfacing a confusing auth error for what's really a stale cache entry.
   if (res.status === 401 && !_retrying) {
     if (env.WCL_CACHE) await env.WCL_CACHE.delete('wcl_token').catch(() => {});
-    return wclQuery(env, query, variables, true);
+    return wclQuery(env, query, variables, true, api);
   }
   const json = await res.json().catch(() => null);
   // WCL's API gateway can reject a request before it ever reaches GraphQL
@@ -1636,6 +1697,15 @@ async function wclQuery(env, query, variables = {}, _retrying = false) {
   }
   if (json?.errors?.length) throw new Error(json.errors.map(e => e.message).join('; '));
   return json?.data;
+}
+
+// Every guild/character/server-scoped query in this file targets a
+// Classic Era or TBC Anniversary realm - see the WCL_CLASSIC_API comment
+// above for why that means classic.warcraftlogs.com, not the retail
+// host. wclQuery's token/retry/error handling is unchanged; this just
+// pins the host.
+function wclClassicQuery(env, query, variables = {}) {
+  return wclQuery(env, query, variables, false, WCL_CLASSIC_API);
 }
 
 // WCL's client_credentials tier is capped (3,600 points/hour as of this
@@ -1694,12 +1764,15 @@ async function handleWCLZones(request, env) {
     return corsResponse(JSON.stringify({ error: 'Warcraft Logs is not configured on this server yet.' }), 501);
   }
   try {
-    const cacheKey = 'wcl_zones_v1';
+    // v2, not v1 - the v1 key could hold zones fetched from the wrong
+    // (retail) WCL host before this was fixed to query classic.warcraftlogs.com;
+    // a new key avoids ever serving that stale/wrong data back from cache.
+    const cacheKey = 'wcl_zones_classic_v2';
     if (env.WCL_CACHE) {
       const cached = await env.WCL_CACHE.get(cacheKey, 'json').catch(() => null);
       if (cached) return corsResponse(JSON.stringify({ zones: cached }), 200);
     }
-    const data = await wclQuery(env, `{ worldData { zones { id name } } }`);
+    const data = await wclClassicQuery(env, `{ worldData { zones { id name } } }`);
     const zones = data?.worldData?.zones || [];
     if (env.WCL_CACHE) await env.WCL_CACHE.put(cacheKey, JSON.stringify(zones), { expirationTtl: 86400 }).catch(() => {});
     return corsResponse(JSON.stringify({ zones }), 200);
@@ -1728,7 +1801,7 @@ async function handleWCLRanking(request, env) {
   }
   const field = metric === 'speed' ? 'speed' : 'progress';
   try {
-    const data = await wclQuery(env, `
+    const data = await wclClassicQuery(env, `
       query($guildId: Int!, $zoneId: Int!) {
         guildData {
           guild(id: $guildId) {
@@ -1849,14 +1922,22 @@ async function fetchRecruitGear(env, region, realmSlug, nameSlug) {
 // rankings fields aren't fully-typed GraphQL, same as the guild-level
 // zoneRanking query above). No zoneID passed -> WCL defaults to the
 // latest unfrozen zone, resolving "this tier" without this endpoint
-// needing to know which guild the recruiter belongs to.
-// NOTE: this pilot has no WCL credentials configured yet, so the exact
-// shape of zoneRankings' JSON has not been confirmed against a real live
-// query - the mapping below is the best-effort shape per WCL's own docs
-// and must be checked against one real response before it's trusted on a
-// real page (flagged in the plan doc, not silently assumed correct).
+// needing to know which guild the recruiter belongs to. Uses
+// wclClassicQuery, not wclQuery - see WCL_CLASSIC_API's comment above;
+// this was confirmed live (2026-09-20) with real credentials against a
+// real Kaizen raider (Bradpitiful/Dreamscythe) - a Dreamscythe character
+// resolves on classic.warcraftlogs.com and comes back null on the retail
+// host every time, regardless of whether the character actually has
+// logs. Real confirmed shape (differs from the pre-credentials guess):
+// zr.zone is a bare numeric id, NOT {name} - resolved below via the same
+// cache /api/wcl-zones already warms, best-effort (a cache miss just
+// means no zone label, never a failure). Per-boss entries have
+// rankPercent (their best logged attempt) and medianPercent (closest
+// analog to "average" - there's no separate per-boss average field) -
+// matches the brief's "best/average parse per relevant boss" directly.
+// bestSpec (not spec) is which spec earned their best parse.
 async function fetchRecruitRankings(env, name, realmSlug, region) {
-  const data = await wclQuery(env, `
+  const data = await wclClassicQuery(env, `
     query($name: String!, $server: String!, $region: String!) {
       characterData {
         character(name: $name, serverSlug: $server, serverRegion: $region) {
@@ -1871,12 +1952,20 @@ async function fetchRecruitRankings(env, name, realmSlug, region) {
   const zr = character.zoneRankings || {};
   const rankings = Array.isArray(zr.rankings) ? zr.rankings.map(r => ({
     encounter: r.encounter?.name ?? null,
-    bestPercent: r.rankPercent ?? r.bestPercent ?? null,
-    spec: r.spec ?? null,
+    bestPercent: r.rankPercent ?? null,
+    medianPercent: r.medianPercent ?? null,
+    spec: r.bestSpec ?? r.spec ?? null,
+    kills: r.totalKills ?? 0,
   })) : [];
+  let zoneName = null;
+  if (zr.zone != null && env.WCL_CACHE) {
+    const zones = await env.WCL_CACHE.get('wcl_zones_classic_v2', 'json').catch(() => null);
+    zoneName = zones?.find(z => z.id === zr.zone)?.name ?? null;
+  }
   return {
     characterId: character.id,
-    zoneName: zr.zone?.name ?? null,
+    zoneId: zr.zone ?? null,
+    zoneName,
     rankings,
     wclUrl: `https://www.warcraftlogs.com/character/id/${character.id}`,
   };

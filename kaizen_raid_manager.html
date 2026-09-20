@@ -17196,9 +17196,9 @@ function renderRecruitCheckResult(name, realm, data) {
   html += '<div class="rc-section"><h3>Warcraft Logs performance</h3>';
   if (data.rankings?.rankings?.length) {
     html += `<p class="rc-muted">${escapeRc(data.rankings.zoneName || 'Current tier')} · <a href="${data.rankings.wclUrl}" target="_blank" rel="noopener">View on Warcraft Logs →</a></p>`;
-    html += '<table class="rc-table"><thead><tr><th>Boss</th><th>Best %</th><th>Spec</th></tr></thead><tbody>';
+    html += '<table class="rc-table"><thead><tr><th>Boss</th><th>Best %</th><th>Avg %</th><th>Spec</th><th>Kills</th></tr></thead><tbody>';
     data.rankings.rankings.forEach(r => {
-      html += `<tr><td>${escapeRc(r.encounter || '—')}</td><td>${r.bestPercent != null ? Math.round(r.bestPercent) : '—'}</td><td>${escapeRc(r.spec || '—')}</td></tr>`;
+      html += `<tr><td>${escapeRc(r.encounter || '—')}</td><td>${r.bestPercent != null ? Math.round(r.bestPercent) : '—'}</td><td>${r.medianPercent != null ? Math.round(r.medianPercent) : '—'}</td><td>${escapeRc(r.spec || '—')}</td><td>${r.kills ?? 0}</td></tr>`;
     });
     html += '</tbody></table>';
   } else if (data.rankings?.wclUrl) {
