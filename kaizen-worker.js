@@ -175,6 +175,28 @@ export default {
       }
     }
 
+    // Permanent read-only diagnostic (matching /wcl-status/battlenet-status):
+    // batch item quality/name/level lookup by id, for checking real gem
+    // qualities (source_item.id from /battlenet-enchant-check) - built to
+    // test the gem-quality hypothesis (see DECISIONS.md), kept for
+    // whenever that needs revisiting with more real data.
+    if (url.pathname === '/battlenet-gem-quality-check' && request.method === 'GET') {
+      const ids = (url.searchParams.get('ids') || '').split(',').map(s => s.trim()).filter(Boolean);
+      try {
+        const results = await Promise.all(ids.map(async id => {
+          try {
+            const item = await battleNetFetch(env, 'us', `/data/wow/item/${id}?namespace=static-${BNET_STATIC_NS_VERSION}-classicann-us&locale=en_US`);
+            return { id, name: item.name, quality: item.quality?.type, level: item.level };
+          } catch (err) {
+            return { id, error: err.message };
+          }
+        }));
+        return corsResponse(JSON.stringify(results), 200);
+      } catch (err) {
+        return corsResponse(JSON.stringify({ error: err.message }), 500);
+      }
+    }
+
     // ── Direct roster post from raid manager ── /post-roster
     if (url.pathname === '/post-roster' && request.method === 'POST') {
       return handleDirectRosterPost(request, env);
