@@ -17181,6 +17181,13 @@ function renderRecruitCheckResult(name, realm, data) {
     const g = data.gear;
     html += `<p class="rc-muted">${escapeRc(g.class || '')} ${escapeRc(g.race || '')}${g.guild ? ' · ' + escapeRc(g.guild) : ''}</p>`;
     html += `<p>Item level: <strong>${g.equippedItemLevel ?? '—'}</strong> (avg ${g.averageItemLevel ?? '—'})</p>`;
+    if (g.gearScore != null) {
+      // "(est.)" is deliberate, not filler - our formula and Classic-Armory's
+      // own reading differ by a real ~10% on the one character checked so
+      // far (see computeGearScore's comment in kaizen-worker.js). Never
+      // claim parity with Classic-Armory's own number until that's resolved.
+      html += `<p>GearScore (est.): <strong>${g.gearScore}</strong></p>`;
+    }
     if (g.items?.length) {
       const enchantableSlots = ['HEAD','SHOULDER','CHEST','LEGS','WRIST','FEET','MAIN_HAND'];
       const missing = g.items.filter(it => !it.enchanted && enchantableSlots.includes(it.slot));

@@ -134,6 +134,22 @@ export default {
       }
     }
 
+    // Permanent read-only diagnostic, same spirit as /wcl-status: runs
+    // the real fetchRecruitGear (the exact code path /api/recruit-check
+    // uses) so a computed gearScore can be checked against Classic-
+    // Armory's own reading for a given character whenever the formula
+    // needs recalibrating (see computeGearScore's own comment).
+    if (url.pathname === '/battlenet-gearscore-check' && request.method === 'GET') {
+      const realmSlug = toWowSlug(url.searchParams.get('realm') || 'dreamscythe');
+      const nameSlug = toWowSlug(url.searchParams.get('name') || 'bradpitiful');
+      try {
+        const gear = await fetchRecruitGear(env, 'us', realmSlug, nameSlug);
+        return corsResponse(JSON.stringify(gear), 200);
+      } catch (err) {
+        return corsResponse(JSON.stringify({ error: err.message }), 500);
+      }
+    }
+
     // ── Direct roster post from raid manager ── /post-roster
     if (url.pathname === '/post-roster' && request.method === 'POST') {
       return handleDirectRosterPost(request, env);
@@ -1890,6 +1906,38 @@ function toWowSlug(str) {
   return String(str || '').trim().toLowerCase().replace(/'/g, '').replace(/\s+/g, '-');
 }
 
+// "static" namespaces (item/media data) carry a content-build version
+// prefix that "profile" namespaces don't (profile-classicann-<region> vs
+// static-2.5.6_68184-classicann-<region> - confirmed live against
+// classic-armory.org's own traffic). This build number WILL go stale
+// whenever Blizzard patches TBC Anniversary content - a real,
+// foreseeable maintenance need, not a one-time constant. Centralized
+// here so there's exactly one place to update it, and the wrong-region-
+// substitution bug this constant replaced (static-2.5.6_68184-<region>,
+// silently missing "classicann", which returned itemLevel:null for
+// every single item until checked against a real response) can't recur.
+const BNET_STATIC_NS_VERSION = '2.5.6_68184';
+
+// A given item id's static data (level/quality/inventory_type/etc) never
+// changes within a namespace version - confirmed live (2026-09-20): the
+// /profile/.../equipment endpoint's equipped_items have NO item-level
+// field at all, only the separate static /data/wow/item/{id} endpoint
+// has it (bare `level`, e.g. 146 for a real Onslaught Battle-Helm).
+// Cached indefinitely (no TTL, same "immutable data" reasoning as WCL
+// report caching elsewhere in this file) so a recruit's gear doesn't
+// cost N extra Blizzard calls on every repeat lookup.
+async function getItemLevel(env, region, itemId) {
+  const cacheKey = `bnet_item_${region}_${itemId}`;
+  if (env.WCL_CACHE) {
+    const cached = await env.WCL_CACHE.get(cacheKey).catch(() => null);
+    if (cached != null) return Number(cached);
+  }
+  const item = await battleNetFetch(env, region, `/data/wow/item/${itemId}?namespace=static-${BNET_STATIC_NS_VERSION}-classicann-${region}&locale=en_US`);
+  const level = item.level ?? null;
+  if (env.WCL_CACHE && level != null) await env.WCL_CACHE.put(cacheKey, String(level)).catch(() => {});
+  return level;
+}
+
 // Blizzard character summary + equipment. Namespace confirmed live
 // against classic-armory.org's own traffic before writing this.
 async function fetchRecruitGear(env, region, realmSlug, nameSlug) {
@@ -1898,11 +1946,19 @@ async function fetchRecruitGear(env, region, realmSlug, nameSlug) {
     battleNetFetch(env, region, `/profile/wow/character/${realmSlug}/${nameSlug}?namespace=${ns}&locale=en_US`),
     battleNetFetch(env, region, `/profile/wow/character/${realmSlug}/${nameSlug}/equipment?namespace=${ns}&locale=en_US`),
   ]);
-  const items = (equipment.equipped_items || []).map(it => ({
+  const rawItems = equipment.equipped_items || [];
+  // Batched in parallel, not sequential - one lookup per equipped item
+  // would otherwise chain 17+ round trips. Each result independently
+  // best-effort (a single bad item id shouldn't null out the rest).
+  const itemLevels = await Promise.all(rawItems.map(it =>
+    it.item?.id ? getItemLevel(env, region, it.item.id).catch(() => null) : Promise.resolve(null)
+  ));
+  const items = rawItems.map((it, i) => ({
     slot: it.slot?.type,
+    inventoryType: it.inventory_type?.type,
     name: it.name,
     quality: it.quality?.type,
-    itemLevel: it.level?.value ?? null,
+    itemLevel: itemLevels[i],
     enchanted: (it.enchantments || []).length > 0,
     gems: (it.sockets || []).filter(s => s.item).length,
     socketCount: (it.sockets || []).length,
@@ -1914,8 +1970,66 @@ async function fetchRecruitGear(env, region, realmSlug, nameSlug) {
     guild: summary.guild?.name ?? null,
     averageItemLevel: summary.average_item_level ?? null,
     equippedItemLevel: summary.equipped_item_level ?? null,
+    gearScore: computeGearScore(items),
     items,
   };
+}
+
+// GearScore - not a Blizzard field, not proprietary to Classic-Armory
+// either. This is the well-known community-standard calculation (ported
+// from the open-source GearScoreClassic+ addon, github.com/gk646/
+// GearScoreClassic - MIT-style, real published source, not guessed at):
+// per item, (itemLevel / rarityWeight) * slotWeight * enchantBonus *
+// GLOBAL_SCALE, summed across every equipped item. Slot weights and
+// rarity weights below are that addon's own real constants verbatim.
+// GS_SLOT_WEIGHTS is keyed by Blizzard's inventory_type.type string,
+// which is the same INVTYPE_* constant WoW itself uses with the
+// "INVTYPE_" prefix stripped - confirmed live (2026-09-20) against a
+// real Kaizen raider's equipment (HEAD/NECK/SHOULDER/CHEST/WAIST/LEGS/
+// FEET/WRIST/FINGER/TRINKET/CLOAK/RANGEDRIGHT all matched exactly);
+// 2HWEAPON/WEAPONMAINHAND/WEAPONOFFHAND are inferred from WoW's own
+// documented InventoryType enum (warcraft.wiki.gg) following that same
+// confirmed prefix-stripping pattern, not directly observed live (no
+// two-handed weapon was equipped on the test character) - worth a real
+// check against a 2H-wielding character if the calibration below is off
+// for one.
+// CALIBRATION RESULT (2026-09-20, real Kaizen raider Bradpitiful): this
+// formula returns 1748; Classic-Armory's own reading for the same
+// character, same moment, was 1949 - a real ~10% gap, not a rounding
+// difference. Every input (item level, quality, enchant presence) was
+// independently confirmed correct against Blizzard's own API before
+// this comparison, so the gap is the formula itself, not bad data:
+// either Classic-Armory tunes its own weights differently from this
+// specific open-source addon, or factors something this port doesn't
+// (e.g. gem quality/count, not just enchant presence - GearScoreClassic+
+// itself doesn't score gems either, so if Classic-Armory does, that
+// would fully explain an undershoot this size). NOT reverse-engineered
+// or curve-fit to match 1949 exactly - doing that off one data point
+// would overfit to this one gear composition and drift wrong for a
+// different one. Ship this as an independent, honestly-labeled estimate
+// ("GearScore (est.)"), not a claimed match to Classic-Armory's own
+// number, unless/until it's recalibrated against several real
+// characters and the actual source of the gap is found, not guessed at.
+const GS_GLOBAL_SCALE = 1.7;
+const GS_ENCHANT_BONUS = 1.05;
+const GS_RARITY_WEIGHTS = { POOR: 3.5, COMMON: 3, UNCOMMON: 2.5, RARE: 1.76, EPIC: 1.6, LEGENDARY: 1.4, ARTIFACT: 1.4, HEIRLOOM: 1.4 };
+const GS_SLOT_WEIGHTS = {
+  RELIC: 0.3164, TRINKET: 0.5625, '2HWEAPON': 2.0, WEAPONMAINHAND: 1.0, WEAPONOFFHAND: 1.0,
+  RANGED: 0.3164, THROWN: 0.3164, RANGEDRIGHT: 0.3164, SHIELD: 1.0, WEAPON: 1.0, HOLDABLE: 1.0,
+  HEAD: 1.0, NECK: 0.5625, SHOULDER: 0.75, CHEST: 1.0, ROBE: 1.0, WAIST: 0.75, LEGS: 1.0,
+  FEET: 0.75, WRIST: 0.5625, HAND: 0.75, FINGER: 0.5625, CLOAK: 0.5625,
+  BODY: 0, TABARD: 0, AMMO: 0, BAG: 0,
+};
+function computeGearScore(items) {
+  let total = 0;
+  for (const it of items) {
+    const slotWeight = GS_SLOT_WEIGHTS[it.inventoryType];
+    if (!slotWeight || !it.itemLevel) continue;
+    const rarityWeight = GS_RARITY_WEIGHTS[it.quality] || GS_RARITY_WEIGHTS.RARE;
+    const enchantBonus = it.enchanted ? GS_ENCHANT_BONUS : 1;
+    total += (it.itemLevel / rarityWeight) * slotWeight * enchantBonus * GS_GLOBAL_SCALE;
+  }
+  return Math.round(total);
 }
 
 // characterData.character(...).zoneRankings - JSON-scalar field (WCL's
