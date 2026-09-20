@@ -1985,21 +1985,47 @@ async function getItemLevel(env, region, itemId) {
   return level;
 }
 
+// Same immutable-data reasoning as getItemLevel, separate endpoint
+// (/data/wow/media/item/{id}, not /data/wow/item/{id} - Blizzard splits
+// stat data and icon media into two calls). Confirmed live (2026-09-20):
+// returns a real, directly-loadable render.worldofwarcraft.com icon URL,
+// no auth needed to actually display the image in a browser - only the
+// lookup call itself needs the Battle.net token.
+async function getItemIcon(env, region, itemId) {
+  const cacheKey = `bnet_item_icon_${region}_${itemId}`;
+  if (env.WCL_CACHE) {
+    const cached = await env.WCL_CACHE.get(cacheKey).catch(() => null);
+    if (cached) return cached;
+  }
+  const media = await battleNetFetch(env, region, `/data/wow/media/item/${itemId}?namespace=static-${BNET_STATIC_NS_VERSION}-classicann-${region}&locale=en_US`);
+  const url = media.assets?.find(a => a.key === 'icon')?.value ?? null;
+  if (env.WCL_CACHE && url) await env.WCL_CACHE.put(cacheKey, url).catch(() => {});
+  return url;
+}
+
 // Blizzard character summary + equipment. Namespace confirmed live
 // against classic-armory.org's own traffic before writing this.
+// character-media gives a REAL rendered character portrait (not a
+// generic race/gender sprite like Classic-Armory uses - confirmed live,
+// 2026-09-20: /character-media returns actual avatar/main-raw render
+// URLs for a real Dreamscythe character) - best-effort, a character with
+// no cached render yet shouldn't fail the whole lookup.
 async function fetchRecruitGear(env, region, realmSlug, nameSlug) {
   const ns = `profile-classicann-${region}`;
-  const [summary, equipment] = await Promise.all([
+  const [summary, equipment, media] = await Promise.all([
     battleNetFetch(env, region, `/profile/wow/character/${realmSlug}/${nameSlug}?namespace=${ns}&locale=en_US`),
     battleNetFetch(env, region, `/profile/wow/character/${realmSlug}/${nameSlug}/equipment?namespace=${ns}&locale=en_US`),
+    battleNetFetch(env, region, `/profile/wow/character/${realmSlug}/${nameSlug}/character-media?namespace=${ns}&locale=en_US`).catch(() => null),
   ]);
   const rawItems = equipment.equipped_items || [];
   // Batched in parallel, not sequential - one lookup per equipped item
-  // would otherwise chain 17+ round trips. Each result independently
-  // best-effort (a single bad item id shouldn't null out the rest).
-  const itemLevels = await Promise.all(rawItems.map(it =>
-    it.item?.id ? getItemLevel(env, region, it.item.id).catch(() => null) : Promise.resolve(null)
-  ));
+  // would otherwise chain 17+ round trips per data type. Each result
+  // independently best-effort (a single bad item id shouldn't null out
+  // the rest).
+  const [itemLevels, itemIcons] = await Promise.all([
+    Promise.all(rawItems.map(it => it.item?.id ? getItemLevel(env, region, it.item.id).catch(() => null) : Promise.resolve(null))),
+    Promise.all(rawItems.map(it => it.item?.id ? getItemIcon(env, region, it.item.id).catch(() => null) : Promise.resolve(null))),
+  ]);
   const items = rawItems.map((it, i) => {
     // Blizzard bundles gems into the SAME enchantments[] array as the
     // real stat enchant, distinguished only by enchantment_slot.type -
@@ -2023,12 +2049,16 @@ async function fetchRecruitGear(env, region, realmSlug, nameSlug) {
       name: it.name,
       quality: it.quality?.type,
       itemLevel: itemLevels[i],
+      icon: itemIcons[i],
       enchanted: realEnchant,
       gems: gemEntries.length,
       gemItemIds: gemEntries.map(e => e.source_item?.id).filter(Boolean),
     };
   });
+  const mediaAssets = media?.assets || [];
   return {
+    avatarUrl: mediaAssets.find(a => a.key === 'avatar')?.value ?? null,
+    portraitUrl: mediaAssets.find(a => a.key === 'main-raw')?.value ?? null,
     level: summary.level ?? null,
     class: summary.character_class?.name ?? null,
     race: summary.race?.name ?? null,

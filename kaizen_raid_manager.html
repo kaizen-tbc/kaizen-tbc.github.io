@@ -17179,16 +17179,35 @@ function renderRecruitCheckResult(name, realm, data) {
   html += `<div class="rc-section"><h3>${escapeRc(name)} — ${escapeRc(realm)}</h3>`;
   if (data.gear) {
     const g = data.gear;
+    // Real rendered character portrait (Blizzard's own character-media
+    // render, not a generic race/gender sprite) - plain <img>, no frame/
+    // layout treatment invented here, that's Codex's call.
+    if (g.portraitUrl) html += `<img src="${g.portraitUrl}" alt="" style="max-width:180px;display:block;margin-bottom:12px;" onerror="this.style.display='none'">`;
     html += `<p class="rc-muted">${escapeRc(g.class || '')} ${escapeRc(g.race || '')}${g.guild ? ' · ' + escapeRc(g.guild) : ''}</p>`;
     html += `<p>Item level: <strong>${g.equippedItemLevel ?? '—'}</strong> (avg ${g.averageItemLevel ?? '—'})</p>`;
     if (g.gearScore != null) {
-      // "(est.)" is deliberate, not filler - our formula and Classic-Armory's
-      // own reading differ by a real ~10% on the one character checked so
-      // far (see computeGearScore's comment in kaizen-worker.js). Never
-      // claim parity with Classic-Armory's own number until that's resolved.
+      // "(est.)" is deliberate, not filler - calibrated against 4 real
+      // characters' own Classic-Armory readings (see computeGearScore's
+      // comment in kaizen-worker.js), consistently within ~1%, but never
+      // claimed as an exact/guaranteed match.
       html += `<p>GearScore (est.): <strong>${g.gearScore}</strong></p>`;
     }
     if (g.items?.length) {
+      // Plain icon grid, real Blizzard item icons + real WoW quality
+      // colors (gray/white/green/blue/purple/orange) - a fixed game
+      // convention, not an invented design choice, same as reusing the
+      // real GearScore formula rather than inventing one. No paperdoll/
+      // slot-position layout attempted here - that's a real visual/IA
+      // task, left for Codex (see Design/DECISIONS.md).
+      const qualityColors = { POOR: '#9d9d9d', COMMON: '#ffffff', UNCOMMON: '#1eff00', RARE: '#0070dd', EPIC: '#a335ee', LEGENDARY: '#ff8000', ARTIFACT: '#e6cc80', HEIRLOOM: '#00ccff' };
+      html += '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;">';
+      g.items.forEach(it => {
+        if (!it.icon) return;
+        const border = qualityColors[it.quality] || '#666';
+        const title = `${it.name || it.slot}${it.itemLevel ? ' (ilvl ' + it.itemLevel + ')' : ''}${it.enchanted ? ' — enchanted' : ''}${it.gems ? ' — ' + it.gems + ' gem(s)' : ''}`;
+        html += `<img src="${it.icon}" alt="" title="${escapeRc(title)}" style="width:36px;height:36px;border:2px solid ${border};border-radius:4px;" onerror="this.style.display='none'">`;
+      });
+      html += '</div>';
       // "Unenchanted" only, not "missing gems" - Blizzard's equipment API
       // only reports FILLED gem sockets (via each item's enchantments[]),
       // never how many total sockets an item has, so an empty-socket gap
