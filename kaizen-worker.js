@@ -2427,20 +2427,21 @@ async function runRecruitCheck(env, { name, realm, region, tier, forceRefresh })
   };
 }
 
-// POST /api/recruit-check - any signed-in user, no guild membership
-// required (owner's own call: "any signed-in member... expose the entry
-// point on the marketing page but request people sign up to use the
-// feature" - matches handleMyGuilds' verifyAuth-only pattern above, not
-// the isApproverRole-gated pattern the WCL ranking sync endpoints use).
-// Body: {name, realm, region, tier, forceRefresh} (region defaults 'us',
-// tier defaults to WCL's own "latest unfrozen zone", forceRefresh
-// defaults false). All the actual lookup/cache/tier logic lives in
-// runRecruitCheck above so it can also run un-authenticated through
-// /recruit-check-diag for verification.
+// POST /api/recruit-check - fully public, no auth required (owner's
+// revised call, superseding the original "any signed-in user" decision
+// below: "expose it to unauthenticated... more value that way for the
+// tool to get traction" - Classic-Armory, the direct comparison point,
+// doesn't gate its own lookup either). The real abuse control was never
+// the sign-in requirement - it's runRecruitCheck's own per-character
+// cache TTL/cooldown (RECRUIT_FRESH_TTL/RECRUIT_REFRESH_COOLDOWN below),
+// which is keyed by character, not by caller identity, so it's untouched
+// by removing this. Body: {name, realm, region, tier, forceRefresh}
+// (region defaults 'us', tier defaults to WCL's own "latest unfrozen
+// zone", forceRefresh defaults false). All the actual lookup/cache/tier
+// logic lives in runRecruitCheck above so it can also run through
+// /recruit-check-diag for verification - this handler is now a thin
+// wrapper around the same public path that diag route already used.
 async function handleRecruitCheck(request, env) {
-  const auth = await verifyAuth(request, env);
-  if (!auth) return corsResponse(JSON.stringify({ error: 'Unauthorized' }), 401);
-
   const { name, realm, region, tier, forceRefresh } = await request.json();
   if (!name || !realm) return corsResponse(JSON.stringify({ error: 'Missing name/realm.' }), 400);
 

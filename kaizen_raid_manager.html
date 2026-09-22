@@ -17157,33 +17157,16 @@ window.addEventListener('load', async function () {
       // away from itself before anyone with a live session ever saw it.
       // Signing out on the landing page needs no extra handling - the
       // nav toggle above already covers it.
-      if (isRecruitCheckPage) {
-        // submitRecruitCheck() stashes the in-progress search before
-        // sending someone through Clerk.openSignIn (which reloads this
-        // same page on return) - restore and re-run it so signing in
-        // doesn't lose what they were about to search. Takes priority
-        // over recruitCheckRoute below: a stashed search reflects
-        // whatever was actually being submitted (which may differ from
-        // the URL if they edited the fields right before signing in).
-        if (isSignedIn) {
-          let pending = null;
-          try { pending = JSON.parse(sessionStorage.getItem('kaizen-recruit-check-pending') || 'null'); } catch {}
-          if (pending) {
-            sessionStorage.removeItem('kaizen-recruit-check-pending');
-            document.getElementById('rc-name').value = pending.name;
-            document.getElementById('rc-realm').value = pending.realm;
-            submitRecruitCheck(pending.tier || null);
-          } else if (recruitCheckRoute) {
-            // A shareable /recruit-check/<region>/tbc-anniversary/<realm>/
-            // <character> link, opened while already signed in (or
-            // freshly signed in with no pending search) - the URL itself
-            // is the intent, run it immediately rather than waiting for
-            // a manual Search click.
-            submitRecruitCheck(recruitCheckRoute.tier);
-          }
-        }
-      }
-      else if (isLandingPage) {
+      // Recruit Check no longer gates on sign-in at all (owner: "expose it
+      // to unauthenticated... more value that way for the tool to get
+      // traction") - both the pending-search stash/restore round trip and
+      // the shareable-link auto-run used to live here specifically because
+      // they only fired once Clerk confirmed a session. The auto-run for a
+      // shareable link now happens unconditionally in initRecruitCheckPage
+      // (page load, no auth wait); there's no pending-search case left to
+      // restore since submitRecruitCheck never redirects to sign-in any
+      // more, so this whole branch is gone.
+      if (isLandingPage) {
         // Discord's OAuth redirect (handleRegisterGuildCallback) always
         // lands back at bare "/" with ?registered=<id>/?registerError=...,
         // regardless of where "Register a guild" was actually clicked from
@@ -17216,9 +17199,14 @@ function openSignInGate() { document.getElementById('auth-gate').style.display =
 function closeSignInGate() { document.getElementById('auth-gate').style.display = 'none'; }
 
 // Recruit Check frontend - see handleRecruitCheck in kaizen-worker.js.
-// Owner's own decision: the nav entry is visible to everyone, but using
-// the feature requires being signed in - gated here, at the point of
-// searching, not by hiding the nav link.
+// Fully public, no sign-in required (owner: "expose it to unauthenticated
+// ... more value that way for the tool to get traction" - Classic-Armory,
+// the comparison point, gates nothing either). Previously required signing
+// in at the point of searching; that gate and its sign-in-redirect/resume
+// plumbing are gone from both this file and the Worker's own
+// handleRecruitCheck. The existing per-character cache TTL/cooldown in
+// runRecruitCheck (kaizen-worker.js) was already the real abuse control,
+// not the sign-in requirement - upstream Blizzard/WCL load is unaffected.
 function escapeRc(value) { return String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
 // Same slugging rule as toWowSlug in kaizen-worker.js (lowercase, strip
@@ -17230,17 +17218,20 @@ function rcSlug(value) { return String(value || '').trim().toLowerCase().replace
 
 // Prefills the search fields from a parsed shareable URL (recruitCheckRoute,
 // set by resolveGuildFromUrl) as soon as the page loads - independent of
-// Clerk, same as initLandingPage. Whether the search actually RUNS yet
-// depends on auth state, handled separately in the sign-in listener below
-// (a signed-out visitor should still see the fields populated and ready,
-// not be thrown into the sign-in flow just for opening a link). Restored
-// values are the URL's slug form (e.g. "zabanya", not "Zabanya") since
-// that's all the URL itself carries - cosmetic only, the lookup still
-// resolves the same character either way.
+// Clerk, same as initLandingPage - and runs the search immediately, since
+// there's no auth gate left to wait on. Used to wait for Clerk to confirm
+// a session before auto-running (see the removed isRecruitCheckPage branch
+// in the auth listener); now that submitRecruitCheck never redirects to
+// sign-in, opening a shared link should just show the result right away,
+// same as Classic-Armory's own character URLs. Restored values are the
+// URL's slug form (e.g. "zabanya", not "Zabanya") since that's all the URL
+// itself carries - cosmetic only, the lookup still resolves the same
+// character either way.
 function initRecruitCheckPage() {
   if (!recruitCheckRoute) return;
   document.getElementById('rc-name').value = recruitCheckRoute.name;
   document.getElementById('rc-realm').value = recruitCheckRoute.realm;
+  submitRecruitCheck(recruitCheckRoute.tier, false, true);
 }
 
 // Keeps the address bar in sync with the current search/tier so the URL
@@ -17290,26 +17281,17 @@ async function submitRecruitCheck(tier, forceRefresh, skipUrlPush) {
   const realm = document.getElementById('rc-realm').value.trim();
   if (!name || !realm) { showToast('Enter a character name and realm.', true); return; }
 
-  if (!window.Clerk?.user) {
-    // Same Clerk.openSignIn modal startMarketingAuth uses, but redirects
-    // back to THIS page instead of the guild-onboarding chooser - signing
-    // in should return the recruiter to the search they were about to
-    // run, not send them somewhere else. Stash it so the reload Clerk
-    // does on return (see the window.load handler's isRecruitCheckPage
-    // branch) can restore and re-run it automatically.
-    try { sessionStorage.setItem('kaizen-recruit-check-pending', JSON.stringify({ name, realm, tier: tier || null })); } catch {}
-    Clerk.openSignIn({ forceRedirectUrl: location.href, signInForceRedirectUrl: location.href, signUpForceRedirectUrl: location.href });
-    return;
-  }
-
   const btn = document.getElementById('rc-search-btn');
   const resultEl = document.getElementById('rc-result');
   btn.disabled = true;
   resultEl.innerHTML = '<p class="rc-muted" style="margin-top:24px;">Searching…</p>';
   try {
+    // No auth header - the endpoint no longer requires (or checks) one.
+    // clerkAuthHeader() throws when signed out, which would break this for
+    // exactly the unauthenticated visitors this is now meant to serve.
     const res = await fetch(`${APP_API_WORKER}/api/recruit-check`, {
       method: 'POST',
-      headers: { ...(await clerkAuthHeader()), 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, realm, region: 'us', tier: tier || undefined, forceRefresh: !!forceRefresh }),
     });
     const data = await res.json();
