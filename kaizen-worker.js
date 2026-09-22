@@ -2114,13 +2114,25 @@ async function fetchRecruitGear(env, region, realmSlug, nameSlug) {
 // which is the same INVTYPE_* constant WoW itself uses with the
 // "INVTYPE_" prefix stripped - confirmed live (2026-09-20) against a
 // real Kaizen raider's equipment (HEAD/NECK/SHOULDER/CHEST/WAIST/LEGS/
-// FEET/WRIST/FINGER/TRINKET/CLOAK/RANGEDRIGHT all matched exactly);
-// 2HWEAPON/WEAPONMAINHAND/WEAPONOFFHAND are inferred from WoW's own
-// documented InventoryType enum (warcraft.wiki.gg) following that same
-// confirmed prefix-stripping pattern, not directly observed live (no
-// two-handed weapon was equipped on the test character) - worth a real
-// check against a 2H-wielding character if the calibration below is off
-// for one.
+// FEET/WRIST/FINGER/TRINKET/CLOAK/RANGEDRIGHT all matched exactly).
+// 2H weapons were the one slot never directly observed at the time -
+// "inferred... not directly observed live, worth a real check against a
+// 2H-wielding character" (this comment's own prior version). That check
+// happened: a real 2H-wielding Mage (Keroseen, a real Kaizen recruit)
+// came back with GearScore 1656 against Classic-Armory's own 2006 for
+// the same character - not a calibration-sized gap (the fitted factor
+// below closes those to under 1%), a whole item's worth. Root cause,
+// confirmed live via /battlenet-gearscore-check: Blizzard's own field is
+// "TWOHWEAPON", not "2HWEAPON" - the prefix-stripped guess broke the
+// INVTYPE_2HWEAPON -> "2HWEAPON" pattern that held for every other slot,
+// so GS_SLOT_WEIGHTS[it.inventoryType] came back undefined and
+// computeGearScore silently skipped the item (its own `if (!slotWeight
+// ...) continue`) - the single highest-weighted slot in the whole table
+// (2.0), dropped entirely for anyone wielding one. WEAPONMAINHAND/
+// WEAPONOFFHAND are still unconfirmed live the same way (no dual-wielder
+// checked yet) but at least now have one proven case showing the
+// prefix-stripping pattern isn't fully reliable - re-verify those too if
+// a dual-wielder's number ever looks light.
 // CALIBRATION (2026-09-20, three real Kaizen raiders, checked against
 // Classic-Armory's own live reading for each): this raw formula
 // undershoots Classic-Armory by a consistent ~11% every time -
@@ -2167,7 +2179,7 @@ const GS_CALIBRATION_FACTOR = 1.1262;
 const GS_ENCHANT_BONUS = 1.05;
 const GS_RARITY_WEIGHTS = { POOR: 3.5, COMMON: 3, UNCOMMON: 2.5, RARE: 1.76, EPIC: 1.6, LEGENDARY: 1.4, ARTIFACT: 1.4, HEIRLOOM: 1.4 };
 const GS_SLOT_WEIGHTS = {
-  RELIC: 0.3164, TRINKET: 0.5625, '2HWEAPON': 2.0, WEAPONMAINHAND: 1.0, WEAPONOFFHAND: 1.0,
+  RELIC: 0.3164, TRINKET: 0.5625, TWOHWEAPON: 2.0, WEAPONMAINHAND: 1.0, WEAPONOFFHAND: 1.0,
   RANGED: 0.3164, THROWN: 0.3164, RANGEDRIGHT: 0.3164, SHIELD: 1.0, WEAPON: 1.0, HOLDABLE: 1.0,
   HEAD: 1.0, NECK: 0.5625, SHOULDER: 0.75, CHEST: 1.0, ROBE: 1.0, WAIST: 0.75, LEGS: 1.0,
   FEET: 0.75, WRIST: 0.5625, HAND: 0.75, FINGER: 0.5625, CLOAK: 0.5625,
