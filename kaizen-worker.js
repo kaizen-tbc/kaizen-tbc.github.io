@@ -198,6 +198,22 @@ export default {
       }
     }
 
+    // Permanent read-only diagnostic (same spirit as /wcl-character-shape-
+    // check): the RAW static item for an id, so what Blizzard actually
+    // returns for tooltip data (preview_item: stats/armor/weapon/spells/
+    // sockets/set) is checked against a real response rather than guessed
+    // at - this project's recurring mistake with Blizzard field names.
+    if (url.pathname === '/battlenet-item-shape-check' && request.method === 'GET') {
+      const id = (url.searchParams.get('id') || '').trim();
+      if (!/^\d+$/.test(id)) return corsResponse(JSON.stringify({ error: 'id required' }), 400);
+      try {
+        const item = await battleNetFetch(env, 'us', `/data/wow/item/${id}?namespace=static-${BNET_STATIC_NS_VERSION}-classicann-us&locale=en_US`);
+        return corsResponse(JSON.stringify(item), 200);
+      } catch (err) {
+        return corsResponse(JSON.stringify({ error: err.message }), 500);
+      }
+    }
+
     // Permanent read-only diagnostic (matching /wcl-status/battlenet-status):
     // batch item quality/name/level lookup by id, for checking real gem
     // qualities (source_item.id from /battlenet-enchant-check) - built to
@@ -1996,19 +2012,59 @@ const BNET_STATIC_NS_VERSION = '2.5.6_68184';
 // Cached indefinitely (no TTL, same "immutable data" reasoning as WCL
 // report caching elsewhere in this file) so a recruit's gear doesn't
 // cost N extra Blizzard calls on every repeat lookup.
-async function getItemLevel(env, region, itemId) {
-  const cacheKey = `bnet_item_${region}_${itemId}`;
-  if (env.WCL_CACHE) {
-    const cached = await env.WCL_CACHE.get(cacheKey).catch(() => null);
-    if (cached != null) return Number(cached);
-  }
-  const item = await battleNetFetch(env, region, `/data/wow/item/${itemId}?namespace=static-${BNET_STATIC_NS_VERSION}-classicann-${region}&locale=en_US`);
-  const level = item.level ?? null;
-  if (env.WCL_CACHE && level != null) await env.WCL_CACHE.put(cacheKey, String(level)).catch(() => {});
-  return level;
+//
+// Now also keeps the item's TOOLTIP data from the same single fetch (owner:
+// "I'm not seeing the actual in-game tooltips. Would be nice to see the
+// actual item stats"). Confirmed live (2026-09-22, via the new
+// /battlenet-item-shape-check) that the static item's preview_item holds
+// exactly what an in-game tooltip is built from - binding, armor, colored
+// stat lines, "Equip:" spell text, weapon damage/speed/dps, level and class
+// requirements, set pieces + set bonuses, durability. It does NOT carry
+// socket info on this namespace, so empty sockets can't be shown (gems and
+// the socket bonus come from the character's own equipment data instead,
+// see fetchRecruitGear). Cached as one compact JSON value under a NEW key
+// (bnet_item_info_v1_) rather than reusing the old level-only bnet_item_
+// key, whose entries have no tooltip data.
+function compactItemTip(item) {
+  const p = item.preview_item || {};
+  const set = p.set ? {
+    name: p.set.item_set?.name || null,
+    pieces: (p.set.items || []).map(x => ({ id: x.item?.id, name: x.item?.name })),
+    effects: (p.set.effects || []).map(e => ({ text: e.display_string, required: e.required_count })),
+  } : null;
+  return {
+    binding: p.binding?.name || null,
+    unique: typeof p.unique_equipped === 'string' ? p.unique_equipped : null,
+    slot: p.inventory_type?.name || item.inventory_type?.name || null,
+    subclass: item.item_subclass?.name || null,
+    armor: p.armor?.display?.display_string || null,
+    weapon: p.weapon ? {
+      damage: p.weapon.damage?.display_string || null,
+      speed: p.weapon.attack_speed?.display_string || null,
+      dps: p.weapon.dps?.display_string || null,
+    } : null,
+    stats: (p.stats || []).map(s => ({ text: s.display?.display_string, equip: !!s.is_equip_bonus })).filter(s => s.text),
+    spells: (p.spells || []).map(s => s.description).filter(Boolean),
+    level: p.requirements?.level?.display_string || null,
+    classes: p.requirements?.playable_classes?.display_string || null,
+    set,
+    durability: p.durability?.display_string || null,
+  };
 }
 
-// Same immutable-data reasoning as getItemLevel, separate endpoint
+async function getItemInfo(env, region, itemId) {
+  const cacheKey = `bnet_item_info_v1_${region}_${itemId}`;
+  if (env.WCL_CACHE) {
+    const cached = await env.WCL_CACHE.get(cacheKey, 'json').catch(() => null);
+    if (cached) return cached;
+  }
+  const item = await battleNetFetch(env, region, `/data/wow/item/${itemId}?namespace=static-${BNET_STATIC_NS_VERSION}-classicann-${region}&locale=en_US`);
+  const info = { level: item.level ?? null, tip: compactItemTip(item) };
+  if (env.WCL_CACHE && info.level != null) await env.WCL_CACHE.put(cacheKey, JSON.stringify(info)).catch(() => {});
+  return info;
+}
+
+// Same immutable-data reasoning as getItemInfo, separate endpoint
 // (/data/wow/media/item/{id}, not /data/wow/item/{id} - Blizzard splits
 // stat data and icon media into two calls). Confirmed live (2026-09-20):
 // returns a real, directly-loadable render.worldofwarcraft.com icon URL,
@@ -2045,8 +2101,8 @@ async function fetchRecruitGear(env, region, realmSlug, nameSlug) {
   // would otherwise chain 17+ round trips per data type. Each result
   // independently best-effort (a single bad item id shouldn't null out
   // the rest).
-  const [itemLevels, itemIcons] = await Promise.all([
-    Promise.all(rawItems.map(it => it.item?.id ? getItemLevel(env, region, it.item.id).catch(() => null) : Promise.resolve(null))),
+  const [itemInfos, itemIcons] = await Promise.all([
+    Promise.all(rawItems.map(it => it.item?.id ? getItemInfo(env, region, it.item.id).catch(() => null) : Promise.resolve(null))),
     Promise.all(rawItems.map(it => it.item?.id ? getItemIcon(env, region, it.item.id).catch(() => null) : Promise.resolve(null))),
   ]);
   const items = rawItems.map((it, i) => {
@@ -2063,21 +2119,47 @@ async function fetchRecruitGear(env, region, realmSlug, nameSlug) {
     // field) - gemItemIds is the real per-gem data now available for a
     // future quality-aware gem score, once that's calibrated against
     // real Classic-Armory comparisons rather than guessed at.
+    //
+    // Also confirmed live (2026-09-22, real Cowl of Tirisfal/Mantle of
+    // Tirisfal): each entry carries its own readable display_string (the
+    // enchant's is "Enchanted: +22 Spell Power and +14 Spell Hit Rating",
+    // each gem's its stat text), and the SOCKET BONUS is the entry at
+    // enchantment_slot.id 5 (no source_item) - which the old gem filter
+    // counted as a gem (a head with 2 gems reported 3). Gems are now
+    // everything that isn't the permanent enchant, the slot-5 bonus line,
+    // or a TEMPORARY buff (oil/stone).
     const enchantments = it.enchantments || [];
-    const realEnchant = enchantments.some(e => e.enchantment_slot?.type === 'PERMANENT');
-    const gemEntries = enchantments.filter(e => e.enchantment_slot?.type !== 'PERMANENT');
+    const permanent = enchantments.find(e => e.enchantment_slot?.type === 'PERMANENT');
+    const bonusEntry = enchantments.find(e => e.enchantment_slot?.id === 5);
+    const gemEntries = enchantments.filter(e => e.enchantment_slot?.type !== 'PERMANENT' && e.enchantment_slot?.type !== 'TEMPORARY' && e.enchantment_slot?.id !== 5);
     return {
+      itemId: it.item?.id ?? null,
       slot: it.slot?.type,
       inventoryType: it.inventory_type?.type,
       name: it.name,
       quality: it.quality?.type,
-      itemLevel: itemLevels[i],
+      itemLevel: itemInfos[i]?.level ?? null,
       icon: itemIcons[i],
-      enchanted: realEnchant,
+      enchanted: !!permanent,
+      enchantText: permanent?.display_string || null,
       gems: gemEntries.length,
       gemItemIds: gemEntries.map(e => e.source_item?.id).filter(Boolean),
+      gemTexts: gemEntries.map(e => e.display_string).filter(Boolean),
+      socketBonus: bonusEntry?.display_string || null,
+      tip: itemInfos[i]?.tip || null,
     };
   });
+  // Which set pieces the CHARACTER actually has on (in-game tooltips show
+  // "Tirisfal Regalia (3/5)" with owned pieces lit and active bonuses lit) -
+  // the static item only lists the set's pieces, not what's equipped.
+  const equippedIds = new Set(items.map(x => x.itemId).filter(Boolean));
+  for (const x of items) {
+    const s = x.tip?.set;
+    if (!s) continue;
+    s.pieces = s.pieces.map(p => ({ ...p, have: equippedIds.has(p.id) }));
+    s.have = s.pieces.filter(p => p.have).length;
+    s.effects = s.effects.map(e => ({ ...e, active: s.have >= (e.required || 0) }));
+  }
   const mediaAssets = media?.assets || [];
   return {
     // Blizzard's own canonical capitalization (confirmed live 2026-09-20:

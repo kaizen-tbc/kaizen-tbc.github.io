@@ -3191,7 +3191,9 @@ body.guild-public-mode #tab-strats .public-assignment-sheet .personal-detail>*{m
 #recruit-check-main .rc-slot-icon{width:100%;height:100%;object-fit:cover;border-radius:3px}#recruit-check-main .rc-slot-fallback{position:absolute;z-index:-1;font-size:11px;color:#b2bec1}
 #recruit-check-main .rc-selected-item,#recruit-check-main .rc-item-tooltip{display:flex;gap:12px;align-items:center;background:#142023;color:#f5f2e9;border:1px solid #34484b;border-radius:6px;padding:14px}
 #recruit-check-main .rc-selected-item{margin-top:18px;min-height:75px}#recruit-check-main .rc-detail-icon{width:40px;height:40px;object-fit:cover;border-radius:4px}#recruit-check-main .rc-selected-item strong,#recruit-check-main .rc-item-tooltip strong{display:block;font-size:14px}#recruit-check-main .rc-selected-item small,#recruit-check-main .rc-item-tooltip small,#recruit-check-main .rc-selected-item span,#recruit-check-main .rc-item-tooltip span{display:block;font-size:12px;color:#b2bec1;margin-top:5px}
-#recruit-check-main .rc-item-tooltip{position:fixed;z-index:10000;width:290px;max-width:calc(100vw - 16px);box-sizing:border-box;box-shadow:0 8px 30px #0008}#recruit-check-main .rc-item-tooltip[hidden]{display:none!important}
+#recruit-check-main .rc-item-tooltip{position:fixed;z-index:10000;width:290px;max-width:calc(100vw - 16px);box-sizing:border-box;box-shadow:0 8px 30px #0008;max-height:calc(100vh - 16px);overflow-y:auto;align-items:flex-start}#recruit-check-main .rc-item-tooltip[hidden]{display:none!important}
+/* Item tooltip rows (stats/enchant/gems/set) - in-game color conventions. div/em rows on purpose: the tooltip's span rule above is display:block with its own margin/color. */
+#recruit-check-main .rc-tip-line{font-size:12px;line-height:1.45;margin-top:2px;color:#f5f2e9}#recruit-check-main .rc-tip-gap{margin-top:9px}#recruit-check-main .rc-tip-row{display:flex;justify-content:space-between;gap:12px}#recruit-check-main .rc-tip-row em{font-style:normal}#recruit-check-main .rc-tip-gold{color:#ffd100}#recruit-check-main .rc-tip-green{color:#1eff00}#recruit-check-main .rc-tip-gray{color:#9d9d9d}#recruit-check-main .rc-tip-dim{color:#7b868a}
 #recruit-check-main .rc-gear-review{margin-top:16px;font-size:12px}#recruit-check-main .rc-gear-review summary{cursor:pointer;color:var(--lp-accent);display:flex;justify-content:space-between;gap:10px}#recruit-check-main .rc-gear-review p{padding:12px 0;border-bottom:1px solid var(--lp-line);margin:0}#recruit-check-main .rc-gear-review small{display:block;margin-top:5px;color:var(--lp-muted)}
 #recruit-check-main .rc-performance-heading{display:flex;justify-content:space-between;align-items:start;gap:12px;margin-bottom:18px}#recruit-check-main .rc-performance-heading h3{margin-top:0}#recruit-check-main .rc-performance-heading a{font-size:12px;white-space:nowrap;margin-top:8px}#recruit-check-main .rc-performance-heading p{font-size:12px;line-height:1.5}
 #recruit-check-main .rc-parse{background:none;border:0;border-radius:0;min-width:0;padding:0;font-size:19px}#recruit-check-main .rc-table td:nth-child(3) .rc-parse{font-size:15px}#recruit-check-main .rc-table td:nth-child(4){font-size:11px;color:var(--lp-muted)}#recruit-check-main .rc-table td:not(:first-child),#recruit-check-main .rc-table th:not(:first-child){text-align:center}#recruit-check-main .rc-table tbody tr:nth-child(even){background:#728b8210}#recruit-check-main .rc-table td:first-child{font-weight:500;min-width:135px}
@@ -3199,6 +3201,59 @@ body.guild-public-mode #tab-strats .public-assignment-sheet .personal-detail>*{m
 #recruit-check-main .rc-table{background:#142023;color:#f5f2e9}#recruit-check-main .rc-table th,#recruit-check-main .rc-table td:nth-child(4){color:#b2bec1}#recruit-check-main table.rc-table td,#recruit-check-main table.rc-table th{border-color:#344044}
 @media(max-width:1000px){#recruit-check-main .rc-columns{grid-template-columns:1fr}#recruit-check-main .rc-equipment{grid-row:1}#recruit-check-main .rc-performance{grid-row:2}#recruit-check-main .rc-armory{max-width:520px;margin:auto}}
 @media(max-width:600px){#recruit-check-main{padding:28px 16px}#recruit-check-main>h1{font-size:40px}#recruit-check-main .rc-profile{flex-wrap:wrap;gap:14px;padding:18px!important}#recruit-check-main .rc-avatar{width:54px;height:54px}#recruit-check-main .rc-identity h2{font-size:28px}#recruit-check-main .rc-metrics{width:100%;margin-top:8px;justify-content:space-around}#recruit-check-main .rc-metrics strong{font-size:29px}#recruit-check-main .rc-columns>.rc-section{padding:18px 14px}#recruit-check-main .rc-performance-heading{flex-wrap:wrap}#recruit-check-main .rc-slot{width:40px;height:40px}#recruit-check-main .rc-armory{grid-template-columns:40px 1fr 40px;min-height:405px}#recruit-check-main .rc-body-render{inset:0 20px 44px}}
+
+/* Recruit Check mobile: desktop rules above remain unchanged. */
+@media(max-width:600px){
+body.recruit-check-mode #landing-page .lp-nav{gap:10px;min-height:64px}
+body.recruit-check-mode #landing-page .lp-wordmark{font-size:27px}
+body.recruit-check-mode #landing-page .lp-navlinks{gap:8px}
+#recruit-check-main{padding:24px 14px 48px}
+#recruit-check-main>h1{font-size:36px;margin:8px 0 12px}
+#recruit-check-main>.rc-muted{font-size:13px;line-height:1.6}
+#recruit-check-main>.rc-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}
+#recruit-check-main .rc-row .rc-field{min-width:0;width:100%}
+#recruit-check-main .rc-field input{width:100%;box-sizing:border-box;font-size:16px;min-height:44px}
+#recruit-check-main #rc-search-btn{grid-column:1/-1;width:100%;min-height:44px}
+#recruit-check-main .rc-profile{display:grid;grid-template-columns:48px minmax(0,1fr);padding:16px!important;gap:12px}
+#recruit-check-main .rc-avatar{width:48px;height:48px}
+#recruit-check-main .rc-identity{min-width:0;overflow-wrap:anywhere}
+#recruit-check-main .rc-identity h2{font-size:27px}
+#recruit-check-main .rc-identity p{font-size:12px;line-height:1.5}
+#recruit-check-main .rc-profile:not(:has(.rc-avatar)) .rc-identity{grid-column:1/-1}
+#recruit-check-main .rc-metrics{grid-column:1/-1;width:100%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;margin:8px 0 0;padding-top:16px;border-top:1px solid var(--lp-line)}
+#recruit-check-main .rc-metrics>div{padding:0 5px;min-width:0;gap:6px}
+#recruit-check-main .rc-metrics>div+div{padding-left:5px}
+#recruit-check-main .rc-metrics strong,#recruit-check-main .rc-best-average strong .rc-parse{font-size:25px;line-height:1.2}
+#recruit-check-main .rc-metrics span{font-size:10px;line-height:1.4}
+#recruit-check-main .rc-metrics small{font-size:10px}
+#recruit-check-main .rc-best-average strong{padding:0 4px;min-width:0}
+#recruit-check-main .rc-columns{gap:16px;margin-top:18px}
+#recruit-check-main .rc-columns>.rc-section{padding:18px 12px;margin:0}
+#recruit-check-main .rc-section h3{font-size:25px;line-height:1.2}
+#recruit-check-main .rc-slot{width:44px;height:44px}
+#recruit-check-main .rc-armory{grid-template-columns:44px minmax(0,1fr) 44px;min-height:420px}
+#recruit-check-main .rc-body-render{inset:0 34px 50px}
+#recruit-check-main .rc-blizzard-render{transform:scale(1.5)}
+#recruit-check-main .rc-selected-item{padding:12px;gap:10px;min-height:0}
+#recruit-check-main .rc-selected-item>div{min-width:0;overflow-wrap:anywhere}
+#recruit-check-main .rc-detail-icon{flex-shrink:0}
+#recruit-check-main .rc-performance-heading{display:flex;flex-direction:column;gap:14px;align-items:stretch}
+#recruit-check-main .rc-performance-heading>div{flex:initial;width:100%}
+#recruit-check-main .rc-performance-heading>div:last-child{flex-wrap:wrap!important;gap:12px!important}
+#recruit-check-main .rc-performance-heading a{margin:0;min-height:32px;display:inline-flex;align-items:center}
+#recruit-check-main #rc-tier-select{font-size:14px;min-height:44px;width:100%}
+#recruit-check-main .rc-table-scroll{overflow:visible}
+#recruit-check-main .rc-table{display:block;background:transparent}
+#recruit-check-main .rc-table thead{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+#recruit-check-main .rc-table tbody{display:grid;gap:10px}
+#recruit-check-main .rc-table tr{display:grid;grid-template-columns:1fr 1fr 1.5fr .65fr;padding:14px 10px;gap:12px 6px;border:1px solid #344044;border-radius:6px;background:#142023!important}
+#recruit-check-main table.rc-table td{padding:0;border:0;min-width:0!important;text-align:left!important;font-size:12px;overflow-wrap:anywhere}
+#recruit-check-main .rc-table td:first-child{grid-column:1/-1;font-size:14px;padding-bottom:10px;border-bottom:1px solid #344044}
+#recruit-check-main .rc-table td[data-label]:before{content:attr(data-label);display:block;color:#b2bec1;font-size:10px;font-weight:400;margin-bottom:6px}
+#recruit-check-main .rc-table td .rc-parse{font-size:20px!important}
+#recruit-check-main .rc-gear-review summary{min-height:44px;align-items:center}
+#recruit-check-main .rc-result>.rc-muted{line-height:1.8}
+}
 
 </style>
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8959237604087556" crossorigin="anonymous"></script>
@@ -17363,11 +17418,45 @@ function renderRecruitCheckResult(name, realm, data) {
   }else html+=`<p class="rc-error">${escapeRc(data.errors?.gear||'Gear information unavailable. Try the lookup again.')}</p>`;
   html+='</section><section class="rc-section rc-performance"><div class="rc-performance-heading"><div><h3>Encounter performance</h3><p class="rc-muted">'+escapeRc(rank?.zoneName||'Current tier')+' · Best and median percentiles</p></div><div style="display:flex;align-items:center;gap:10px;">'+tierSelect+(rcSafeAsset(rank?.wclUrl)?`<a href="${rcSafeAsset(rank.wclUrl)}" target="_blank" rel="noopener">View on WCL ↗</a>`:'')+'</div></div>';
   if(rank?.rankings?.length){html+='<div class="rc-table-scroll"><table class="rc-table"><thead><tr><th scope="col">Encounter</th><th scope="col">Best</th><th scope="col">Median</th><th scope="col">Spec</th><th scope="col">Kills</th></tr></thead><tbody>';
-    rank.rankings.forEach(r=>{html+=`<tr><td>${escapeRc(r.encounter||'—')}</td><td>${rcParseBadge(r.bestPercent)}</td><td>${rcParseBadge(r.medianPercent)}</td><td>${escapeRc(r.spec||'—')}</td><td>${number(r.kills??0)}</td></tr>`});html+='</tbody></table></div>';
+    rank.rankings.forEach(r=>{html+=`<tr><td>${escapeRc(r.encounter||'—')}</td><td data-label="Best">${rcParseBadge(r.bestPercent)}</td><td data-label="Median">${rcParseBadge(r.medianPercent)}</td><td data-label="Spec">${escapeRc(r.spec||'—')}</td><td data-label="Kills">${number(r.kills??0)}</td></tr>`});html+='</tbody></table></div>';
   }else html+=`<p class="rc-muted">${escapeRc(data.errors?.rankings||(rank?'No ranked parses this tier yet.':'Performance information unavailable. Try the lookup again.'))}</p>`;
   html+='</section></div><div id="rc-item-tooltip" class="rc-item-tooltip" role="tooltip" hidden></div></div>';el.innerHTML=html;
   const detail=el.querySelector('#rc-selected-item'),tooltip=el.querySelector('#rc-item-tooltip');
-  const itemText=it=>`${image(it.icon,'rc-detail-icon')}<div><strong style="color:${qualities[it.quality]||'#f5f2e9'}">${escapeRc(it.name||'Unknown item')}</strong><small>${escapeRc(it.slot||'').replaceAll('_',' ')} · Item level ${number(it.itemLevel)}</small><span>${it.enchanted?'Enchanted':'No enchant recorded'} · ${number(it.gems??0)} gems recorded</span></div>`;
+  // In-game-style tooltip built from Blizzard's own item data (owner: "I'm
+  // not seeing the actual in-game tooltips... would be nice to see the
+  // actual item stats"). it.tip is the static item's preview_item (base
+  // stats, armor/weapon, Equip effects, requirements, set + bonuses,
+  // durability); enchant, gem and socket-bonus text come from the
+  // character's own equipment data (see fetchRecruitGear). Rows are <div>/
+  // <em>, not <span>, so the tooltip's existing `span{display:block}` rule
+  // doesn't flatten them. A lookup cached before tooltip data existed has
+  // no it.tip - falls back to the old one-line summary rather than a blank.
+  const tl=(text,cls,gap)=>text?`<div class="rc-tip-line${cls?' '+cls:''}${gap?' rc-tip-gap':''}">${escapeRc(text)}</div>`:'';
+  const itemText=it=>{
+    const t=it.tip;
+    const name=`<strong style="color:${qualities[it.quality]||'#f5f2e9'}">${escapeRc(it.name||'Unknown item')}</strong>`;
+    if(!t)return `${image(it.icon,'rc-detail-icon')}<div>${name}<small>${escapeRc(it.slot||'').replaceAll('_',' ')} · Item level ${number(it.itemLevel)}</small><span>${it.enchanted?'Enchanted':'No enchant recorded'} · ${number(it.gems??0)} gems recorded</span></div>`;
+    const equipStats=t.stats.filter(s=>s.equip),baseStats=t.stats.filter(s=>!s.equip);
+    let h=name+tl(it.itemLevel!=null?'Item Level '+number(it.itemLevel):'','rc-tip-gold');
+    h+=tl(t.binding)+tl(t.unique);
+    if(t.slot||t.subclass)h+=`<div class="rc-tip-line rc-tip-row"><em>${escapeRc(t.slot||'')}</em><em>${escapeRc(t.subclass||'')}</em></div>`;
+    if(t.weapon)h+=`<div class="rc-tip-line rc-tip-row"><em>${escapeRc(t.weapon.damage||'')}</em><em>${escapeRc(t.weapon.speed||'')}</em></div>`+tl(t.weapon.dps);
+    h+=tl(t.armor);
+    baseStats.forEach(s=>{h+=tl(s.text)});
+    h+=tl(it.enchantText,'rc-tip-green');
+    (it.gemTexts||[]).forEach(g=>{h+=tl(g)});
+    h+=tl(it.socketBonus?'Socket Bonus: '+it.socketBonus:'','rc-tip-gray');
+    equipStats.forEach(s=>{h+=tl(s.text,'rc-tip-green')});
+    t.spells.forEach(s=>{h+=tl(s,'rc-tip-green')});
+    h+=tl(t.durability,'',true)+tl(t.level)+tl(t.classes);
+    const set=t.set;
+    if(set){
+      h+=tl(`${set.name||'Set'} (${set.have??0}/${set.pieces.length})`,'rc-tip-gold',true);
+      set.pieces.forEach(p=>{h+=tl(p.name,p.have?'':'rc-tip-dim')});
+      set.effects.forEach((e,i)=>{h+=tl(e.text,e.active?'rc-tip-green':'rc-tip-dim',i===0)});
+    }
+    return `${image(it.icon,'rc-detail-icon')}<div>${h}</div>`;
+  };
   const hide=()=>{tooltip.hidden=true};
   const show=b=>{const it=items[Number(b.dataset.rcItem)];tooltip.innerHTML=itemText(it);tooltip.hidden=false;const r=b.getBoundingClientRect();tooltip.style.left=Math.max(8,Math.min(innerWidth-tooltip.offsetWidth-8,r.left+r.width+10))+'px';tooltip.style.top=Math.max(8,Math.min(innerHeight-tooltip.offsetHeight-8,r.top))+'px';};
   el.querySelectorAll('[data-rc-item]').forEach(b=>{b.onmouseenter=()=>show(b);b.onmouseleave=hide;b.onfocus=()=>show(b);b.onblur=hide;b.onclick=()=>{detail.innerHTML=itemText(items[Number(b.dataset.rcItem)]);show(b)};b.onkeydown=e=>{if(e.key==='Escape')hide()}});
