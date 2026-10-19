@@ -17,3 +17,5 @@ Kaizen Terminal.bat
 node
 .gitignore
 .assetsignore
+item-sources.json
+tools/
